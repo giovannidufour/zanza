@@ -2,7 +2,7 @@
 
 The sample player docked at the bottom of the site: now playing (cover, track position, sample, product), actions, transport (`n of total`, previous · play/pause · next), the browser's native audio controls, close. Figma: `player` (device mobile | desktop) with the building block `_player controls` (state default | playing), page `player`.
 
-- **Desktop:** one row, top-aligned: actions · now playing (fill) · controls (136) · native player (326) · close.
+- **Desktop:** one row, top-aligned: actions · now playing (fill) · controls (136) · native player (fill, half of the row, max 800) · close.
 - **Mobile:** now playing + close / actions · controls (centred, space-between) / native player.
 
 ## API
@@ -43,4 +43,4 @@ Presentational: it renders one sample and the native audio element. The site own
 
 ## Dimensions (Figma)
 
-padding 8 / `page-margin-*` · desktop gap `gutter-small` · cover 48 · title row gap 8 · actions gap 4 · controls 136, gap 8 · native player 326 × 32 (desktop), full width × 32 with padding-bottom 8 (mobile). Height 65 desktop, 153 mobile.
+padding 8 / `page-margin-*` · desktop gap `gutter-small` · cover 48 · title row gap 8 · actions gap 4 · controls 136, gap 8 · native player fill × 32, max-width 800 (desktop), full width × 32 with padding-bottom 8 (mobile). Height 65 desktop, 153 mobile.

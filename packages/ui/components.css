@@ -451,8 +451,9 @@ a.zz-tab {
   background: var(--surface-base);                /* Figma fill #73ff61, unbound → surface-base (same value) */
   border-top: 1px solid var(--border-divider-strong);   /* Figma top stroke #000, unbound */
   color: var(--text-strong);
-  /* desktop: one row, top-aligned (Figma: horizontal, align MIN) */
-  grid-template-columns: auto minmax(0, 1fr) 136px 326px 24px;
+  /* desktop: one row, top-aligned (Figma: horizontal, align MIN). Figma groups actions+now+controls and the native
+     player as two FILL siblings (equal halves of the row minus close and gaps), native capped at max-width 800 */
+  grid-template-columns: auto minmax(0, 1fr) 136px min(800px, calc((100% - 24px - 2 * var(--gutter-small)) / 2)) 24px;
   grid-template-areas: "actions now controls native close";
   align-items: start;
 }
