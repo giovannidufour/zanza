@@ -1,0 +1,54 @@
+<!-- @dsCard group="Commerce" height=360 subtitle="device=desktop · mobile" -->
+<!doctype html>
+<html data-theme="default">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: var(--surface-base); color: var(--text-strong); font-family: var(--font-sans); }
+  .pg { display: grid; grid-template-columns: 1fr 240px; }
+  .pg__canvas { padding: 24px; }
+  .pg__controls { border-left: 1px solid var(--black-a16); padding: 16px; display: grid; gap: 12px; align-content: start; font-size: 12px; line-height: 14px; }
+  .pg__controls h3 { margin: 0 0 4px; font: 400 12px/14px var(--font-sans); letter-spacing: .1em; text-transform: uppercase; }
+  .ctl { display: grid; grid-template-columns: 72px 1fr; align-items: center; gap: 8px; }
+  .ctl select { font: inherit; color: var(--text-strong); background: var(--white); border: 1px solid var(--black); border-radius: 0; padding: 4px 6px; width: 100%; }
+  .ctl input[type=checkbox] { justify-self: start; margin: 0; }
+  .frame[data-device="desktop"] { width: 1150px; max-width: 100%; }   /* Figma: device=desktop */
+  .frame[data-device="mobile"]  { width: 344px; }                      /* Figma: device=mobile */
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function () {
+  var React = window.React, ReactDOM = window.ReactDOM, Z = window.Zanza;
+  var h = React.createElement, useState = React.useState;
+  function Select(p) { return h('div', { className: 'ctl' }, h('label', { htmlFor: p.id }, p.label), h('select', { id: p.id, value: p.value, onChange: function (e) { p.onChange(e.target.value); } }, p.options.map(function (o) { return h('option', { key: o, value: o }, o); }))); }
+  function Check(p) { return h('div', { className: 'ctl' }, h('label', { htmlFor: p.id }, p.label), h('input', { id: p.id, type: 'checkbox', checked: p.value, onChange: function (e) { p.onChange(e.target.checked); } })); }
+  function Playground() {
+    var st = useState({ device: 'desktop', tags: true, samples: true, description: true });
+    var s = st[0], set = st[1];
+    var upd = function (k) { return function (v) { var n = Object.assign({}, s); n[k] = v; set(n); }; };
+    return h('div', { className: 'pg' },
+      h('div', { className: 'pg__canvas' },
+        h('div', { className: 'frame', 'data-device': s.device },
+          h(Z.ProductCard, {
+            device: s.device,
+            title: 'Little Meeky - Swear', releaseInfo: 'Kesta 12” (JA)', price: '12€',
+            tags: s.tags ? ['Dancehall'] : null,
+            description: s.description ? 'Description' : null,
+            grading: 'Grading: VG+',
+            samples: s.samples ? [h(Z.PlayerButton, { key: 'a' }, '1'), h(Z.PlayerButton, { key: 'b' }, '2')] : null
+          }))),
+      h('div', { className: 'pg__controls' },
+        h('h3', null, 'Props'),
+        h(Select, { id: 'device', label: 'device', value: s.device, options: ['desktop', 'mobile'], onChange: upd('device') }),
+        h(Check, { id: 'tags', label: 'tags', value: s.tags, onChange: upd('tags') }),
+        h(Check, { id: 'description', label: 'description', value: s.description, onChange: upd('description') }),
+        h(Check, { id: 'samples', label: 'samples', value: s.samples, onChange: upd('samples') })));
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(h(Playground));
+})();
+</script>
+</body>
+</html>

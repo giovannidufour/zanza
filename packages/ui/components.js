@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"Gallery"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"Gallery"}]} */
 /* packages/ui/components.js — the ONE implementation of the Zanza components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
@@ -161,8 +161,8 @@
     return h('span', Object.assign({
       className: cx('zz-tag', props.className),
       'data-size': size
-    }, omit(props, ['size', 'children', 'className'])),
-      h('span', { className: cx('zz-tag__label', TAG_TYPE[size]) }, props.children));
+    }, omit(props, ['size', 'children', 'className', '_typeClass'])),
+      h('span', { className: cx('zz-tag__label', props._typeClass || TAG_TYPE[size]) }, props.children));
   }
 
   function TagGroup(props) {
@@ -308,6 +308,63 @@
       props.samples ? h('div', { className: 'zz-product-info__samples' }, props.samples) : null);
   }
 
+  /* ── ProductCard ────────────────────────────────────────────────────────
+     Figma: `product card` (device=desktop | mobile), page PDP. One markup for both variants; CSS grid places the blocks:
+       desktop: 9-col grid · image 2 cols · info 3 cols (title block, tags, samples; gap 16) ·
+                purchase 4 cols (button fill medium "Add to bag", price, then description + grading below; gap 8)
+       mobile:  12-col grid · image 4 cols · info (title block, description, tags, samples; gap 8) + purchase (button
+                hug small "Add", price, right-aligned) share the other 8 cols.
+     In Figma the description sits in different frames per variant (auto layout cannot move it); here it is one node.
+     Responsive (no device): both buttons are rendered and CSS shows one per breakpoint (labels and sizes differ). */
+  var CARD_TYPE = {
+    desktop:    { head: 'body-large', meta: 'body-medium', tag: 'large' },
+    mobile:     { head: 'body-medium', meta: 'body-small', tag: 'small' },
+    responsive: { head: 'body-large body-medium--mobile', meta: 'body-medium body-small--mobile', tag: 'large', tagType: 'body-medium body-extra-small--mobile' }
+  };
+  var useId = React.useId || function () { return React.useRef('zz-' + Math.random().toString(36).slice(2, 8)).current; };
+  function ProductCard(props) {
+    var device = props.device || 'responsive';
+    var t = CARD_TYPE[device];
+    var titleId = useId();
+    var img = props.image;
+    var tags = props.tags || [];
+    function addButton(d) {
+      return h(Button, {
+        key: d,
+        hierarchy: 'secondary',
+        size: d === 'mobile' ? 'small' : 'medium',
+        className: 'zz-product-card__add',
+        'data-device': d,
+        onClick: props.onAdd,
+        'aria-describedby': titleId
+      }, d === 'mobile' ? (props.addLabelShort || 'Add') : (props.addLabel || 'Add to bag'));
+    }
+    return h('article', Object.assign({
+      className: cx('zz-product-card', props.className),
+      'data-device': device,
+      'aria-labelledby': titleId
+    }, omit(props, ['device', 'image', 'href', 'title', 'releaseInfo', 'price', 'description', 'grading', 'tags', 'samples',
+                    'onAdd', 'addLabel', 'addLabelShort', 'headingLevel', 'className', 'children'])),
+      // href: the cover becomes the link to the product page (no visual change; the link style is not designed yet)
+      h(props.href ? 'a' : 'div', props.href ? { className: 'zz-product-card__image', href: props.href, 'aria-labelledby': titleId } : { className: 'zz-product-card__image' },
+        img && img.src ? h('img', { src: img.src, alt: img.alt || '', loading: 'lazy' }) : null),
+      h('div', { className: 'zz-product-card__info' },
+        h('div', { className: 'zz-product-card__title-block' },
+          h('h' + (props.headingLevel || 2), { id: titleId, className: cx('zz-product-card__name', t.head) }, props.title),
+          props.releaseInfo ? h('p', { className: cx('zz-product-card__release', t.head) }, props.releaseInfo) : null),
+        tags.length ? h(TagGroup, { className: 'zz-product-card__tags' },
+          tags.map(function (tag, i) { return h(Tag, { key: i, size: t.tag, _typeClass: t.tagType }, tag); })) : null,
+        props.samples ? h('div', { className: 'zz-product-card__samples' }, props.samples) : null),
+      h('div', { className: 'zz-product-card__purchase' },
+        device === 'responsive' ? [addButton('desktop'), addButton('mobile')] : addButton(device),
+        props.price != null ? h('p', { className: cx('zz-product-card__price', t.head) }, props.price) : null),
+      (props.description || props.grading)
+        ? h('div', { className: 'zz-product-card__description' },
+            props.description ? h('p', { className: t.meta }, props.description) : null,
+            props.grading ? h('p', { className: t.meta }, props.grading) : null)
+        : null);
+  }
+
   /* ── Gallery ────────────────────────────────────────────────────────────
      Figma: PDP `product image` ×2 (desktop: big + half-width below; mobile: `mobile gallery`, horizontal swipe).
      The Figma gallery component is not designed yet: this mirrors the PDP placement. */
@@ -327,5 +384,5 @@
   }
 
   return { Button: Button, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, Tag: Tag, TagGroup: TagGroup,
-           PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon };
+           PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon };
 });

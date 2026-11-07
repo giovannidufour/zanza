@@ -14,6 +14,12 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - **Gallery.** Figma component not designed yet; image placeholder fill `#f2f4f7` has no token. *Parked.*
 
 - **Player track number.** Figma shows "1" next to the title and "1 of 3" in the controls; code maps the first to the track position on the record (A, B) — to confirm.
+- **ProductCard link.** No link to the product page in Figma. Code: the cover is the link (`href`, no visual change, so the PLP is navigable). Proposal: the title becomes the link too (link style to design).
+- **ProductCard "Add" (mobile).** Button small = 32px: passes WCAG 2.5.8 (24) but under the 44px touch recommendation (2.5.5).
+- **PLP filters.** Hardcoded placeholder copied from Figma (`apps/storefront/pages/plp.js`), no state, no filtering, not focusable: replace with the filters component when designed (checkbox semantics, `filter/content=tag` variant).
+- **PLP breadcrumbs.** Figma shows "For sale / Dancehall / 7”" (the applied filters); code shows only "For sale" until filters work.
+- **PLP mobile filters.** Figma PLP - mobile has no filters: hidden below the breakpoint. Where they live on mobile (drawer from the hamburger? a "Filters" button?) is to design.
+- **PLP sample labels.** Card samples are "1", "2" (Figma); the PDP shows the sample title. Accessible name in code: "<product>, sample 1: <title>".
 - **Player "Add to bag".** Rendered, no action yet (no cart).
 - **Sample audio.** `audio_url` must be a direct file (mp3/aac/ogg). Sample B uses a reggaefever.ch URL (hotlinking and rights to verify); sample A is still a generated test tone (`public/test-sample-a.mp3`). Depends on Q3.
 - **Home link.** `/zanza/` is a meta-refresh page, so the soft navigation falls back to a full load there and the audio stops. Fixes itself with a real home page.
@@ -30,6 +36,8 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - `tab`: single-value `hierarchy`, unused `layout` variant.
 - `tag group / orientation=vertical` is not vertical · `tag item` gap 8 with one child.
 - `product info`: 8 text nodes with hardcoded `#000000` → `text/strong` · placeholder name "Artist 1 - Title 1 / Artist 2 - Title 2" needs a data model for split releases.
+- `product card`: all 10 text nodes have unbound fills (`#000000`) → `text/strong` · button and product image descriptions say "Codice: .cw-button · ui_button()" / ".cw-product-image · ui_product_image()": not Zanza names (`zz-`, React `Button`), looks copied from another project → rewrite · product image description says 80×80 (here it is 249 / 109).
+- `PLP - desktop`: content frame named `pdp content`, list frame `Frame 46`, card instances `Frame 43/44/45` → `plp content`, `product list`, `product card`.
 - `header` mobile: store-name frame named `logo` (desktop: `store name`).
 - `player`: native-player placeholder fill unbound (placeholder only, fine).
 - Icons: hamburger lines have a white stroke · `icon-pencil` uses unbound `#212121`.

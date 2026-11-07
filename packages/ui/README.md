@@ -45,6 +45,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | IconButton | page `buttons` → `icon button` | ported: state default/hover/pressed/disabled, 24px, icon slot |
 | Player | page `player` → `player` + `_player controls` | ported: desktop / mobile / responsive, presentational (site owns playback) |
 | ProductInfo | page `PDP` → `product info` | ported: desktop / mobile / responsive |
+| ProductCard | page `PDP` → `product card` | ported: desktop / mobile / responsive |
 | Gallery | page `PDP` → `product image` ×2, `mobile gallery` | ported from page placement; Figma component pending |
 
 ## Open items

@@ -1,5 +1,5 @@
 /* apps/storefront/build.js — static build.
-   content/products/*.json → dist/products/<slug>/index.html (+ css, assets).
+   content/products/*.json → dist/products/<slug>/index.html, dist/sale/index.html (PLP) (+ css, assets).
    Upload the whole `dist/` folder to the web root. Run: npm run build */
 'use strict';
 const fs = require('fs');
@@ -28,12 +28,14 @@ const css = {
   tokens: readCss(path.join(UI, 'tokens.css')),
   components: readCss(path.join(UI, 'components.css')),
   base: readCss(path.join(APP, 'base.css')),
-  pdp: readCss(path.join(APP, 'pdp.css'))
+  pdp: readCss(path.join(APP, 'pdp.css')),
+  plp: readCss(path.join(APP, 'plp.css'))
 };
 const cssHref = (name) => url(`/css/${name}.css?v=${hashOf(css[name])}`);
 const siteJs = fs.readFileSync(path.join(APP, 'scripts/site.js'));
 const siteJsHref = url(`/js/site.js?v=${hashOf(siteJs)}`);
 const { Pdp, title } = require('./pages/pdp.js');
+const Plp = require('./pages/plp.js');
 const Z = require(path.join(UI, 'components.js'));
 
 // the site player: one per page, outside .zz-page, so the soft navigation in site.js keeps it (and the audio) alive.
@@ -61,6 +63,7 @@ function page({ title: t, body }) {
 <link rel="stylesheet" href="${cssHref('components')}">
 <link rel="stylesheet" href="${cssHref('base')}">
 <link rel="stylesheet" href="${cssHref('pdp')}">
+<link rel="stylesheet" href="${cssHref('plp')}">
 <script src="${siteJsHref}" defer></script>
 </head>
 <body>
@@ -86,6 +89,7 @@ write('css/tokens.css', css.tokens);
 write('css/components.css', css.components);
 write('css/base.css', css.base);
 write('css/pdp.css', css.pdp);
+write('css/plp.css', css.plp);
 write('js/site.js', siteJs);
 for (const f of fs.readdirSync(path.join(APP, 'public'))) write('assets/' + f, fs.readFileSync(path.join(APP, 'public', f)));
 
@@ -97,8 +101,10 @@ for (const product of products) {
   write(`products/${product.listing.slug}/index.html`, page({ title: title(product), body }));
 }
 
-// root: redirect to the first product while there is no home page
-if (products[0]) {
-  write('index.html', `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=${url(`/products/${products[0].listing.slug}/`)}"><title>${escape(site.storeName)}</title>`);
-}
-console.log(`done: ${products.length} product page(s)`);
+// PLP: the listing of the "For sale" section (Figma: PLP - desktop); "For trade" has no products yet
+const forSale = products.filter(p => p.listing.section === 'sale' && p.listing.status === 'available');
+write('sale/index.html', page({ title: Plp.title('sale'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, site, url })) }));
+
+// root: redirect to the PLP while there is no home page
+write('index.html', `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=${url('/sale/')}"><title>${escape(site.storeName)}</title>`);
+console.log(`done: ${products.length} product page(s), 1 listing (${forSale.length} for sale)`);

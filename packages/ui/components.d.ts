@@ -186,6 +186,46 @@ export interface ProductInfoProps extends HTMLAttributes<HTMLElement> {
 }
 export declare function ProductInfo(props: ProductInfoProps): JSX.Element;
 
+/** Mirrors the Figma component `product card` (device=desktop | mobile): a release in a list. One markup; CSS grid places
+ *  the blocks per variant (the description moves from the purchase column on desktop to the info column on mobile). */
+export interface ProductCardImage {
+  /** Cover URL. Omitted → the empty square (surface/support-1). */
+  src?: string;
+  /** Alt text; empty = decorative (the title already names the release). */
+  alt?: string;
+}
+export interface ProductCardProps extends HTMLAttributes<HTMLElement> {
+  /** Omitted → responsive (breakpoint `--mobile` from tokens.json, <768px placeholder). */
+  device?: "desktop" | "mobile";
+  /** Figma `product image`: the cover, square. */
+  image?: ProductCardImage;
+  /** Product page URL: the cover becomes a link to it (no visual change; a designed link style is in open.md). */
+  href?: string;
+  /** Figma `product name`. Rendered as a heading; it also names the card and its button. */
+  title: ReactNode;
+  /** Heading level of the title, to fit the page outline. @default 2 */
+  headingLevel?: 2 | 3 | 4;
+  /** Figma `release info`, e.g. "Label Format (Country)". */
+  releaseInfo?: ReactNode;
+  /** Figma `price`, already formatted. */
+  price?: ReactNode;
+  /** Figma `description`. Desktop: purchase column, below the price; mobile: info column, below the title. */
+  description?: ReactNode;
+  /** Figma `grading`, already formatted. */
+  grading?: ReactNode;
+  /** Tag labels. Rendered as a TagGroup: size large on desktop, small on mobile. */
+  tags?: string[];
+  /** <PlayerButton>s, in a row (gap 8). */
+  samples?: ReactNode;
+  /** Click on the add button. */
+  onAdd?: () => void;
+  /** Desktop button label (Figma: "Add to bag"). Default "Add to bag". */
+  addLabel?: string;
+  /** Mobile button label (Figma: "Add"). Default "Add". */
+  addLabelShort?: string;
+}
+export declare function ProductCard(props: ProductCardProps): JSX.Element;
+
 /** Product images: 2 per product. Desktop: big + half-width below; mobile: horizontal swipe. Mirrors the PDP placement (no Figma gallery component yet). */
 export interface GalleryImage {
   /** Image URL. */

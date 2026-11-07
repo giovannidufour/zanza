@@ -39,3 +39,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0013](0013-docs-structure.md) | Docs: decision log, one backlog, API generated | accepted |
 | [0014](0014-strokes-included-in-layout.md) | Strokes included in layout: CSS border + full Figma padding | accepted |
 | [0015](0015-persistent-player.md) | Persistent player: native audio + soft navigation | accepted |
+| [0016](0016-one-markup-blocks-placed-by-grid.md) | One markup per component; blocks moved between variants are placed by CSS grid | accepted |
