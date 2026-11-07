@@ -61,11 +61,27 @@ if (process.argv.includes('--list')) {
 
 if (!fs.existsSync(DIST)) fail(`${path.relative(process.cwd(), DIST)} not found — run npm run build first.`);
 const files = walk(DIST);
-const lines = [...common, 'ftp-create-dirs', 'fail-early', 'retry = 2', 'write-out = "%{response_code} %{url_effective}\\n"'];
-for (const f of files) {
-  const rel = path.relative(DIST, f).split(path.sep).map(encodeURIComponent).join('/');
-  lines.push(`upload-file = ${q(f)}`, `url = ${q(base + rel)}`);
+const urlOf = (f) => base + path.relative(DIST, f).split(path.sep).map(encodeURIComponent).join('/');
+
+// Uploads a batch in one connection; returns the files that did not get a 226 (transfer complete).
+// No fail-early: one server hiccup (e.g. FTP 451) must not stop the rest of the batch.
+function upload(batch) {
+  const lines = [...common, 'ftp-create-dirs', 'write-out = "%{response_code} %{url_effective}\\n"'];
+  for (const f of batch) lines.push(`upload-file = ${q(f)}`, `url = ${q(urlOf(f))}`);
+  const r = spawnSync('curl', ['--config', '-'], { input: lines.join('\n') + '\n', encoding: 'utf8', stdio: ['pipe', 'pipe', 'inherit'] });
+  const ok = new Set(r.stdout.split('\n').filter((l) => l.startsWith('226 ')).map((l) => l.slice(4)));
+  for (const f of batch) console.log(`${ok.has(urlOf(f)) ? 'ok  ' : 'FAIL'} ${path.relative(DIST, f)}`);
+  return batch.filter((f) => !ok.has(urlOf(f)));
 }
+const sleep = (s) => spawnSync('sleep', [String(s)]);
+
 console.log(`Uploading ${files.length} files to ${cfg.host}/${remoteDir}/ …`);
-curl(lines);
+let pending = upload(files);
+// transient server errors (4xx like 451): retry only the failed files, with backoff
+for (let attempt = 1; pending.length && attempt <= 3; attempt++) {
+  console.log(`Retrying ${pending.length} file(s) in ${attempt * 2}s (attempt ${attempt}/3) …`);
+  sleep(attempt * 2);
+  pending = upload(pending);
+}
+if (pending.length) fail(`${pending.length} file(s) not uploaded — the site may be partially updated. Run the deploy again.`);
 console.log(`Done → ${cfg.publicUrl}`);
