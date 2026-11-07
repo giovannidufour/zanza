@@ -6,7 +6,7 @@ const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 
-const { SECTION_LABEL, formatPrice, productName, releaseInfo, grading, SiteHeader, sampleAttrs } = require('./shell.js');
+const { SECTION_LABEL, formatPrice, productName, releaseInfo, grading, SiteHeader, sampleAttrs, ProductCardFor } = require('./shell.js');
 
 function breadcrumbItems(product, url) {
   const { listing, release } = product;
@@ -17,7 +17,7 @@ function breadcrumbItems(product, url) {
   ];
 }
 
-function Pdp({ product, site, url }) {
+function Pdp({ product, related = [], site, url }) {
   const { listing, release, copy, samples } = product;
   return h('div', { className: 'zz-page' },
     h(SiteHeader, { site, url, section: listing.section }),
@@ -42,7 +42,10 @@ function Pdp({ product, site, url }) {
         samples: samples.length ? samples.map((s) => h(Z.PlayerButton, Object.assign({ key: s.track_position }, sampleAttrs(product, s, url)), s.title)) : null
       }),
       h('div', { className: 'pdp-content__actions' },
-        h(Z.Button, { hierarchy: 'primary', size: 'large', className: 'pdp-content__cta' }, 'Add to bag'))
+        h(Z.Button, { hierarchy: 'primary', size: 'large', className: 'pdp-content__cta' }, 'Add to bag')),
+      // Figma: `you may also like` — desktop row 2, cols 5–12; mobile below the content. Cards are h3 under its h2.
+      related.length ? h(Z.RelatedProducts, { className: 'pdp-content__related', title: 'More for sale:' },
+        related.map((p) => h(ProductCardFor, { key: p.listing.slug, product: p, url, headingLevel: 3 }))) : null
     )
   );
 }

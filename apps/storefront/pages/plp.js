@@ -5,7 +5,7 @@
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
-const { SECTION_LABEL, formatPrice, productName, releaseInfo, grading, productHref, SiteHeader, sampleAttrs } = require('./shell.js');
+const { SECTION_LABEL, SiteHeader, ProductCardFor } = require('./shell.js');
 
 // Figma: `filters` > `filter block` ×3 > `filter` (content=label) — hardcoded values from the Figma frame
 const FILTERS = [
@@ -38,26 +38,8 @@ function Plp({ section, products, site, url }) {
       h(Filters),
       h('main', { className: 'plp-list' },
         h('h1', { className: 'plp-list__title' }, SECTION_LABEL[section]),
-        products.map((product) => {
-          const { listing, release, copy, samples } = product;
-          return h(Z.ProductCard, {
-            key: listing.slug,
-            // no device: responsive card (desktop variant on PLP - desktop, mobile variant on PLP - mobile)
-            href: productHref(product, url),
-            image: release.cover ? { src: url(release.cover), alt: '' } : null,
-            title: productName(release),
-            releaseInfo: releaseInfo(release),
-            price: section === 'sale' ? formatPrice(listing.price) : null,
-            tags: release.style,
-            description: copy.notes,
-            grading: grading(copy),
-            // Figma labels the card samples 1, 2…; the accessible name keeps the product and the sample title
-            samples: samples.length ? samples.map((s, i) => h(Z.PlayerButton, Object.assign({
-              key: s.track_position,
-              'aria-label': `${productName(release)}, sample ${i + 1}: ${s.title}`
-            }, sampleAttrs(product, s, url)), String(i + 1))) : null
-          });
-        })))
+        // no device: responsive card (desktop variant on PLP - desktop, mobile variant on PLP - mobile)
+        products.map((product) => h(ProductCardFor, { key: product.listing.slug, product, url }))))
   );
 }
 

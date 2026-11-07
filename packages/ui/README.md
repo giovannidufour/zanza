@@ -46,6 +46,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | Player | page `player` → `player` + `_player controls` | ported: desktop / mobile / responsive, presentational (site owns playback) |
 | ProductInfo | page `PDP` → `product info` | ported: desktop / mobile / responsive |
 | ProductCard | page `PDP` → `product card` | ported: desktop / mobile / responsive |
+| RelatedProducts | page `PDP` → `you may also like` | ported: one layout, cards carry the device |
 | Gallery | page `PDP` → `product image` ×2, `mobile gallery` | ported from page placement; Figma component pending |
 
 ## Open items

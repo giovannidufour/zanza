@@ -10,6 +10,10 @@
   align-items: start;
 }
 .pdp-content__gallery { grid-column: 1 / span 4; grid-row: 1 / span 2; }   /* image 1 row 1, image 2 row 2 */
+/* the gallery's rows ARE the page rows (subgrid): row 1 is as tall as image 1, so row 2 (image 2 + related) starts
+   below it, as in Figma. Without subgrid row 1 would size to the info column and the related list would ride up. */
+.pdp-content__gallery { grid-template-rows: subgrid; }
+.pdp-content__related { grid-column: 5 / span 8; grid-row: 2; }   /* Figma: you may also like, row 2, cols 5–12 */
 .pdp-content__info    { grid-column: 5 / span 4; grid-row: 1; }
 .pdp-content__actions { grid-column: 9 / span 4; grid-row: 1; }
 
@@ -20,7 +24,13 @@
    Breakpoint: `--mobile` from packages/ui/tokens.json → breakpoint (expanded at build time) */
 @media (--mobile) {
   .pdp-content { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: var(--small); }
-  .pdp-content__gallery, .pdp-content__info, .pdp-content__actions { grid-column: 1 / -1; grid-row: auto; }
+  .pdp-content__gallery, .pdp-content__info, .pdp-content__actions, .pdp-content__related { grid-column: 1 / -1; grid-row: auto; }
+  .pdp-content__gallery { grid-template-rows: none; }
+  /* Figma PDP - mobile: `pdp content` padding-bottom 24 (literal, no token: open.md), then `you may also like` full
+     width. Here the list is the last grid item: 24 = row gap (small) + 16, and the content padding moves below it. */
+  .pdp-content { padding-bottom: 24px; }
+  .pdp-content:has(> .pdp-content__related) { padding-bottom: 0; }
+  .pdp-content__related { margin-top: calc(24px - var(--small)); }
   /* Figma PDP - mobile: the gallery scroller bleeds into both page margins (image 2 peeks; swiped images exit at the edge, the resting one keeps the margin) */
   .pdp-content__gallery { --zz-gallery-bleed: var(--page-margin-mobile); }
 }

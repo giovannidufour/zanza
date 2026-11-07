@@ -44,4 +44,25 @@ function sampleAttrs(product, s, url) {
   };
 }
 
-module.exports = { SECTION_LABEL, formatPrice, productName, releaseInfo, grading, productHref, SiteHeader, sampleAttrs };
+// A product as a ProductCard (PLP list, PDP "More for sale"). No device: responsive card.
+// Figma labels the card samples 1, 2…; the accessible name keeps the product and the sample title.
+function ProductCardFor({ product, url, headingLevel }) {
+  const { listing, release, copy, samples } = product;
+  return h(Z.ProductCard, {
+    href: productHref(product, url),
+    image: release.cover ? { src: url(release.cover), alt: '' } : null,
+    title: productName(release),
+    headingLevel,
+    releaseInfo: releaseInfo(release),
+    price: listing.section === 'sale' ? formatPrice(listing.price) : null,
+    tags: release.style,
+    description: copy.notes,
+    grading: grading(copy),
+    samples: samples.length ? samples.map((s, i) => h(Z.PlayerButton, Object.assign({
+      key: s.track_position,
+      'aria-label': `${productName(release)}, sample ${i + 1}: ${s.title}`
+    }, sampleAttrs(product, s, url)), String(i + 1))) : null
+  });
+}
+
+module.exports = { SECTION_LABEL, formatPrice, productName, releaseInfo, grading, productHref, SiteHeader, sampleAttrs, ProductCardFor };

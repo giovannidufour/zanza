@@ -606,6 +606,25 @@ a.zz-product-card__image { display: block; color: inherit; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+   RelatedProducts (Figma: PDP `you may also like`, device=desktop | mobile — same layout, only the cards differ)
+   top stroke 1px border divider/strong (strokes included in layout → border + full padding, 0014),
+   padding 8/0, title body/medium, list of cards gap 8. Figma padding/gap are literal 8 (open.md).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.zz-related-products {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border-divider-strong);
+  box-sizing: border-box;
+  color: var(--text-strong);
+  min-width: 0;
+}
+.zz-related-products__title { margin: 0; }
+.zz-related-products__list  { display: flex; flex-direction: column; gap: 8px; }
+
+/* ═══════════════════════════════════════════════════════════════════════
    Gallery (Figma: PDP `product image` ×2 · `mobile gallery`)
    desktop: image 1 full width, image 2 below at half width (2 of the 4 page columns, same gutter)
    mobile:  horizontal swipe, one full-width square per screen, gap 1px (as in Figma)

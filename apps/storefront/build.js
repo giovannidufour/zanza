@@ -96,8 +96,19 @@ for (const f of fs.readdirSync(path.join(APP, 'public'))) write('assets/' + f, f
 // products
 const dir = path.join(APP, 'content/products');
 const products = fs.readdirSync(dir).filter(f => f.endsWith('.json')).map(f => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')));
+// "More for sale" (PDP): up to 3 other available products of the same section, most shared styles first, then
+// listing order. Placeholder logic until the backend provides recommendations.
+const RELATED_COUNT = 3;
+function relatedTo(product) {
+  const styles = new Set(product.release.style);
+  return products
+    .filter(p => p !== product && p.listing.section === product.listing.section && p.listing.status === 'available')
+    .map(p => ({ p, score: p.release.style.filter(s => styles.has(s)).length }))
+    .sort((a, b) => b.score - a.score || a.p.listing.id.localeCompare(b.p.listing.id))
+    .slice(0, RELATED_COUNT).map(x => x.p);
+}
 for (const product of products) {
-  const body = renderToStaticMarkup(React.createElement(Pdp, { product, site, url }));
+  const body = renderToStaticMarkup(React.createElement(Pdp, { product, related: relatedTo(product), site, url }));
   write(`products/${product.listing.slug}/index.html`, page({ title: title(product), body }));
 }
 

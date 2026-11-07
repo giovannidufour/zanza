@@ -226,6 +226,17 @@ export interface ProductCardProps extends HTMLAttributes<HTMLElement> {
 }
 export declare function ProductCard(props: ProductCardProps): JSX.Element;
 
+/** Titled list of product cards below the product (Figma: PDP `you may also like`). Same layout on desktop and mobile: the cards carry the device. */
+export interface RelatedProductsProps extends HTMLAttributes<HTMLElement> {
+  /** Figma `title` (PDP: "More for sale:"). Rendered as a heading; it also names the section. */
+  title: ReactNode;
+  /** Heading level of the title; give the cards' titles the next level. @default 2 */
+  headingLevel?: 2 | 3 | 4;
+  /** Figma slot `products list`: <ProductCard>s, stacked (gap 8). */
+  children?: ReactNode;
+}
+export declare function RelatedProducts(props: RelatedProductsProps): JSX.Element;
+
 /** Product images: 2 per product. Desktop: big + half-width below; mobile: horizontal swipe. Mirrors the PDP placement (no Figma gallery component yet). */
 export interface GalleryImage {
   /** Image URL. */
