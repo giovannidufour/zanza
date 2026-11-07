@@ -1,0 +1,55 @@
+{
+  "listing": {
+    "id": "lst_0001",
+    "slug": "little-meeky-swear",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 1200,
+      "currency": "EUR"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "Little Meeky",
+    "title": "Swear",
+    "label": "Kesta",
+    "cat_no": null,
+    "year": null,
+    "country": "JA",
+    "format": "7\"",
+    "genre": [
+      "Reggae"
+    ],
+    "style": [
+      "Dancehall"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194256766.jpg?cmsp_timestamp=20261101012818"
+  },
+  "copy": {
+    "condition_media": "VG+",
+    "condition_sleeve": null,
+    "notes": "Telephone love kinda vibes",
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194256766.jpg?cmsp_timestamp=20261101012818"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Vocal",
+      "audio_url": null,
+      "duration": null,
+      "source": null
+    },
+    {
+      "track_position": "B",
+      "title": "Acapella",
+      "audio_url": null,
+      "duration": null,
+      "source": null
+    }
+  ]
+}

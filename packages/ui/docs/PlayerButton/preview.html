@@ -1,0 +1,34 @@
+<!-- @dsCard group="Media" height=200 subtitle="default · playing" -->
+<!doctype html>
+<html data-theme="default">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: var(--surface-base); color: var(--text-strong); font-family: var(--font-sans); }
+  .matrix { display: grid; grid-template-columns: 100px max-content; gap: 16px 24px; align-items: center; padding: 24px; }
+  .row-hd { font: 400 12px/14px var(--font-sans); }
+  .live { padding: 0 24px 24px; display: flex; gap: 16px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function () {
+  var React = window.React, ReactDOM = window.ReactDOM, Z = window.Zanza;
+  var h = React.createElement, useState = React.useState;
+  function Live() {
+    var st = useState(null); var cur = st[0], set = st[1];
+    return h('div', { className: 'live' }, ['Vocal', 'Acapella', 'Version'].map(function (l) {
+      return h(Z.PlayerButton, { key: l, playing: cur === l, onClick: function () { set(cur === l ? null : l); } }, l);
+    }));
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(h(React.Fragment, null,
+    h('div', { className: 'matrix' },
+      h('div', { className: 'row-hd' }, 'default'), h(Z.PlayerButton, null, 'Vocal'),
+      h('div', { className: 'row-hd' }, 'playing'), h(Z.PlayerButton, { playing: true }, 'Vocal')),
+    h(Live)));
+})();
+</script>
+</body>
+</html>

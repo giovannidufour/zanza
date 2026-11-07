@@ -1,0 +1,96 @@
+<!-- @dsCard group="Navigation" height=420 subtitle="device=desktop · device=mobile" -->
+<!doctype html>
+<html data-theme="default">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* documentation chrome only — not part of the design system */
+  html, body { margin: 0; background: var(--surface-base); color: var(--text-strong); font-family: var(--font-sans); }
+  .pg { display: grid; grid-template-columns: 1fr 240px; border-bottom: 1px solid var(--black-a16); }
+  .pg__canvas { padding: 24px; overflow-x: auto; }
+  .pg__controls { border-left: 1px solid var(--black-a16); padding: 16px; display: grid; gap: 12px; align-content: start; font-size: 12px; line-height: 14px; }
+  .pg__controls h3 { margin: 0 0 4px; font: 400 12px/14px var(--font-sans); letter-spacing: .1em; text-transform: uppercase; }
+  .ctl { display: grid; grid-template-columns: 88px 1fr; align-items: center; gap: 8px; }
+  .ctl select, .ctl input[type=text] { font: inherit; color: var(--text-strong); background: var(--white); border: 1px solid var(--black); border-radius: 0; padding: 4px 6px; width: 100%; box-sizing: border-box; }
+  .ctl input[type=checkbox] { justify-self: start; margin: 0; }
+  .code { margin: 0; padding: 12px 16px; background: var(--black); color: var(--white); font: 12px/18px ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre; overflow-x: auto; }
+  /* placeholder for the logo image slot (Figma: image fill) */
+  .logo-ph { width: 100%; height: 100%; background: var(--black); }
+  /* page placement (Figma: section `layout`, frames desktop 1024 / mobile 375): surface/base + page-margin padding */
+  .page { background: var(--surface-base); box-sizing: border-box; outline: 1px dashed var(--black-a16); }
+  .page[data-device="desktop"] { width: 1024px; padding: 0 var(--page-margin-desktop); }
+  .page[data-device="mobile"]  { width: 375px;  padding: 0 var(--page-margin-mobile); }
+  .page[data-device="responsive"] { width: 100%; padding: 0 var(--page-margin-desktop); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function () {
+  var React = window.React, ReactDOM = window.ReactDOM, Z = window.Zanza;
+  var h = React.createElement, useState = React.useState;
+
+  function Select(p) {
+    return h('div', { className: 'ctl' }, h('label', { htmlFor: p.id }, p.label),
+      h('select', { id: p.id, value: p.value, onChange: function (e) { p.onChange(e.target.value); } },
+        p.options.map(function (o) { return h('option', { key: o, value: o }, o); })));
+  }
+  function Check(p) {
+    return h('div', { className: 'ctl' }, h('label', { htmlFor: p.id }, p.label),
+      h('input', { id: p.id, type: 'checkbox', checked: p.value, onChange: function (e) { p.onChange(e.target.checked); } }));
+  }
+  function Text(p) {
+    return h('div', { className: 'ctl' }, h('label', { htmlFor: p.id }, p.label),
+      h('input', { id: p.id, type: 'text', value: p.value, onChange: function (e) { p.onChange(e.target.value); } }));
+  }
+
+  function Playground() {
+    var st = useState({ device: 'desktop', storeName: 'Store-name', logo: true, section: 'sale', tabs: true, actions: true });
+    var s = st[0], set = st[1];
+    var upd = function (k) { return function (v) { var n = Object.assign({}, s); n[k] = v; set(n); }; };
+
+    var tabs = s.tabs ? h(Z.Tabs, { value: s.section, onValueChange: upd('section'), 'aria-label': 'Section' },
+      h(Z.Tab, { value: 'sale' }, 'For Sale'),
+      h(Z.Tab, { value: 'trade' }, 'For Trade')) : null;
+
+    var actions = s.actions ? h(React.Fragment, null,
+      s.device === 'desktop' ? h(Z.Button, { hierarchy: 'secondary' }, 'account') : null,
+      h(Z.Button, { hierarchy: 'secondary' }, 'Bag')) : null;
+
+    var lines = ['<Header', '  device="' + s.device + '"'];
+    if (s.logo) lines.push('  logo={<img src="…" alt="" />}');
+    if (s.storeName) lines.push('  storeName="' + s.storeName + '"');
+    if (s.tabs && s.device === 'desktop') lines.push('  tabs={<Tabs value="' + s.section + '" …>…</Tabs>}');
+    if (s.actions) lines.push('  actions={<>' + (s.device === 'desktop' ? '<Button hierarchy="secondary">account</Button>' : '') + '<Button hierarchy="secondary">Bag</Button></>}');
+    if (s.device === 'mobile') lines.push('  onMenuClick={openMenu}');
+    lines.push('/>');
+
+    return h(React.Fragment, null,
+      h('div', { className: 'pg' },
+        h('div', { className: 'pg__canvas' },
+          h('div', { className: 'page', 'data-device': s.device },
+            h(Z.Header, {
+              device: s.device === 'responsive' ? undefined : s.device,
+              logo: s.logo ? h('div', { className: 'logo-ph', 'aria-hidden': 'true' }) : null,
+              storeName: s.storeName || null,
+              tabs: tabs,
+              actions: actions,
+              onMenuClick: function () {}
+            }))),
+        h('div', { className: 'pg__controls' },
+          h('h3', null, 'Props'),
+          h(Select, { id: 'device', label: 'device', value: s.device, options: ['desktop', 'mobile', 'responsive'], onChange: upd('device') }),
+          h(Text,   { id: 'storeName', label: 'storeName', value: s.storeName, onChange: upd('storeName') }),
+          h(Check,  { id: 'logo', label: 'logo', value: s.logo, onChange: upd('logo') }),
+          h(Check,  { id: 'tabs', label: 'tabs', value: s.tabs, onChange: upd('tabs') }),
+          h(Check,  { id: 'actions', label: 'actions', value: s.actions, onChange: upd('actions') }))),
+      h('pre', { className: 'code' }, lines.join('\n')));
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(h(Playground));
+})();
+</script>
+</body>
+</html>

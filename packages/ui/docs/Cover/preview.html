@@ -1,0 +1,35 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html data-theme="default">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; }
+  .cover { position: relative; width: 960px; height: 288px; background: var(--surface-base); overflow: hidden; font-family: var(--font-sans); }
+  .name { position: absolute; left: 32px; bottom: 56px; margin: 0; font: 400 120px/0.9 var(--font-sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-strong); }
+  .tag { position: absolute; left: 32px; bottom: 28px; margin: 0; font: 400 13px/16px var(--font-sans); color: var(--text-strong); }
+  svg { position: absolute; left: 0; top: 0; }
+  .ink { fill: var(--black); }
+  .paper { fill: var(--white); }
+  .ink-a16 { fill: var(--black-a16); }
+</style>
+</head>
+<body>
+<div class="cover">
+  <!--
+    blocks: black 240×288 · white 120×144 · black-a16 120×144 — the entire palette (black, white, accent as ground)
+    arrangement: flush, bleeding off the right edge; square corners (radius 0, the system has no radius)
+    pattern: none — the system defines no pattern or ornament, nothing is invented here
+    scales: 8px grid multiples (the button padding step); no radius tokens exist
+  -->
+  <svg width="960" height="288" viewBox="0 0 960 288" aria-hidden="true">
+    <rect class="ink"     x="720" y="0"   width="240" height="288"/>
+    <rect class="paper"   x="600" y="0"   width="120" height="144"/>
+    <rect class="ink-a16" x="600" y="144" width="120" height="144"/>
+  </svg>
+  <h1 class="name">Zanza</h1>
+  <p class="tag">Record store — for sale, for trade.</p>
+</div>
+</body>
+</html>

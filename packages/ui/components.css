@@ -1,0 +1,441 @@
+/* packages/ui/components.css — the ONE stylesheet of the Zanza components.
+   Every color is a token from tokens.css. Dimensions are the values hardcoded in the Figma components
+   unless a dimension token exists (page-margin-*, small). */
+
+.zz-button {
+  /* ── anatomy: horizontal auto-layout, hug, radius 0, 1px inside border ── */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  margin: 0;
+  border: 1px solid;
+  border-radius: 0;
+  background-clip: padding-box;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  text-decoration: none;
+  white-space: nowrap;
+
+  /* ── type: the label carries the text-style class (label-medium | label-extra-small), see components.js ── */
+
+  /* ── per-instance slots, set by hierarchy + state below ── */
+  background-color: var(--zz-btn-bg);
+  border-color: var(--zz-btn-border);
+  color: var(--zz-btn-fg);
+}
+
+.zz-button__label { display: inline-flex; align-items: center; }
+.zz-button__icon { display: inline-flex; flex: none; }
+.zz-button__icon > svg { width: 100%; height: 100%; display: block; }
+.zz-button__icon svg [fill]:not([fill="none"]) { fill: var(--zz-btn-icon); }
+.zz-button__icon svg [stroke]:not([stroke="none"]) { stroke: var(--zz-btn-icon); }
+
+/* ── size (Figma: _button-sizes) ── */
+.zz-button[data-size="large"] {
+  padding: 12px;
+  gap: 8px;
+}
+.zz-button[data-size="large"] .zz-button__label { gap: 4px; }
+.zz-button[data-size="large"] .zz-button__icon { width: 20px; height: 20px; }
+
+.zz-button[data-size="medium"] {
+  padding: 8px;
+  gap: 8px;
+}
+.zz-button[data-size="medium"] .zz-button__label { gap: 4px; }
+.zz-button[data-size="medium"] .zz-button__icon { width: 20px; height: 20px; }
+
+.zz-button[data-size="extra-small"] {
+  padding: 4px;
+  gap: 2px;
+}
+.zz-button[data-size="extra-small"] .zz-button__label { gap: 2px; }
+.zz-button[data-size="extra-small"] .zz-button__icon { width: 14px; height: 14px; }
+
+/* ── hierarchy × state (Figma: _button-states) ──
+   [data-state] exists only so documentation can pin a state; in the product
+   the browser pseudo-classes drive it. */
+
+/* primary */
+.zz-button[data-hierarchy="primary"] {
+  --zz-btn-bg: var(--action-primary-background-default);
+  --zz-btn-border: var(--action-primary-border-default);
+  --zz-btn-fg: var(--text-strong-invert);
+  --zz-btn-icon: var(--icon-strong-invert);
+}
+.zz-button[data-hierarchy="primary"]:hover,
+.zz-button[data-hierarchy="primary"][data-state="hover"] {
+  --zz-btn-bg: var(--action-primary-background-hover);
+  --zz-btn-border: var(--action-primary-border-hover);
+}
+.zz-button[data-hierarchy="primary"]:active,
+.zz-button[data-hierarchy="primary"][data-state="pressed"] {
+  --zz-btn-bg: var(--action-primary-background-pressed);
+  --zz-btn-border: var(--action-primary-border-pressed);
+}
+.zz-button[data-hierarchy="primary"]:disabled,
+.zz-button[data-hierarchy="primary"][data-state="disabled"] {
+  --zz-btn-bg: var(--action-primary-background-disabled);
+  --zz-btn-border: var(--action-primary-border-disabled);
+  --zz-btn-fg: var(--text-strong);
+  --zz-btn-icon: var(--icon-strong);
+}
+
+/* secondary */
+.zz-button[data-hierarchy="secondary"] {
+  --zz-btn-bg: var(--action-secondary-background-default);
+  --zz-btn-border: var(--action-secondary-border-default);
+  --zz-btn-fg: var(--text-strong);
+  --zz-btn-icon: var(--icon-strong);
+}
+.zz-button[data-hierarchy="secondary"]:hover,
+.zz-button[data-hierarchy="secondary"][data-state="hover"] {
+  --zz-btn-bg: var(--action-secondary-background-hover);
+  --zz-btn-border: var(--action-secondary-border-hover);
+}
+.zz-button[data-hierarchy="secondary"]:active,
+.zz-button[data-hierarchy="secondary"][data-state="pressed"] {
+  --zz-btn-bg: var(--action-secondary-background-pressed);
+  --zz-btn-border: var(--action-secondary-border-pressed);
+}
+.zz-button[data-hierarchy="secondary"]:disabled,
+.zz-button[data-hierarchy="secondary"][data-state="disabled"] {
+  --zz-btn-bg: var(--action-secondary-background-disabled);
+  --zz-btn-border: var(--action-secondary-border-disabled);
+}
+
+/* disabled: label struck through (Figma: textDecoration STRIKETHROUGH on both hierarchies) */
+.zz-button:disabled,
+.zz-button[data-state="disabled"] { cursor: not-allowed; }
+.zz-button:disabled .zz-button__label,
+.zz-button[data-state="disabled"] .zz-button__label { text-decoration: line-through; }
+
+/* focus: not yet defined in Figma — intentionally no style here (TODO: border/focus token) */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Tabs (Figma: tab group) · Tab (Figma: tab → _tab-states → _button-sizes)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.zz-tabs {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;                 /* Figma: slot container itemSpacing */
+  margin: 0;
+  padding: 0;
+}
+
+.zz-tab,
+a.zz-tab {
+  /* same anatomy as .zz-button medium: 1px inside border, radius 0, padding 8, gap 8 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 8px;
+  gap: 8px;
+  border: 1px solid;
+  border-radius: 0;
+  background-origin: border-box;   /* the border is drawn by gradients inside the border box (see below) */
+  background-clip: border-box;
+  background-repeat: no-repeat;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  white-space: nowrap;
+
+  /* type: label carries the class label-medium */
+  color: var(--text-strong);
+  text-decoration: none;
+  background-color: var(--tab-background-default);
+  border-color: transparent;     /* the visible border is drawn by the gradients below */
+}
+.zz-tab__label { display: inline-flex; align-items: center; gap: 4px; }
+.zz-tab__icon { display: inline-flex; flex: none; width: 20px; height: 20px; color: var(--icon-strong); }
+.zz-tab__icon > svg { width: 100%; height: 100%; display: block; }
+
+/* border: Figma draws a 1px inside stroke — solid (default, active), dashPattern [4,4] (hover), [2,2] (pressed).
+   CSS `dashed` can neither set the pattern nor animate, so the four sides are always drawn as repeating
+   gradients, 1px thick: --zz-dash-on = dash length, --zz-dash-off = gap. Solid = gap 0.
+   Both lengths are registered (@property) so they interpolate: solid → dashed opens the gaps smoothly. */
+@property --zz-dash-on  { syntax: "<length>"; inherits: false; initial-value: 4px; }
+@property --zz-dash-off { syntax: "<length>"; inherits: false; initial-value: 0px; }
+
+.zz-tab {
+  --zz-dash-color: var(--tab-border-default);
+  --zz-dash-on: 4px;
+  --zz-dash-off: 0px;                           /* Figma: solid */
+  background-image:
+    repeating-linear-gradient(90deg,  var(--zz-dash-color) 0 var(--zz-dash-on), transparent var(--zz-dash-on) calc(var(--zz-dash-on) + var(--zz-dash-off))),
+    repeating-linear-gradient(90deg,  var(--zz-dash-color) 0 var(--zz-dash-on), transparent var(--zz-dash-on) calc(var(--zz-dash-on) + var(--zz-dash-off))),
+    repeating-linear-gradient(180deg, var(--zz-dash-color) 0 var(--zz-dash-on), transparent var(--zz-dash-on) calc(var(--zz-dash-on) + var(--zz-dash-off))),
+    repeating-linear-gradient(180deg, var(--zz-dash-color) 0 var(--zz-dash-on), transparent var(--zz-dash-on) calc(var(--zz-dash-on) + var(--zz-dash-off)));
+  background-size: 100% 1px, 100% 1px, 1px 100%, 1px 100%;
+  background-position: 0 0, 0 100%, 0 0, 100% 0;
+  /* TODO motion: no duration/easing in Figma yet — 150ms ease-out is a placeholder (candidate token motion/duration/fast) */
+  transition: --zz-dash-on 150ms ease-out, --zz-dash-off 150ms ease-out, background-color 150ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) { .zz-tab { transition: none; } }
+
+.zz-tab:hover,
+.zz-tab[data-state="hover"] {
+  background-color: var(--tab-background-hover);
+  --zz-dash-color: var(--tab-border-hover);
+  --zz-dash-on: 4px;  --zz-dash-off: 4px;      /* Figma: dashPattern [4,4] */
+}
+.zz-tab:active,
+.zz-tab[data-state="pressed"] {
+  background-color: var(--tab-background-pressed);
+  --zz-dash-color: var(--tab-border-pressed);
+  --zz-dash-on: 2px;  --zz-dash-off: 2px;      /* Figma: dashPattern [2,2] */
+}
+.zz-tab[aria-selected="true"],
+.zz-tab[data-selected="true"],
+.zz-tab[data-state="active"] {
+  background-color: var(--tab-background-active);
+  --zz-dash-color: var(--tab-border-active);
+  --zz-dash-on: 4px;  --zz-dash-off: 0px;      /* Figma: solid */
+  cursor: default;
+}
+
+/* focus: not yet defined in Figma — no style (TODO: border/focus token) */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Header (Figma: header · device=desktop | mobile)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.zz-header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 8px 0 0;            /* Figma: paddingTop 8 */
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+  color: var(--text-strong);
+}
+/* width: always fill (Figma: layout sizing FILL). The mobile variant is drawn at 375 in Figma; the parent sets the width. */
+
+.zz-header__row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;     /* Figma: counterAxis MIN */
+}
+
+.zz-header__leading,
+.zz-header__trailing {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+.zz-header__leading { align-items: flex-start; }
+.zz-header__trailing { align-items: center; }
+.zz-header__tabs { display: flex; }
+
+.zz-header__logo { flex: none; width: 64px; height: 64px; overflow: hidden; }
+.zz-header[data-device="mobile"] .zz-header__logo { width: 48px; height: 48px; }
+.zz-header__logo > img,
+.zz-header__logo > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* store name: 1px border divider/strong, padding 8, label/medium */
+.zz-header__name {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 8px;
+  gap: 8px;
+  /* Figma: 1px inside stroke, dashPattern [8,8]. CSS `dashed` cannot set the pattern,
+     so the four sides are drawn as 8px-on / 8px-off repeating gradients, 1px thick, in the border box. */
+  border: 1px solid transparent;
+  background-origin: border-box;
+  background-clip: border-box;
+  background-repeat: no-repeat;
+  background-image:
+    repeating-linear-gradient(90deg,  var(--border-divider-strong) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(90deg,  var(--border-divider-strong) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(180deg, var(--border-divider-strong) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(180deg, var(--border-divider-strong) 0 8px, transparent 8px 16px);
+  background-size: 100% 1px, 100% 1px, 1px 100%, 1px 100%;
+  background-position: 0 0, 0 100%, 0 0, 100% 0;
+  border-radius: 0;
+  color: var(--text-strong);
+  text-decoration: none;
+  /* type: class label-medium on the element */
+  white-space: nowrap;
+}
+
+/* bottom rule — Figma has it hardcoded #000000; the token it should bind to is border divider/strong */
+.zz-header__rule { height: 1px; width: 100%; background: var(--border-divider-strong); }
+
+/* responsive header (device omitted): one of menu / tabs is shown.
+   Breakpoint: `--mobile` from tokens.json → breakpoint (expanded at build time by media.js). */
+.zz-header[data-device="responsive"] .zz-header__menu { display: none; }
+@media (--mobile) {
+  .zz-header[data-device="responsive"] .zz-header__menu { display: inline-flex; }
+  .zz-header[data-device="responsive"] .zz-header__tabs { display: none; }
+  .zz-header[data-device="responsive"] .zz-header__account { display: none; }   /* Figma mobile: only Bag */
+  .zz-header[data-device="responsive"] .zz-header__logo { width: 48px; height: 48px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Breadcrumbs (Figma: breadcrumbs)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.zz-breadcrumbs { display: flex; flex-direction: column; width: 100%; }
+.zz-breadcrumbs__list {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;                     /* Figma: slot container itemSpacing */
+  margin: 0;
+  padding: var(--small);        /* Figma: breadcrumbs wrapper padding → dimension `small` */
+  list-style: none;
+  /* type: class body-medium on the list */
+  color: var(--text-strong);
+}
+.zz-breadcrumbs__item a { color: inherit; text-decoration: none; }
+.zz-breadcrumbs__rule { height: 1px; width: 100%; background: var(--border-divider-strong); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Tag (Figma: tag item) · TagGroup (Figma: tag group)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.zz-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border-radius: 0;
+  background: var(--surface-support-1);
+  color: var(--text-strong);
+  white-space: nowrap;
+}
+/* type: the label carries body-extra-small (extra-small, small) | body-small (medium) | body-medium (large) */
+.zz-tag[data-size="extra-small"] { padding: 2px 4px; }
+.zz-tag[data-size="small"]       { padding: 4px 8px; }
+.zz-tag[data-size="medium"]      { padding: 4px 8px; }
+.zz-tag[data-size="large"]       { padding: 4px 8px; }
+
+.zz-tag-group {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 4px;                 /* Figma: tags slot itemSpacing */
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  width: 100%;
+}
+.zz-tag-group__item { display: contents; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PlayerButton (Figma: player button · state default | playing)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.zz-player-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  color: var(--text-strong);
+  /* type: label carries body-medium */
+  white-space: nowrap;
+}
+.zz-player-button__icon { display: inline-flex; flex: none; width: 24px; height: 24px; color: var(--icon-strong); }
+.zz-player-button__icon > svg { width: 100%; height: 100%; display: block; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ProductInfo (Figma: product info · device=desktop | mobile)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.zz-product-info {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));   /* Figma: 3 FLEX columns, no gaps */
+  gap: 0;
+  width: 100%;
+  color: var(--text-strong);
+}
+/* type: every text node carries its text-style class (components.js); here only the UA margins are reset */
+.zz-product-info p, .zz-product-info h1 { margin: 0; }
+
+.zz-product-info__details { grid-column: 1 / -1; display: flex; flex-direction: column; }
+.zz-product-info__title-block { display: flex; flex-direction: column; padding-bottom: 16px; }
+.zz-product-info__title-row { display: flex; flex-direction: row; align-items: flex-start; gap: var(--gutter-small); }
+.zz-product-info__name { flex: 1 1 auto; min-width: 0; }
+.zz-product-info__price { flex: none; }
+.zz-product-info__tags { display: flex; flex-direction: column; gap: 8px; padding-bottom: 16px; }
+.zz-product-info__description-block { display: flex; flex-direction: column; gap: 4px; padding-bottom: 16px; }
+
+/* samples: desktop = middle column, vertical, gap 8 · mobile = full width, horizontal, gap 16, padding-bottom 8 */
+.zz-product-info__samples { grid-column: 2 / 3; display: flex; flex-direction: column; gap: 8px; }
+.zz-product-info__samples .zz-player-button { width: 100%; justify-content: flex-start; }
+
+.zz-product-info[data-device="mobile"] .zz-product-info__samples { grid-column: 1 / -1; flex-direction: row; gap: 16px; padding-bottom: 8px; }
+.zz-product-info[data-device="mobile"] .zz-product-info__samples .zz-player-button { width: auto; }
+
+@media (--mobile) {
+  .zz-product-info[data-device="responsive"] .zz-product-info__samples { grid-column: 1 / -1; flex-direction: row; gap: 16px; padding-bottom: 8px; }
+  .zz-product-info[data-device="responsive"] .zz-product-info__samples .zz-player-button { width: auto; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Gallery (Figma: PDP `product image` ×2 · `mobile gallery`)
+   desktop: image 1 full width, image 2 below at half width (2 of the 4 page columns, same gutter)
+   mobile:  horizontal swipe, one full-width square per screen, gap 1px (as in Figma)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.zz-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--gutter-small);
+  row-gap: var(--gutter-small);
+  width: 100%;
+}
+.zz-gallery__item { aspect-ratio: 1 / 1; overflow: hidden; }
+.zz-gallery__item > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.zz-gallery__item:nth-child(1) { grid-column: 1 / -1; }
+.zz-gallery__item:nth-child(2) { grid-column: 1 / 2; }
+
+.zz-gallery[data-device="mobile"] {
+  display: flex;
+  flex-direction: row;
+  gap: 1px;                       /* Figma: mobile gallery itemSpacing 1 */
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.zz-gallery[data-device="mobile"]::-webkit-scrollbar { display: none; }
+/* --zz-gallery-bleed: how far the scroller extends past its column (the page sets it to the page margin),
+   so the next image peeks and suggests the swipe. Items stay as wide as the column. */
+.zz-gallery[data-device="mobile"] { margin-right: calc(-1 * var(--zz-gallery-bleed, 0px)); }
+.zz-gallery[data-device="mobile"] .zz-gallery__item { flex: 0 0 calc(100% - var(--zz-gallery-bleed, 0px)); scroll-snap-align: start; }
+
+@media (--mobile) {
+  .zz-gallery[data-device="responsive"] {
+    display: flex;
+    flex-direction: row;
+    gap: 1px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .zz-gallery[data-device="responsive"]::-webkit-scrollbar { display: none; }
+  .zz-gallery[data-device="responsive"] { margin-right: calc(-1 * var(--zz-gallery-bleed, 0px)); }
+  .zz-gallery[data-device="responsive"] .zz-gallery__item { flex: 0 0 calc(100% - var(--zz-gallery-bleed, 0px)); scroll-snap-align: start; }
+}

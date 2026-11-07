@@ -1,0 +1,124 @@
+<!-- @dsCard group="Actions" height=760 subtitle="playground + hierarchy × size × state" -->
+<!doctype html>
+<html data-theme="default">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* documentation chrome only — not part of the design system */
+  html, body { margin: 0; background: var(--surface-base); color: var(--text-strong); font-family: var(--font-sans); }
+  .pg { display: grid; grid-template-columns: 1fr 280px; border-bottom: 1px solid var(--black-a16); }
+  .pg__canvas { display: flex; align-items: center; justify-content: center; min-height: 200px; padding: 24px; }
+  .pg__controls { border-left: 1px solid var(--black-a16); padding: 16px; display: grid; gap: 12px; align-content: start; font-size: 12px; line-height: 14px; }
+  .pg__controls h3 { margin: 0 0 4px; font: 400 12px/14px var(--font-sans); letter-spacing: .1em; text-transform: uppercase; }
+  .ctl { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 8px; }
+  .ctl label { color: var(--text-strong); }
+  .ctl select, .ctl input[type=text] { font: inherit; color: var(--text-strong); background: var(--white); border: 1px solid var(--black); border-radius: 0; padding: 4px 6px; width: 100%; box-sizing: border-box; }
+  .ctl input[type=checkbox] { justify-self: start; margin: 0; }
+  .code { margin: 0; padding: 12px 16px; background: var(--black); color: var(--white); font: 12px/18px ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre; overflow-x: auto; }
+  .code .k { color: var(--acid-green); }
+  .matrix { display: grid; grid-template-columns: 140px repeat(4, max-content); gap: 16px 24px; align-items: center; padding: 24px; }
+  .hd { font: 400 12px/14px var(--font-sans); letter-spacing: .1em; text-transform: uppercase; }
+  .row-hd { font: 400 12px/14px var(--font-sans); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function () {
+  var React = window.React, ReactDOM = window.ReactDOM, Button = window.Zanza.Button;
+  var h = React.createElement, useState = React.useState;
+
+  // Figma: icon/icon-play-ultra (24×24, exported path; fill bound to icon/strong → recolored by the button)
+  function Icon() {
+    return h('svg', { viewBox: '0 0 24 24', fill: 'none' },
+      h('path', { d: 'M24 12L0 23.999V0.000976562L24 12Z', fill: 'currentColor' }));
+  }
+
+  var OPTS = {
+    hierarchy: ['primary', 'secondary'],
+    size: ['large', 'medium', 'extra-small'],
+    state: ['default', 'hover', 'pressed', 'disabled']
+  };
+
+  function Select(p) {
+    return h('div', { className: 'ctl' },
+      h('label', { htmlFor: p.id }, p.label),
+      h('select', { id: p.id, value: p.value, onChange: function (e) { p.onChange(e.target.value); } },
+        p.options.map(function (o) { return h('option', { key: o, value: o }, o); })));
+  }
+  function Check(p) {
+    return h('div', { className: 'ctl' },
+      h('label', { htmlFor: p.id }, p.label),
+      h('input', { id: p.id, type: 'checkbox', checked: p.value, onChange: function (e) { p.onChange(e.target.checked); } }));
+  }
+  function Text(p) {
+    return h('div', { className: 'ctl' },
+      h('label', { htmlFor: p.id }, p.label),
+      h('input', { id: p.id, type: 'text', value: p.value, onChange: function (e) { p.onChange(e.target.value); } }));
+  }
+
+  function snippet(s) {
+    var props = [];
+    if (s.hierarchy !== 'primary') props.push('hierarchy="' + s.hierarchy + '"');
+    if (s.size !== 'medium') props.push('size="' + s.size + '"');
+    if (s.disabled) props.push('disabled');
+    if (s.leadingIcon) props.push('leadingIcon={<PlayIcon />}');
+    if (s.trailingIcon) props.push('trailingIcon={<PlayIcon />}');
+    var open = '<Button' + (props.length ? ' ' + props.join(' ') : '') + '>';
+    return [open, '  ' + s.label, '</Button>'].join('\n');
+  }
+
+  function Playground() {
+    var st = useState({ hierarchy: 'primary', size: 'medium', state: 'default', disabled: false, leadingIcon: true, trailingIcon: false, label: 'Add to bag' });
+    var s = st[0], set = st[1];
+    var upd = function (k) { return function (v) { var n = Object.assign({}, s); n[k] = v; set(n); }; };
+    return h(React.Fragment, null,
+      h('div', { className: 'pg' },
+        h('div', { className: 'pg__canvas' },
+          h(Button, {
+            hierarchy: s.hierarchy, size: s.size, disabled: s.disabled,
+            state: s.state !== 'default' ? s.state : undefined,
+            leadingIcon: s.leadingIcon ? h(Icon) : null,
+            trailingIcon: s.trailingIcon ? h(Icon) : null
+          }, s.label)),
+        h('div', { className: 'pg__controls' },
+          h('h3', null, 'Props'),
+          h(Select, { id: 'hierarchy', label: 'hierarchy', value: s.hierarchy, options: OPTS.hierarchy, onChange: upd('hierarchy') }),
+          h(Select, { id: 'size', label: 'size', value: s.size, options: OPTS.size, onChange: upd('size') }),
+          h(Check,  { id: 'disabled', label: 'disabled', value: s.disabled, onChange: upd('disabled') }),
+          h(Check,  { id: 'leadingIcon', label: 'leadingIcon', value: s.leadingIcon, onChange: upd('leadingIcon') }),
+          h(Check,  { id: 'trailingIcon', label: 'trailingIcon', value: s.trailingIcon, onChange: upd('trailingIcon') }),
+          h(Text,   { id: 'label', label: 'children', value: s.label, onChange: upd('label') }),
+          h('h3', { style: { marginTop: 8 } }, 'Docs only'),
+          h(Select, { id: 'state', label: 'state', value: s.state, options: OPTS.state, onChange: upd('state') }))),
+      h('pre', { className: 'code' }, snippet(s)));
+  }
+
+  function Matrix() {
+    var states = OPTS.state;
+    var rows = [
+      { label: 'primary / large',         hierarchy: 'primary',   size: 'large' },
+      { label: 'secondary / large',       hierarchy: 'secondary', size: 'large' },
+      { label: 'primary / medium',        hierarchy: 'primary',   size: 'medium' },
+      { label: 'secondary / medium',      hierarchy: 'secondary', size: 'medium' },
+      { label: 'primary / extra-small',   hierarchy: 'primary',   size: 'extra-small' },
+      { label: 'secondary / extra-small', hierarchy: 'secondary', size: 'extra-small' }
+    ];
+    var cells = [h('div', { key: 'c' })];
+    states.forEach(function (s) { cells.push(h('div', { key: 'h' + s, className: 'hd' }, s)); });
+    rows.forEach(function (r) {
+      cells.push(h('div', { key: r.label, className: 'row-hd' }, r.label));
+      states.forEach(function (s) {
+        cells.push(h(Button, { key: r.label + s, hierarchy: r.hierarchy, size: r.size, state: s, leadingIcon: h(Icon) }, 'Add to bag'));
+      });
+    });
+    return h('div', { className: 'matrix' }, cells);
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(h(React.Fragment, null, h(Playground), h(Matrix)));
+})();
+</script>
+</body>
+</html>

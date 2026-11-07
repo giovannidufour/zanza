@@ -1,0 +1,26 @@
+/* apps/storefront/pdp.css — page layout of the PDP (Figma: frame `pdp content`).
+   Layout only: components bring their own styles from packages/ui. */
+
+.pdp-content {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));   /* Figma: 12 FLEX columns */
+  column-gap: var(--gutter-small);
+  row-gap: var(--gutter-small);
+  padding: var(--small) 0;                             /* Figma: paddingTop/Bottom → small */
+  align-items: start;
+}
+.pdp-content__gallery { grid-column: 1 / span 4; grid-row: 1 / span 2; }   /* image 1 row 1, image 2 row 2 */
+.pdp-content__info    { grid-column: 5 / span 4; grid-row: 1; }
+.pdp-content__actions { grid-column: 9 / span 4; grid-row: 1; }
+
+/* Figma: button layout=fill, size large (desktop and mobile) */
+.pdp-content__cta { width: 100%; }
+
+/* mobile: 4 columns, three full rows (image / info / actions), row gap `small`.
+   Breakpoint: `--mobile` from packages/ui/tokens.json → breakpoint (expanded at build time) */
+@media (--mobile) {
+  .pdp-content { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: var(--small); }
+  .pdp-content__gallery, .pdp-content__info, .pdp-content__actions { grid-column: 1 / -1; grid-row: auto; }
+  /* Figma PDP - mobile: the gallery bleeds into the right page margin so image 2 peeks (swipe hint) */
+  .pdp-content__gallery { --zz-gallery-bleed: var(--page-margin-mobile); }
+}

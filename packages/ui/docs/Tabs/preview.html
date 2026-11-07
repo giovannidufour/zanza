@@ -1,0 +1,95 @@
+<!-- @dsCard group="Navigation" height=420 subtitle="Tabs + Tab · playground + states" -->
+<!doctype html>
+<html data-theme="default">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* documentation chrome only — not part of the design system */
+  html, body { margin: 0; background: var(--surface-base); color: var(--text-strong); font-family: var(--font-sans); }
+  .pg { display: grid; grid-template-columns: 1fr 280px; border-bottom: 1px solid var(--black-a16); }
+  .pg__canvas { display: flex; align-items: center; justify-content: center; min-height: 160px; padding: 24px; }
+  .pg__controls { border-left: 1px solid var(--black-a16); padding: 16px; display: grid; gap: 12px; align-content: start; font-size: 12px; line-height: 14px; }
+  .pg__controls h3 { margin: 0 0 4px; font: 400 12px/14px var(--font-sans); letter-spacing: .1em; text-transform: uppercase; }
+  .ctl { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 8px; }
+  .ctl select, .ctl input[type=text] { font: inherit; color: var(--text-strong); background: var(--white); border: 1px solid var(--black); border-radius: 0; padding: 4px 6px; width: 100%; box-sizing: border-box; }
+  .ctl input[type=checkbox] { justify-self: start; margin: 0; }
+  .code { margin: 0; padding: 12px 16px; background: var(--black); color: var(--white); font: 12px/18px ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre; overflow-x: auto; }
+  .matrix { display: grid; grid-template-columns: 120px repeat(4, max-content); gap: 16px 24px; align-items: center; padding: 24px; }
+  .hd { font: 400 12px/14px var(--font-sans); letter-spacing: .1em; text-transform: uppercase; }
+  .row-hd { font: 400 12px/14px var(--font-sans); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function () {
+  var React = window.React, ReactDOM = window.ReactDOM, Z = window.Zanza;
+  var h = React.createElement, useState = React.useState;
+
+  // Figma: icon/icon-play-ultra
+  function Icon() {
+    return h('svg', { viewBox: '0 0 24 24', fill: 'none' },
+      h('path', { d: 'M24 12L0 23.999V0.000976562L24 12Z', fill: 'currentColor' }));
+  }
+
+  function Select(p) {
+    return h('div', { className: 'ctl' }, h('label', { htmlFor: p.id }, p.label),
+      h('select', { id: p.id, value: p.value, onChange: function (e) { p.onChange(e.target.value); } },
+        p.options.map(function (o) { return h('option', { key: o, value: o }, o); })));
+  }
+  function Check(p) {
+    return h('div', { className: 'ctl' }, h('label', { htmlFor: p.id }, p.label),
+      h('input', { id: p.id, type: 'checkbox', checked: p.value, onChange: function (e) { p.onChange(e.target.checked); } }));
+  }
+  function Text(p) {
+    return h('div', { className: 'ctl' }, h('label', { htmlFor: p.id }, p.label),
+      h('input', { id: p.id, type: 'text', value: p.value, onChange: function (e) { p.onChange(e.target.value); } }));
+  }
+
+  function Playground() {
+    var st = useState({ value: 'sale', labels: 'For sale, For trade', leadingIcon: false });
+    var s = st[0], set = st[1];
+    var upd = function (k) { return function (v) { var n = Object.assign({}, s); n[k] = v; set(n); }; };
+    var items = s.labels.split(',').map(function (l) { return l.trim(); }).filter(Boolean);
+    var values = items.map(function (l) { return l.toLowerCase().replace(/\s+/g, '-'); });
+    var current = values.indexOf(s.value) === -1 ? values[0] : s.value;
+
+    var snippet = ['<Tabs value={value} onValueChange={setValue}>']
+      .concat(items.map(function (l, i) {
+        return '  <Tab value="' + values[i] + '"' + (s.leadingIcon ? ' leadingIcon={<PlayIcon />}' : '') + '>' + l + '</Tab>';
+      }))
+      .concat(['</Tabs>']).join('\n');
+
+    return h(React.Fragment, null,
+      h('div', { className: 'pg' },
+        h('div', { className: 'pg__canvas' },
+          h(Z.Tabs, { value: current, onValueChange: upd('value'), 'aria-label': 'Section' },
+            items.map(function (l, i) {
+              return h(Z.Tab, { key: values[i], value: values[i], leadingIcon: s.leadingIcon ? h(Icon) : null }, l);
+            }))),
+        h('div', { className: 'pg__controls' },
+          h('h3', null, 'Props'),
+          h(Select, { id: 'value', label: 'value', value: current, options: values, onChange: upd('value') }),
+          h(Text,   { id: 'labels', label: 'tabs (csv)', value: s.labels, onChange: upd('labels') }),
+          h(Check,  { id: 'leadingIcon', label: 'leadingIcon', value: s.leadingIcon, onChange: upd('leadingIcon') }))),
+      h('pre', { className: 'code' }, snippet));
+  }
+
+  function Matrix() {
+    var states = ['default', 'hover', 'pressed', 'active'];
+    var cells = [h('div', { key: 'c' })];
+    states.forEach(function (s) { cells.push(h('div', { key: 'h' + s, className: 'hd' }, s)); });
+    cells.push(h('div', { key: 'r1', className: 'row-hd' }, 'tab'));
+    states.forEach(function (s) { cells.push(h(Z.Tab, { key: 't' + s, value: s, state: s }, 'For sale')); });
+    cells.push(h('div', { key: 'r2', className: 'row-hd' }, 'with icon'));
+    states.forEach(function (s) { cells.push(h(Z.Tab, { key: 'i' + s, value: s, state: s, leadingIcon: h(Icon) }, 'For sale')); });
+    return h('div', { className: 'matrix' }, cells);
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(h(React.Fragment, null, h(Playground), h(Matrix)));
+})();
+</script>
+</body>
+</html>

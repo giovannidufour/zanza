@@ -1,0 +1,7 @@
+node_modules/
+apps/storefront/dist/
+packages/ui/tokens.css
+.DS_Store
+packages/ui/artifact/
+.deploy.env
+apps/storefront/_to_delete/
