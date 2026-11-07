@@ -61,7 +61,7 @@ if (process.argv.includes('--list')) {
 
 if (!fs.existsSync(DIST)) fail(`${path.relative(process.cwd(), DIST)} not found — run npm run build first.`);
 const files = walk(DIST);
-const lines = [...common, 'ftp-create-dirs'];
+const lines = [...common, 'ftp-create-dirs', 'fail-early', 'retry = 2', 'write-out = "%{response_code} %{url_effective}\\n"'];
 for (const f of files) {
   const rel = path.relative(DIST, f).split(path.sep).map(encodeURIComponent).join('/');
   lines.push(`upload-file = ${q(f)}`, `url = ${q(base + rel)}`);
