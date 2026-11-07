@@ -47,7 +47,8 @@ Architettura: **headless**, frontend custom, servizi terzi per commerce/pagament
 | `design/README.md` | Come Figma → `packages/ui` → sito/artifact si collegano; regole, placeholder, naming Figma da sistemare |
 | `packages/ui/` | **Design system in codice — unica fonte dei componenti.** `tokens.json` (mirror delle variabili Figma) → `tokens.css` (generato, mai a mano) · `media.js` (espande `@media (--mobile)` dal gruppo `breakpoint` di tokens.json: il breakpoint vive solo lì) · `components.js` (React, createElement, UMD) · `components.css` |
 | `apps/storefront/` | Sito statico. `content/products/*.json` (modello del brief) · `pages/pdp.js` · `base.css` (reset + page shell) · `pdp.css` (grid di pagina) · `scripts/site.js` (comportamenti di sito: header che sparisce allo scroll down e torna sticky allo scroll up) · `site.json` (storeName, outputDir, basePath) · `build.js` → **`dist/zanza/` = la cartella da caricare via FTP** |
-| `package.json` | `npm run build` (tokens.css + dist/) · `npm run build:artifact` (cartella da pubblicare come artifact DS). Claude lancia le build; Gio non usa il terminale |
+| `package.json` | `npm run build` (tokens.css + dist/) · `npm run build:artifact` (cartella da pubblicare come artifact DS) · `npm run deploy` / `npm run build:deploy` (upload FTPS di `dist/zanza/` → `public_html/zanza` su GoDaddy, https://gio-d.xyz/zanza/). Claude lancia build e deploy; Gio non usa il terminale |
+| Git / deploy | Repo git locale (branch `main`, nessun remote per ora). `apps/storefront/deploy.js` + `deploy.json` (host, remoteDir). Credenziali FTP in `apps/storefront/.deploy.env` (git-ignored, mai committare né stampare). Il deploy carica/sovrascrive soltanto: i file rimossi in locale restano sul server |
 
 ## Stato del porting (2026-11-07)
 
