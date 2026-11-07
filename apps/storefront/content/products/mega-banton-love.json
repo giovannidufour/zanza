@@ -1,0 +1,61 @@
+{
+  "listing": {
+    "id": "lst_0019",
+    "slug": "mega-banton-love",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 800,
+      "currency": "EUR"
+    },
+    "source": {
+      "shop": "jammersrecord.com",
+      "url": "https://jammersrecord.com/?pid=194272499",
+      "price_jpy": 1320,
+      "note": "test content: images and samples hotlinked from the source shop"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "MEGA BANTON",
+    "title": "LOVE",
+    "label": "DUKE",
+    "cat_no": null,
+    "year": null,
+    "country": null,
+    "format": "7\"",
+    "genre": [
+      "Reggae"
+    ],
+    "style": [
+      "90's Dancehall"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194272499.jpg?cmsp_timestamp=20261101183316"
+  },
+  "copy": {
+    "condition_media": "EX",
+    "condition_sleeve": null,
+    "notes": null,
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194272499.jpg?cmsp_timestamp=20261101183316"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Side A",
+      "audio_url": "https://dl.dropboxusercontent.com/s/xeeoj0gvo170at3imnrlu/Ld_21.mp3?rlkey=6slhoxpedd810cnmk8tswhwid&st=srn7qx9r&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    },
+    {
+      "track_position": "B",
+      "title": "Side B",
+      "audio_url": "https://dl.dropboxusercontent.com/s/afqto7ksyphqv0flys56a/UP_22.mp3?rlkey=fs6rqpsovp4oeo4yzhb8vnsqr&st=hibuwt9k&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    }
+  ]
+}

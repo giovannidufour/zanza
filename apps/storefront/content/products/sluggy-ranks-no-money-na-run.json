@@ -1,0 +1,61 @@
+{
+  "listing": {
+    "id": "lst_0004",
+    "slug": "sluggy-ranks-no-money-na-run",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 600,
+      "currency": "EUR"
+    },
+    "source": {
+      "shop": "jammersrecord.com",
+      "url": "https://jammersrecord.com/?pid=194315168",
+      "price_jpy": 880,
+      "note": "test content: images and samples hotlinked from the source shop"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "SLUGGY RANKS",
+    "title": "NO MONEY NA RUN",
+    "label": "ROCKERS FOREVER",
+    "cat_no": null,
+    "year": null,
+    "country": null,
+    "format": "7\"",
+    "genre": [
+      "Reggae"
+    ],
+    "style": [
+      "90's Dancehall"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194315168.jpg?cmsp_timestamp=20261104144038"
+  },
+  "copy": {
+    "condition_media": "VG",
+    "condition_sleeve": null,
+    "notes": null,
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194315168.jpg?cmsp_timestamp=20261104144038"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Side A",
+      "audio_url": "https://dl.dropboxusercontent.com/s/ss28vsb0565tvulwfdo8s/SL_26.mp3?rlkey=w2f3sygt85bnztxbsqdoo0m2b&st=m4hnpnux&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    },
+    {
+      "track_position": "B",
+      "title": "Side B",
+      "audio_url": "https://dl.dropboxusercontent.com/s/kqb8vfdtw45fhvdjmljrr/RD_27.mp3?rlkey=pvwiqzb3hki2v8zry15unr89s&st=lf6ypqdg&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    }
+  ]
+}

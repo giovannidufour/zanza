@@ -1,0 +1,63 @@
+{
+  "listing": {
+    "id": "lst_0018",
+    "slug": "10cc-the-things-we-do-for-love-hot-to-trot",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 300,
+      "currency": "EUR"
+    },
+    "source": {
+      "shop": "jammersrecord.com",
+      "url": "https://jammersrecord.com/?pid=194272992",
+      "price_jpy": 550,
+      "note": "test content: images and samples hotlinked from the source shop"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "10CC",
+    "title": "THE THINGS WE DO FOR LOVE / HOT TO TROT",
+    "label": "MERCURY",
+    "cat_no": null,
+    "year": null,
+    "country": null,
+    "format": "7\"",
+    "genre": [
+      "Pop",
+      "Rock"
+    ],
+    "style": [
+      "Pop",
+      "Rock"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194272992.jpg?cmsp_timestamp=20261101184940"
+  },
+  "copy": {
+    "condition_media": "VG+",
+    "condition_sleeve": null,
+    "notes": null,
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194272992_o1.jpg?cmsp_timestamp=20261101184940"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Side A",
+      "audio_url": "https://dl.dropboxusercontent.com/s/fretlldbxuzv1ze6zdb4q/Td_35.mp3?rlkey=177ibz2c3ht5u9uiv9uk76jba&st=1lnqkixf&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    },
+    {
+      "track_position": "B",
+      "title": "Side B",
+      "audio_url": "https://dl.dropboxusercontent.com/s/nrd539etbum8ujeg8ayzl/HT_36.mp3?rlkey=gar3dgsnwgbr3m4ogxnqjy5hu&st=rch7lg7y&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    }
+  ]
+}

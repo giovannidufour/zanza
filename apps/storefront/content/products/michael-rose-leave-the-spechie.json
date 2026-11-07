@@ -1,0 +1,61 @@
+{
+  "listing": {
+    "id": "lst_0017",
+    "slug": "michael-rose-leave-the-spechie",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 400,
+      "currency": "EUR"
+    },
+    "source": {
+      "shop": "jammersrecord.com",
+      "url": "https://jammersrecord.com/?pid=194275796",
+      "price_jpy": 660,
+      "note": "test content: images and samples hotlinked from the source shop"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "MICHAEL ROSE",
+    "title": "LEAVE THE SPECHIE",
+    "label": "PENTHOUSE",
+    "cat_no": null,
+    "year": null,
+    "country": null,
+    "format": "7\"",
+    "genre": [
+      "Reggae"
+    ],
+    "style": [
+      "90's Dancehall"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194275796.jpg?cmsp_timestamp=20261101221541"
+  },
+  "copy": {
+    "condition_media": "VG",
+    "condition_sleeve": null,
+    "notes": null,
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194275796.jpg?cmsp_timestamp=20261101221541"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Side A",
+      "audio_url": "https://dl.dropboxusercontent.com/s/gx30okoobhf23x6hspptd/LT_23.mp3?rlkey=l82rkfo7mlojjlzeq6outsg93&st=gqt62ehw&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    },
+    {
+      "track_position": "B",
+      "title": "Side B",
+      "audio_url": "https://dl.dropboxusercontent.com/s/zsq1bwx5skqpw9op0ifzt/HR_24.mp3?rlkey=jmkh88y3jwr4m9koizl1gc1y2&st=ybhk0u6f&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "listing": {
+    "id": "lst_0007",
+    "slug": "gregory-isaacs-why-did-you-leave",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 600,
+      "currency": "EUR"
+    },
+    "source": {
+      "shop": "jammersrecord.com",
+      "url": "https://jammersrecord.com/?pid=194311044",
+      "price_jpy": 990,
+      "note": "test content: images and samples hotlinked from the source shop"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "GREGORY ISAACS",
+    "title": "WHY DID YOU LEAVE",
+    "label": "GG'S",
+    "cat_no": null,
+    "year": null,
+    "country": null,
+    "format": "7\"",
+    "genre": [
+      "Reggae"
+    ],
+    "style": [
+      "90's Dancehall",
+      "Lovers"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194311044.jpg?cmsp_timestamp=20261104141510"
+  },
+  "copy": {
+    "condition_media": "VG+",
+    "condition_sleeve": null,
+    "notes": null,
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194311044.jpg?cmsp_timestamp=20261104141510"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Side A",
+      "audio_url": "https://dl.dropboxusercontent.com/s/atxq94lrw2n8utl4qrid1/GR_28.mp3?rlkey=bpd67hdjebf9fmj5wj25exlwx&st=9gshib26&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    },
+    {
+      "track_position": "B",
+      "title": "Side B",
+      "audio_url": "https://dl.dropboxusercontent.com/s/jae2vlsddvrulf18qh2h2/D_29.mp3?rlkey=1tg2xm19j9lj9i0xm541z1y7p&st=861mvzvn&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    }
+  ]
+}

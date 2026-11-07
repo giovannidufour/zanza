@@ -1,0 +1,61 @@
+{
+  "listing": {
+    "id": "lst_0015",
+    "slug": "honorable-apache-good-woman",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 500,
+      "currency": "EUR"
+    },
+    "source": {
+      "shop": "jammersrecord.com",
+      "url": "https://jammersrecord.com/?pid=194276459",
+      "price_jpy": 770,
+      "note": "test content: images and samples hotlinked from the source shop"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "HONORABLE APACHE",
+    "title": "GOOD WOMAN",
+    "label": "CHINEGRO",
+    "cat_no": null,
+    "year": null,
+    "country": null,
+    "format": "7\"",
+    "genre": [
+      "Reggae"
+    ],
+    "style": [
+      "90's Dancehall"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194276459.jpg?cmsp_timestamp=20261102005654"
+  },
+  "copy": {
+    "condition_media": "EX",
+    "condition_sleeve": null,
+    "notes": null,
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194276459.jpg?cmsp_timestamp=20261102005654"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Side A",
+      "audio_url": "https://dl.dropboxusercontent.com/s/4dfbrytohw8e7j1x1zu5m/gwm_19.mp3?rlkey=sl5wyeodwwv5itency18pkkfv&st=w27ea8q3&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    },
+    {
+      "track_position": "B",
+      "title": "Side B",
+      "audio_url": "https://dl.dropboxusercontent.com/s/qsswxb7ek8mb8cn6dg9oh/Cdr_20.mp3?rlkey=fojhrtbnabyikwfii9macz9zc&st=bogk30c5&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    }
+  ]
+}

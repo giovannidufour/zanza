@@ -1,0 +1,61 @@
+{
+  "listing": {
+    "id": "lst_0012",
+    "slug": "emanuel-walsh-ut-ras-revolution-blood-of-my-children",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 1000,
+      "currency": "EUR"
+    },
+    "source": {
+      "shop": "jammersrecord.com",
+      "url": "https://jammersrecord.com/?pid=194306084",
+      "price_jpy": 1650,
+      "note": "test content: images and samples hotlinked from the source shop"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "EMANUEL WALSH & UT RAS",
+    "title": "REVOLUTION / BLOOD OF MY CHILDREN",
+    "label": "JAH SEH SO RECORDS",
+    "cat_no": null,
+    "year": null,
+    "country": null,
+    "format": "7\"",
+    "genre": [
+      "Reggae"
+    ],
+    "style": [
+      "Roots"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194306084.jpg?cmsp_timestamp=20261103220650"
+  },
+  "copy": {
+    "condition_media": "EX",
+    "condition_sleeve": null,
+    "notes": null,
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194306084_o1.jpg?cmsp_timestamp=20261103220650"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Side A",
+      "audio_url": "https://dl.dropboxusercontent.com/s/l39rm2g496iq7gzhbrv0z/RE_16.mp3?rlkey=knmxl5waz2rscvi8swz6pqddd&st=bzmpceq2&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    },
+    {
+      "track_position": "B",
+      "title": "Side B",
+      "audio_url": "https://dl.dropboxusercontent.com/s/d4wojtebq2liy7xhksrux/Bd_17.mp3?rlkey=old26l8yyv326a59mryq3jv7m&st=88xixadc&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    }
+  ]
+}

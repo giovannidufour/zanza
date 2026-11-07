@@ -1,0 +1,61 @@
+{
+  "listing": {
+    "id": "lst_0002",
+    "slug": "malibu-my-love",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 500,
+      "currency": "EUR"
+    },
+    "source": {
+      "shop": "jammersrecord.com",
+      "url": "https://jammersrecord.com/?pid=194319940",
+      "price_jpy": 770,
+      "note": "test content: images and samples hotlinked from the source shop"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "MALIBU",
+    "title": "MY LOVE",
+    "label": "KESTA",
+    "cat_no": null,
+    "year": null,
+    "country": null,
+    "format": "7\"",
+    "genre": [
+      "Reggae"
+    ],
+    "style": [
+      "80's Dancehall"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194319940.jpg?cmsp_timestamp=20261104152613"
+  },
+  "copy": {
+    "condition_media": "VG",
+    "condition_sleeve": null,
+    "notes": null,
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194319940.jpg?cmsp_timestamp=20261104152613"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Side A",
+      "audio_url": "https://dl.dropboxusercontent.com/s/hwmna9527hofr57394df5/ML_20.mp3?rlkey=ky05s9gkkdlgps1i26n17hgsr&st=kxegnneg&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    },
+    {
+      "track_position": "B",
+      "title": "Side B",
+      "audio_url": "https://dl.dropboxusercontent.com/s/4zjn7638ym7wrlqumv77o/VD_21.mp3?rlkey=ypqwo1d77tton48qdqkuj9ehk&st=ha2zzki0&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    }
+  ]
+}

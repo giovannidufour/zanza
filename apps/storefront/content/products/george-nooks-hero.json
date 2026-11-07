@@ -1,0 +1,62 @@
+{
+  "listing": {
+    "id": "lst_0020",
+    "slug": "george-nooks-hero",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 400,
+      "currency": "EUR"
+    },
+    "source": {
+      "shop": "jammersrecord.com",
+      "url": "https://jammersrecord.com/?pid=194271823",
+      "price_jpy": 660,
+      "note": "test content: images and samples hotlinked from the source shop"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "GEORGE NOOKS",
+    "title": "HERO",
+    "label": "STONE LOVE",
+    "cat_no": null,
+    "year": null,
+    "country": null,
+    "format": "7\"",
+    "genre": [
+      "Reggae"
+    ],
+    "style": [
+      "Dancehall",
+      "Lovers"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194271823.jpg?cmsp_timestamp=20261101182248"
+  },
+  "copy": {
+    "condition_media": "VG+",
+    "condition_sleeve": null,
+    "notes": null,
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194271823.jpg?cmsp_timestamp=20261101182248"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Side A",
+      "audio_url": "https://dl.dropboxusercontent.com/s/ho5ry9b9dme57rejripg3/Hro_03.mp3?rlkey=iw7peacomwkht03mp138qbpd1&st=df2124zr&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    },
+    {
+      "track_position": "B",
+      "title": "Side B",
+      "audio_url": "https://dl.dropboxusercontent.com/s/9rt7tk2oydxnbv8vkwrvw/Hv_04.mp3?rlkey=ro506c84oh2yhcgo3wakkj9lx&st=c0ryufct&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    }
+  ]
+}

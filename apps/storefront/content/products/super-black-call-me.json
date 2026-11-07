@@ -1,0 +1,63 @@
+{
+  "listing": {
+    "id": "lst_0013",
+    "slug": "super-black-call-me",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 600,
+      "currency": "EUR"
+    },
+    "source": {
+      "shop": "jammersrecord.com",
+      "url": "https://jammersrecord.com/?pid=194306072",
+      "price_jpy": 990,
+      "note": "test content: images and samples hotlinked from the source shop"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "SUPER BLACK",
+    "title": "CALL ME",
+    "label": "MC WORTH",
+    "cat_no": null,
+    "year": null,
+    "country": null,
+    "format": "7\"",
+    "genre": [
+      "Reggae"
+    ],
+    "style": [
+      "80's Dancehall",
+      "Roots",
+      "Dub"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194306072.jpg?cmsp_timestamp=20261103215245"
+  },
+  "copy": {
+    "condition_media": "EX",
+    "condition_sleeve": null,
+    "notes": null,
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194306072_o1.jpg?cmsp_timestamp=20261103215245"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Side A",
+      "audio_url": "https://dl.dropboxusercontent.com/s/6nsvfttrgm78g2mm0hlnv/Cl_22.mp3?rlkey=zaoteg35hibufxfkmdhoqse7j&st=9rc6w0lb&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    },
+    {
+      "track_position": "B",
+      "title": "Side B",
+      "audio_url": "https://dl.dropboxusercontent.com/s/5trky6jgl9fd25d828v5p/Cv_23.mp3?rlkey=64eyxe27dyw8gi2zyytmx10v3&st=i8qjp2v0&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    }
+  ]
+}

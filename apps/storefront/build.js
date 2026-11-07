@@ -102,7 +102,8 @@ for (const product of products) {
 }
 
 // PLP: the listing of the "For sale" section (Figma: PLP - desktop); "For trade" has no products yet
-const forSale = products.filter(p => p.listing.section === 'sale' && p.listing.status === 'available');
+const forSale = products.filter(p => p.listing.section === 'sale' && p.listing.status === 'available')
+  .sort((a, b) => a.listing.id.localeCompare(b.listing.id));   // listing order = id order
 write('sale/index.html', page({ title: Plp.title('sale'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, site, url })) }));
 
 // root: redirect to the PLP while there is no home page

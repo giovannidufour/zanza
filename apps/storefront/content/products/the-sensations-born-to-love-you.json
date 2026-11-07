@@ -1,0 +1,63 @@
+{
+  "listing": {
+    "id": "lst_0014",
+    "slug": "the-sensations-born-to-love-you",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 600,
+      "currency": "EUR"
+    },
+    "source": {
+      "shop": "jammersrecord.com",
+      "url": "https://jammersrecord.com/?pid=194300298",
+      "price_jpy": 990,
+      "note": "test content: images and samples hotlinked from the source shop"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "THE SENSATIONS",
+    "title": "BORN TO LOVE YOU",
+    "label": "TECHNIQUES",
+    "cat_no": null,
+    "year": null,
+    "country": null,
+    "format": "7\"",
+    "genre": [
+      "Reggae"
+    ],
+    "style": [
+      "Early Reggae",
+      "Lovers",
+      "Rockers"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194300298.jpg?cmsp_timestamp=20261103130720"
+  },
+  "copy": {
+    "condition_media": "VG",
+    "condition_sleeve": null,
+    "notes": null,
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194300298.jpg?cmsp_timestamp=20261103130720"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Side A",
+      "audio_url": "https://dl.dropboxusercontent.com/s/4t31cw0h3yskls9blmtrg/Sn_04.mp3?rlkey=6humgcgo62ucvc6v79f7ytjmy&st=tuphshpi&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    },
+    {
+      "track_position": "B",
+      "title": "Side B",
+      "audio_url": "https://dl.dropboxusercontent.com/s/yaypf21h6fvchx6l7ce0v/Bl_05.mp3?rlkey=kwho58bpz98bwymk0qe07dakr&st=9ynjmu9j&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    }
+  ]
+}

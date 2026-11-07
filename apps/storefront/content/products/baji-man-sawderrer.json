@@ -1,0 +1,61 @@
+{
+  "listing": {
+    "id": "lst_0011",
+    "slug": "baji-man-sawderrer",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 300,
+      "currency": "EUR"
+    },
+    "source": {
+      "shop": "jammersrecord.com",
+      "url": "https://jammersrecord.com/?pid=194309286",
+      "price_jpy": 550,
+      "note": "test content: images and samples hotlinked from the source shop"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "BAJI MAN",
+    "title": "SAWDERRER",
+    "label": "DYNAMITE RECORDS",
+    "cat_no": null,
+    "year": null,
+    "country": null,
+    "format": "7\"",
+    "genre": [
+      "Reggae"
+    ],
+    "style": [
+      "90's Dancehall"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194309286.jpg?cmsp_timestamp=20261104134352"
+  },
+  "copy": {
+    "condition_media": "EX",
+    "condition_sleeve": null,
+    "notes": null,
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194309286.jpg?cmsp_timestamp=20261104134352"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Side A",
+      "audio_url": "https://dl.dropboxusercontent.com/s/92w1f9210hhm0qbjd7725/Bj_06.mp3?rlkey=9kus4wdrsm12mh5hw69ok4lw9&st=txqtzod9&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    },
+    {
+      "track_position": "B",
+      "title": "Side B",
+      "audio_url": "https://dl.dropboxusercontent.com/s/ne7gj4dsmxwugv67sjuop/Mq_07.mp3?rlkey=6qsjze1elcq9l88546edaqr8j&st=t7m0kz2j&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    }
+  ]
+}

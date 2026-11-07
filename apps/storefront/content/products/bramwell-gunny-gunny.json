@@ -1,0 +1,61 @@
+{
+  "listing": {
+    "id": "lst_0016",
+    "slug": "bramwell-gunny-gunny",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 400,
+      "currency": "EUR"
+    },
+    "source": {
+      "shop": "jammersrecord.com",
+      "url": "https://jammersrecord.com/?pid=194276445",
+      "price_jpy": 660,
+      "note": "test content: images and samples hotlinked from the source shop"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "BRAMWELL",
+    "title": "GUNNY GUNNY",
+    "label": "JAMMYS",
+    "cat_no": null,
+    "year": null,
+    "country": null,
+    "format": "7\"",
+    "genre": [
+      "Reggae"
+    ],
+    "style": [
+      "90's Dancehall"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194276445.jpg?cmsp_timestamp=20261102003851"
+  },
+  "copy": {
+    "condition_media": "EX",
+    "condition_sleeve": null,
+    "notes": null,
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194276445.jpg?cmsp_timestamp=20261102003851"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Side A",
+      "audio_url": "https://dl.dropboxusercontent.com/s/idsvk0vq9emx9dgu24h3r/Pen_17.mp3?rlkey=7tkm39d2q338b7f0orhlw01jc&st=rcl52etz&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    },
+    {
+      "track_position": "B",
+      "title": "Side B",
+      "audio_url": "https://dl.dropboxusercontent.com/s/buqt9j7go5ps43bjot55w/Peb_18.mp3?rlkey=9h5cr6lt1t32jb6d41xyjju9i&st=4djnuuby&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    }
+  ]
+}

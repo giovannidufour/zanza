@@ -1,0 +1,62 @@
+{
+  "listing": {
+    "id": "lst_0005",
+    "slug": "tony-curtis-nitty-kutchie-i-don-t-know",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 1200,
+      "currency": "EUR"
+    },
+    "source": {
+      "shop": "jammersrecord.com",
+      "url": "https://jammersrecord.com/?pid=194313609",
+      "price_jpy": 1980,
+      "note": "test content: images and samples hotlinked from the source shop"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "TONY CURTIS & NITTY KUTCHIE",
+    "title": "I DON'T KNOW",
+    "label": "DIAMOND RUSH",
+    "cat_no": null,
+    "year": null,
+    "country": null,
+    "format": "7\"",
+    "genre": [
+      "Reggae"
+    ],
+    "style": [
+      "Roots",
+      "90's Dancehall"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194313609.jpg?cmsp_timestamp=20261104143132"
+  },
+  "copy": {
+    "condition_media": "EX",
+    "condition_sleeve": null,
+    "notes": null,
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194313609.jpg?cmsp_timestamp=20261104143132"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Side A",
+      "audio_url": "https://dl.dropboxusercontent.com/s/dn6hoz3eekp76utmfy34o/ID_24.mp3?rlkey=c6hooz5gcw0rmw9gc8zresvjk&st=8gfgsn54&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    },
+    {
+      "track_position": "B",
+      "title": "Side B",
+      "audio_url": "https://dl.dropboxusercontent.com/s/2o9zz5o71h8iep35s5n0m/Bd_25.mp3?rlkey=l54vsnaevo05mqgrevym0n86i&st=xtkppnqc&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    }
+  ]
+}

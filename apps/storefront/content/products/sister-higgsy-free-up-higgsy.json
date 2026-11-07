@@ -1,0 +1,61 @@
+{
+  "listing": {
+    "id": "lst_0009",
+    "slug": "sister-higgsy-free-up-higgsy",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 600,
+      "currency": "EUR"
+    },
+    "source": {
+      "shop": "jammersrecord.com",
+      "url": "https://jammersrecord.com/?pid=194309400",
+      "price_jpy": 880,
+      "note": "test content: images and samples hotlinked from the source shop"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "SISTER HIGGSY",
+    "title": "FREE UP HIGGSY",
+    "label": "RED MAN INT",
+    "cat_no": null,
+    "year": null,
+    "country": null,
+    "format": "7\"",
+    "genre": [
+      "Reggae"
+    ],
+    "style": [
+      "90's Dancehall"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194309400.jpg?cmsp_timestamp=20261104135628"
+  },
+  "copy": {
+    "condition_media": "EX",
+    "condition_sleeve": null,
+    "notes": null,
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194309400.jpg?cmsp_timestamp=20261104135628"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Side A",
+      "audio_url": "https://dl.dropboxusercontent.com/s/c5hq1h8a109icm8365i5a/Fz_10.mp3?rlkey=5irtycybzyfekw0cqy9g7gw6s&st=bdjg9l3p&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    },
+    {
+      "track_position": "B",
+      "title": "Side B",
+      "audio_url": "https://dl.dropboxusercontent.com/s/3xhl90m62t9hobcwnntzj/Xd_11.mp3?rlkey=fmzntng3l7xeht1t0ry8ggklq&st=fqkop1ew&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "listing": {
+    "id": "lst_0008",
+    "slug": "della-grant-colour-red-dance-dance",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 600,
+      "currency": "EUR"
+    },
+    "source": {
+      "shop": "jammersrecord.com",
+      "url": "https://jammersrecord.com/?pid=194309671",
+      "price_jpy": 880,
+      "note": "test content: images and samples hotlinked from the source shop"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "DELLA GRANT & COLOUR RED",
+    "title": "DANCE DANCE",
+    "label": "TWINKLE",
+    "cat_no": null,
+    "year": null,
+    "country": null,
+    "format": "7\"",
+    "genre": [
+      "Reggae"
+    ],
+    "style": [
+      "Soca",
+      "90S Dancehall"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194309671.jpg?cmsp_timestamp=20261104140219"
+  },
+  "copy": {
+    "condition_media": "EX",
+    "condition_sleeve": null,
+    "notes": null,
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194309671_o1.jpg?cmsp_timestamp=20261104140219"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Side A",
+      "audio_url": "https://dl.dropboxusercontent.com/s/82h48niu6z7ax4jh22ram/Dc_12.mp3?rlkey=1qa70umt0e1w07ywme9a08kkb&st=jmgof2jc&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    },
+    {
+      "track_position": "B",
+      "title": "Side B",
+      "audio_url": "https://dl.dropboxusercontent.com/s/bpc5glxjiiptz4tv6zcdv/Tw_13.mp3?rlkey=j08zwy19xucc2gwreycu43kou&st=vtzr6qk0&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    }
+  ]
+}

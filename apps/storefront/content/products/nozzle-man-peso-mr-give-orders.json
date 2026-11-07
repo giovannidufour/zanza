@@ -1,0 +1,62 @@
+{
+  "listing": {
+    "id": "lst_0010",
+    "slug": "nozzle-man-peso-mr-give-orders",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 300,
+      "currency": "EUR"
+    },
+    "source": {
+      "shop": "jammersrecord.com",
+      "url": "https://jammersrecord.com/?pid=194309337",
+      "price_jpy": 550,
+      "note": "test content: images and samples hotlinked from the source shop"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "NOZZLE MAN & PESO",
+    "title": "MR GIVE ORDERS",
+    "label": "PLATT PROD",
+    "cat_no": null,
+    "year": null,
+    "country": null,
+    "format": "7\"",
+    "genre": [
+      "Reggae"
+    ],
+    "style": [
+      "Roots",
+      "90's Dancehall"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194309337.jpg?cmsp_timestamp=20261104135023"
+  },
+  "copy": {
+    "condition_media": "VG",
+    "condition_sleeve": null,
+    "notes": null,
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194309337.jpg?cmsp_timestamp=20261104135023"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Side A",
+      "audio_url": "https://dl.dropboxusercontent.com/s/hzczyiqkmn19c76o780mz/Nz_08.mp3?rlkey=b6ofjz9u4ok3nl069dbn75732&st=a0lvdg7h&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    },
+    {
+      "track_position": "B",
+      "title": "Side B",
+      "audio_url": "https://dl.dropboxusercontent.com/s/j15v3xqfd0tmrjkoe279o/Zd_09.mp3?rlkey=82as4vfxu5zrizexjmp8ftika&st=458hckrt&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    }
+  ]
+}

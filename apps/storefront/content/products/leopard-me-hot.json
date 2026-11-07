@@ -1,0 +1,61 @@
+{
+  "listing": {
+    "id": "lst_0021",
+    "slug": "leopard-me-hot",
+    "section": "sale",
+    "status": "available",
+    "price": {
+      "amount": 400,
+      "currency": "EUR"
+    },
+    "source": {
+      "shop": "jammersrecord.com",
+      "url": "https://jammersrecord.com/?pid=194256775",
+      "price_jpy": 660,
+      "note": "test content: images and samples hotlinked from the source shop"
+    }
+  },
+  "release": {
+    "discogs_release_id": null,
+    "discogs_master_id": null,
+    "artist": "LEOPARD",
+    "title": "ME HOT",
+    "label": "GOD BLESS CREW",
+    "cat_no": null,
+    "year": null,
+    "country": null,
+    "format": "7\"",
+    "genre": [
+      "Reggae"
+    ],
+    "style": [
+      "90's Dancehall"
+    ],
+    "tracklist": [],
+    "cover": "https://img08.shop-pro.jp/PA01032/434/product/194256775.jpg?cmsp_timestamp=20261101015553"
+  },
+  "copy": {
+    "condition_media": "EX",
+    "condition_sleeve": null,
+    "notes": null,
+    "photos": [
+      "https://img08.shop-pro.jp/PA01032/434/product/194256775.jpg?cmsp_timestamp=20261101015553"
+    ]
+  },
+  "samples": [
+    {
+      "track_position": "A",
+      "title": "Side A",
+      "audio_url": "https://dl.dropboxusercontent.com/s/qv6attiootve372z8hgga/ME_13.mp3?rlkey=chr5sec10diibffejqoxtkblb&st=b1i9924y&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    },
+    {
+      "track_position": "B",
+      "title": "Side B",
+      "audio_url": "https://dl.dropboxusercontent.com/s/2c18plu4zogfze2ljn3jw/VR_14.mp3?rlkey=c58cw2oylo4mxz6cw17ngeimh&st=yfdnhew3&dl=0",
+      "duration": null,
+      "source": "jammersrecord"
+    }
+  ]
+}
