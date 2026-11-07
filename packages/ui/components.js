@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"ProductInfo"},{"name":"Gallery"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"Gallery"}]} */
 /* packages/ui/components.js — the ONE implementation of the Zanza components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
@@ -25,18 +25,17 @@
     var hierarchy = props.hierarchy || 'primary';
     var size = props.size || 'medium';
     var disabled = !!props.disabled || props.state === 'disabled';
-    var attrs = Object.assign({
-      type: props.type || 'button',
+    var isLink = !!props.href;   // href → a link styled as a button (navigation, e.g. Player "View")
+    var attrs = Object.assign(isLink ? {} : { type: props.type || 'button', disabled: disabled }, {
       className: cx('zz-button', props.className),
       'data-hierarchy': hierarchy,
-      'data-size': size,
-      disabled: disabled
+      'data-size': size
     }, omit(props, ['hierarchy', 'size', 'disabled', 'leadingIcon', 'trailingIcon', 'children', 'state', 'className', 'type']));
     if (props.state && props.state !== 'default') attrs['data-state'] = props.state;
     // icon-only (no children): Figma hides the label container; aria-label is required by the consumer
     var hasLabel = props.children !== undefined && props.children !== null && props.children !== false;
-    var typeClass = size === 'extra-small' ? 'label-extra-small' : 'label-medium';   // Figma text style per size
-    return h('button', attrs,
+    var typeClass = (size === 'small' || size === 'extra-small') ? 'label-extra-small' : 'label-medium';   // Figma text style per size
+    return h(isLink ? 'a' : 'button', attrs,
       props.leadingIcon ? h('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, props.leadingIcon) : null,
       hasLabel ? h('span', { className: cx('zz-button__label', typeClass) }, props.children) : null,
       props.trailingIcon ? h('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, props.trailingIcon) : null);
@@ -181,16 +180,105 @@
   function PauseIcon() {  // Figma: icon/pause-ultra
     return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M9 24H8V0H9V24ZM16 24H15V0H16V24Z', fill: 'currentColor' }));
   }
+  /* Figma: `_player button-icon` (building block, state default | playing): the 24px play/pause icon.
+     Internal, like the `_` component in Figma: PlayerButton exposes its state as the nested `playing` prop. */
+  function PlayerButtonIcon(props) {
+    return h('span', { className: 'zz-player-button__icon', 'aria-hidden': 'true' },
+      h(PlayPauseIcons));
+  }
+  /* Both icons are always in the markup; CSS shows one from the nearest [data-playing] ancestor.
+     So a static page (no React at runtime) can switch play ↔ pause by flipping one attribute. */
+  function PlayPauseIcons() {
+    return h(React.Fragment, null,
+      h('span', { className: 'zz-icon-play' }, h(PlayIcon)),
+      h('span', { className: 'zz-icon-pause' }, h(PauseIcon)));
+  }
+  /* Figma: `player button` (state default | hover | pressed | disabled) + nested exposed `_player button-icon`.
+     Interaction states come from :hover / :active / :disabled; `state` pins one for documentation only. */
   function PlayerButton(props) {
     var playing = !!props.playing;
-    return h('button', Object.assign({
+    var disabled = !!props.disabled || props.state === 'disabled';
+    var attrs = Object.assign({
       type: 'button',
       className: cx('zz-player-button', props.className),
-      'data-state': playing ? 'playing' : 'default',
-      'aria-pressed': playing ? 'true' : 'false'
-    }, omit(props, ['playing', 'children', 'className'])),
-      h('span', { className: 'zz-player-button__icon', 'aria-hidden': 'true' }, playing ? h(PauseIcon) : h(PlayIcon)),
+      'data-playing': playing ? 'true' : 'false',
+      'aria-pressed': playing ? 'true' : 'false',
+      disabled: disabled
+    }, omit(props, ['playing', 'disabled', 'state', 'children', 'className']));
+    if (props.state && props.state !== 'default') attrs['data-state'] = props.state;
+    return h('button', attrs,
+      h(PlayerButtonIcon, { playing: playing }),
       h('span', { className: 'zz-player-button__label body-medium' }, props.children));
+  }
+
+  /* ── IconButton ─────────────────────────────────────────────────────────
+     Figma: `icon button` (state default | hover | pressed | disabled), 24 × 24, icon fills the box.
+     Same colour logic as PlayerButton: action/floating/foreground/* on the icon, background/* on the box.
+     Icon-only: an accessible name (aria-label) is required. Interaction states come from
+     :hover / :active / :disabled; `state` pins one for documentation only. */
+  function IconButton(props) {
+    var disabled = !!props.disabled || props.state === 'disabled';
+    var attrs = Object.assign({
+      type: 'button',
+      className: cx('zz-icon-button', props.className),
+      disabled: disabled
+    }, omit(props, ['icon', 'disabled', 'state', 'children', 'className']));
+    if (props.state && props.state !== 'default') attrs['data-state'] = props.state;
+    return h('button', attrs,
+      h('span', { className: 'zz-icon-button__icon', 'aria-hidden': 'true' }, props.icon || h(PlayIcon)));
+  }
+
+  /* ── Player ─────────────────────────────────────────────────────────────
+     Figma: `player` (device mobile | desktop) + building block `_player controls` (state default | playing).
+     The sample player docked at the bottom of the site. Presentational: it renders the current sample and the
+     native audio element; the site owns playback, the queue, docking and the slide in/out (apps/storefront).
+     Desktop row: actions · now playing (fill) · _player controls · native player (326) · close.
+     Mobile column: now playing + close / actions · _player controls / native player. */
+  function PreviousIcon() {   // Figma: icon/play-previous-ultra
+    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M1 11.5L24 0V24L1 12.5V24H0V0H1V11.5ZM2.23633 12L23 22.3818V1.61816L2.23633 12Z', fill: 'currentColor' }));
+  }
+  function NextIcon() {       // Figma: icon/play-next-ultra
+    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M24 24H23V12.5L0 24V0.000976562L23 11.5V0H24V24ZM1 22.3818L21.7637 12L1 1.61816V22.3818Z', fill: 'currentColor' }));
+  }
+  function CloseIcon() {      // Figma: icon/icon-x-ultra
+    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M11.7483 11.2881L23.0129 0.0233791L23.72 0.730486L12.4554 11.9952L23.7249 23.2647L23.0178 23.9718L11.7483 12.7023L0.725267 23.7253L0.0181598 23.0182L11.0412 11.9952L0.0229935 0.977006L0.7301 0.2699L11.7483 11.2881Z', fill: 'currentColor' }));
+  }
+  /* Figma: `_player controls` (state default | playing): position "n of total" + previous · play/pause · next.
+     Internal (0008): Player exposes its state as `playing`. Previous/next are disabled at the ends of the queue. */
+  function PlayerControls(props) {
+    var index = props.index || 1, total = props.total || 1;
+    return h('div', { className: 'zz-player__controls' },
+      h('span', { className: 'zz-player__position body-medium', 'aria-hidden': 'true' }, index + ' of ' + total),
+      h('div', { className: 'zz-player__transport' },
+        h(IconButton, { className: 'zz-player__previous', icon: h(PreviousIcon), 'aria-label': 'Previous sample', disabled: index <= 1, onClick: props.onPrevious }),
+        h(IconButton, { className: 'zz-player__toggle', icon: h(PlayPauseIcons), 'aria-label': props.playing ? 'Pause' : 'Play', onClick: props.onTogglePlay }),
+        h(IconButton, { className: 'zz-player__next', icon: h(NextIcon), 'aria-label': 'Next sample', disabled: index >= total, onClick: props.onNext })));
+  }
+  function Player(props) {
+    var device = props.device || 'responsive';
+    var img = props.image || {};
+    return h('section', Object.assign({
+      className: cx('zz-player', props.className),
+      'data-device': device,
+      'data-playing': props.playing ? 'true' : 'false',
+      'aria-label': props['aria-label'] || 'Player'
+    }, omit(props, ['device', 'image', 'trackPosition', 'sampleTitle', 'productName', 'index', 'total', 'playing', 'src',
+                    'actions', 'onPrevious', 'onNext', 'onTogglePlay', 'onClose', 'audioRef', 'className', 'aria-label'])),
+      // Figma: `now playing` — image 48 + title row (track position · sample title / product name)
+      h('div', { className: 'zz-player__now' },
+        h('div', { className: 'zz-player__image' }, img.src ? h('img', { src: img.src, alt: img.alt || '', width: 48, height: 48 }) : null),
+        h('p', { className: 'zz-player__title body-medium', 'aria-live': 'polite' },
+          h('span', { className: 'zz-player__track' }, props.trackPosition),
+          h('span', { className: 'zz-player__names' },
+            h('span', { className: 'zz-player__sample' }, props.sampleTitle),
+            h('span', { className: 'zz-player__product' }, props.productName)))),
+      props.actions ? h('div', { className: 'zz-player__actions' }, props.actions) : null,
+      h(PlayerControls, { index: props.index, total: props.total, playing: props.playing,
+        onPrevious: props.onPrevious, onNext: props.onNext, onTogglePlay: props.onTogglePlay }),
+      // Figma: `native player` slot — the browser's own audio controls (seek, time, volume)
+      h('div', { className: 'zz-player__native' },
+        h('audio', { className: 'zz-player__audio', controls: true, preload: 'none', src: props.src || undefined, ref: props.audioRef })),
+      h(IconButton, { className: 'zz-player__close', icon: h(CloseIcon), 'aria-label': 'Close player', onClick: props.onClose }));
   }
 
   /* ── ProductInfo ────────────────────────────────────────────────────────
@@ -239,5 +327,5 @@
   }
 
   return { Button: Button, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, Tag: Tag, TagGroup: TagGroup,
-           PlayerButton: PlayerButton, ProductInfo: ProductInfo, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon };
+           PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon };
 });

@@ -1,45 +1,46 @@
 # Tabs
 
-A horizontal tablist (`Tabs`, Figma `tab group`) of `Tab` items (Figma `tab`). Selection is owned by `Tabs`: a tab is active only when `Tabs.value === Tab.value`, so exactly one tab is active at a time.
+A horizontal tablist (`Tabs`, Figma `tab group`) of `Tab` items (Figma `tab`). `Tabs` owns the selection: a tab is active only when `Tabs.value === Tab.value`. There is no `disabled` and no `size` in Figma, so none here.
 
 ## API
 
+<!-- api: TabsProps TabProps -->
+<!-- generated from components.d.ts by build-docs.js: edit the .d.ts, not this table -->
 ### Tabs
 
-| Prop | Values | Figma |
-| --- | --- | --- |
-| `value` | string — the selected tab | — |
-| `onValueChange` | `(value) => void` | — |
-| `children` | `<Tab>` elements | slot `slot container` (gap 8) |
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `value` * | `string` |  | The `value` of the selected Tab. Controlled. |
+| `onValueChange` | `(value: string) => void` |  | Called with the `value` of the Tab the user picks (click or ← → Home End). |
+| `as` | `"nav"` |  | `"nav"` when the tabs are site navigation (links with href): no tablist semantics, no keyboard roving. |
+| `children` * | `ReactNode` |  | &lt;Tab> elements. |
 
 ### Tab
 
-| Prop | Values | Figma |
-| --- | --- | --- |
-| `value` | string — identity | — |
-| `children` | label text | text `label` |
-| `leadingIcon` / `trailingIcon` | `<svg>` (20px) | boolean `leading icon` / `trailing icon` |
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `value` * | `string` |  | Identity of this tab inside its Tabs. |
+| `href` | `string` |  | When set, renders an &lt;a> (site navigation) with aria-current="page" if selected, instead of role="tab". |
+| `children` * | `ReactNode` |  | Label text. Rendered uppercase by the label text style. |
+| `leadingIcon` | `ReactNode` |  | Icon slot before the label (20px). Figma: `leading icon`. |
+| `trailingIcon` | `ReactNode` |  | Icon slot after the label (20px). Figma: `trailing icon`. |
+| `state` | `"default" \| "hover" \| "pressed" \| "active"` |  | Documentation only: pins a visual state regardless of pointer/selection. |
 
-`active` is not a prop: it is derived from the parent. `hover` / `pressed` come from pseudo-classes; `data-state` is documentation only. There is no `disabled` state in Figma, so none here.
+`*` required.
+<!-- /api -->
 
-**Navigation use** (header For sale / For trade): `<Tabs as="nav">` + `<Tab href>` render a `<nav>` of links with `aria-current="page"` on the selected one — no tablist semantics, because they change page, not a panel.
+**Navigation use** (header For sale / For trade): `<Tabs as="nav">` + `<Tab href>` render a `<nav>` of links with `aria-current="page"`: no tablist semantics, because they change page, not a panel.
 
 ## Accessibility
 
-WAI-ARIA tabs pattern: `role="tablist"` / `role="tab"`, `aria-selected`, roving `tabIndex` (only the active tab is in the tab order), `←` `→` `Home` `End` move and select. Consumers add `aria-controls` / `role="tabpanel"` on their panels.
+WAI-ARIA tabs pattern: `role="tablist"` / `role="tab"`, `aria-selected`, roving `tabIndex`, `←` `→` `Home` `End` move and select. Consumers add `aria-controls` / `role="tabpanel"`.
 
-## Tokens used
+## Tokens
 
-- Background: `tab-background-{default|hover|pressed|active}` — transparent, transparent, transparent, `white`
-- Border (1px, inside): `tab-border-*` — always `black`; the **pattern** carries the state: solid (default, active), dashed 4/4 (hover), dashed 2/2 (pressed). Dash and gap lengths are animated custom properties (`@property`), so solid → dashed opens the gaps smoothly (150ms ease-out, placeholder: no motion in Figma yet; off with `prefers-reduced-motion`)
-- Label `text-strong`, icons `icon-strong`; type `label-medium`
+- Background `tab-background-{default|hover|pressed|active}`: transparent ×3, `white` when active
+- Border (1px) `tab-border-*`, always black: the pattern carries the state ([0005](../../../../design/decisions/0005-border-pattern-carries-state.md))
+- Label `text-strong`, icons `icon-strong`, type `label-medium`
 
-## Dimensions (hardcoded, as in Figma)
+## Dimensions (Figma)
 
-padding 8 · gap 8 (icon ↔ label) · list gap 8 · icon 20. Only `medium` exists in Figma, so no `size` prop.
-
-## Open
-
-- Focus style: no token yet.
-- Figma `_tab-states` now wraps `_tab-sizes` (size=medium: padding 8, gap 8) — the old `_button-sizes` wiring is fixed.
-- Figma `tab` still has `hierarchy` with a single value and a `layout` variant; neither is a prop here.
+padding 8 · icon ↔ label gap 8 · list gap 8 · icon 20.

@@ -2,11 +2,14 @@
    Credentials are never stored in the repo: user + password are read from the macOS
    Keychain entry that Cyberduck already saved for the host (macOS may ask once to allow it).
    Run: npm run deploy          (build first: npm run build)
-        npm run deploy -- --list   (only list the remote folder, upload nothing) */
+        npm run deploy -- --list   (only list the remote folder, upload nothing)
+        npm run deploy -- --verify (only compare the live site with dist/, upload nothing)
+   After every upload the live site is verified (see verify()). */
 'use strict';
 const fs = require('fs');
 const path = require('path');
 const { execFileSync, spawnSync } = require('child_process');
+const crypto = require('crypto');
 
 const APP = __dirname;
 const site = JSON.parse(fs.readFileSync(path.join(APP, 'site.json'), 'utf8'));
@@ -52,28 +55,59 @@ function curl(lines) {
 }
 
 const { user, pass } = credentials();
-const common = [`user = ${q(user + ':' + pass)}`, 'ssl-reqd', 'silent', 'show-error'];
+// tls-max 1.2: this host aborts data transfers above ~15 KB with FTP 451 when macOS curl (SecureTransport/LibreSSL)
+// negotiates TLS 1.3; with TLS 1.2 they go through (diagnosed 2026-11-07 with size probes, content-independent).
+const common = [`user = ${q(user + ':' + pass)}`, 'ssl-reqd', 'tls-max = 1.2', 'silent', 'show-error'];
 
 if (process.argv.includes('--list')) {
   curl([...common, 'list-only', `url = ${q(base)}`]);
   process.exit(0);
 }
 
+const sleep = (s) => spawnSync('sleep', [String(s)]);
+
+// Post-deploy check, safe for the host's firewall: it requests ONLY the files that are in dist/ (never paths built
+// from the project folder: probing .git/, node_modules/, .env… is what vulnerability scanners do, and the host bans
+// the IP for it — happened 2026-11-07), one at a time, 1s apart, cache-bypassed, and compares them byte for byte.
+function verify(list) {
+  const sha = (b) => crypto.createHash('sha1').update(b).digest('hex');
+  let bad = 0;
+  for (const f of list) {
+    const rel = path.relative(DIST, f).split(path.sep).join('/');
+    const url = cfg.publicUrl.replace(/\/?$/, '/') + rel.replace(/(^|\/)index\.html$/, '$1') + '?verify=' + Date.now();
+    const r = spawnSync('curl', ['-s', '-f', '--max-time', '20', url], { maxBuffer: 64 * 1024 * 1024 });
+    const same = r.status === 0 && sha(r.stdout) === sha(fs.readFileSync(f));
+    if (!same) bad++;
+    console.log(`${same ? 'live' : 'DIFF'} ${rel}${r.status === 0 ? '' : ` (curl ${r.status})`}`);
+    sleep(1);
+  }
+  if (bad) fail(`${bad} file(s) differ from dist/ on ${cfg.publicUrl} (if every request fails, the host may be blocking this IP).`);
+  console.log(`Verified: the live site matches dist/ (${list.length} files).`);
+}
+
 if (!fs.existsSync(DIST)) fail(`${path.relative(process.cwd(), DIST)} not found — run npm run build first.`);
 const files = walk(DIST);
+if (process.argv.includes('--verify')) { verify(files); process.exit(0); }
 const urlOf = (f) => base + path.relative(DIST, f).split(path.sep).map(encodeURIComponent).join('/');
 
-// Uploads a batch in one connection; returns the files that did not get a 226 (transfer complete).
-// No fail-early: one server hiccup (e.g. FTP 451) must not stop the rest of the batch.
+// Safe upload: each file goes up as `<name>.uploading` and is renamed onto `<name>` only after the transfer
+// completed (RNFR/RNTO as post-quote commands). A failed transfer (e.g. FTP 451) therefore never truncates
+// the live file: the site keeps the previous version until the rename succeeds.
+// One curl call per file, so the rename commands apply to that file only. Returns the files that failed.
 function upload(batch) {
-  const lines = [...common, 'ftp-create-dirs', 'write-out = "%{response_code} %{url_effective}\\n"'];
-  for (const f of batch) lines.push(`upload-file = ${q(f)}`, `url = ${q(urlOf(f))}`);
-  const r = spawnSync('curl', ['--config', '-'], { input: lines.join('\n') + '\n', encoding: 'utf8', stdio: ['pipe', 'pipe', 'inherit'] });
-  const ok = new Set(r.stdout.split('\n').filter((l) => l.startsWith('226 ')).map((l) => l.slice(4)));
-  for (const f of batch) console.log(`${ok.has(urlOf(f)) ? 'ok  ' : 'FAIL'} ${path.relative(DIST, f)}`);
-  return batch.filter((f) => !ok.has(urlOf(f)));
+  return batch.filter((f) => {
+    const name = path.basename(f);
+    const tmp = name + '.uploading';
+    const tmpUrl = urlOf(f).replace(/[^/]+$/, encodeURIComponent(tmp));
+    const lines = [...common, 'ftp-create-dirs', 'write-out = "%{response_code}\\n"',
+      `upload-file = ${q(f)}`, `url = ${q(tmpUrl)}`,
+      `quote = ${q('-RNFR ' + tmp)}`, `quote = ${q('-RNTO ' + name)}`];
+    const r = spawnSync('curl', ['--config', '-'], { input: lines.join('\n') + '\n', encoding: 'utf8', stdio: ['pipe', 'pipe', 'inherit'] });
+    const ok = r.status === 0;
+    console.log(`${ok ? 'ok  ' : 'FAIL'} ${path.relative(DIST, f)}${ok ? '' : ` (curl ${r.status}, ftp ${String(r.stdout).trim() || '?'})`}`);
+    return !ok;
+  });
 }
-const sleep = (s) => spawnSync('sleep', [String(s)]);
 
 console.log(`Uploading ${files.length} files to ${cfg.host}/${remoteDir}/ …`);
 let pending = upload(files);
@@ -84,4 +118,5 @@ for (let attempt = 1; pending.length && attempt <= 3; attempt++) {
   pending = upload(pending);
 }
 if (pending.length) fail(`${pending.length} file(s) not uploaded — the site may be partially updated. Run the deploy again.`);
-console.log(`Done → ${cfg.publicUrl}`);
+console.log(`Uploaded → ${cfg.publicUrl}`);
+verify(files);

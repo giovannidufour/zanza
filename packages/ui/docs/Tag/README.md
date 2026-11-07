@@ -1,41 +1,38 @@
 # Tag
 
-A static label chip (`Tag`, Figma `tag item`) and a wrapping list of them (`TagGroup`, Figma `tag group`). Non-interactive: no states.
+A static label chip (`Tag`, Figma `tag item`) and a wrapping list of them (`TagGroup`, Figma `tag group`). Non-interactive: no states. Figma's `orientation` axis is not ported (both variants are horizontal).
 
 ## API
 
+<!-- api: TagProps TagGroupProps -->
+<!-- generated from components.d.ts by build-docs.js: edit the .d.ts, not this table -->
 ### Tag
 
-| Prop | Values | Figma |
-| --- | --- | --- |
-| `size` | `extra-small` (18px) · `small` (22px, default) · `medium` (24px) · `large` (28px) | variant `size` |
-| `children` | label text | text `Label` |
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `size` | `"extra-small" \| "small" \| "medium" \| "large"` | `small` | Figma: `size`. extra-small = 18px, small = 22px, medium = 24px, large = 28px. |
+| `children` * | `ReactNode` |  | Label text. Figma: `Label`. |
 
 ### TagGroup
 
-| Prop | Values | Figma |
-| --- | --- | --- |
-| `children` | `<Tag>` elements; wraps, gap 4 | slot `tags` |
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `children` * | `ReactNode` |  | &lt;Tag> elements; wraps, gap 4. Figma: slot `tags`. |
 
-Figma's `orientation` axis is **not ported**: both variants are horizontal wrapping rows, they only differ by the tag size inside.
+`*` required.
+<!-- /api -->
 
-## Tokens used
+## Tokens
 
-- Background `surface-support-1` (→ `support-1` → `light-blue`)
-- Text `text-strong`; type `body-extra-small` (extra-small, small), `body-small` (medium), `body-medium` (large)
+Background `surface-support-1` · text `text-strong`.
 
-## Dimensions (as in Figma)
+## Dimensions (Figma)
 
-| | padding | type |
-| --- | --- | --- |
-| extra-small | 2 / 4 | body-extra-small |
-| small | 4 / 8 | body-extra-small |
-| medium | 4 / 8 | body-small |
-| large | 4 / 8 | body-medium |
+| size | height | padding (v / h) | type |
+| --- | --- | --- | --- |
+| extra-small | 18 | 2 / 4 | body-extra-small |
+| small | 22 | 4 / 8 | body-extra-small |
+| medium | 24 | 4 / 8 | body-small |
+| large | 28 | 4 / 8 | body-medium |
 
 Group gap 4.
-
-## Open
-
-- Figma `tag group / orientation=vertical` is not vertical.
-- Figma `tag item` has `gap 8` with a single child (harmless).

@@ -44,15 +44,17 @@ Architettura: **headless**, frontend custom, servizi terzi per commerce/pagament
 | `_context/product-brief.md` | Cos'è, flussi, modello dati, feedback di prodotto |
 | `_context/stack.md` | Opzioni di architettura headless, servizi terzi, raccomandazione |
 | `_context/open-questions.md` | Decisioni aperte — da chiudere prima del codice |
-| `design/README.md` | Come Figma → `packages/ui` → sito/artifact si collegano; regole, placeholder, naming Figma da sistemare |
+| `design/README.md` | Mappa della documentazione DS + flusso Figma → codice + checklist di porting di un componente |
+| `design/decisions/` | **Il perché**: una decisione di design per file (inglese, append-only, con la *Rule* da applicare). Leggere prima di portare o modificare un componente |
+| `design/open.md` | **L'unico backlog** di gap, parcheggi e fix Figma. Una voce chiusa diventa una decisione |
 | `packages/ui/` | **Design system in codice — unica fonte dei componenti.** `tokens.json` (mirror delle variabili Figma) → `tokens.css` (generato, mai a mano) · `media.js` (espande `@media (--mobile)` dal gruppo `breakpoint` di tokens.json: il breakpoint vive solo lì) · `components.js` (React, createElement, UMD) · `components.css` |
 | `apps/storefront/` | Sito statico. `content/products/*.json` (modello del brief) · `pages/pdp.js` · `base.css` (reset + page shell) · `pdp.css` (grid di pagina) · `scripts/site.js` (comportamenti di sito: header che sparisce allo scroll down e torna sticky allo scroll up) · `site.json` (storeName, outputDir, basePath) · `build.js` → **`dist/zanza/` = la cartella da caricare via FTP** |
-| `package.json` | `npm run build` (tokens.css + dist/) · `npm run build:artifact` (cartella da pubblicare come artifact DS) · `npm run deploy` / `npm run build:deploy` (upload FTPS di `dist/zanza/` → `public_html/zanza` su GoDaddy, https://gio-d.xyz/zanza/). Claude lancia build e deploy; Gio non usa il terminale |
+| `package.json` | `npm run build` (tokens.css + dist/) · `npm run build:artifact` (cartella da pubblicare come artifact DS) · `npm run deploy` / `npm run build:deploy` (upload FTPS di `dist/zanza/` → `public_html/zanza` su GoDaddy, https://gio-d.xyz/zanza/). Claude lancia build e deploy; Gio non usa il terminale. Dopo l'upload il deploy verifica il sito da solo (solo i file di `dist/`, uno al secondo; `npm run deploy -- --verify` per rifarlo). **Mai** richiedere al sito percorsi del progetto (`.git`, `node_modules`, config): l'host banna l'IP |
 | Git / deploy | Repo git locale (branch `main`, nessun remote per ora). `apps/storefront/deploy.js` + `deploy.json` (host, remoteDir). Credenziali FTP in `apps/storefront/.deploy.env` (git-ignored, mai committare né stampare). Il deploy carica/sovrascrive soltanto: i file rimossi in locale restano sul server |
 
-## Stato del porting (2026-11-07)
+## Stato del porting
 
-Componenti in `packages/ui`: Button, Tabs/Tab, Header, Breadcrumbs, Tag/TagGroup, PlayerButton, ProductInfo, Gallery. Pagina: PDP (header, breadcrumbs, gallery, info, Add to bag). Artifact DS: https://claude.ai/artifact/9Q7SAYDqDnBAj4MEKLnphz
+Componenti portati: tabella in `packages/ui/README.md`. Aperti: `design/open.md`. Non duplicare qui.
 
 ## Regole del codice
 
@@ -77,7 +79,10 @@ Componenti in `packages/ui`: Button, Tabs/Tab, Header, Breadcrumbs, Tag/TagGroup
 
 1. Decisione di prodotto → aggiorna `product-brief.md` e chiudi la voce in `open-questions.md`
 2. Scelta tecnica → `stack.md`
-3. Cambia la struttura → aggiorna questo file
+3. Decisione di design (anche presa in chat) → nuovo file in `design/decisions/` + riga nell'indice; se chiude un aperto, toglilo da `design/open.md`
+4. Gap o fix Figma emerso nel porting → `design/open.md`, non nei README dei componenti
+5. API di un componente → `components.d.ts` (la tabella nei README è generata da `build-docs.js`)
+6. Cambia la struttura → aggiorna questo file
 
 ---
 

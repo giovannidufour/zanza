@@ -1,34 +1,33 @@
 # ProductInfo
 
-The text block of a product page: name + price, release info, tags, description, grading, and the sample players. Mirrors the Figma component `product info` (device=desktop | mobile).
+The text block of a product page: name + price, release info, tags, description, grading, sample players. Figma: `product info` (device=desktop | mobile).
 
-Inner layout: a 3-column grid, no gaps. Row 1 = details (full width). Row 2 = samples — **desktop: middle column, stacked (gap 8); mobile: full width, in a row (gap 16, padding-bottom 8)**.
+Inner layout: 3-column grid, no gaps ([0012](../../../../design/decisions/0012-layout-mirrors-figma-grid.md)). Row 1 = details, full width. Row 2 = samples: **desktop columns 2–3, stacked (gap 8); mobile full width, in a row (gap 16, padding-bottom 8).**
 
 ## API
 
-| Prop | Values | Figma |
-| --- | --- | --- |
-| `device` | `desktop` · `mobile` · omitted = responsive | variant `device` |
-| `title` | product name → `<h1>` | `product name` |
-| `price` | formatted string | `price` |
-| `releaseInfo` | "Label Format (Country)" | `release info` |
-| `tags` | a `<TagGroup>` | `tags container` |
-| `description` | copy notes | `Description` |
-| `grading` | "Grading: VG+" | `Grading: VG+` |
-| `samples` | `<PlayerButton>`s | `samples container` |
+<!-- api: ProductInfoProps -->
+<!-- generated from components.d.ts by build-docs.js: edit the .d.ts, not this table -->
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `device` | `"desktop" \| "mobile"` |  | Omitted → responsive (breakpoint `--mobile` from tokens.json, &lt;768px placeholder). |
+| `title` * | `ReactNode` |  | Figma `product name` — rendered as &lt;h1>. |
+| `price` | `ReactNode` |  | Figma `price`, already formatted. |
+| `releaseInfo` | `ReactNode` |  | Figma `release info`, e.g. "Label Format (Country)". |
+| `tags` | `ReactNode` |  | A &lt;TagGroup>. |
+| `description` | `ReactNode` |  | Figma `Description`. |
+| `grading` | `ReactNode` |  | Figma `Grading: …`, already formatted. |
+| `samples` | `ReactNode` |  | &lt;PlayerButton>s. Desktop: columns 2–3, stacked; mobile: full width, in a row. |
+
+`*` required.
+<!-- /api -->
 
 All text formatting (price, grading label) is done by the page, not here.
 
-## Tokens used
+## Tokens
 
-Text `text-strong`. Type: `body-extra-large` (desktop) / `body-large` (mobile) for name, price, release info; `body-medium` for description and grading. Title row gap `gutter-small`.
+Text `text-strong`. Type: name, price, release info `body-extra-large` (desktop) / `body-large` (mobile); description and grading `body-medium`. Title row gap `gutter-small`.
 
-## Dimensions (as in Figma)
+## Dimensions (Figma)
 
 title block padding-bottom 16 · tags block gap 8, padding-bottom 16 · description block gap 4, padding-bottom 16.
-
-## Open
-
-- Figma: all 8 text nodes have fill hardcoded `#000000` → bind `text/strong`.
-- Figma `product name` placeholder reads "Artist 1 - Title 1 / Artist 2 - Title 2": split releases need a data model (sides) — not decided.
-- Breakpoint: `--mobile` from tokens.json (<768px placeholder).

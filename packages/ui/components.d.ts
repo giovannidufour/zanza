@@ -1,11 +1,11 @@
-import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode, Ref } from "react";
 
 /** Mirrors the Figma component `button` — variants hierarchy × size, states via pseudo-classes. */
 export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
-  /** Visual weight. Figma: `hierarchy`. */
+  /** Visual weight. Figma: `hierarchy`. @default "primary" */
   hierarchy?: "primary" | "secondary";
-  /** Figma: `size`. large = 44px, medium = 36px, extra-small = 22px. */
-  size?: "large" | "medium" | "extra-small";
+  /** Figma: `size`. large = 46px, medium = 38px, small = 32px, extra-small = 24px (border included). @default "medium" */
+  size?: "large" | "medium" | "small" | "extra-small";
   /** Native disabled; also drives the disabled visual state. */
   disabled?: boolean;
   /** Icon slot before the label. Pass an <svg>; it is sized and colored by the button. Figma: `leading icon`. */
@@ -16,6 +16,8 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
   children?: ReactNode;
   /** Documentation only: pins a visual state regardless of pointer. Do not use in product code. */
   state?: "default" | "hover" | "pressed" | "disabled";
+  /** When set, renders an <a> styled as the button (navigation). */
+  href?: string;
 }
 
 export declare function Button(props: ButtonProps): JSX.Element;
@@ -72,7 +74,12 @@ export interface TabProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
 export declare function Tab(props: TabProps): JSX.Element;
 
 /** Mirrors the Figma component `breadcrumbs`: body-medium items separated by "/", 1px rule below. */
-export interface BreadcrumbItem { label: ReactNode; href?: string | null; }
+export interface BreadcrumbItem {
+  /** Item text. */
+  label: ReactNode;
+  /** Link target; omitted or null = plain text. Ignored on the last item. */
+  href?: string | null;
+}
 export interface BreadcrumbsProps extends HTMLAttributes<HTMLElement> {
   /** In order; the last item is the current page (never a link, aria-current="page"). */
   items: Array<BreadcrumbItem | string>;
@@ -81,26 +88,82 @@ export declare function Breadcrumbs(props: BreadcrumbsProps): JSX.Element;
 
 /** Mirrors the Figma component `tag item`: a static label chip on surface-support-1. */
 export interface TagProps extends HTMLAttributes<HTMLSpanElement> {
-  /** Figma: `size`. extra-small = 18px, small = 22px, medium = 24px, large = 28px. */
+  /** Figma: `size`. extra-small = 18px, small = 22px, medium = 24px, large = 28px. @default "small" */
   size?: "extra-small" | "small" | "medium" | "large";
+  /** Label text. Figma: `Label`. */
   children: ReactNode;
 }
 export declare function Tag(props: TagProps): JSX.Element;
 
 /** Mirrors the Figma component `tag group`: a wrapping list of <Tag>s, gap 4. Figma's `orientation` axis is not ported (both variants are horizontal). */
 export interface TagGroupProps extends HTMLAttributes<HTMLUListElement> {
+  /** <Tag> elements; wraps, gap 4. Figma: slot `tags`. */
   children: ReactNode;
 }
 export declare function TagGroup(props: TagGroupProps): JSX.Element;
 
-/** Mirrors the Figma component `player button`: play/pause icon + label, no chrome. */
+/** Mirrors the Figma component `player button` (state default | hover | pressed | disabled) with the nested
+ *  `_player button-icon` (state default | playing) exposed as `playing`. No chrome: icon + label in action-floating-*. */
 export interface PlayerButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  /** Figma: state=playing. Also sets aria-pressed. */
+  /** Nested `_player button-icon` state=playing: pause icon instead of play. Also sets aria-pressed. */
   playing?: boolean;
+  /** Native disabled; also drives the Figma state=disabled colour. */
+  disabled?: boolean;
   /** Label (body-medium): the sample / track name. */
   children: ReactNode;
+  /** Documentation only: pins an interaction state regardless of pointer. Do not use in product code. */
+  state?: "default" | "hover" | "pressed" | "disabled";
 }
 export declare function PlayerButton(props: PlayerButtonProps): JSX.Element;
+
+/** Mirrors the Figma component `icon button` (state default | hover | pressed | disabled): 24 × 24, icon only. */
+export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  /** The 24px icon (an <svg> using currentColor). Defaults to PlayIcon, the icon drawn in Figma. */
+  icon?: ReactNode;
+  /** Required: the button has no visible label. */
+  "aria-label": string;
+  /** Native disabled; also drives the Figma state=disabled colour. */
+  disabled?: boolean;
+  /** Documentation only: pins an interaction state regardless of pointer. Do not use in product code. */
+  state?: "default" | "hover" | "pressed" | "disabled";
+}
+export declare function IconButton(props: IconButtonProps): JSX.Element;
+
+/** Mirrors the Figma component `player` (device=desktop | mobile) with the building block `_player controls`.
+ *  Presentational: the site owns playback, the queue, docking and the slide in/out. */
+export interface PlayerProps extends HTMLAttributes<HTMLElement> {
+  /** Omitted → responsive (breakpoint `--mobile` from tokens.json). */
+  device?: "desktop" | "mobile";
+  /** Cover of the product, 48 × 48. Figma: `product image`. */
+  image?: { src: string; alt?: string };
+  /** Track position on the record, e.g. "A". Figma: `sample number`. */
+  trackPosition?: ReactNode;
+  /** The sample title, e.g. "Vocal". Figma: first `product name` text. */
+  sampleTitle: ReactNode;
+  /** "Artist - Title". Figma: second `product name` text. */
+  productName: ReactNode;
+  /** 1-based position of the sample in the queue ("1 of 3"). Previous is disabled at 1. @default 1 */
+  index?: number;
+  /** Queue length. Next is disabled at the last sample. @default 1 */
+  total?: number;
+  /** Nested `_player controls` state=playing: pause icon instead of play. */
+  playing?: boolean;
+  /** Audio URL for the native player (a direct file: mp3, aac, ogg). */
+  src?: string;
+  /** Small secondary Buttons, e.g. "Add to bag" and "View" (href). Figma: gap 4. */
+  actions?: ReactNode;
+  /** Previous sample. */
+  onPrevious?: () => void;
+  /** Next sample. */
+  onNext?: () => void;
+  /** Play / pause. */
+  onTogglePlay?: () => void;
+  /** Close button (top right): the site stops playback and hides the player. */
+  onClose?: () => void;
+  /** Ref to the native audio element. */
+  audioRef?: Ref<HTMLAudioElement>;
+}
+export declare function Player(props: PlayerProps): JSX.Element;
 
 /** Mirrors the Figma component `product info` (device=desktop | mobile): the text block of a PDP. */
 export interface ProductInfoProps extends HTMLAttributes<HTMLElement> {
@@ -118,13 +181,18 @@ export interface ProductInfoProps extends HTMLAttributes<HTMLElement> {
   description?: ReactNode;
   /** Figma `Grading: …`, already formatted. */
   grading?: ReactNode;
-  /** <PlayerButton>s. Desktop: middle column, stacked; mobile: full width, in a row. */
+  /** <PlayerButton>s. Desktop: columns 2–3, stacked; mobile: full width, in a row. */
   samples?: ReactNode;
 }
 export declare function ProductInfo(props: ProductInfoProps): JSX.Element;
 
 /** Product images: 2 per product. Desktop: big + half-width below; mobile: horizontal swipe. Mirrors the PDP placement (no Figma gallery component yet). */
-export interface GalleryImage { src: string; alt?: string; }
+export interface GalleryImage {
+  /** Image URL. */
+  src: string;
+  /** Alt text; empty = decorative. */
+  alt?: string;
+}
 export interface GalleryProps extends HTMLAttributes<HTMLDivElement> {
   /** Omitted → responsive (breakpoint `--mobile` from tokens.json, <768px placeholder). */
   device?: "desktop" | "mobile";

@@ -41,14 +41,12 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | Header | page `header` → `header` | ported: device desktop/mobile or responsive, composition of Button + Tabs |
 | Breadcrumbs | page `breadcrumbs` → `breadcrumbs` | ported |
 | Tag / TagGroup | page `tags` → `tag item`, `tag group` | ported: 3 sizes; `orientation` not ported |
-| PlayerButton | page `buttons` → `player button` | ported: default / playing |
+| PlayerButton | page `buttons` → `player button` + `_player button-icon` | ported: state default/hover/pressed/disabled × nested `playing` |
+| IconButton | page `buttons` → `icon button` | ported: state default/hover/pressed/disabled, 24px, icon slot |
+| Player | page `player` → `player` + `_player controls` | ported: desktop / mobile / responsive, presentational (site owns playback) |
 | ProductInfo | page `PDP` → `product info` | ported: desktop / mobile / responsive |
 | Gallery | page `PDP` → `product image` ×2, `mobile gallery` | ported from page placement; Figma component pending |
 
-## Open items (tracked, not solved here)
+## Open items
 
-- Focus state and `border/focus` token — required before launch.
-- Dimension tokens: `page-margin-*` (page shell), `small` (breadcrumbs) are used; `gutter-small` is not yet. Button/Tab/Header paddings are hardcoded as in Figma.
-- Figma naming to fix: `white-0/4/8/16` → `white-a*`; `border divider/strong` → `border/divider/strong`; `small`, `medium-small` → `space/*`.
-- Breakpoint desktop/mobile: not defined in Figma (frames are auto layout fill, mobile drawn at 375). Single source: `tokens.json → breakpoint.mobile` (`<768px`, value to confirm); CSS writes `@media (--mobile)`, `media.js` expands it at build time.
-- Figma `_button-sizes` still carries `prefix`/`suffix` slots and an `active` axis with one value: unported pending a use case.
+Tracked in the repo, in `design/open.md` (the only backlog). The reasons behind the rules above are in `design/decisions/`.

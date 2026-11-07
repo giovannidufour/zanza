@@ -1,4 +1,4 @@
-<!-- @dsCard group="Media" height=200 subtitle="default · playing" -->
+<!-- @dsCard group="Media" height=200 subtitle="state × playing" -->
 <!doctype html>
 <html data-theme="default">
 <head>
@@ -25,8 +25,11 @@
   }
   ReactDOM.createRoot(document.getElementById('root')).render(h(React.Fragment, null,
     h('div', { className: 'matrix' },
-      h('div', { className: 'row-hd' }, 'default'), h(Z.PlayerButton, null, 'Vocal'),
-      h('div', { className: 'row-hd' }, 'playing'), h(Z.PlayerButton, { playing: true }, 'Vocal')),
+      ['default', 'hover', 'pressed', 'disabled'].map(function (st) {
+        return [h('div', { key: st + 'h', className: 'row-hd' }, st),
+          h('div', { key: st, style: { display: 'flex', gap: 16 } },
+            h(Z.PlayerButton, { state: st }, 'Vocal'), h(Z.PlayerButton, { state: st, playing: true }, 'Vocal'))];
+      })),
     h(Live)));
 })();
 </script>

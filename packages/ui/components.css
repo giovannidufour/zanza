@@ -18,7 +18,7 @@
   text-decoration: none;
   white-space: nowrap;
 
-  /* ── type: the label carries the text-style class (label-medium | label-extra-small), see components.js ── */
+  /* ── type: the label carries the text-style class (label-medium: large, medium | label-extra-small: small, extra-small), see components.js ── */
 
   /* ── per-instance slots, set by hierarchy + state below ── */
   background-color: var(--zz-btn-bg);
@@ -32,7 +32,9 @@
 .zz-button__icon svg [fill]:not([fill="none"]) { fill: var(--zz-btn-icon); }
 .zz-button__icon svg [stroke]:not([stroke="none"]) { stroke: var(--zz-btn-icon); }
 
-/* ── size (Figma: _button-sizes) ── */
+/* ── size (Figma: _button-sizes) ──
+   Figma padding as is: _button-states has "strokes included in layout", so the 1px border adds
+   to the box in Figma too. Heights: 46 / 38 / 32 / 24 (decision 0014). */
 .zz-button[data-size="large"] {
   padding: 12px;
   gap: 8px;
@@ -46,6 +48,13 @@
 }
 .zz-button[data-size="medium"] .zz-button__label { gap: 4px; }
 .zz-button[data-size="medium"] .zz-button__icon { width: 20px; height: 20px; }
+
+.zz-button[data-size="small"] {
+  padding: 8px;
+  gap: 8px;
+}
+.zz-button[data-size="small"] .zz-button__label { gap: 4px; }
+.zz-button[data-size="small"] .zz-button__icon { width: 14px; height: 14px; }
 
 .zz-button[data-size="extra-small"] {
   padding: 4px;
@@ -106,6 +115,34 @@
   --zz-btn-border: var(--action-secondary-border-disabled);
 }
 
+/* secondary border: same logic as Tab — Figma 1px inside stroke, solid (default, disabled), dashPattern [4,4] (hover),
+   [2,2] (pressed). Drawn as four 1px repeating gradients (see Tab below for the @property registration),
+   so solid → dashed animates. The colour is --zz-btn-border (action-secondary-border-*). */
+.zz-button[data-hierarchy="secondary"] {
+  --zz-dash-on: 4px;
+  --zz-dash-off: 0px;                         /* Figma: solid */
+  border-color: transparent;
+  background-origin: border-box;
+  background-clip: border-box;
+  background-repeat: no-repeat;
+  background-image:
+    repeating-linear-gradient(90deg,  var(--zz-btn-border) 0 var(--zz-dash-on), transparent var(--zz-dash-on) calc(var(--zz-dash-on) + var(--zz-dash-off))),
+    repeating-linear-gradient(90deg,  var(--zz-btn-border) 0 var(--zz-dash-on), transparent var(--zz-dash-on) calc(var(--zz-dash-on) + var(--zz-dash-off))),
+    repeating-linear-gradient(180deg, var(--zz-btn-border) 0 var(--zz-dash-on), transparent var(--zz-dash-on) calc(var(--zz-dash-on) + var(--zz-dash-off))),
+    repeating-linear-gradient(180deg, var(--zz-btn-border) 0 var(--zz-dash-on), transparent var(--zz-dash-on) calc(var(--zz-dash-on) + var(--zz-dash-off)));
+  background-size: 100% 1px, 100% 1px, 1px 100%, 1px 100%;
+  background-position: 0 0, 0 100%, 0 0, 100% 0;
+  /* TODO motion: placeholder, same as Tab (no motion tokens in Figma yet) */
+  transition: --zz-dash-on 150ms ease-out, --zz-dash-off 150ms ease-out, background-color 150ms ease-out;
+}
+.zz-button[data-hierarchy="secondary"]:hover,
+.zz-button[data-hierarchy="secondary"][data-state="hover"] { --zz-dash-on: 4px; --zz-dash-off: 4px; }   /* Figma: [4,4] */
+.zz-button[data-hierarchy="secondary"]:active,
+.zz-button[data-hierarchy="secondary"][data-state="pressed"] { --zz-dash-on: 2px; --zz-dash-off: 2px; } /* Figma: [2,2] */
+.zz-button[data-hierarchy="secondary"]:disabled,
+.zz-button[data-hierarchy="secondary"][data-state="disabled"] { --zz-dash-on: 4px; --zz-dash-off: 0px; } /* Figma: solid */
+@media (prefers-reduced-motion: reduce) { .zz-button[data-hierarchy="secondary"] { transition: none; } }
+
 /* disabled: label struck through (Figma: textDecoration STRIKETHROUGH on both hierarchies) */
 .zz-button:disabled,
 .zz-button[data-state="disabled"] { cursor: not-allowed; }
@@ -115,7 +152,7 @@
 /* focus: not yet defined in Figma — intentionally no style here (TODO: border/focus token) */
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Tabs (Figma: tab group) · Tab (Figma: tab → _tab-states → _button-sizes)
+   Tabs (Figma: tab group) · Tab (Figma: tab → _tab-states → _tab-sizes)
    ═══════════════════════════════════════════════════════════════════════ */
 
 .zz-tabs {
@@ -217,6 +254,7 @@ a.zz-tab {
   box-sizing: border-box;
   font-family: var(--font-sans);
   color: var(--text-strong);
+  background: var(--surface-base);   /* Figma: header fill → surface/base (both devices) */
 }
 /* width: always fill (Figma: layout sizing FILL). The mobile variant is drawn at 375 in Figma; the parent sets the width. */
 
@@ -336,27 +374,132 @@ a.zz-tab {
 .zz-tag-group__item { display: contents; }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   PlayerButton (Figma: player button · state default | playing)
+   PlayerButton (Figma: player button · state default | hover | pressed | disabled)
+   + nested `_player button-icon` (playing). Icon and label share action-floating-foreground-{state};
+   the button itself fills with action-floating-background-{state} (a tint only on hover/pressed).
    ═══════════════════════════════════════════════════════════════════════ */
 
 .zz-player-button {
   display: inline-flex;
   align-items: center;
-  gap: 0;
+  gap: 0;                   /* Figma: itemSpacing 0 */
   margin: 0;
   padding: 0;
   border: 0;
   border-radius: 0;
-  background: none;
+  background: var(--action-floating-background-default);
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
-  color: var(--text-strong);
+  color: var(--action-floating-foreground-default);
   /* type: label carries body-medium */
   white-space: nowrap;
 }
-.zz-player-button__icon { display: inline-flex; flex: none; width: 24px; height: 24px; color: var(--icon-strong); }
-.zz-player-button__icon > svg { width: 100%; height: 100%; display: block; }
+.zz-player-button:hover,
+.zz-player-button[data-state="hover"]    { color: var(--action-floating-foreground-hover);    background: var(--action-floating-background-hover); }
+.zz-player-button:active,
+.zz-player-button[data-state="pressed"]  { color: var(--action-floating-foreground-pressed);  background: var(--action-floating-background-pressed); }
+.zz-player-button:disabled,
+.zz-player-button[data-state="disabled"] { color: var(--action-floating-foreground-disabled); background: var(--action-floating-background-disabled); cursor: not-allowed; }
+
+/* ── IconButton (Figma: icon button) — 24 × 24, the icon fills the box; colours as PlayerButton ── */
+.zz-icon-button {
+  display: inline-flex;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--action-floating-background-default);
+  color: var(--action-floating-foreground-default);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.zz-icon-button:hover,
+.zz-icon-button[data-state="hover"]    { color: var(--action-floating-foreground-hover);    background: var(--action-floating-background-hover); }
+.zz-icon-button:active,
+.zz-icon-button[data-state="pressed"]  { color: var(--action-floating-foreground-pressed);  background: var(--action-floating-background-pressed); }
+.zz-icon-button:disabled,
+.zz-icon-button[data-state="disabled"] { color: var(--action-floating-foreground-disabled); background: var(--action-floating-background-disabled); cursor: not-allowed; }
+.zz-icon-button__icon { display: inline-flex; width: 100%; height: 100%; color: inherit; }
+.zz-icon-button__icon svg { width: 100%; height: 100%; display: block; }
+
+/* _player button-icon: 24px, fill = the button colour (Figma overrides icon/strong with action/floating/foreground/*) */
+.zz-player-button__icon { display: inline-flex; flex: none; width: 24px; height: 24px; color: inherit; }
+.zz-player-button__icon svg { width: 100%; height: 100%; display: block; }
+
+/* play ↔ pause: both icons are in the markup, the nearest [data-playing] decides (PlayerButton, Player) */
+.zz-icon-play, .zz-icon-pause { display: contents; }
+[data-playing="true"] .zz-icon-play,
+[data-playing="false"] .zz-icon-pause { display: none; }
+
+/* focus: not yet defined in Figma — no style (TODO: border/focus token) */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Player (Figma: player · device=desktop | mobile, + _player controls)
+   Docking, slide in/out and playback belong to the site (apps/storefront), not here.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.zz-player {
+  box-sizing: border-box;
+  display: grid;
+  gap: var(--gutter-small);                       /* Figma desktop: itemSpacing gutter/small */
+  padding: 8px var(--page-margin-desktop);        /* Figma: 8 / page-margin */
+  background: var(--surface-base);                /* Figma fill #73ff61, unbound → surface-base (same value) */
+  border-top: 1px solid var(--border-divider-strong);   /* Figma top stroke #000, unbound */
+  color: var(--text-strong);
+  /* desktop: one row, top-aligned (Figma: horizontal, align MIN) */
+  grid-template-columns: auto minmax(0, 1fr) 136px 326px 24px;
+  grid-template-areas: "actions now controls native close";
+  align-items: start;
+}
+.zz-player__now      { grid-area: now; display: flex; gap: 8px; min-width: 0; }
+.zz-player__actions  { grid-area: actions; display: flex; gap: 4px; }
+.zz-player__controls { grid-area: controls; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.zz-player__native   { grid-area: native; }
+.zz-player__close    { grid-area: close; }
+
+/* now playing: image 48 + title row (track · sample / product), gap 8 */
+.zz-player__image { flex: none; width: 48px; height: 48px; overflow: hidden; }
+.zz-player__image > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.zz-player__title { display: flex; gap: 8px; min-width: 0; margin: 0; }
+.zz-player__track { flex: none; }
+.zz-player__names { display: flex; flex-direction: column; min-width: 0; }
+.zz-player__sample, .zz-player__product { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* _player controls: position + transport (gap 8), fixed 136, right-aligned */
+.zz-player__position { white-space: nowrap; }
+.zz-player__transport { display: flex; gap: 8px; }
+
+/* native player slot: the browser's audio controls, 32 tall, full width of the slot (Figma placeholder) */
+.zz-player__audio { display: block; width: 100%; height: 32px; }
+
+/* mobile (Figma device=mobile): now + close / actions · controls (space-between, centred) / native (padding-y 8) */
+.zz-player[data-device="mobile"] {
+  padding: 8px var(--page-margin-mobile);
+  grid-template-columns: auto minmax(0, 1fr) 24px;
+  grid-template-areas: "now now close" "actions controls controls" "native native native";
+  column-gap: 8px;
+  row-gap: 8px;
+}
+.zz-player[data-device="mobile"] .zz-player__actions,
+.zz-player[data-device="mobile"] .zz-player__controls { align-self: center; }
+.zz-player[data-device="mobile"] .zz-player__native { padding-bottom: 8px; }
+@media (--mobile) {
+  .zz-player[data-device="responsive"] {
+    padding: 8px var(--page-margin-mobile);
+    grid-template-columns: auto minmax(0, 1fr) 24px;
+    grid-template-areas: "now now close" "actions controls controls" "native native native";
+    column-gap: 8px;
+    row-gap: 8px;
+  }
+  .zz-player[data-device="responsive"] .zz-player__actions,
+  .zz-player[data-device="responsive"] .zz-player__controls { align-self: center; }
+  .zz-player[data-device="responsive"] .zz-player__native { padding-bottom: 8px; }
+}
 
 /* ═══════════════════════════════════════════════════════════════════════
    ProductInfo (Figma: product info · device=desktop | mobile)
@@ -381,7 +524,7 @@ a.zz-tab {
 .zz-product-info__description-block { display: flex; flex-direction: column; gap: 4px; padding-bottom: 16px; }
 
 /* samples: desktop = middle column, vertical, gap 8 · mobile = full width, horizontal, gap 16, padding-bottom 8 */
-.zz-product-info__samples { grid-column: 2 / 3; display: flex; flex-direction: column; gap: 8px; }
+.zz-product-info__samples { grid-column: 2 / 4; display: flex; flex-direction: column; gap: 8px; }
 .zz-product-info__samples .zz-player-button { width: 100%; justify-content: flex-start; }
 
 .zz-product-info[data-device="mobile"] .zz-product-info__samples { grid-column: 1 / -1; flex-direction: row; gap: 16px; padding-bottom: 8px; }
@@ -420,10 +563,18 @@ a.zz-tab {
   scrollbar-width: none;
 }
 .zz-gallery[data-device="mobile"]::-webkit-scrollbar { display: none; }
-/* --zz-gallery-bleed: how far the scroller extends past its column (the page sets it to the page margin),
-   so the next image peeks and suggests the swipe. Items stay as wide as the column. */
-.zz-gallery[data-device="mobile"] { margin-right: calc(-1 * var(--zz-gallery-bleed, 0px)); }
-.zz-gallery[data-device="mobile"] .zz-gallery__item { flex: 0 0 calc(100% - var(--zz-gallery-bleed, 0px)); scroll-snap-align: start; }
+/* --zz-gallery-bleed: how far the scroller extends past its column on BOTH sides (the page sets it to the page margin).
+   The scroller spans the full viewport, padding + scroll-padding put the snap point back on the page margin:
+   image 1 rests at the left margin with image 2 peeking at the right edge; swiping, image 1 exits on the left
+   and image 2 stops at the margin, keeping the right margin. Items stay as wide as the column (100% of the content box).
+   width auto: with width 100% the negative margins would only shift the box, not widen it. */
+.zz-gallery[data-device="mobile"] {
+  width: auto;
+  margin-inline: calc(-1 * var(--zz-gallery-bleed, 0px));
+  padding-inline: var(--zz-gallery-bleed, 0px);
+  scroll-padding-inline: var(--zz-gallery-bleed, 0px);
+}
+.zz-gallery[data-device="mobile"] .zz-gallery__item { flex: 0 0 100%; scroll-snap-align: start; }
 
 @media (--mobile) {
   .zz-gallery[data-device="responsive"] {
@@ -436,6 +587,11 @@ a.zz-tab {
     scrollbar-width: none;
   }
   .zz-gallery[data-device="responsive"]::-webkit-scrollbar { display: none; }
-  .zz-gallery[data-device="responsive"] { margin-right: calc(-1 * var(--zz-gallery-bleed, 0px)); }
-  .zz-gallery[data-device="responsive"] .zz-gallery__item { flex: 0 0 calc(100% - var(--zz-gallery-bleed, 0px)); scroll-snap-align: start; }
+  .zz-gallery[data-device="responsive"] {
+    width: auto;
+    margin-inline: calc(-1 * var(--zz-gallery-bleed, 0px));
+    padding-inline: var(--zz-gallery-bleed, 0px);
+    scroll-padding-inline: var(--zz-gallery-bleed, 0px);
+  }
+  .zz-gallery[data-device="responsive"] .zz-gallery__item { flex: 0 0 100%; scroll-snap-align: start; }
 }

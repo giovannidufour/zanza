@@ -1,42 +1,37 @@
 # Header
 
-The site header: logo and store name on the left, section tabs in the middle (desktop), actions on the right, a 1px rule below. A composition of `Button` and `Tabs` — it defines no colors or type of its own.
+The site header: logo and store name on the left, section tabs in the middle (desktop), actions on the right, a 1px rule below. Figma: `header` (device=desktop | mobile). A composition of `Button` and `Tabs`: it defines no colours or type of its own besides the ones below.
 
 ## API
 
-| Prop | Values | Figma |
-| --- | --- | --- |
-| `device` | `desktop` · `mobile` · omitted = responsive | variant `device` |
-| `logo` | `<img>` / `<svg>` — 64px desktop, 48px mobile | `image 2` |
-| `storeName` | text in the bordered box | `Store-name` |
-| `homeHref` | URL — makes the store name a link | — |
-| `tabs` | a `<Tabs>` element; desktop only | `tab group` |
-| `actions` | trailing `<Button hierarchy="secondary">`s | `trailing actions` |
-| `onMenuClick` / `menuLabel` | mobile hamburger button | leading icon-only `button` |
+<!-- api: HeaderProps -->
+<!-- generated from components.d.ts by build-docs.js: edit the .d.ts, not this table -->
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `device` | `"desktop" \| "mobile"` |  | Which Figma variant to render. Omitted → responsive: one markup, CSS switches menu/tabs/logo size (breakpoint `--mobile` from tokens.json, &lt;768px placeholder). |
+| `logo` | `ReactNode` |  | Logo image (&lt;img> or &lt;svg>). 64×64 on desktop, 48×48 on mobile. Figma: `image 2`. |
+| `storeName` | `ReactNode` |  | Store name shown in the bordered label box. Figma: `Store-name`. |
+| `homeHref` | `string` |  | When set, the store name becomes a link to this URL. |
+| `tabs` | `ReactNode` |  | A &lt;Tabs> element. Rendered on desktop only (Figma: no tabs in the mobile variant). |
+| `actions` | `ReactNode` |  | Trailing actions, usually secondary &lt;Button>s (Figma: `trailing actions`, gap 8). |
+| `onMenuClick` | `() => void` |  | Mobile only: click handler of the hamburger button. |
+| `menuLabel` | `string` |  | Mobile only: accessible name of the hamburger button. Default "Menu". |
 
-With `device` omitted the header renders one markup and CSS switches the menu button / tabs / logo size at the breakpoint `--mobile` (**tokens.json → breakpoint, <768px placeholder**; Figma has none, its frames are fill). The header itself is always full width. Pass `device` to pin a variant (documentation, tests).
+`*` required.
+<!-- /api -->
 
-## Tokens used
+Without `device` it is responsive: one markup, CSS switches menu button / tabs / logo size at `--mobile` ([0004](../../../../design/decisions/0004-one-breakpoint-in-tokens.md)). Sticky behaviour is added by the site ([0010](../../../../design/decisions/0010-sticky-header-is-site-behaviour.md)).
 
-- Store-name border (1px **dashed**, Figma dashPattern [8,8]) and bottom rule: `border-divider-strong`
+## Tokens
+
+- Background `surface-base` (Figma fill on both variants)
+- Store-name border (1px dashed `[8,8]`) and bottom rule: `border-divider-strong`
 - Everything else comes from `Button` and `Tabs`
 
-## Dimensions (hardcoded, as in Figma)
+## Dimensions (Figma)
 
-padding-top 8 · leading/trailing gap 8 · row `space-between`, top-aligned · logo 64 (desktop) / 48 (mobile) · store-name box padding 8, `label-medium` · rule 1px · mobile frame 375.
+padding-top 8 · leading / trailing gap 8 · `space-between`, top-aligned · logo 64 desktop / 48 mobile · store-name box padding 8, `label-medium` · rule 1px.
 
-## Placement (Figma: section `layout`)
+## Placement
 
-The header sits at the top of the page container, full width inside its horizontal padding:
-
-```css
-.page { background: var(--surface-base); padding: 0 var(--page-margin-desktop); } /* 1024 */
-.page[data-device="mobile"] { padding: 0 var(--page-margin-mobile); }          /* 375 */
-```
-
-Both margins are 8px today. The preview shows the header inside this container (dashed outline = page frame).
-
-## Open
-
-- `icon/hamburger-menu-ultra` contains an empty `Union` (width 0).
-- Breakpoint value (<768px) still to confirm; it lives only in tokens.json.
+The header sits at the top of the page container, full width inside its padding (`page-margin-desktop` / `page-margin-mobile`, both 8 today). The preview shows it inside this container (dashed outline = page frame).

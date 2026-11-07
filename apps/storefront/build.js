@@ -20,7 +20,10 @@ const url = (p) => (/^https?:\/\//.test(p) ? p : BASE + p);   // absolute URLs p
 const hashOf = (buf) => crypto.createHash('sha1').update(buf).digest('hex').slice(0, 8);
 // custom media (`@media (--mobile)`) are expanded from tokens.json → breakpoint: one value, one place
 const { expandMedia } = require(path.join(UI, 'media.js'));
-const readCss = (f) => expandMedia(fs.readFileSync(f, 'utf8'));
+// dist CSS ships without comments: lighter, and pure ASCII (the host's FTP rejected components.css with 451,
+// likely because of the non-ASCII box-drawing characters in its comments). Sources keep their comments.
+const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\n\s*\n+/g, '\n').trim() + '\n';
+const readCss = (f) => stripComments(expandMedia(fs.readFileSync(f, 'utf8')));
 const css = {
   tokens: readCss(path.join(UI, 'tokens.css')),
   components: readCss(path.join(UI, 'components.css')),
@@ -31,6 +34,18 @@ const cssHref = (name) => url(`/css/${name}.css?v=${hashOf(css[name])}`);
 const siteJs = fs.readFileSync(path.join(APP, 'scripts/site.js'));
 const siteJsHref = url(`/js/site.js?v=${hashOf(siteJs)}`);
 const { Pdp, title } = require('./pages/pdp.js');
+const Z = require(path.join(UI, 'components.js'));
+
+// the site player: one per page, outside .zz-page, so the soft navigation in site.js keeps it (and the audio) alive.
+// Empty and closed at load; site.js fills it when a sample is played.
+const playerHtml = renderToStaticMarkup(React.createElement(Z.Player, {
+  className: 'site-player',
+  sampleTitle: '',
+  productName: '',
+  actions: React.createElement(React.Fragment, null,
+    React.createElement(Z.Button, { hierarchy: 'secondary', size: 'small', className: 'site-player__add' }, 'Add to bag'),
+    React.createElement(Z.Button, { hierarchy: 'secondary', size: 'small', className: 'site-player__view', href: url('/') }, 'View'))
+}));
 
 function page({ title: t, body }) {
   return `<!doctype html>
@@ -50,6 +65,7 @@ function page({ title: t, body }) {
 </head>
 <body>
 ${body}
+${playerHtml}
 </body>
 </html>
 `;

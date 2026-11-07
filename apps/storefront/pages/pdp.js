@@ -55,7 +55,17 @@ function Pdp({ product, site, url }) {
         tags: release.style.length ? h(Z.TagGroup, null, release.style.map((s) => h(Z.Tag, { key: s, size: 'large' }, s))) : null,
         description: copy.notes,
         grading: grading(copy),
-        samples: samples.length ? samples.map((s) => h(Z.PlayerButton, { key: s.track_position }, s.title)) : null
+        // each PlayerButton carries what the site player needs (scripts/site.js): the product's samples are its queue
+        samples: samples.length ? samples.map((s) => h(Z.PlayerButton, {
+          key: s.track_position,
+          disabled: !s.audio_url,
+          'data-sample-src': s.audio_url ? url(s.audio_url) : undefined,
+          'data-sample-title': s.title,
+          'data-sample-track': s.track_position,
+          'data-product-name': productName(release),
+          'data-product-image': release.cover ? url(release.cover) : undefined,
+          'data-product-href': url(`/products/${listing.slug}/`)
+        }, s.title)) : null
       }),
       h('div', { className: 'pdp-content__actions' },
         h(Z.Button, { hierarchy: 'primary', size: 'large', className: 'pdp-content__cta' }, 'Add to bag'))

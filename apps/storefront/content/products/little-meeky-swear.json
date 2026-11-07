@@ -40,16 +40,16 @@
     {
       "track_position": "A",
       "title": "Vocal",
-      "audio_url": null,
+      "audio_url": "/assets/test-sample-a.mp3",
       "duration": null,
-      "source": null
+      "source": "test"
     },
     {
       "track_position": "B",
       "title": "Acapella",
-      "audio_url": null,
+      "audio_url": "https://s.reggaefever.ch/samples/06/46/24-B.mp3",
       "duration": null,
-      "source": null
+      "source": "reggaefever"
     }
   ]
 }

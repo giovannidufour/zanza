@@ -1,0 +1,34 @@
+<!-- @dsCard group="Media" height=360 subtitle="desktop · mobile · playing" -->
+<!doctype html>
+<html data-theme="default">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: var(--surface-base); color: var(--text-strong); font-family: var(--font-sans); }
+  .stack { display: grid; gap: 8px; padding: 24px; }
+  .row-hd { font: 400 12px/14px var(--font-sans); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function () {
+  var React = window.React, ReactDOM = window.ReactDOM, Z = window.Zanza;
+  var h = React.createElement, useState = React.useState;
+  function P(device, playing) {
+    return h(Z.Player, {
+      device: device, playing: playing, index: 1, total: 3, trackPosition: 'A',
+      sampleTitle: 'Vocal', productName: 'Little Meeky - Swear',
+      actions: h(React.Fragment, null,
+        h(Z.Button, { hierarchy: 'secondary', size: 'small' }, 'Add to bag'),
+        h(Z.Button, { hierarchy: 'secondary', size: 'small', href: '#' }, 'View'))
+    });
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div', { className: 'stack' },
+    h('div', { className: 'row-hd' }, 'desktop · playing'), P('desktop', true),
+    h('div', { className: 'row-hd' }, 'mobile · paused'), h('div', { style: { width: 375 } }, P('mobile', false))));
+})();
+</script>
+</body>
+</html>

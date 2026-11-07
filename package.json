@@ -4,8 +4,8 @@
   "description": "Zanza — vinyl record store. packages/ui = design system (tokens + components), apps/storefront = the site.",
   "scripts": {
     "build:tokens": "node packages/ui/build-tokens.js",
-    "build": "node packages/ui/build-tokens.js && node apps/storefront/build.js",
-    "build:artifact": "node packages/ui/build-artifact.js",
+    "build": "node packages/ui/build-tokens.js && node packages/ui/build-docs.js && node apps/storefront/build.js",
+    "build:artifact": "node packages/ui/build-docs.js && node packages/ui/build-artifact.js",
     "deploy": "node apps/storefront/deploy.js",
     "build:deploy": "npm run build && npm run deploy"
   },

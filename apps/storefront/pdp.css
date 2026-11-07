@@ -21,6 +21,6 @@
 @media (--mobile) {
   .pdp-content { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: var(--small); }
   .pdp-content__gallery, .pdp-content__info, .pdp-content__actions { grid-column: 1 / -1; grid-row: auto; }
-  /* Figma PDP - mobile: the gallery bleeds into the right page margin so image 2 peeks (swipe hint) */
+  /* Figma PDP - mobile: the gallery scroller bleeds into both page margins (image 2 peeks; swiped images exit at the edge, the resting one keeps the margin) */
   .pdp-content__gallery { --zz-gallery-bleed: var(--page-margin-mobile); }
 }

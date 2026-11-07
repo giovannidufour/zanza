@@ -1,22 +1,31 @@
 # Gallery
 
-The product images: two per product. Mirrors the PDP placement in Figma (`product image` ×2 on desktop, `mobile gallery` on mobile) — the Figma gallery component is still to be designed.
+The product images, two per product. Mirrors the PDP placement in Figma (`product image` ×2 on desktop, `mobile gallery` on mobile): the Figma gallery component is not designed yet.
 
-- **Desktop**: image 1 full width of its column, image 2 below at half width (2 of the 4 page columns), same gutter. Both visible, no interaction.
-- **Mobile**: a horizontal swipe row, one column-wide square per screen, scroll-snap. The page sets `--zz-gallery-bleed` to its right margin so the scroller extends into it and the next image peeks (swipe hint, as in Figma). No indicators (none designed).
+- **Desktop:** image 1 full width of its column, image 2 below at half width, same gutter.
+- **Mobile:** horizontal swipe row with scroll-snap, bleeding into the page margins ([0011](../../../../design/decisions/0011-mobile-gallery-bleed.md)). No indicators (none designed).
 
 ## API
 
-| Prop | Values |
-| --- | --- |
-| `images` | `[{ src, alt }]` in order; the first is the main image |
-| `device` | `desktop` · `mobile` · omitted = responsive |
+<!-- api: GalleryProps GalleryImage -->
+<!-- generated from components.d.ts by build-docs.js: edit the .d.ts, not this table -->
+### Gallery
 
-## Dimensions (as in Figma)
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `device` | `"desktop" \| "mobile"` |  | Omitted → responsive (breakpoint `--mobile` from tokens.json, &lt;768px placeholder). |
+| `images` * | `GalleryImage[]` |  | In order; the first is the main image. |
 
-Square images (1:1). Desktop gaps `gutter-small`. Mobile gap **1px** (Figma `mobile gallery` itemSpacing 1 — intentional).
+### GalleryImage
 
-## Open
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `src` * | `string` |  | Image URL. |
+| `alt` | `string` |  | Alt text; empty = decorative. |
 
-- Figma `product image` fill is a plain `#f2f4f7` (ghost variable removed); no placeholder token decided yet.
-- Figma gallery component to be designed; this follows the page placement.
+`*` required.
+<!-- /api -->
+
+## Dimensions (Figma)
+
+Square images (1:1). Desktop gap `gutter-small`. Mobile gap 1px (Figma itemSpacing 1, intentional).
