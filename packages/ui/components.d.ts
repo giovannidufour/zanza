@@ -509,7 +509,7 @@ export declare function Dialog(props: DialogProps): JSX.Element;
 export interface ToastProps extends HTMLAttributes<HTMLDivElement> {
   /** What happened, past tense, two lines at most ("Removed from bag."). Figma: `message`. */
   message: ReactNode;
-  /** One verb ("Undo", "View bag"): a secondary small Button. Omit for no action. Figma: `action`. A toast with an action never times out. */
+  /** One verb ("Undo", "View bag"): a secondary small Button. Omit for no action. Figma: `action`. With Undo it never times out; with an action also on the page (View bag) it closes after 6 s (0050). */
   actionLabel?: ReactNode;
   onAction?: () => void;
   /** The × IconButton. Figma: `dismiss`. Default true. */

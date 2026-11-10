@@ -2,11 +2,12 @@
    (static pages) and in the admin (React app). The markup comes from components.js (ToastRegion renders the live
    region, an empty slot and a <template> of the Toast), so this file only clones, fills and removes. ASCII only.
 
-   ZanzaToast.show({ message, actionLabel, onAction, returnFocus }) -> { dismiss }
+   ZanzaToast.show({ message, actionLabel, onAction, actionElsewhere, returnFocus }) -> { dismiss }
      - one toast at a time: a new one replaces the current one (no queue)
      - the message is announced by the live region (role=status, polite); focus never moves to the toast (0043)
      - without an action: gone after 6 s, paused while the pointer is over it, focus is inside it, or the tab is
-       hidden. With an action: no timeout (WCAG 2.2.1); it stays until dismissed, replaced or acted on
+       hidden. With an action only the toast offers (Undo): no timeout (WCAG 2.2.1); it stays until dismissed,
+       replaced or acted on. `actionElsewhere: true` (the same action is on the page, e.g. View bag): 6 s as above
      - the action runs onAction and closes the toast; the caller usually shows "Undone." next
      - Esc (focus inside) and the dismiss button close it; if focus was inside, it goes back to `returnFocus` when
        that element is still on the page
@@ -66,6 +67,9 @@
     node.querySelector('[data-toast-message]').textContent = opts.message || '';
     var action = node.querySelector('[data-toast-action]');
     var hasAction = !!opts.actionLabel;
+    // an action that also exists on the page (View bag = the header Bag) loses nothing when the toast goes: it times
+    // out like a text-only toast. An action only the toast offers (Undo) keeps it open (WCAG 2.2.1, decision 0050)
+    var keep = hasAction && !opts.actionElsewhere;
     if (action) {
       if (!hasAction) action.parentNode.removeChild(action);
       else {
@@ -90,12 +94,12 @@
 
     // timeout only without an action; paused by hover, focus inside, hidden tab
     function run() {
-      if (hasAction || t.closed || t.hover || t.focus || document.hidden) return;
+      if (keep || t.closed || t.hover || t.focus || document.hidden) return;
       t.started = Date.now();
       t.timer = window.setTimeout(function () { close(t); }, t.left);
     }
     function pause() {
-      if (hasAction || !t.started) return;
+      if (keep || !t.started) return;
       window.clearTimeout(t.timer);
       t.left = Math.max(1000, t.left - (Date.now() - t.started));
       t.started = 0;
