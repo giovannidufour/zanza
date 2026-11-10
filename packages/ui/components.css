@@ -790,10 +790,10 @@ a.zz-product-card__image { display: block; color: inherit; }
 /* live reorder: rows slide to their new place (FLIP, set in JS).
    TODO motion: no duration/easing in Figma yet — 150ms ease-out is the same placeholder as Button/Tab.
    The dragged row itself follows the pointer (no browser drag image), its number showing the slot it will land in,
-   and the list shows an empty slot of its size there (Gio, 2026-11-10). No Figma style for either (design/open.md). */
+   and the list shows an empty slot of its size there (Gio, 2026-11-10). The dragged row is on surface-base (opaque white, Gio 2026-11-10); the slot has no style. */
 .zz-file-list__item { transition: transform 150ms ease-out; }
 @media (prefers-reduced-motion: reduce) { .zz-file-list__item { transition: none; } }
-.zz-file-list__item[data-dragged] { position: relative; z-index: 1; transition: none; }
+.zz-file-list__item[data-dragged] { position: relative; z-index: 1; transition: none; background: var(--surface-base); }   /* opaque, so it covers the rows it passes (Gio, 2026-11-10) */
 .zz-file-list__status { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 
 .zz-file-item { display: inline-flex; align-items: flex-start; gap: 16px; color: var(--text-strong); }
