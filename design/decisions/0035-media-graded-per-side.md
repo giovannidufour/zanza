@@ -7,4 +7,4 @@
 **Rule.** Write grades in side order, A first, joined by ` / `; leave out an ungraded side, never write a placeholder. A filter or sort on grading (none yet) must say which side it reads, or use the worse of the two.
 **Where.** `supabase/migrations/20261110110000_media_grade_per_side.sql`; `apps/admin/admin.js` (form, payload `listing.condition_media_b`, preview); `apps/storefront/data/products.js` (`copy.condition_media_b`), `pages/shell.js` (`grading`).
 
-**Update 2026-11-10 (Gio).** The conditions comment (`condition_notes`, value only) follows the record grade on the same line ("Record: VG+ / VG (light scuffs)"), always in brackets. When the cover is graded it goes on its own line under "Cover: …" instead. Card and PDP (`gradingProps` in pages/shell.js). Not drawn in Figma.
+**Update 2026-11-10 (Gio).** The conditions comment (`condition_notes`, value only) follows the record grade on the same line ("Record: VG+ / VG (light scuffs)"), always in brackets. When the cover is graded it goes on its own line under "Cover: …" instead. Card and PDP (`gradingProps` in pages/shell.js). Stacked line drawn in Figma and spaced like the others: see 0042.

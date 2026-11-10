@@ -74,15 +74,16 @@ const grading = (c) => `Record: ${[c.condition_media, c.condition_media_b].filte
 // the cover/sleeve grade on its own line, only when there is one (Gio, 2026-11-10)
 const coverGrading = (c) => (c.condition_sleeve && c.sleeve_type !== 'none' ? `Cover: ${c.condition_sleeve}` : null);
 // the conditions comment, value only (Gio 2026-11-10): right after the record grade; when the cover is graded,
-// on its own line under "Cover:". Returns the { grading, cover } props of ProductCard / ProductInfo.
+// on its own line under "Cover:". Returns the { grading, cover, conditions } props of ProductCard / ProductInfo.
 function gradingProps(c) {
   const text = (c.condition_notes || '').trim();
   const note = text ? `(${text})` : '';   // always in brackets (Gio 2026-11-10)
   const record = grading(c);
   const cover = coverGrading(c);
-  if (!note) return { grading: record, cover };
-  if (!cover) return { grading: `${record} ${note}`, cover: null };
-  return { grading: record, cover: [cover, h('br', { key: 'br' }), note] };
+  if (!note) return { grading: record, cover, conditions: null };
+  if (!cover) return { grading: `${record} ${note}`, cover: null, conditions: null };
+  // stacked: its own line, so it keeps the 4px gap of the other lines (Figma `conditions`, decision 0042)
+  return { grading: record, cover, conditions: note };
 }
 const productHref = (product, url) => url(`/products/${product.listing.slug}/`);
 

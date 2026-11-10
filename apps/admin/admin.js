@@ -581,6 +581,8 @@
        Same components as the shop; empty parts are left out. Its sample buttons play through the admin audio. */
     function shopPreview() {
       var title = previewName(f), tags = previewTags(f);
+      var previewCover = f.sleeveType !== 'none' && f.sleeveCondition ? 'Cover: ' + f.sleeveCondition : null;
+      var previewNote = f.conditionNotes.trim() ? '(' + f.conditionNotes.trim() + ')' : null;
       var images = f.images.slice(0, 2).map(function (x, i) { return { src: x.url, alt: i === 0 ? title : '' }; });
       return h('section', { className: 'admin-section admin-preview', 'aria-labelledby': 'admin-preview-title' },
         h('h2', { id: 'admin-preview-title', className: 'label-medium' }, 'Preview'),
@@ -593,8 +595,10 @@
             releaseInfo: previewReleaseInfo(f) || null,
             tags: tags.length ? h(Z.TagGroup, null, tags.map(function (n, i) { return h(Z.Tag, { key: i, size: 'large' }, n); })) : null,
             description: f.notes.trim() || null,
-            grading: f.condition ? 'Record: ' + [f.condition, f.conditionB].filter(Boolean).join(' / ') : null,
-            cover: f.sleeveType !== 'none' && f.sleeveCondition ? 'Cover: ' + f.sleeveCondition : null,
+            // same lines as the shop (gradingProps in apps/storefront/pages/shell.js, decision 0042)
+            grading: f.condition ? 'Record: ' + [f.condition, f.conditionB].filter(Boolean).join(' / ') + (previewNote && !previewCover ? ' ' + previewNote : '') : null,
+            cover: previewCover,
+            conditions: previewCover ? previewNote : null,
             samples: f.samples.length ? f.samples.map(function (s, i) {
               var t = sampleTitleOf(s);
               return h(Z.PlayerButton, { key: s.id, playing: playing === s.id, onClick: function () { togglePlay(s); },
