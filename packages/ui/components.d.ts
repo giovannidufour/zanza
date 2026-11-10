@@ -340,7 +340,8 @@ export interface FileItemProps extends HTMLAttributes<HTMLDivElement> {
   removeLabel?: string;
   /** Accessible name of the drag handle. Default "Move <name>, position n of m (arrow up / down)". */
   reorderLabel?: string;
-  /** Content under the file row (gap 8), e.g. the sample title Input in the samples overview (Figma 2095:20507). */
+  /** Content under the file row, e.g. the sample title Input (Figma `sample row` 2095:20507). With children the item is
+   *  full width: [handle] · column of `file row` (file + remove, gap 16) and the children (gap 16). */
   children?: ReactNode;
 }
 export declare function FileItem(props: FileItemProps): JSX.Element;
