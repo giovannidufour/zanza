@@ -53,3 +53,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0027](0027-first-line-is-four-plus-four.md) | Line 1 is 4 + 4 columns, lines 2+ are 3 + 4 | accepted |
 | [0030](0030-admin-shop-preview.md) | The admin shows a live shop preview, built from the shop's components | accepted |
 | [0032](0032-create-page-on-surface-base.md) | The create / edit page is on `surface/base` | accepted |
+| [0033](0033-pdp-gallery-scrolls-on-its-own.md) | PDP desktop gallery: images stacked 1px apart, the column scrolls on its own | accepted |

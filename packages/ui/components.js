@@ -381,8 +381,9 @@
   }
 
   /* ── Gallery ────────────────────────────────────────────────────────────
-     Figma: PDP `product image` ×2 (desktop: big + half-width below; mobile: `mobile gallery`, horizontal swipe).
-     The Figma gallery component is not designed yet: this mirrors the PDP placement. */
+     Figma: PDP - desktop `gallery` (images stacked, gap 1, scrolls vertically) / PDP - mobile `mobile gallery`
+     (horizontal swipe). Not a Figma component yet: this mirrors the PDP frames. Focusable (tabIndex 0): it is a
+     scroll container, so keyboard users can scroll it. */
   function Gallery(props) {
     var images = props.images || [];
     var device = props.device || 'responsive';
@@ -390,6 +391,7 @@
       className: cx('zz-gallery', props.className),
       'data-device': device,
       role: 'group',
+      tabIndex: 0,
       'aria-label': props['aria-label'] || 'Product images'
     }, omit(props, ['images', 'device', 'className', 'aria-label'])),
       images.map(function (img, i) {
