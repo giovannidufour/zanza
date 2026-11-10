@@ -495,29 +495,125 @@
   /* ── FileList / FileItem ────────────────────────────────────────────────
      Figma: the page-local `uploaded list` frames on BACKEND → Create (images, the sample of a line, samples overview);
      no Figma component yet. A row: [drag handle] · [thumbnail 40 | play] position name (featured) · [remove ×].
-     Gaps: list 8, row 16, content 8 (Figma). Reorder: drag a row onto another (pointer), or ↑ ↓ on the handle (keyboard).
-     FileList numbers the rows ("01", "02"…), so positions never drift after a reorder. */
+     Gaps: list 8, row 16, content 8 (Figma). Reorder: drag a row (pointer): the other rows shift live to the order it would have on drop; or ↑ ↓ on the handle
+     (keyboard), announced in a polite live region. FileList numbers the rows ("01", "02"…) in the shown order,
+     so positions follow the preview while dragging. */
   var FileListContext = React.createContext(null);
 
   function FileList(props) {
-    var dragFrom = React.useRef(null);
+    var listRef = React.useRef(null);
+    var tops = React.useRef({});          // layout top of each row by key, for the keyboard-move slide (FLIP)
+    var focusKey = React.useRef(null);    // keyboard move: the row whose handle keeps the focus
+    var dropped = React.useRef(false);    // drop: the preview becomes the order, without sliding again
+    // drag = { from, to, rows: [{ top, height }], gap, grab }: while dragging, the DOM keeps the old order and the
+    // rows are translated to where they would be after the drop (the others shift live); committed on drop,
+    // reverted on dragend elsewhere. Moving DOM nodes during a native drag would cancel the drop in Chromium.
+    var dragState = React.useState(null), drag = dragState[0], setDrag = dragState[1];
+    var dragRef = React.useRef(null);
+    var liveState = React.useState(''), live = liveState[0], setLive = liveState[1];
     var items = React.Children.toArray(props.children);
     var move = props.onMove;
-    return h('ol', Object.assign({ className: cx('zz-file-list', props.className) }, omit(props, ['onMove', 'children', 'className'])),
-      items.map(function (child, i) {
-        return h('li', {
-          key: child.key || i,
-          className: 'zz-file-list__item',
-          draggable: move ? true : undefined,
-          onDragStart: move ? function (e) {
-            // selecting text in a field of the row (e.g. a sample title) must not drag the row
-            if (e.target.closest && e.target.closest('input, textarea, select')) { e.preventDefault(); return; }
-            dragFrom.current = i; e.dataTransfer.effectAllowed = 'move'; } : undefined,
-          onDragOver: move ? function (e) { if (dragFrom.current !== null) e.preventDefault(); } : undefined,
-          onDrop: move ? function (e) { e.preventDefault(); var from = dragFrom.current; dragFrom.current = null; if (from !== null && from !== i) move(from, i); } : undefined,
-          onDragEnd: move ? function () { dragFrom.current = null; } : undefined
-        }, h(FileListContext.Provider, { value: { index: i, count: items.length, move: move } }, child));
-      }));
+
+    function update(next) { dragRef.current = next; setDrag(next); }
+    function itemName(i) { var c = items[i]; return (c && c.props && c.props.name) || ('item ' + (i + 1)); }
+    function commit(from, to, viaKeyboard) {
+      if (from === to) return;
+      if (viaKeyboard) focusKey.current = items[from].key; else dropped.current = true;
+      setLive(itemName(from) + ', position ' + (to + 1) + ' of ' + items.length);
+      move(from, to);
+    }
+    // where row i shows (0-based) and how far it is translated, for the current preview
+    function slot(i) {
+      if (!drag || drag.from === drag.to) return { pos: i, dy: 0 };
+      var f = drag.from, t = drag.to, r = drag.rows, step = r[f].height + drag.gap;
+      if (i === f) return { pos: t, dy: t > f ? r[t].top + r[t].height - r[f].top - r[f].height : r[t].top - r[f].top };
+      if (f < t && i > f && i <= t) return { pos: i - 1, dy: -step };
+      if (t < f && i >= t && i < f) return { pos: i + 1, dy: step };
+      return { pos: i, dy: 0 };
+    }
+
+    React.useLayoutEffect(function () {
+      var list = listRef.current; if (!list) return;
+      var animate = !dropped.current && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      var settle = dropped.current; dropped.current = false;
+      var next = {};
+      Array.prototype.forEach.call(list.children, function (li) {
+        var key = li.getAttribute('data-key');
+        next[key] = li.offsetTop;
+        var dy = tops.current[key] !== undefined ? tops.current[key] - li.offsetTop : 0;
+        if (settle) {                       // the preview translate is gone and the row is in its new DOM place: no slide
+          li.style.transition = 'none'; li.getBoundingClientRect(); li.style.transition = '';
+        } else if (dy && animate) {         // keyboard move: slide from the old place
+          li.style.transition = 'none'; li.style.transform = 'translateY(' + dy + 'px)';
+          li.getBoundingClientRect();
+          li.style.transition = ''; li.style.transform = '';
+        }
+      });
+      tops.current = next;
+      if (focusKey.current !== null) {
+        var handle = list.querySelector('[data-key="' + focusKey.current + '"] .zz-file-item__handle');
+        focusKey.current = null;
+        if (handle && document.activeElement !== handle) handle.focus();
+      }
+    });
+
+    function onDragStart(i, e) {
+      // selecting text in a field of the row (e.g. a sample title) must not drag the row
+      if (e.target.closest && e.target.closest('input, textarea, select')) { e.preventDefault(); return; }
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', itemName(i)); } catch (err) { /* Firefox starts a drag only with data */ }
+      var list = listRef.current, lis = list.children;
+      var rows = Array.prototype.map.call(lis, function (li) { return { top: li.offsetTop, height: li.offsetHeight }; });
+      update({ from: i, to: i, rows: rows, gap: parseFloat(getComputedStyle(list).rowGap) || 0,
+        grab: e.clientY - lis[i].getBoundingClientRect().top });
+    }
+    // the slot of the dragged row: how many other rows have their middle above its middle, measured on the list
+    // without the dragged row (fixed geometry, so the rows don't flicker while they shift)
+    function slotAt(clientY) {
+      var d = dragRef.current, r = d.rows, step = r[d.from].height + d.gap;
+      var mid = clientY - listRef.current.getBoundingClientRect().top - d.grab + r[d.from].height / 2, n = 0;
+      r.forEach(function (row, k) {
+        if (k === d.from) return;
+        if (row.top - (k > d.from ? step : 0) + row.height / 2 < mid) n++;
+      });
+      return n;
+    }
+
+    return h(React.Fragment, null,
+      h('ol', Object.assign({ ref: listRef, className: cx('zz-file-list', props.className), 'data-dragging': drag ? 'true' : undefined,
+        onDragOver: move ? function (e) {
+          var d = dragRef.current; if (!d) return;
+          e.preventDefault();
+          var to = slotAt(e.clientY);
+          if (to !== d.to || !d.over) update(Object.assign({}, d, { to: to, over: true }));
+        } : undefined,
+        // left the list (or Escape, which fires a dragleave): on dragend the old order comes back
+        onDragLeave: move ? function (e) {
+          var d = dragRef.current; if (!d) return;
+          var b = listRef.current.getBoundingClientRect();
+          if (e.clientX <= b.left || e.clientX >= b.right || e.clientY <= b.top || e.clientY >= b.bottom) update(Object.assign({}, d, { over: false }));
+        } : undefined,
+        onDrop: move ? function (e) {
+          var d = dragRef.current; if (!d) return;
+          e.preventDefault(); update(null); commit(d.from, d.to);
+        } : undefined
+      }, omit(props, ['onMove', 'children', 'className'])),
+        items.map(function (child, i) {
+          var s = slot(i);
+          return h('li', {
+            key: child.key || i,
+            'data-key': child.key || i,
+            'data-dragged': drag && drag.from === i ? 'true' : undefined,
+            className: 'zz-file-list__item',
+            style: s.dy ? { transform: 'translateY(' + s.dy + 'px)' } : undefined,
+            draggable: move ? true : undefined,
+            onDragStart: move ? function (e) { onDragStart(i, e); } : undefined,
+            // Chromium fires no drop when the pointer is over the drag source, and the dragged row is translated under it:
+            // so dragend commits the preview while the pointer is still on the list, and reverts it otherwise
+            onDragEnd: move ? function () { var d = dragRef.current; if (!d) return; update(null); if (d.over) commit(d.from, d.to); } : undefined
+          }, h(FileListContext.Provider, { value: { index: s.pos, count: items.length, move: move && function (from, to) { commit(from, to, true); } } }, child));
+        })),
+      move ? h('span', { className: 'zz-file-list__status', role: 'status', 'aria-live': 'polite' }, live) : null);
   }
 
   function FileItem(props) {
