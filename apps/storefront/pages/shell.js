@@ -123,7 +123,7 @@ function sampleAttrs(product, s, url) {
 }
 
 // A product as a ProductCard (PLP list, PDP "More for sale"). No device: responsive card.
-// one tag group: genres first, then the shop's own tags (decisions 0031, 0047)
+// one tag group: genres first, then the shop's own tags (decisions 0031, 0048)
 function tagsOf(release) {
   return [...new Set([...(release.genres || []), ...(release.tags || [])])];
 }

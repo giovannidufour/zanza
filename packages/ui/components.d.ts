@@ -564,6 +564,8 @@ export interface EntityChipProps extends HTMLAttributes<HTMLSpanElement> {
 export declare function EntityChip(props: EntityChipProps): JSX.Element;
 export declare function XThinIcon(): JSX.Element;
 export declare function PlusSmallThinIcon(): JSX.Element;
+/** Figma icon/icon-tick-large-thin. Trailing icon of "Added to bag" (decision 0046). */
+export declare function TickLargeThinIcon(): JSX.Element;
 
 /** Mirrors the Figma component `radio` (page controls): a native radio, 24px control (18px icon), gap 8, label body/medium. */
 export interface RadioProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {

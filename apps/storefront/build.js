@@ -57,6 +57,9 @@ const playerHtml = renderToStaticMarkup(React.createElement(Z.Player, {
     React.createElement(Z.Button, { hierarchy: 'secondary', size: 'small', className: 'site-player__view', href: url('/') }, 'View'))
 }));
 
+// the tick of "Added to bag" (decision 0046): scripts/site.js clones it into the Button's trailing icon slot
+const tickTemplate = `<template id="zz-icon-tick">${renderToStaticMarkup(React.createElement('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, React.createElement(Z.TickLargeThinIcon)))}</template>`;
+
 function page({ title: t, body }) {
   return `<!doctype html>
 <html lang="${site.lang}">
@@ -78,6 +81,7 @@ function page({ title: t, body }) {
 <body>
 ${body}
 ${playerHtml}
+${tickTemplate}
 </body>
 </html>
 `;

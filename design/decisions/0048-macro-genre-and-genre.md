@@ -1,4 +1,4 @@
-# 0047 — Genre is the Discogs style; the Discogs genre is the macro genre
+# 0048 — Genre is the Discogs style; the Discogs genre is the macro genre
 
 `2026-11-10` · accepted (Gio) · Figma: BACKEND → Create, section "genre and tags" (`2126:1404`); COMPONENTS → filters; Attributes tabs
 

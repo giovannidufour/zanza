@@ -22,7 +22,8 @@
    6. Bag (decision 0044)
       - the bag = the listing ids in localStorage ('zanza-bag'), in the order they were added; a copy is unique, so an
         id is in the bag once (no quantity). Adding does NOT hold the copy: the hold starts at checkout
-      - "Add to bag" (card, PDP, player) adds; the header Bag shows the count in brackets on every page
+      - "Add to bag" (card, PDP, player) adds; then the button reads "Added to bag" ("Added" on the mobile card) and
+        opens the bag; the header Bag shows the count in brackets on every page
       - /bag/ (pages/bag.js) shows the lines of the bag, the subtotal of the available ones, or the empty state;
         Remove takes a line out. Checkout is not wired yet (create-checkout + Stripe, _context/backend.md)
 
@@ -153,7 +154,7 @@
       var view = q('.site-player__view');
       if (view && cur.href) view.setAttribute('href', cur.href);
       var add = q('.site-player__add');
-      if (add) add.disabled = !cur.listing;
+      if (add) { add.disabled = !cur.listing; syncAddButton(add, cur.listing); }
       q('.zz-player__previous').disabled = index <= 0;
       q('.zz-player__next').disabled = index >= queue.length - 1;
     }
@@ -304,7 +305,7 @@
      blocks; an option at 0 is hidden unless ticked. State lives in the URL (?genre=Roots&format=7"), so a
      filtered list can be shared and Back restores it. Active filter row (0041, in place of the breadcrumbs) = the filter
      reached from a link: artist / label (no checkbox) or the genre / tag a card's tag linked to, one removable chip.
-     Links from before decision 0047 (?subgenre=Roots) are rewritten to ?genre= in place.
+     Links from before decision 0048 (?subgenre=Roots) are rewritten to ?genre= in place.
      The column's checkboxes are the applied state. On mobile (Figma `filters layer`, 2026-11-10) the layer has its
      own checkboxes: a draft, copied from the column when the layer opens and back to it on Apply; closing discards
      it. Levels: main (applied recap + one row per facet) and facet (the options of one facet). */
@@ -323,7 +324,7 @@
       return v;
     });
     var params = new URLSearchParams(location.search);
-    if (params.has('subgenre')) {   // subgenre was renamed genre (0047): old shared links keep working
+    if (params.has('subgenre')) {   // subgenre was renamed genre (0048): old shared links keep working
       params.getAll('subgenre').forEach(function (v) { params.append('genre', v); });
       params.delete('subgenre');
       history.replaceState(history.state, '', location.pathname + '?' + params.toString() + location.hash);
@@ -632,7 +633,6 @@
     if (!id) return;
     var ids = readBag();
     if (ids.indexOf(id) === -1) { ids.push(id); writeBag(ids); }
-    // TODO design: no "added" / "In bag" state on the buttons yet (design/open.md); for now: count + announcement
     announce('Added to bag. ' + ids.length + (ids.length === 1 ? ' record' : ' records') + ' in the bag.');
   }
   function removeFromBag(id) {
@@ -687,18 +687,60 @@
       ids = known;
     }
     renderBagCount(ids.length);
+    syncAddButtons(ids);
   }
 
   function initBag() { renderBag(); }
+
+  // a copy already in the bag: its Add buttons read "Added to bag" (mobile card: "Added") + a tick, Gio 2026-11-10. Not
+  // disabled (no strikethrough): still a working button, it opens the bag. The default label is kept in
+  // data-label-default so a Remove brings it back.
+  function syncAddButton(btn, id, ids) {
+    var label = btn.querySelector('.zz-button__label');
+    var text = label && label.firstChild;
+    if (!text || text.nodeType !== 3) return;
+    if (!btn.hasAttribute('data-label-default')) btn.setAttribute('data-label-default', text.nodeValue);
+    var def = btn.getAttribute('data-label-default');
+    var inBag = !!id && (ids || readBag()).indexOf(id) !== -1;
+    var added = /^add$/i.test(def) ? 'Added' : 'Added to bag';
+    text.nodeValue = inBag ? added : def;
+    btn.setAttribute('data-in-bag', inBag ? 'true' : 'false');
+    // Figma: `trailing icon` on, icon-tick-large-thin (Gio 2026-11-10); the icon comes from the page's template
+    var tick = btn.querySelector('[data-added-tick]');
+    var tpl = document.getElementById('zz-icon-tick');
+    if (inBag && !tick && tpl && tpl.content.firstElementChild) {
+      tick = tpl.content.firstElementChild.cloneNode(true);
+      tick.setAttribute('data-added-tick', '');
+      btn.appendChild(tick);
+    } else if (!inBag && tick) tick.parentNode.removeChild(tick);
+  }
+  function syncAddButtons(ids) {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-listing-id] .zz-product-card__add'), function (b) {
+      syncAddButton(b, b.closest('[data-listing-id]').getAttribute('data-listing-id'), ids);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-add-to-bag]'), function (b) {
+      syncAddButton(b, b.getAttribute('data-add-to-bag'), ids);
+    });
+    var add = player && player.querySelector('.site-player__add');
+    var cur = typeof current === 'function' ? current() : null;
+    if (add && cur) syncAddButton(add, cur.listing, ids);
+  }
+  // Add on a copy already in the bag opens the bag (the header Bag link, so the soft navigation keeps the player)
+  function addOrOpen(id) {
+    if (!id) return;
+    if (readBag().indexOf(id) === -1) { addToBag(id); return; }
+    var link = document.querySelector('a[data-bag-count]');
+    if (link) link.click();
+  }
 
   document.addEventListener('click', function (e) {
     var t = e.target;
     if (!t || !t.closest) return;
     var card = t.closest('.zz-product-card__add');
-    if (card) { var holder = card.closest('[data-listing-id]'); if (holder) addToBag(holder.getAttribute('data-listing-id')); return; }
+    if (card) { var holder = card.closest('[data-listing-id]'); if (holder) addOrOpen(holder.getAttribute('data-listing-id')); return; }
     var cta = t.closest('[data-add-to-bag]');
-    if (cta) { addToBag(cta.getAttribute('data-add-to-bag')); return; }
-    if (t.closest('.site-player__add')) { var cur = typeof current === 'function' ? current() : null; if (cur) addToBag(cur.listing); return; }
+    if (cta) { addOrOpen(cta.getAttribute('data-add-to-bag')); return; }
+    if (t.closest('.site-player__add')) { var cur = typeof current === 'function' ? current() : null; if (cur) addOrOpen(cur.listing); return; }
     var remove = t.closest('.zz-bag-item__remove');
     if (remove) {
       var li = remove.closest('[data-bag-line]');
