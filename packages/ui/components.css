@@ -789,6 +789,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-file-list__item { display: block; }
 
 .zz-file-item { display: inline-flex; align-items: flex-start; gap: 16px; color: var(--text-strong); }
+.zz-file-item__body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .zz-file-item__content { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
 .zz-file-item[data-media="audio"] .zz-file-item__content { align-items: center; }
 .zz-file-item__position,

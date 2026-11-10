@@ -44,3 +44,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0018](0018-form-fields-map-to-the-platform.md) | Form fields: Figma states map to native state; props go to the control | accepted |
 | [0019](0019-entity-suggestions-are-native.md) | Artist and label suggestions use the native datalist | superseded by 0020 |
 | [0020](0020-entity-fields-are-chip-inputs.md) | Entity fields are chip inputs (the `input` with chips) | accepted |
+| [0021](0021-sample-title-defaults-to-line-title.md) | The sample title defaults to its line title | accepted |

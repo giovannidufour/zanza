@@ -21,7 +21,6 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - **PLP breadcrumbs.** Figma shows "For sale / Dancehall / 7”" (the applied filters); code shows only "For sale" until filters work.
 - **PLP mobile filters.** Figma PLP - mobile has no filters: hidden below the breakpoint. Where they live on mobile (drawer from the hamburger? a "Filters" button?) is to design.
 - **PLP sample labels.** Card samples are "1", "2" (Figma); the PDP shows the sample title. Accessible name in code: "<product>, sample 1: <title>".
-- **PDP sample label = track title.** The admin form has no title per sample: a sample on a line shows that line's title (`data/products.js`); two samples on the same line (A, A2) show the same label; an additional sample (X1, no line) has no title, so its PlayerButton is icon-only (accessible name "<product>, sample N") and the docked player shows no sample title. Proposal: a title field per sample in the admin (e.g. "Vocal", "Dub") that overrides the line title.
 - **Player "Add to bag".** Rendered, no action yet (no cart).
 - **Sample audio.** `audio_url` must be a direct file (mp3/aac/ogg). Sample B uses a reggaefever.ch URL (hotlinking and rights to verify); sample A is still a generated test tone (`public/test-sample-a.mp3`). Depends on Q3.
 - **Home link.** `/zanza/` is a meta-refresh page, so the soft navigation falls back to a full load there and the audio stops. Fixes itself with a real home page.

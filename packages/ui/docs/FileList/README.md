@@ -27,6 +27,7 @@ Ordered list of uploaded files in the admin (images, the sample of a line, sampl
 | `onRemove` | `() => void` |  | Shows the remove (×) IconButton. |
 | `removeLabel` | `string` |  | Accessible name of the remove button. Default "Remove &lt;name>". |
 | `reorderLabel` | `string` |  | Accessible name of the drag handle. Default "Move &lt;name>, position n of m (arrow up / down)". |
+| `children` | `ReactNode` |  | Content under the file row (gap 8), e.g. the sample title Input in the samples overview (Figma 2095:20507). |
 
 `*` required.
 <!-- /api -->
@@ -37,6 +38,7 @@ Ordered list of uploaded files in the admin (images, the sample of a line, sampl
 - Reorder (only with `onMove`): drag a row onto another, or focus the handle and press ↑ ↓.
 - The featured image is always position 1: the admin sets `featured` on the first image (Gio, 2026-11-10).
 - Play and remove are `IconButton`s, named "Play / Pause / Remove <file name>".
+- `children` go under the file row (gap 8): the samples overview puts the sample title `Input` there (Figma 2095:20507, [0021](../../../../design/decisions/0021-sample-title-defaults-to-line-title.md)). Dragging from a field inside the row selects text instead of moving the row.
 
 ## Tokens
 
