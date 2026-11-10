@@ -915,14 +915,14 @@ a.zz-product-card__image { display: block; color: inherit; }
   top: calc(100% + 4px); left: -1px; right: -1px;
   margin: 0; padding: 0; list-style: none;
   max-height: 288px; overflow-y: auto;
-  background: var(--surface-accent);
+  background: var(--surface-base);   /* floats over the form: opaque in every mode (0023; Gio 2026-11-10) */
   border: 1px solid var(--border-divider-strong);
 }
 .zz-entity-field__menu[hidden] { display: none; }
 .zz-entity-option {
   display: flex; align-items: center; gap: 8px;
   padding: 8px;
-  background: var(--surface-accent);
+  background: var(--surface-base);
   color: var(--text-strong);
   cursor: pointer;
 }
