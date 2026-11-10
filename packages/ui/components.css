@@ -547,7 +547,7 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
    desktop: 9 cols, gap gutter/small · image cols 1–2 · info cols 3–5 (gap 16) · purchase cols 6–9 (gap 8),
             description below the purchase block (row gap = purchase gap 8). Rows `auto 1fr`: the image's extra height
             goes to the last row, never between blocks.
-   mobile:  12 cols, gap gutter/small · image 4 cols · info + purchase (hug, right-aligned) share the other 8,
+   mobile:  gap gutter/small · image 4 of 12 cols, max 96px (0039) · info + purchase (hug, right-aligned) share the rest,
             details gap 8 = gutter/small today (Figma: literal 8).
    ═══════════════════════════════════════════════════════════════════════ */
 
@@ -579,7 +579,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-product-card[data-device="responsive"] .zz-product-card__add[data-device="mobile"] { display: none; }
 
 .zz-product-card[data-device="mobile"] {
-  grid-template-columns: calc((100% - 11 * var(--gutter-small)) / 3 + 3 * var(--gutter-small)) minmax(0, 1fr) auto;   /* 12 cols: image = 4 cols + 3 gaps; info fill; purchase hug */
+  grid-template-columns: min(calc((100% - 11 * var(--gutter-small)) / 3 + 3 * var(--gutter-small)), 96px) minmax(0, 1fr) auto;   /* image = 4 of 12 cols, max 96 (Figma: image track fixed 96, decision 0039); info fill; purchase hug */
   grid-template-rows: repeat(4, auto) minmax(16px, 1fr);   /* title, description, tags, samples; last row = Figma details padding-bottom 16 */
   row-gap: 0;   /* info spacing is per block (margin), so a missing block leaves no gap */
 }
@@ -594,7 +594,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 
 @media (--mobile) {
   .zz-product-card[data-device="responsive"] {
-    grid-template-columns: calc((100% - 11 * var(--gutter-small)) / 3 + 3 * var(--gutter-small)) minmax(0, 1fr) auto;   /* 12 cols: image = 4 cols + 3 gaps; info fill; purchase hug */
+    grid-template-columns: min(calc((100% - 11 * var(--gutter-small)) / 3 + 3 * var(--gutter-small)), 96px) minmax(0, 1fr) auto;   /* image = 4 of 12 cols, max 96 (Figma: image track fixed 96, decision 0039); info fill; purchase hug */
     grid-template-rows: repeat(4, auto) minmax(16px, 1fr);   /* title, description, tags, samples; last row = Figma details padding-bottom 16 */
     row-gap: 0;   /* info spacing is per block (margin), so a missing block leaves no gap */
   }
