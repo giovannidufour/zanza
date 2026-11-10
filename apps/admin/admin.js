@@ -45,7 +45,11 @@
   function checkoutUntil(row) {
     return effectiveStatus(row) === 'reserved' && row.stripe_session_id && row.reserved_until ? new Date(row.reserved_until) : null;
   }
-  function discogsId(t) { var m = String(t || '').match(/(\d{3,})/); return m ? parseInt(m[1], 10) : null; }
+  // a release link (…/release/249504-Artist-Title), its number, or Discogs' own [r249504]; a master link is not a release
+  function discogsId(t) {
+    var s = String(t || '').trim(), m = s.match(/\/release\/(\d+)/) || s.match(/^\[?r?(\d+)\]?$/i);
+    return m ? parseInt(m[1], 10) : null;
+  }
 
   // ── uploads ───────────────────────────────────────────────────────────────
   // images: resized in the browser to webp, long side 1600 (backend.md → Storage)
@@ -64,25 +68,30 @@
       img.src = url;
     });
   }
-  async function upload(kind, blob) {
-    var res = await sb.functions.invoke('sign-upload', { body: { kind: kind, contentType: blob.type, size: blob.size } });
+  // calls an Edge Function; its own { error } text wins over the generic "non-2xx" message
+  async function invoke(name, body) {
+    var res = await sb.functions.invoke(name, { body: body });
     if (res.error) {
       var msg = res.error.message;
       try { var j = await res.error.context.json(); if (j && j.error) msg = j.error; } catch (e) { /* keep the generic message */ }
       throw new Error(msg);
     }
+    return res.data;
+  }
+  async function upload(kind, blob) {
+    var signed = await invoke('sign-upload', { kind: kind, contentType: blob.type, size: blob.size });
     var put;
-    try { put = await fetch(res.data.uploadUrl, { method: 'PUT', headers: { 'Content-Type': blob.type }, body: blob }); }
+    try { put = await fetch(signed.uploadUrl, { method: 'PUT', headers: { 'Content-Type': blob.type }, body: blob }); }
     catch (e) { throw new Error('Storage refused the upload without details (R2 sends no CORS headers on errors): check the R2 keys and the bucket CORS policy.'); }
     if (!put.ok) throw new Error('Upload refused by storage (' + put.status + ').');
-    return res.data.key;
+    return signed.key;
   }
 
   // ── empty form ────────────────────────────────────────────────────────────
   function emptyForm() {
     return {
       listingId: null, sku: null, status: 'draft', slug: null, checkoutUntil: null, soldAt: null,
-      customTitle: '', discogs: '',
+      customTitle: '', discogs: '', catNo: '',
       lines: [{ id: nextId(), artist: '', title: '' }],
       label: '', country: '', year: '', format: '', section: 'sale', price: '',
       tags: '', genre: '',
@@ -100,6 +109,7 @@
     f.listingId = row.id; f.sku = row.sku; f.status = effectiveStatus(row); f.slug = row.slug;
     f.checkoutUntil = checkoutUntil(row); f.soldAt = row.sold_at;
     f.customTitle = row.custom_title || ''; f.discogs = r.discogs_release_id ? String(r.discogs_release_id) : '';
+    f.catNo = r.cat_no || '';
     f.lines = lines.length ? lines.map(function (l) { return { id: nextId(), artist: l.artist || '', title: l.title || '' }; }) : f.lines;
     f.label = r.label || ''; f.country = r.country || ''; f.year = r.year ? String(r.year) : ''; f.format = r.format || '';
     f.section = row.section; f.price = centsToText(row.price_cents);
@@ -112,6 +122,41 @@
       return { id: nextId(), key: s.audio_key, name: s.title || fileNameOf(s.audio_key), url: mediaUrl(s.audio_key), line: s.line_id ? lineIdToPos[s.line_id] || null : null };
     });
     return f;
+  }
+
+  // ── Discogs → form (Edge Function discogs-lookup) ─────────────────────────
+  // Fills the release fields only; price, condition, notes, photos and samples stay as they are.
+  // Returns the patch and the Discogs values the form vocabularies could not take.
+  function formatOf(fmt) {
+    var d = (fmt && fmt.descriptions) || [];
+    if (d.indexOf('LP') >= 0) return 'LP';
+    for (var i = 0; i < FORMATS.length; i++) if (d.indexOf(FORMATS[i]) >= 0) return FORMATS[i];
+    return '';
+  }
+  function patchFromDiscogs(cur, d) {
+    var skipped = [];
+    var tracks = (d.tracks || []).filter(function (t) { return t.title; });
+    var first = tracks.length ? tracks[0].artist : d.artist;
+    var lines = tracks.length
+      ? tracks.map(function (t, i) { return { id: nextId(), artist: i > 0 && t.artist === first ? '' : t.artist, title: t.title }; })
+      : cur.lines;
+    // samples keep their line; a line that no longer exists turns them into additional samples
+    var samples = cur.samples.map(function (s) { return s.line && s.line > lines.length ? Object.assign({}, s, { line: null }) : s; });
+    var country = COUNTRIES.filter(function (c) { return c[1] === d.country; })[0];
+    if (d.country && !country) skipped.push('country ' + d.country);
+    var format = formatOf(d.format);
+    if (!format) skipped.push('format ' + [d.format && d.format.name].concat((d.format && d.format.descriptions) || []).filter(Boolean).join(' '));
+    var genre = (d.genres || []).filter(function (g) { return GENRES.indexOf(g) >= 0; })[0] || '';
+    if ((d.genres || []).length > 1) skipped.push('other genres ' + d.genres.filter(function (g) { return g !== genre; }).join(', '));
+    return {
+      patch: {
+        discogs: String(d.releaseId), lines: lines, samples: samples,
+        label: d.label || '', catNo: d.catNo || '', year: d.year ? String(d.year) : '',
+        country: country ? country[0] : '', format: format, genre: genre,
+        tags: (d.styles || []).join(', ')
+      },
+      skipped: skipped
+    };
   }
 
   // ── validation: what the database needs (format, condition, line 1, price for sale) ──
@@ -134,7 +179,7 @@
       listing_id: f.listingId,
       release: {
         discogs_release_id: f.discogs ? discogsId(f.discogs) : null,
-        label: f.label, year: f.year.trim(), country: f.country, format: f.format,
+        label: f.label, cat_no: f.catNo, year: f.year.trim(), country: f.country, format: f.format,
         genre: f.genre ? [f.genre] : [],
         style: f.tags.split(',').map(function (t) { return t.trim(); }).filter(Boolean)
       },
@@ -161,6 +206,7 @@
     var sv = useState(false), saving = sv[0], setSaving = sv[1];
     var pl = useState(null), playing = pl[0], setPlaying = pl[1];
     var fRef = useRef(f); fRef.current = f;
+    var fd = useState(false), fetching = fd[0], setFetching = fd[1];
 
     function set(patch) { setF(function (cur) { return Object.assign({}, cur, typeof patch === 'function' ? patch(cur) : patch); }); }
     function bind(name) {
@@ -237,6 +283,27 @@
       if (!cur.listingId) history.replaceState(null, '', '#edit-' + d.listing_id);
     }
 
+    // Fetch Discogs: reads the release in "Discogs match" and fills the release fields
+    async function fetchDiscogs() {
+      if (fetching) return;
+      var id = discogsId(fRef.current.discogs);
+      if (id === null) {
+        setErrors(function (cur) { return Object.assign({}, cur, { discogs: 'Paste a Discogs release URL or its number.' }); });
+        return;
+      }
+      setErrors(function (cur) { var n = Object.assign({}, cur); delete n.discogs; return n; });
+      setFetching(true); setMessage({ error: false, text: 'Reading Discogs…' });
+      try {
+        var d = await invoke('discogs-lookup', { releaseId: id });
+        var r = patchFromDiscogs(fRef.current, d);
+        set(r.patch);
+        setMessage({ error: false, text: 'Filled from Discogs: check the fields before saving.' + (r.skipped.length ? ' Not filled: ' + r.skipped.join('; ') + '.' : '') });
+      } catch (err) {
+        setMessage({ error: true, text: 'Discogs: ' + err.message });
+      }
+      setFetching(false);
+    }
+
     // manual status changes (admin_set_status): sold elsewhere, held for someone, unpublished, undo
     var nt = useState(''), statusNote = nt[0], setStatusNote = nt[1];
     async function setStatus(status) {
@@ -271,8 +338,11 @@
         h(Z.Input, Object.assign({ id: 'custom-title', label: 'Custom title', optional: true,
           supportText: 'Replaces "Artist - Title" in the shop.' }, bind('customTitle'))),
         h(Z.Input, Object.assign({ id: 'discogs', label: 'Discogs match', optional: true, variant: 'search',
-          placeholder: 'Release URL or number', supportText: errors.discogs ? undefined : 'Search arrives with the Discogs token. For now paste the release link.' }, bind('discogs')))),
+          placeholder: 'Release URL or number', supportText: errors.discogs ? undefined : 'Paste the release link, then Fetch Discogs.' }, bind('discogs')))),
       h('hr', { className: 'admin-divider' }),
+
+      // Figma 2103:20718: secondary button on its own, between the divider and the lines it fills
+      h('div', null, h(Z.Button, { hierarchy: 'secondary', disabled: locked, 'aria-busy': fetching || undefined, onClick: fetchDiscogs }, 'Fetch Discogs')),
 
       h('section', { className: 'admin-section' },
         h('div', { className: 'admin-stack' },

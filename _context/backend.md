@@ -46,7 +46,7 @@ Chiavi casuali e immutabili (2026-11-10): l'upload avviene prima che il listing 
 ## Flussi
 
 ### Creare un listing (admin)
-1. (dopo) Cerca su Discogs (Edge Function `discogs-lookup`, il token resta lato server). Oggi il campo "Discogs match" accetta link o numero della release.
+1. **Fetch Discogs** (2026-11-10, Figma 2103:20718): incolli link o numero della release in "Discogs match" → il pulsante chiama l'Edge Function `discogs-lookup` (solo admin, User-Agent proprio, token opzionale `DISCOGS_TOKEN` nei secret; niente cache, ToU 6 h) e riempie **solo i campi della release**: righe artista/titolo (una per traccia; artista vuoto se uguale alla riga 1), label, cat. no (non mostrato, salvato), anno, paese, formato, genere (il primo), tag (= styles). Prezzo, condizioni, note, foto e sample restano; i sample di righe sparite diventano "additional". Valori fuori dai vocabolari del form (paese, formato, altri generi) vengono elencati nel messaggio, non inventati. Foto Discogs: non importate (diritti). La ricerca per testo (serve il token) arriverà nella stessa funzione.
 2. Condizione, prezzo, note, foto, sample.
 3. Salva = **una chiamata** a `admin_save_listing(payload)` (una transazione: release, righe, listing, sample). `draft` → **Pubblica** = `available` + `published_at`; poi ricostruzione del sito.
 4. Copertina: il grado è ammesso per busta `original` e `generic`, mai per `none` (0003).
@@ -90,4 +90,4 @@ Le pagine sono statiche, ma "sold/reserved" non può aspettare una ricostruzione
 4. Gio: design in Figma del flusso "crea listing" nell'admin.
 5. Checkout: dopo il chiarimento fiscale (Q5b).
 
-_Last updated: 2026-11-10 (0004 stati di vendita e 0005 ricostruzione automatica applicate)_
+_Last updated: 2026-11-10 (Fetch Discogs: Edge Function `discogs-lookup`)_
