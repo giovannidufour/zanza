@@ -7,6 +7,8 @@
 * { box-sizing: border-box; }
 /* background on html only: surface-accent is translucent in the backend mode (black-a4), stacking it on body darkens it (0023) */
 html { background: var(--surface-accent); min-height: 100%; }
+/* Figma BACKEND → Create (Gio, 2026-11-10): the create / edit frame is on surface/base (white); fields keep surface-accent (black-a4) over it, decision 0032 */
+html:has(.admin-page) { background: var(--surface-base); }
 body { margin: 0; color: var(--text-strong); font-family: var(--font-sans); }
 h1, h2, p { margin: 0; }
 
