@@ -87,11 +87,17 @@ export interface BreadcrumbItem {
 export interface BreadcrumbsProps extends HTMLAttributes<HTMLElement> {
   /** In order; the last item is the current page (never a link, aria-current="page"). */
   items: Array<BreadcrumbItem | string>;
-  /** Figma: `active filters` (boolean). The active artist / label filter: one removable EntityChip (medium on desktop,
-   *  large on mobile), after a last "/". Not repeated as a text item. */
-  active?: ReactNode;
 }
 export declare function Breadcrumbs(props: BreadcrumbsProps): JSX.Element;
+
+/** Mirrors the Figma component `active filter` (PLP only, decision 0041): the filter reached from a link, in place of the breadcrumbs. */
+export interface ActiveFilterProps extends HTMLAttributes<HTMLDivElement> {
+  /** One removable <EntityChip>: size medium on desktop, large on mobile (Figma `device`). Figma: `active filter`. */
+  children?: ReactNode;
+  /** Accessible name of the group. @default "Active filter" */
+  "aria-label"?: string;
+}
+export declare function ActiveFilter(props: ActiveFilterProps): JSX.Element;
 
 /** Mirrors the Figma component `tag item`: a static label chip on surface-support-1. */
 export interface TagProps extends HTMLAttributes<HTMLElement> {

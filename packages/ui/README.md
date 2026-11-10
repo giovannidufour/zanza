@@ -40,7 +40,8 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | Button | page `buttons` → section `button` | ported: hierarchy × size × state, `suffix` |
 | Tabs / Tab | page `tabs` → `tab group`, `tab` | ported: controlled selection, 4 states, `suffix` (counts, 0029) |
 | Header | page `header` → `header` | ported: device desktop/mobile or responsive, composition of Button + Tabs |
-| Breadcrumbs | page `breadcrumbs` → `breadcrumbs` | ported |
+| Breadcrumbs | page `breadcrumbs` → `breadcrumbs` | ported (PDP; PLP uses ActiveFilter, 0041) |
+| ActiveFilter | page `active filter` → `active filter` | ported: device = chip size, set by the consumer |
 | Tag / TagGroup | page `tags` → `tag item`, `tag group` | ported: 3 sizes; `orientation` not ported |
 | PlayerButton | page `buttons` → `player button` + `_player button-icon` | ported: state default/hover/pressed/disabled × nested `playing` |
 | IconButton | page `buttons` → `icon button` | ported: state default/hover/pressed/disabled, 24px, icon slot |

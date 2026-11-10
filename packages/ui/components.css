@@ -341,9 +341,17 @@ a.zz-tab {
   color: var(--text-strong);
 }
 .zz-breadcrumbs__item a { color: inherit; text-decoration: none; }
-.zz-breadcrumbs__sep, .zz-breadcrumbs__item, .zz-breadcrumbs__active { flex: none; }
-.zz-breadcrumbs__active { display: flex; }
+.zz-breadcrumbs__sep, .zz-breadcrumbs__item { flex: none; }
 .zz-breadcrumbs__rule { height: 1px; width: 100%; background: var(--border-divider-strong); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ActiveFilter (Figma: active filter, device=desktop|mobile — only the chip size differs, set by the consumer)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.zz-active-filter { display: flex; flex-direction: column; width: 100%; }
+.zz-active-filter[hidden] { display: none; }
+.zz-active-filter__row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: var(--small); }   /* Figma: row padding `small`, counter-axis center */
+.zz-active-filter__rule { height: 1px; width: 100%; background: var(--border-divider-strong); }   /* Figma: border, fill border divider/strong */
 
 /* ═══════════════════════════════════════════════════════════════════════
    Tag (Figma: tag item) · TagGroup (Figma: tag group)

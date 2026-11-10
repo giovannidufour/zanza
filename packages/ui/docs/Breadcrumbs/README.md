@@ -1,6 +1,6 @@
 # Breadcrumbs
 
-The path above the page content: `body-medium` items separated by `/`, a 1px rule below. Figma: `breadcrumbs` (slot of labels).
+The path above the PDP content (the PLP shows ActiveFilter, 0041): `body-medium` items separated by `/`, a 1px rule below. Figma: `breadcrumbs` (slot of labels).
 
 ## API
 
@@ -11,7 +11,6 @@ The path above the page content: `body-medium` items separated by `/`, a 1px rul
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `items` * | `Array<BreadcrumbItem \| string>` |  | In order; the last item is the current page (never a link, aria-current="page"). |
-| `active` | `ReactNode` |  |  |
 
 ### BreadcrumbItem
 
