@@ -546,7 +546,29 @@
       props.onRemove ? h(IconButton, { className: 'zz-file-item__remove', icon: h(CloseIcon), 'aria-label': props.removeLabel || ('Remove ' + name), onClick: props.onRemove }) : null);
   }
 
+  /* ── Checkbox ───────────────────────────────────────────────────────────
+     Figma: page `controls` → `checkbox` (state default | active). A native checkbox (0018): the input is visually
+     hidden and drives the drawn box (icon/icon-square ↔ icon/icon-square-tick); the label is clickable.
+     state=active = checked. Focus: browser ring on the box (no focus token yet, design/open.md). */
+  function SquareIcon() {        // Figma: icon/icon-square
+    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M19.5 3.25C20.1904 3.25 20.75 3.80964 20.75 4.5V19.5C20.75 20.1904 20.1904 20.75 19.5 20.75H4.5C3.80964 20.75 3.25 20.1904 3.25 19.5V4.5C3.25 3.80964 3.80964 3.25 4.5 3.25H19.5ZM4.5 4.25C4.36193 4.25 4.25 4.36193 4.25 4.5V19.5C4.25 19.6381 4.36193 19.75 4.5 19.75H19.5C19.6381 19.75 19.75 19.6381 19.75 19.5V4.5C19.75 4.36193 19.6381 4.25 19.5 4.25H4.5Z', fill: 'currentColor' }));
+  }
+  function SquareTickIcon() {    // Figma: icon/icon-square-tick
+    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M19.5 3.25C20.1904 3.25 20.75 3.80964 20.75 4.5V19.5C20.75 20.1904 20.1904 20.75 19.5 20.75H4.5C3.80964 20.75 3.25 20.1904 3.25 19.5V4.5C3.25 3.80964 3.80964 3.25 4.5 3.25H19.5ZM4.5 4.25C4.36193 4.25 4.25 4.36193 4.25 4.5V19.5C4.25 19.6381 4.36193 19.75 4.5 19.75H19.5C19.6381 19.75 19.75 19.6381 19.75 19.5V4.5C19.75 4.36193 19.6381 4.25 19.5 4.25H4.5ZM15.3965 9.39648C15.5917 9.20122 15.9083 9.20122 16.1035 9.39648C16.2988 9.59175 16.2988 9.90825 16.1035 10.1035L10.8535 15.3535C10.6583 15.5488 10.3417 15.5488 10.1465 15.3535L7.89648 13.1035C7.70122 12.9083 7.70122 12.5917 7.89648 12.3965C8.09175 12.2012 8.40825 12.2012 8.60352 12.3965L10.5 14.293L15.3965 9.39648Z', fill: 'currentColor' }));
+  }
+  function Checkbox(props) {
+    var checked = props.checked !== undefined ? !!props.checked : props.state === 'active';
+    var attrs = Object.assign({ type: 'checkbox', className: 'zz-checkbox__control' },
+      omit(props, ['label', 'state', 'className', 'style', 'children']));
+    if (props.checked === undefined && props.state) { attrs.checked = checked; attrs.readOnly = true; }
+    return h('label', { className: cx('zz-checkbox', props.className), style: props.style },
+      h('input', attrs),
+      h('span', { className: 'zz-checkbox__box', 'aria-hidden': 'true' }, h(SquareIcon), h(SquareTickIcon)),
+      h('span', { className: 'zz-checkbox__label body-medium' }, props.label || props.children));
+  }
+
   return { Button: Button, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, Tag: Tag, TagGroup: TagGroup,
            PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
-           Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, DragHandleIcon: DragHandleIcon };
+           Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, DragHandleIcon: DragHandleIcon,
+           Checkbox: Checkbox, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon };
 });

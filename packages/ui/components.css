@@ -825,3 +825,15 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-file-item__handle:active { background: var(--action-floating-background-pressed); cursor: grabbing; }
 .zz-file-item__handle-icon { display: inline-flex; width: 100%; height: 100%; }
 .zz-file-item__handle-icon svg { width: 100%; height: 100%; display: block; }
+
+/* ── Checkbox (Figma: controls → checkbox, state default | active) ─────────
+   row gap 8, icon 24, label body/medium text/strong. The native input is visually hidden and drives the drawn box. */
+.zz-checkbox { display: inline-flex; align-items: flex-start; gap: 8px; color: var(--text-strong); cursor: pointer; position: relative; }
+.zz-checkbox__control { position: absolute; width: 24px; height: 24px; margin: 0; opacity: 0; cursor: inherit; }
+.zz-checkbox__box { display: inline-flex; width: 24px; height: 24px; flex: none; color: var(--icon-strong); }
+.zz-checkbox__box svg { width: 100%; height: 100%; display: block; }
+.zz-checkbox__box svg + svg,
+.zz-checkbox__control:checked + .zz-checkbox__box svg:first-child { display: none; }
+.zz-checkbox__control:checked + .zz-checkbox__box svg + svg { display: block; }
+.zz-checkbox__control:focus-visible + .zz-checkbox__box { outline: auto; }   /* browser ring: no border/focus token yet */
+/* disabled: not designed (design/open.md) */

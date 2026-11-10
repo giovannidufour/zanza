@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode, Ref } from "react";
+import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, ReactNode, Ref } from "react";
 
 /** Mirrors the Figma component `button` — variants hierarchy × size, states via pseudo-classes. */
 export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
@@ -342,3 +342,15 @@ export interface FileItemProps extends HTMLAttributes<HTMLDivElement> {
   reorderLabel?: string;
 }
 export declare function FileItem(props: FileItemProps): JSX.Element;
+
+/** Mirrors the Figma component `checkbox` (page `controls`, state default | active). A native checkbox (decision 0018):
+ *  every prop that is not listed here goes to the <input>; the whole row is the clickable <label>. */
+export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
+  /** Text next to the box. Figma: the text layer (e.g. "Different spelling"). */
+  label?: ReactNode;
+  /** Native checked (controlled, with onChange). Figma: state=active. */
+  checked?: boolean;
+  /** Documentation only: pins the Figma state when `checked` is not given. Do not use in product code. */
+  state?: "default" | "active";
+}
+export declare function Checkbox(props: CheckboxProps): JSX.Element;
