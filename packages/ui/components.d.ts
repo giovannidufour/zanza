@@ -87,6 +87,9 @@ export interface BreadcrumbItem {
 export interface BreadcrumbsProps extends HTMLAttributes<HTMLElement> {
   /** In order; the last item is the current page (never a link, aria-current="page"). */
   items: Array<BreadcrumbItem | string>;
+  /** Figma: `active filters` (boolean). The active artist / label filter: one removable EntityChip (medium on desktop,
+   *  large on mobile), after a last "/". Not repeated as a text item. */
+  active?: ReactNode;
 }
 export declare function Breadcrumbs(props: BreadcrumbsProps): JSX.Element;
 

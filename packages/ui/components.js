@@ -136,7 +136,9 @@
   }
 
   /* ── Breadcrumbs ────────────────────────────────────────────────────────
-     Figma: `breadcrumbs` (page breadcrumbs). body/medium items separated by "/", padding `small`, 1px rule below. */
+     Figma: `breadcrumbs` (device=desktop|mobile). `trail` = body/medium items separated by "/", padding `small`, one line
+     (scrolls sideways when too long), 1px rule below. `active` (Figma boolean `active filters`, 2026-11-10): the active
+     artist / label filter as one removable entity chip after a last "/" — not repeated as a text crumb. */
   function Breadcrumbs(props) {
     var items = props.items || [];
     var nodes = [];
@@ -150,10 +152,14 @@
           ? h('a', { href: href }, label)
           : h('span', last ? { 'aria-current': 'page' } : null, label)));
     });
+    if (props.active) {
+      nodes.push(h('li', { key: 'sep-active', className: 'zz-breadcrumbs__sep', 'aria-hidden': 'true' }, '/'));
+      nodes.push(h('li', { key: 'active', className: 'zz-breadcrumbs__active' }, props.active));
+    }
     return h('nav', Object.assign({
       className: cx('zz-breadcrumbs', props.className),
       'aria-label': props['aria-label'] || 'Breadcrumb'
-    }, omit(props, ['items', 'className', 'aria-label'])),
+    }, omit(props, ['items', 'active', 'className', 'aria-label'])),
       h('ol', { className: 'zz-breadcrumbs__list body-medium' }, nodes),
       h('div', { className: 'zz-breadcrumbs__rule', role: 'presentation' }));
   }
