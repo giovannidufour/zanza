@@ -19,6 +19,9 @@ h1, h2, p { margin: 0; }
 .admin-page { display: grid; grid-template-columns: minmax(0, 645fr) minmax(0, 315fr); gap: 16px; align-items: start; }
 .admin-main { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
 .admin-side { display: flex; flex-direction: column; gap: 24px; position: sticky; top: 24px; }
+/* with the shop preview the side column can be taller than the window: it scrolls on its own, so the preview and the
+   actions stay reachable while the form scrolls. The 4px padding (cancelled by the margin) keeps focus rings unclipped. */
+.admin-side { max-height: calc(100vh - 48px); overflow-y: auto; overscroll-behavior: contain; margin: -4px; padding: 4px; }
 
 .admin-section { display: flex; flex-direction: column; gap: 16px; }
 .admin-stack { display: flex; flex-direction: column; gap: 24px; }           /* Figma: Frame 1 / list, gap 24 */
@@ -61,3 +64,15 @@ h1, h2, p { margin: 0; }
 }
 /* Figma `uploaded list` in Samples overview (2095:19476): rows with a title field, gap 16 */
 .admin-samples { gap: 16px; }
+
+/* Figma BACKEND → Create › side › preview (decision 0030): the PDP - mobile `pdp content`, in the shop theme
+   (data-theme="frontend" = the frame's explicit Figma mode). Same values as apps/storefront/pdp.css (mobile):
+   padding-x page-margin/mobile, padding-top small, padding-bottom 24 (literal, see open.md), row gap small,
+   the gallery bleeds into the margins and the frame clips it (second image peeks). */
+.admin-preview__shop {
+  display: grid; grid-template-columns: minmax(0, 1fr); row-gap: var(--small);
+  padding: var(--small) var(--page-margin-mobile) 24px;
+  background: var(--surface-accent); color: var(--text-strong);
+  overflow: hidden;
+}
+.admin-preview__shop .zz-gallery { --zz-gallery-bleed: var(--page-margin-mobile); }

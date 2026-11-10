@@ -33,6 +33,12 @@ lines.push('  /* type families */');
 for (const [key, stack] of Object.entries(t.type.families)) lines.push(`  --font-${key}: ${stack};`);
 lines.push('}');
 
+// the first theme also gets a [data-theme] block with every per-mode token, so it can be nested inside another theme
+// (Figma: a frame with an explicit mode inside a frame in another mode, e.g. the shop preview inside the admin, 0030)
+lines.push('', `[data-theme="${themes[0]}"] {`);
+for (const tok of t.color.tokens) if (typeof tok.value === 'object') lines.push(`  --${tok.name}: ${cssValue(valueIn(tok, themes[0]))};`);
+lines.push('}');
+
 // other themes (Figma modes of the `color` collection), e.g. backend = the admin
 for (const id of themes.slice(1)) {
   const diff = t.color.tokens.filter(tok => typeof tok.value === 'object' && tok.value[id] !== undefined && tok.value[id] !== tok.value[themes[0]]);

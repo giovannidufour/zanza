@@ -514,7 +514,7 @@ a.zz-tab {
   color: var(--text-strong);
 }
 /* type: every text node carries its text-style class (components.js); here only the UA margins are reset */
-.zz-product-info p, .zz-product-info h1 { margin: 0; }
+.zz-product-info p, .zz-product-info :is(h1, h2, h3, h4, h5, h6) { margin: 0; }   /* the title level is a prop (headingLevel) */
 
 .zz-product-info__details { grid-column: 1 / -1; display: flex; flex-direction: column; }
 .zz-product-info__title-block { display: flex; flex-direction: column; padding-bottom: 16px; }

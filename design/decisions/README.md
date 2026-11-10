@@ -51,3 +51,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0025](0025-every-bulk-action-confirms-delete-any.md) | Every bulk action asks first; any listing can be deleted | accepted |
 | [0026](0026-admin-blocks-are-components-layout-stays-frames.md) | Admin blocks are components; layout stays frames | accepted |
 | [0027](0027-first-line-is-four-plus-four.md) | Line 1 is 4 + 4 columns, lines 2+ are 3 + 4 | accepted |
+| [0030](0030-admin-shop-preview.md) | The admin shows a live shop preview, built from the shop's components | accepted |
