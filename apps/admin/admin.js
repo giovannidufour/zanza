@@ -515,7 +515,7 @@
 
       h('section', { className: 'admin-section' },
         h('h2', { className: 'label-medium' }, 'Samples overview'),
-        f.samples.length ? h(Z.FileList, { onMove: moveIn('samples') }, f.samples.map(overviewSampleItem)) : null,
+        f.samples.length ? h(Z.FileList, { className: 'admin-samples', onMove: moveIn('samples') }, f.samples.map(overviewSampleItem)) : null,
         h(Z.DropZone, { label: 'Browse sample', accept: 'audio/mpeg', multiple: true, onFiles: addFiles('sample', null) })));
 
     var shopUrl = f.slug && f.status !== 'draft' && CFG.storefrontUrl ? CFG.storefrontUrl.replace(/\/$/, '') + '/products/' + f.slug + '/' : null;

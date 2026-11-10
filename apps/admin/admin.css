@@ -50,3 +50,5 @@ h1, h2, p { margin: 0; }
   .admin-row { grid-template-columns: minmax(0, 1fr); }
   .admin-row > * { grid-column: auto; }
 }
+/* Figma `uploaded list` in Samples overview (2095:19476): rows with a title field, gap 16 */
+.admin-samples { gap: 16px; }

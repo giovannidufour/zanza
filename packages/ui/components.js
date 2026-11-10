@@ -530,17 +530,22 @@
       if (e.key === 'ArrowDown' && ctx.index < ctx.count - 1) { e.preventDefault(); ctx.move(ctx.index, ctx.index + 1); }
     }
     var playable = !!props.onTogglePlay;
+    var hasBody = !!props.children;
+    var remove = props.onRemove ? h(IconButton, { className: 'zz-file-item__remove', icon: h(CloseIcon), 'aria-label': props.removeLabel || ('Remove ' + name), onClick: props.onRemove }) : null;
     return h('div', Object.assign({
       className: cx('zz-file-item', props.className),
-      'data-media': props.image ? 'image' : (playable ? 'audio' : undefined)
+      'data-media': props.image ? 'image' : (playable ? 'audio' : undefined),
+      'data-body': hasBody ? 'true' : undefined
     }, omit(props, ['name', 'position', 'image', 'featured', 'featuredLabel', 'playing', 'onTogglePlay', 'onRemove', 'removeLabel', 'reorderLabel', 'className', 'children'])),
       ctx.move ? h('button', {
         type: 'button', className: 'zz-file-item__handle',
         'aria-label': props.reorderLabel || ('Move ' + name + ', position ' + (ctx.index + 1) + ' of ' + ctx.count + ' (arrow up / down)'),
         onKeyDown: onHandleKey
       }, h('span', { className: 'zz-file-item__handle-icon', 'aria-hidden': 'true' }, h(DragHandleIcon))) : null,
-      // children (e.g. the sample title Input, Figma 2095:20507) sit under the file row, gap 8
-      h(props.children ? 'div' : React.Fragment, props.children ? { className: 'zz-file-item__body' } : null,
+      // with children (e.g. the sample title Input, Figma `sample row` 2095:20507): a full-width column,
+      // `file row` (content + remove, gap 16) above the children (gap 16)
+      h(hasBody ? 'div' : React.Fragment, hasBody ? { className: 'zz-file-item__body' } : null,
+      h(hasBody ? 'div' : React.Fragment, hasBody ? { className: 'zz-file-item__row' } : null,
       h('div', { className: 'zz-file-item__content' },
         props.image ? h('span', { className: 'zz-file-item__thumb' }, props.image.src ? h('img', { src: props.image.src, alt: props.image.alt || '' }) : null) : null,
         playable ? h(IconButton, { 'data-playing': props.playing ? 'true' : 'false', 'aria-pressed': !!props.playing, 'aria-label': (props.playing ? 'Pause ' : 'Play ') + name,
@@ -548,8 +553,9 @@
         h('span', { className: 'zz-file-item__position body-medium' }, position),
         h('span', { className: 'zz-file-item__name body-medium' }, name),
         props.featured ? h('span', { className: 'zz-file-item__featured body-medium' }, props.featuredLabel || '(featured)') : null),
+      hasBody ? remove : null),
       props.children || null),
-      props.onRemove ? h(IconButton, { className: 'zz-file-item__remove', icon: h(CloseIcon), 'aria-label': props.removeLabel || ('Remove ' + name), onClick: props.onRemove }) : null);
+      hasBody ? null : remove);
   }
 
   /* ── Checkbox ───────────────────────────────────────────────────────────
