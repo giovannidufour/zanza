@@ -789,9 +789,11 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-file-list__item { display: block; }
 /* live reorder: rows slide to their new place (FLIP, set in JS).
    TODO motion: no duration/easing in Figma yet — 150ms ease-out is the same placeholder as Button/Tab.
-   No Figma style for the dragged row (design/open.md): it looks like the others, the browser drag image follows the pointer. */
+   The dragged row is hidden in the list (Gio, 2026-11-10): only the browser drag image follows the pointer, and the
+   list shows an empty slot of the row's size where it will land. No Figma style for the slot (design/open.md). */
 .zz-file-list__item { transition: transform 150ms ease-out; }
 @media (prefers-reduced-motion: reduce) { .zz-file-list__item { transition: none; } }
+.zz-file-list__item[data-dragged] { visibility: hidden; }
 .zz-file-list__status { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 
 .zz-file-item { display: inline-flex; align-items: flex-start; gap: 16px; color: var(--text-strong); }

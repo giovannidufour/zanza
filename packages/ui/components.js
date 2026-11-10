@@ -566,6 +566,9 @@
       var rows = Array.prototype.map.call(lis, function (li) { return { top: li.offsetTop, height: li.offsetHeight }; });
       update({ from: i, to: i, rows: rows, gap: parseFloat(getComputedStyle(list).rowGap) || 0,
         grab: e.clientY - lis[i].getBoundingClientRect().top });
+      // the browser snapshots the drag image right after dragstart: hide the row in the list only after that,
+      // so the pointer carries the row and the list shows the empty slot where it will land
+      setTimeout(function () { var d = dragRef.current; if (d && d.from === i) update(Object.assign({}, d, { lifted: true })); }, 0);
     }
     // the slot of the dragged row: how many other rows have their middle above its middle, measured on the list
     // without the dragged row (fixed geometry, so the rows don't flicker while they shift)
@@ -603,7 +606,7 @@
           return h('li', {
             key: child.key || i,
             'data-key': child.key || i,
-            'data-dragged': drag && drag.from === i ? 'true' : undefined,
+            'data-dragged': drag && drag.lifted && drag.from === i ? 'true' : undefined,
             className: 'zz-file-list__item',
             style: s.dy ? { transform: 'translateY(' + s.dy + 'px)' } : undefined,
             draggable: move ? true : undefined,
