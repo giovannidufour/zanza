@@ -296,17 +296,47 @@
     var items = Array.prototype.slice.call(document.querySelectorAll('.plp-item'));
     var boxes = Array.prototype.slice.call(root.querySelectorAll('input[type="checkbox"]'));
     var keys = []; boxes.forEach(function (b) { if (keys.indexOf(b.name) === -1) keys.push(b.name); });
+    // hidden facets (label): no checkbox; the value comes from the URL and shows as a removable chip
+    var hidden = []; try { hidden = JSON.parse(root.getAttribute('data-hidden-facets') || '[]'); } catch (e) { hidden = []; }
+    hidden.forEach(function (f) { if (keys.indexOf(f.key) === -1) keys.push(f.key); });
     var values = items.map(function (el) {
       var v = {}; keys.forEach(function (k) { try { v[k] = JSON.parse(el.getAttribute('data-' + k) || '[]'); } catch (e) { v[k] = []; } });
       return v;
     });
     var params = new URLSearchParams(location.search);
     boxes.forEach(function (b) { b.checked = params.getAll(b.name).indexOf(b.value) !== -1; });
+    var hiddenSel = {}; hidden.forEach(function (f) { hiddenSel[f.key] = params.getAll(f.key); });
 
     function selected() {
       var s = {}; keys.forEach(function (k) { s[k] = []; });
       boxes.forEach(function (b) { if (b.checked) s[b.name].push(b.value); });
+      hidden.forEach(function (f) { s[f.key] = hiddenSel[f.key].slice(); });
       return s;
+    }
+    var active = document.querySelector('[data-plp-active]');
+    var chipTemplate = document.querySelector('template[data-plp-chip]');
+    function renderActive() {
+      if (!active || !chipTemplate) return;
+      active.textContent = '';
+      hidden.forEach(function (f) {
+        hiddenSel[f.key].forEach(function (value) {
+          var chip = chipTemplate.content.firstElementChild.cloneNode(true);
+          var text = f.label + ': ' + value;
+          chip.querySelector('.zz-entity-chip__label').textContent = text;
+          var btn = chip.querySelector('.zz-entity-chip__remove');
+          btn.setAttribute('aria-label', 'Remove filter ' + text);
+          btn.removeAttribute('tabindex');
+          btn.addEventListener('click', function () {
+            hiddenSel[f.key] = hiddenSel[f.key].filter(function (x) { return x !== value; });
+            renderActive();
+            apply(true);
+            var next = active.querySelector('.zz-entity-chip__remove') || root.querySelector('input');
+            if (next) next.focus();   // the removed button is gone: keep keyboard focus on the page
+          });
+          active.appendChild(chip);
+        });
+      });
+      active.hidden = !active.firstChild;
     }
     function matches(v, s, skip) {
       return keys.every(function (k) {
@@ -340,6 +370,7 @@
       var list = nav && nav.querySelector('ol');
       if (list) {
         var labels = [nav.getAttribute('data-section-label')];
+        hidden.forEach(function (f) { hiddenSel[f.key].forEach(function (x) { labels.push(x); }); });
         boxes.forEach(function (b) { if (b.checked) labels.push(b.getAttribute('data-facet-label') || b.value); });
         list.textContent = '';
         labels.forEach(function (text, i) {
@@ -352,6 +383,7 @@
       }
     }
     root.addEventListener('change', function () { apply(true); });
+    renderActive();
     apply(false);
   }
 

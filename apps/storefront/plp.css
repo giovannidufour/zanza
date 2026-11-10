@@ -40,3 +40,8 @@ html[data-header-revealing] .plp-filters { transition: top 200ms ease-out, max-h
 }
 .plp-filters .zz-filter[hidden],
 .plp-filters .zz-filter-block[hidden] { display: none; }
+
+/* active filters with no list (label, ?label=): EntityChips above the list. Not in Figma (design/open.md);
+   gap 4 as the tag group, inset 8 as the empty state. */
+.plp-active { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 8px; }
+.plp-active[hidden] { display: none; }

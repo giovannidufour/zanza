@@ -14,3 +14,5 @@
 **Update 2026-11-10 (Gio).** When the site header comes back on scroll up, the filter column moves down with it (same 200 ms reveal), so the header never covers it. The script publishes the visible header height as `--site-header-visible`; any other sticky page part should sit below it the same way.
 
 **Update 2026-11-10 (Gio).** Tags are always links: on the product card (PLP, "More for sale") and on the PDP, a tag opens the sale PLP with that filter applied (`/sale/?subgenre=…` for a subgenre, `/sale/?tag=…` for one of the shop's own tags). `Tag` takes `href` and renders an `<a>` with the same look. Interaction states are ignored for now (Gio), see open.md.
+
+**Update 2026-11-10 (Gio).** Labels are links too: the label in the release info (card and PDP) opens `/sale/?label=…`. Label is a *hidden facet*: no list in the filter column (too many labels), it combines with the other filters (AND), shows in the breadcrumbs and as a removable `EntityChip` ("Label: Kesta") above the list. Rule: a facet with many values that is reached from a link goes in `HIDDEN_FACETS` (pages/plp.js), not in the column.

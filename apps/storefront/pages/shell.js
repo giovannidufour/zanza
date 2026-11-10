@@ -13,6 +13,15 @@ const formatPrice = (p) => `${p.amount % 100 === 0 ? p.amount / 100 : (p.amount 
 const productName = (r) => r.name || `${r.artist} - ${r.title}`;
 // a pre-release ("blank") of the label: "Pre" right after the label name (Gio, 2026-11-10)
 const releaseInfo = (r) => [r.label, r.label && r.pre_release ? 'Pre' : null, r.format, r.country ? `(${r.country})` : null].filter(Boolean).join(' ');
+// the sale PLP filtered by one value (`key` = a PLP filter key, pages/plp.js)
+const plpHref = (url, key, value) => `${url('/sale/')}?${key}=${encodeURIComponent(value)}`;
+// releaseInfo with the label as a link to the sale PLP filtered by it (Gio 2026-11-10; ?label= is a filter with no list)
+const releaseInfoLinked = (r, url) => {
+  if (!r.label) return releaseInfo(r);
+  const rest = releaseInfo(Object.assign({}, r, { label: null }));
+  return [h('a', { key: 'label', className: 'site-inline-link', href: plpHref(url, 'label', r.label) }, r.label),
+    (r.pre_release ? ' Pre' : '') + (rest ? ' ' + rest : '')];
+};
 // the record graded per side: "Record: VG+ / VG", only side A when side B is not graded (Gio, 2026-11-10)
 const grading = (c) => `Record: ${[c.condition_media, c.condition_media_b].filter(Boolean).join(' / ')}`;
 // the cover/sleeve grade on its own line, only when there is one (Gio, 2026-11-10)
@@ -62,7 +71,7 @@ function tagLinksOf(release, url) {
   [['subgenre', release.style || []], ['tag', release.tags || []]].forEach(([key, names]) => names.forEach((name) => {
     if (seen.has(name)) return;
     seen.add(name);
-    out.push({ label: name, href: `${url('/sale/')}?${key}=${encodeURIComponent(name)}` });
+    out.push({ label: name, href: plpHref(url, key, name) });
   }));
   return out;
 }
@@ -74,7 +83,7 @@ function ProductCardFor({ product, url, headingLevel }) {
     image: release.cover ? { src: url(release.cover), alt: '' } : null,
     title: productName(release),
     headingLevel,
-    releaseInfo: releaseInfo(release),
+    releaseInfo: releaseInfoLinked(release, url),
     price: listing.section === 'sale' ? formatPrice(listing.price) : null,
     tags: tagLinksOf(release, url),
     description: copy.notes,
@@ -87,4 +96,4 @@ function ProductCardFor({ product, url, headingLevel }) {
   });
 }
 
-module.exports = { SECTION_LABEL, tagsOf, tagLinksOf, formatPrice, productName, releaseInfo, grading, coverGrading, productHref, SiteHeader, sampleAttrs, ProductCardFor };
+module.exports = { SECTION_LABEL, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, productHref, SiteHeader, sampleAttrs, ProductCardFor };

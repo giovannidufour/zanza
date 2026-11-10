@@ -51,3 +51,7 @@ html { background: var(--surface-accent); }
 @media (prefers-reduced-motion: reduce) { .site-player, .site-player[data-open] { transition: none; } }
 /* while it is open, the page reserves its height so the end of the content is never covered (height set by site.js) */
 body[data-player-open] { padding-bottom: var(--site-player-height, 0px); }
+
+/* a link inside running text (the label in the release info → the PLP filtered by it, Gio 2026-11-10).
+   Not in Figma: same colour as the text, the browser's underline. Interaction states ignored for now (open.md). */
+.site-inline-link { color: inherit; }
