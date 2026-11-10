@@ -47,6 +47,9 @@ function PlpFilters({ facets }) {
   return h('aside', { className: 'plp-filters', 'aria-label': 'Filters', 'data-plp-filters': '',
     'data-hidden-facets': JSON.stringify(HIDDEN_FACETS.map((f) => ({ key: f.key, label: f.label }))) },
     h(Z.Filters, null,
+      // active hidden filters (label) on top of the column (Gio 2026-11-10): one EntityChip each, built by site.js
+      h('div', { className: 'plp-active', hidden: true, 'data-plp-active': '' }),
+      h('template', { 'data-plp-chip': '' }, h(Z.EntityChip, { label: '' })),
       facets.map((f) => h(Z.FilterBlock, { key: f.key, label: f.label },
         f.options.map((o) => h(Z.Filter, {
           key: o.value, name: f.key, value: o.value, label: optionLabel(f.key, o.value), count: o.count,
@@ -68,9 +71,6 @@ function Plp({ section, products, site, url }) {
       facets.length ? h(PlpFilters, { facets }) : null,
       h('main', { className: 'plp-list' },
         h('h1', { className: 'plp-list__title' }, SECTION_LABEL[section]),
-        // active hidden filters (label): one EntityChip each, built by site.js from the template
-        h('div', { className: 'plp-active', hidden: true, 'data-plp-active': '' }),
-        h('template', { 'data-plp-chip': '' }, h(Z.EntityChip, { label: '' })),
         // no device: responsive card (desktop variant on PLP - desktop, mobile variant on PLP - mobile)
         products.map((product) => h('div', Object.assign({ key: product.listing.slug, className: 'plp-item' },
           ...FACETS.concat(HIDDEN_FACETS).map((f) => ({ [`data-${f.key}`]: JSON.stringify([...new Set(f.values(product))]) }))),
