@@ -505,7 +505,7 @@
         currentFacet = key;
         panel.setAttribute('data-level', key ? 'facet' : 'main');
         var row = key && rows.filter(function (r) { return r.getAttribute('data-facet') === key; })[0];
-        title.textContent = key ? row.getAttribute('data-facet-label') : 'Filters';
+        title.textContent = key ? row.getAttribute('data-facet-label') : 'Filter';   // Gio 2026-11-10: "Filter", as the trigger
         back.hidden = !key;
         layer.querySelector('[data-layer-facets]').hidden = !!key;
         blocks.forEach(function (bl) { bl.hidden = bl.getAttribute('data-facet-block') !== key; });

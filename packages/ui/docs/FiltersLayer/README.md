@@ -9,7 +9,7 @@ The shop's mobile filters (decision [0038](../../../../design/decisions/0038-mob
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `level` | `"main" \| "facet"` | `main` | main = applied recap + FilterFacet rows; facet = the options of one facet, with Back. Figma: `level`. |
-| `title` * | `ReactNode` |  | Bar title: "Filters" on main, the facet name on facet. Figma: `facet` (level=facet). |
+| `title` * | `ReactNode` |  | Bar title: "Filter" on main, the facet name on facet. Figma: `facet` (level=facet). |
 | `applied` | `ReactNode` |  | Applied filters as EntityChip size=large (level=main). Figma: `applied`. |
 | `appliedLabel` | `ReactNode` | `Applied` | Recap heading. |
 | `applyCount` | `ReactNode` |  | Records the current choice would show, Apply's suffix (0029). |
