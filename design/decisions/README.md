@@ -75,6 +75,7 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0049](0049-toast-feedback.md) | Toasts carry Undo and off-screen news; everything else stays inline | accepted, amended by 0050, 0052, 0053 |
 | [0050](0050-added-to-bag-toast.md) | Add to bag shows a toast too; an action that is also on the page lets the toast time out | accepted |
 | [0051](0051-toast-dashed-border.md) | The toast border is dotted: dashed [1,1] | superseded by 0053 |
-| [0052](0052-toast-clear-of-rounded-corners.md) | On mobile the toast sits 2 × medium-small above the bottom, plus the safe area | accepted |
+| [0052](0052-toast-clear-of-rounded-corners.md) | On mobile the toast sits 2 × medium-small above the bottom, plus the safe area | superseded by 0055 |
 | [0053](0053-toast-border-dash-16.md) | The toast border is dashed [16,16], like the drop zone | accepted |
 | [0054](0054-in-bag-add-becomes-remove.md) | A copy in the bag: its Add buttons read "Remove" and take it out | accepted |
+| [0055](0055-toast-mobile-gap-16.md) | On mobile the toast sits medium-small above the bottom, or the safe area if larger | accepted |
