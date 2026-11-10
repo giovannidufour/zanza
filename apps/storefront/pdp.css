@@ -10,9 +10,10 @@
   align-items: start;
 }
 /* Figma `gallery` (2138:1176): cols 1–4, rows 1–2, images stacked, gap gutter-small. It moves with the page (not
-   sticky) and scrolls on its own when taller than the space from its resting top to the bottom of the window, minus the
-   open site player: at rest the whole box is on screen, so scrolling inside shows the last image entirely (decision 0036).
-   --pdp-gallery-top = the gallery's top in the document, measured by scripts/site.js (header + breadcrumbs vary).
+   sticky) and scrolls on its own; its max height runs from its top to the bottom of the window (minus the open site
+   player), so at rest the whole box is on screen and, as the page scrolls, it grows until both images show whole: the
+   container never crops image 2 above visible page content (decision 0036).
+   --pdp-gallery-top = the gallery's top in the window, tracked by scripts/site.js on scroll and resize.
    Row 1 is at least as tall as image 1 (Figma: row 1 FIXED 330.67 at 1024); gallery gap = row gap, so row 2
    (you may also like) starts exactly where image 2 starts. Image side = 4 of 12 columns: (100cqw - 11 gaps) / 3 + 3 gaps. */
 .zz-page:has(> .pdp-content) { container-type: inline-size; }   /* 100cqw = page content width = .pdp-content width */

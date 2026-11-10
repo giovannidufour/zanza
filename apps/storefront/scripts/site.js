@@ -11,7 +11,7 @@
       - internal links load the next page with fetch and swap only .zz-page, so the player and its audio keep playing
       - anything unexpected (error, other origin, page without .zz-page) falls back to a normal page load
    4. PDP gallery
-      - measures the gallery's top in the document (--pdp-gallery-top), so pdp.css can fit it in the window at rest
+      - tracks the gallery's top in the window (--pdp-gallery-top), so pdp.css keeps its bottom at the window bottom
    5. PLP filters
       - ticking an option filters the list (OR inside a block, AND between blocks), updates the counts, the URL and
         the breadcrumbs, and announces the number of records
@@ -255,13 +255,24 @@
     galleryCleanup = null;
     var gallery = document.querySelector('.pdp-content__gallery');
     if (!gallery) return;
+    // --pdp-gallery-top = the gallery's top in the window (negative once scrolled past). pdp.css: max height = window
+    // bottom - this, so the box always ends at the window bottom: as the page scrolls, it grows until both images
+    // show whole, and the container never crops image 2 while page content is visible below it.
+    var frame = 0;
     function measure() {
-      gallery.style.setProperty('--pdp-gallery-top', Math.round(gallery.getBoundingClientRect().top + window.scrollY) + 'px');
+      frame = 0;
+      gallery.style.setProperty('--pdp-gallery-top', Math.round(gallery.getBoundingClientRect().top) + 'px');
     }
+    function schedule() { if (!frame) frame = window.requestAnimationFrame(measure); }
     measure();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);   // web fonts can change the header height
-    window.addEventListener('resize', measure);
-    galleryCleanup = function () { window.removeEventListener('resize', measure); };
+    window.addEventListener('resize', schedule);
+    window.addEventListener('scroll', schedule, { passive: true });
+    galleryCleanup = function () {
+      window.removeEventListener('resize', schedule);
+      window.removeEventListener('scroll', schedule);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
   }
 
   /* -- PLP filters (pages/plp.js, Figma page `filters`) --------------------
