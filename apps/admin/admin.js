@@ -592,7 +592,8 @@
             releaseInfo: previewReleaseInfo(f) || null,
             tags: tags.length ? h(Z.TagGroup, null, tags.map(function (n, i) { return h(Z.Tag, { key: i, size: 'large' }, n); })) : null,
             description: f.notes.trim() || null,
-            grading: f.condition ? 'Grading: ' + [f.condition, f.conditionB].filter(Boolean).join(' / ') : null,
+            grading: f.condition ? 'Record: ' + [f.condition, f.conditionB].filter(Boolean).join(' / ') : null,
+            cover: f.sleeveType !== 'none' && f.sleeveCondition ? 'Cover: ' + f.sleeveCondition : null,
             samples: f.samples.length ? f.samples.map(function (s, i) {
               var t = sampleTitleOf(s);
               return h(Z.PlayerButton, { key: s.id, playing: playing === s.id, onClick: function () { togglePlay(s); },

@@ -183,8 +183,10 @@ export interface ProductInfoProps extends HTMLAttributes<HTMLElement> {
   tags?: ReactNode;
   /** Figma `Description`. */
   description?: ReactNode;
-  /** Figma `Grading: …`, already formatted. */
+  /** Figma `grading`: the record's grade, already formatted ("Record: VG+ / VG"). */
   grading?: ReactNode;
+  /** Figma `cover` (boolean + text): the cover/sleeve grade below the record's, already formatted ("Cover: NM"). Omit when not graded. */
+  cover?: ReactNode;
   /** <PlayerButton>s. Desktop: columns 2–3, stacked; mobile: full width, in a row. */
   samples?: ReactNode;
 }
@@ -215,8 +217,10 @@ export interface ProductCardProps extends HTMLAttributes<HTMLElement> {
   price?: ReactNode;
   /** Figma `description`. Desktop: purchase column, below the price; mobile: info column, below the title. */
   description?: ReactNode;
-  /** Figma `grading`, already formatted. */
+  /** Figma `grading`: the record's grade, already formatted ("Record: VG+ / VG"). */
   grading?: ReactNode;
+  /** Figma `cover` (boolean + text): the cover/sleeve grade below the record's, already formatted ("Cover: NM"). Omit when not graded. */
+  cover?: ReactNode;
   /** Tag labels. Rendered as a TagGroup: size large on desktop, small on mobile. */
   tags?: string[];
   /** <PlayerButton>s, in a row (gap 8). */
