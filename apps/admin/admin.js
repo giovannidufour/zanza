@@ -87,13 +87,56 @@
     return signed.key;
   }
 
+  // ── artists and labels are entities (migration 0006) ─────────────────────────
+  // A line / the release keeps: the OFFICIAL name (the field, bound to an entity), the CREDIT as printed on this
+  // record (optional, empty = same) and, when known, the entity id or its Discogs id. The database binds on save:
+  // id → Discogs id → official name or alias → new entity; a different credit is learnt as an alias.
+  function newLine(p) { return Object.assign({ id: nextId(), artist: '', artistCredit: '', artistId: null, artistDiscogsId: null, title: '' }, p); }
+  // entities = { artists: [{ id, name, aliases: [] }], labels: [...] }, loaded once per form
+  function findEntity(list, text) {
+    var t = String(text || '').trim().toLowerCase();
+    if (!t || !list) return null;
+    for (var i = 0; i < list.length; i++) if (list[i].name.toLowerCase() === t) return { entity: list[i], alias: null };
+    for (i = 0; i < list.length; i++) {
+      var a = list[i].aliases.filter(function (x) { return x.toLowerCase() === t; })[0];
+      if (a) return { entity: list[i], alias: a };
+    }
+    return null;
+  }
+  // an official field: an official name binds while typing; an alias (on leaving the field, so typing is never
+  // interrupted) becomes "official name + credit as printed"
+  function bindTyped(list, text, credit, final) {
+    var m = findEntity(list, text);
+    if (!m || (m.alias && !final)) return { name: text, credit: credit, id: null };
+    if (m.alias) return { name: m.entity.name, credit: credit || m.alias, id: m.entity.id };
+    return { name: text, credit: credit, id: m.entity.id };
+  }
+  function entityOptions(id, list) {
+    var opts2 = [];
+    (list || []).forEach(function (e) {
+      opts2.push(h('option', { key: e.id, value: e.name }));
+      e.aliases.forEach(function (a) { opts2.push(h('option', { key: e.id + a, value: a, label: a + ' → ' + e.name })); });
+    });
+    return h('datalist', { id: id }, opts2);
+  }
+  function loadEntities() {
+    function one(table, aliases, fk) {
+      return sb.from(table).select('id,name,' + aliases + '(name)').order('name').then(function (res) {
+        if (res.error) throw new Error(res.error.message);
+        return res.data.map(function (e) { return { id: e.id, name: e.name, aliases: (e[aliases] || []).map(function (a) { return a.name; }) }; });
+      });
+    }
+    return Promise.all([one('artists', 'artist_aliases'), one('labels', 'label_aliases')])
+      .then(function (r) { return { artists: r[0], labels: r[1] }; });
+  }
+
   // ── empty form ────────────────────────────────────────────────────────────
   function emptyForm() {
     return {
       listingId: null, sku: null, status: 'draft', slug: null, checkoutUntil: null, soldAt: null,
       customTitle: '', discogs: '', catNo: '',
-      lines: [{ id: nextId(), artist: '', title: '' }],
-      label: '', country: '', year: '', format: '', section: 'sale', price: '',
+      lines: [newLine()],
+      label: '', labelCredit: '', labelId: null, labelDiscogsId: null, country: '', year: '', format: '', section: 'sale', price: '',
       tags: '', genre: '',
       condition: '', conditionNotes: '', sleeveType: 'original', sleeveCondition: '',
       notes: '',
@@ -110,8 +153,16 @@
     f.checkoutUntil = checkoutUntil(row); f.soldAt = row.sold_at;
     f.customTitle = row.custom_title || ''; f.discogs = r.discogs_release_id ? String(r.discogs_release_id) : '';
     f.catNo = r.cat_no || '';
-    f.lines = lines.length ? lines.map(function (l) { return { id: nextId(), artist: l.artist || '', title: l.title || '' }; }) : f.lines;
-    f.label = r.label || ''; f.country = r.country || ''; f.year = r.year ? String(r.year) : ''; f.format = r.format || '';
+    // the field shows the official name; the stored text is the credit (shown only when it differs)
+    f.lines = lines.length ? lines.map(function (l) {
+      var a = ((l.credits || []).filter(function (c) { return c.position === 1; })[0] || {}).artist;
+      var credit = l.artist || '';
+      return newLine({ artist: a ? a.name : credit, artistCredit: a && credit.toLowerCase() !== a.name.toLowerCase() ? credit : '',
+                       artistId: a ? a.id : null, title: l.title || '' });
+    }) : f.lines;
+    var le = r.label_entity;
+    f.label = le ? le.name : (r.label || ''); f.labelId = le ? le.id : null;
+    f.labelCredit = le && r.label && r.label.toLowerCase() !== le.name.toLowerCase() ? r.label : ''; f.country = r.country || ''; f.year = r.year ? String(r.year) : ''; f.format = r.format || '';
     f.section = row.section; f.price = centsToText(row.price_cents);
     f.tags = (r.style || []).join(', '); f.genre = (r.genre || [])[0] || '';
     f.condition = row.condition_media || ''; f.conditionNotes = row.condition_notes || '';
@@ -133,12 +184,17 @@
     for (var i = 0; i < FORMATS.length; i++) if (d.indexOf(FORMATS[i]) >= 0) return FORMATS[i];
     return '';
   }
-  function patchFromDiscogs(cur, d) {
+  function patchFromDiscogs(cur, d, entities) {
+    function idOf(list, name) { var m = findEntity(list, name); return m && !m.alias ? m.entity.id : null; }
     var skipped = [];
     var tracks = (d.tracks || []).filter(function (t) { return t.title; });
     var first = tracks.length ? tracks[0].artist : d.artist;
     var lines = tracks.length
-      ? tracks.map(function (t, i) { return { id: nextId(), artist: i > 0 && t.artist === first ? '' : t.artist, title: t.title }; })
+      ? tracks.map(function (t, i) {
+          if (i > 0 && t.artist === first) return newLine({ title: t.title });   // same as line 1: left empty
+          return newLine({ artist: t.artist, artistCredit: t.artistCredit && t.artistCredit !== t.artist ? t.artistCredit : '',
+                           artistDiscogsId: t.artistDiscogsId || null, artistId: idOf(entities && entities.artists, t.artist), title: t.title });
+        })
       : cur.lines;
     // samples keep their line; a line that no longer exists turns them into additional samples
     var samples = cur.samples.map(function (s) { return s.line && s.line > lines.length ? Object.assign({}, s, { line: null }) : s; });
@@ -151,7 +207,7 @@
     return {
       patch: {
         discogs: String(d.releaseId), lines: lines, samples: samples,
-        label: d.label || '', catNo: d.catNo || '', year: d.year ? String(d.year) : '',
+        label: d.label || '', labelCredit: '', labelId: idOf(entities && entities.labels, d.label), labelDiscogsId: d.labelDiscogsId || null, catNo: d.catNo || '', year: d.year ? String(d.year) : '',
         country: country ? country[0] : '', format: format, genre: genre,
         tags: (d.styles || []).join(', ')
       },
@@ -179,11 +235,13 @@
       listing_id: f.listingId,
       release: {
         discogs_release_id: f.discogs ? discogsId(f.discogs) : null,
-        label: f.label, cat_no: f.catNo, year: f.year.trim(), country: f.country, format: f.format,
+        label: f.label, label_credit: f.labelCredit, label_id: f.labelId, label_discogs_id: f.labelDiscogsId, cat_no: f.catNo, year: f.year.trim(), country: f.country, format: f.format,
         genre: f.genre ? [f.genre] : [],
         style: f.tags.split(',').map(function (t) { return t.trim(); }).filter(Boolean)
       },
-      lines: f.lines.map(function (l) { return { artist: l.artist, title: l.title }; }),
+      lines: f.lines.map(function (l) {
+        return { artist: l.artist, artist_credit: l.artistCredit, artist_id: l.artistId, artist_discogs_id: l.artistDiscogsId, title: l.title };
+      }),
       listing: {
         section: f.section, status: status, price_cents: textToCents(f.price),
         condition_media: f.condition, condition_notes: f.conditionNotes,
@@ -207,6 +265,10 @@
     var pl = useState(null), playing = pl[0], setPlaying = pl[1];
     var fRef = useRef(f); fRef.current = f;
     var fd = useState(false), fetching = fd[0], setFetching = fd[1];
+    var en = useState(null), entities = en[0], setEntities = en[1];
+    useEffect(function () {
+      loadEntities().then(setEntities).catch(function (err) { setMessage({ error: true, text: 'Suggestions not loaded: ' + err.message }); });
+    }, []);
 
     function set(patch) { setF(function (cur) { return Object.assign({}, cur, typeof patch === 'function' ? patch(cur) : patch); }); }
     function bind(name) {
@@ -215,7 +277,24 @@
     function setLine(i, key, value) {
       set(function (cur) { var lines = cur.lines.slice(); lines[i] = Object.assign({}, lines[i]); lines[i][key] = value; return { lines: lines }; });
     }
-    function addLine() { set(function (cur) { return { lines: cur.lines.concat([{ id: nextId(), artist: '', title: '' }]) }; }); }
+    function addLine() { set(function (cur) { return { lines: cur.lines.concat([newLine()]) }; }); }
+    // official artist / label typed or picked: bind to the entity, forget a Discogs id that no longer applies
+    function setLineArtist(i, text, final) {
+      set(function (cur) {
+        var lines = cur.lines.slice(), l = lines[i];
+        if (final && l.artistId) return {};
+        var b = bindTyped(entities && entities.artists, text, l.artistCredit, final);
+        lines[i] = Object.assign({}, l, { artist: b.name, artistCredit: b.credit, artistId: b.id, artistDiscogsId: final ? l.artistDiscogsId : null });
+        return { lines: lines };
+      });
+    }
+    function setLabel(text, final) {
+      set(function (cur) {
+        if (final && cur.labelId) return {};
+        var b = bindTyped(entities && entities.labels, text, cur.labelCredit, final);
+        return { label: b.name, labelCredit: b.credit, labelId: b.id, labelDiscogsId: final ? cur.labelDiscogsId : null };
+      });
+    }
     function removeLine(i) {
       // the line's samples are kept as "additional" samples (line null); later lines move up by one
       set(function (cur) {
@@ -295,7 +374,7 @@
       setFetching(true); setMessage({ error: false, text: 'Reading Discogs…' });
       try {
         var d = await invoke('discogs-lookup', { releaseId: id });
-        var r = patchFromDiscogs(fRef.current, d);
+        var r = patchFromDiscogs(fRef.current, d, entities);
         set(r.patch);
         setMessage({ error: false, text: 'Filled from Discogs: check the fields before saving.' + (r.skipped.length ? ' Not filled: ' + r.skipped.join('; ') + '.' : '') });
       } catch (err) {
@@ -351,10 +430,16 @@
             return h('div', { key: l.id, className: 'admin-line' },
               h('div', { className: 'admin-row' },
                 h(Z.Input, { className: i === 0 ? 'span-4' : 'span-3', id: 'artist-' + i, label: 'Artist ' + (i + 1), optional: i > 0,
-                  value: l.artist, error: errors['artist-' + i], onChange: function (e) { setLine(i, 'artist', e.target.value); } }),
+                  list: 'artist-options', autoComplete: 'off',
+                  value: l.artist, error: errors['artist-' + i], onChange: function (e) { setLineArtist(i, e.target.value); }, onBlur: function (e) { setLineArtist(i, e.target.value, true); } }),
                 h(Z.Input, { className: 'span-4', id: 'title-' + i, label: 'Title ' + (i + 1),
                   value: l.title, error: errors['title-' + i], onChange: function (e) { setLine(i, 'title', e.target.value); } }),
                 i > 0 ? h(Z.IconButton, { className: 'col-8', icon: h(Z.CloseIcon), 'aria-label': 'Remove line ' + (i + 1), onClick: function () { removeLine(i); } }) : null),
+              // PROVISIONAL (not in Figma, Gio 2026-11-10): spelling printed on this record, bound to the artist above
+              l.artist ? h('div', { className: 'admin-row' },
+                h(Z.Input, { className: i === 0 ? 'span-4' : 'span-3', id: 'artist-credit-' + i, label: 'As printed', optional: true,
+                  placeholder: l.artist, supportText: l.artistId ? undefined : 'New artist: created on save.',
+                  value: l.artistCredit, onChange: function (e) { setLine(i, 'artistCredit', e.target.value); } })) : null,
               h('div', { className: 'admin-line__samples' },
                 samples.length ? h(Z.FileList, null, samples.map(sampleItem)) : null,
                 h(Z.DropZone, { label: 'Browse sample', accept: 'audio/mpeg', multiple: true, onFiles: addFiles('sample', i + 1) })));
@@ -364,9 +449,13 @@
 
       h('section', { className: 'admin-section' },
         h('div', { className: 'admin-row' },
-          h(Z.Input, Object.assign({ className: 'span-4', id: 'label', label: 'Label' }, bind('label'))),
+          h(Z.Input, { className: 'span-4', id: 'label', label: 'Label', list: 'label-options', autoComplete: 'off',
+            value: f.label, error: errors.label, onChange: function (e) { setLabel(e.target.value); }, onBlur: function (e) { setLabel(e.target.value, true); } }),
           h(Z.Input, Object.assign({ className: 'span-2', id: 'country', label: 'Country', variant: 'select', placeholder: '' }, bind('country')), opts(COUNTRIES)),
           h(Z.Input, Object.assign({ className: 'span-2', id: 'year', label: 'Year', optional: true, inputMode: 'numeric', maxLength: 4 }, bind('year')))),
+        f.label ? h('div', { className: 'admin-row' },
+          h(Z.Input, Object.assign({ className: 'span-4', id: 'label-credit', label: 'As printed', optional: true, placeholder: f.label,
+            supportText: f.labelId ? undefined : 'New label: created on save.' }, bind('labelCredit')))) : null,
         h('div', { className: 'admin-row' },
           h(Z.Input, Object.assign({ className: 'span-2', id: 'format', label: 'Format', variant: 'select', placeholder: '' }, bind('format')), opts(FORMATS)),
           h(Z.Input, Object.assign({ className: 'span-2', id: 'section', label: 'Sale type', variant: 'select' }, bind('section')), opts([['sale', 'For sale'], ['trade', 'For trade']])),
@@ -403,7 +492,10 @@
       h('section', { className: 'admin-section' },
         h('h2', { className: 'label-medium' }, 'Samples overview'),
         f.samples.length ? h(Z.FileList, { onMove: moveIn('samples') }, f.samples.map(sampleItem)) : null,
-        h(Z.DropZone, { label: 'Browse sample', accept: 'audio/mpeg', multiple: true, onFiles: addFiles('sample', null) })));
+        h(Z.DropZone, { label: 'Browse sample', accept: 'audio/mpeg', multiple: true, onFiles: addFiles('sample', null) })),
+      // suggestions for Artist and Label: native datalist (Gio 2026-11-10, decision 0019)
+      entityOptions('artist-options', entities && entities.artists),
+      entityOptions('label-options', entities && entities.labels));
 
     var shopUrl = f.slug && f.status !== 'draft' && CFG.storefrontUrl ? CFG.storefrontUrl.replace(/\/$/, '') + '/products/' + f.slug + '/' : null;
     var side = h('aside', { className: 'admin-side' },
@@ -477,7 +569,7 @@
     var st = useState(null), initial = st[0], setInitial = st[1];
     var er = useState(null), error = er[0], setError = er[1];
     useEffect(function () {
-      sb.from('listings').select('*,release:releases(*,lines:release_lines(*),samples(*))').eq('id', props.id).single()
+      sb.from('listings').select('*,release:releases(*,label_entity:labels(id,name),lines:release_lines(*,credits:release_line_artists(position,artist:artists(id,name))),samples(*))').eq('id', props.id).single()
         .then(function (res) { if (res.error) setError(res.error.message); else setInitial(formFromRow(res.data)); });
     }, [props.id]);
     if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not open this listing: ' + error);

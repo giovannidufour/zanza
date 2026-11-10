@@ -24,12 +24,22 @@ const json = (body: unknown, status: number, headers: Record<string, string>) =>
   new Response(JSON.stringify(body), { status, headers: { ...headers, "Content-Type": "application/json" } });
 
 // Discogs disambiguates homonyms with " (2)"; "anv" is the name as printed on this release
-type DiscogsArtist = { name: string; anv?: string; join?: string };
+type DiscogsArtist = { id?: number; name: string; anv?: string; join?: string };
 const clean = (s: string) => s.replace(/\s+\(\d+\)$/, "").trim();
-function artistName(list: DiscogsArtist[] | undefined): string {
+// printed = as on the record (anv), official = the Discogs artist name
+function artistName(list: DiscogsArtist[] | undefined, printed: boolean): string {
   if (!list || !list.length) return "";
-  return list.map((a, i) => clean(a.anv || a.name) + (i < list.length - 1 ? (a.join && a.join !== "," ? ` ${a.join} ` : ", ") : ""))
+  return list.map((a, i) => clean((printed && a.anv) || a.name) + (i < list.length - 1 ? (a.join && a.join !== "," ? ` ${a.join} ` : ", ") : ""))
     .join("").replace(/\s+/g, " ").trim();
+}
+// the official name, the credit and the Discogs id of one line (id only when the line has a single artist:
+// a combined "A & B" must not bind to A)
+function credit(list: DiscogsArtist[] | undefined) {
+  return {
+    artist: artistName(list, false),
+    artistCredit: artistName(list, true),
+    artistDiscogsId: list && list.length === 1 && list[0].id ? list[0].id : null,
+  };
 }
 
 Deno.serve(async (req) => {
@@ -58,12 +68,12 @@ Deno.serve(async (req) => {
   // deno-lint-ignore no-explicit-any
   const d: any = await res.json();
 
-  const releaseArtist = artistName(d.artists);
+  const releaseCredit = credit(d.artists);
   const tracks = (d.tracklist ?? [])
     .filter((t: { type_?: string }) => (t.type_ ?? "track") === "track")
     .map((t: { position?: string; title?: string; artists?: DiscogsArtist[] }) => ({
       position: t.position ?? "",
-      artist: artistName(t.artists) || releaseArtist,
+      ...(t.artists && t.artists.length ? credit(t.artists) : releaseCredit),
       title: (t.title ?? "").trim(),
     }));
   const label = (d.labels ?? [])[0] ?? {};
@@ -73,9 +83,10 @@ Deno.serve(async (req) => {
     releaseId: d.id,
     masterId: d.master_id ?? null,
     uri: d.uri ?? null,
-    artist: releaseArtist,
+    ...releaseCredit,
     title: d.title ?? "",
     label: label.name ? clean(label.name) : "",
+    labelDiscogsId: label.id ?? null,
     catNo: label.catno && label.catno !== "none" ? label.catno : "",
     year: d.year || null,
     country: d.country ?? "",
