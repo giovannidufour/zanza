@@ -686,7 +686,7 @@
 
   function initBag() { renderBag(); }
 
-  // a copy already in the bag: its Add buttons read "Added to bag" (mobile card: "Added"), Gio 2026-11-10. Not
+  // a copy already in the bag: its Add buttons read "Added to bag" (mobile card: "Added") + a tick, Gio 2026-11-10. Not
   // disabled (no strikethrough): still a working button, it opens the bag. The default label is kept in
   // data-label-default so a Remove brings it back.
   function syncAddButton(btn, id, ids) {
@@ -699,6 +699,14 @@
     var added = /^add$/i.test(def) ? 'Added' : 'Added to bag';
     text.nodeValue = inBag ? added : def;
     btn.setAttribute('data-in-bag', inBag ? 'true' : 'false');
+    // Figma: `trailing icon` on, icon-tick-large-thin (Gio 2026-11-10); the icon comes from the page's template
+    var tick = btn.querySelector('[data-added-tick]');
+    var tpl = document.getElementById('zz-icon-tick');
+    if (inBag && !tick && tpl && tpl.content.firstElementChild) {
+      tick = tpl.content.firstElementChild.cloneNode(true);
+      tick.setAttribute('data-added-tick', '');
+      btn.appendChild(tick);
+    } else if (!inBag && tick) tick.parentNode.removeChild(tick);
   }
   function syncAddButtons(ids) {
     Array.prototype.forEach.call(document.querySelectorAll('[data-listing-id] .zz-product-card__add'), function (b) {

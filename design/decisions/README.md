@@ -70,3 +70,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0044](0044-bag-is-a-page.md) | The bag is a page; one line per copy; adding does not hold | accepted |
 | [0045](0045-button-active-is-the-current-page.md) | Button `active` = the current page: a link with aria-current, never disabled | accepted |
 | [0046](0046-added-to-bag-label.md) | A copy in the bag: its Add buttons read "Added to bag" and open the bag | accepted |
+| [0047](0047-added-to-bag-tick.md) | "Added to bag" carries a tick as its trailing icon | accepted |
