@@ -1181,7 +1181,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    Toast + ToastRegion (Figma: page `toast` → `toast` 2177:439; decision 0049)
-   The look mirrors `dialog`: surface-base (opaque, 0023), 1px border-divider-strong, padding and gap medium-small,
+   The look: surface-base (opaque, 0023), 1px border-divider-strong dashed [1,1] (0051), padding and gap medium-small,
    message body/medium text-strong, no radius, no shadow. Action = Button secondary small, dismiss = IconButton ×.
    Region: fixed at the bottom of the viewport, gutter-small above whatever is docked there (--zz-toast-offset: the
    shop sets it to the player height while the player is open). Desktop: right-aligned at the page margin, 360 wide
@@ -1190,22 +1190,35 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-toast-region {
   position: fixed; z-index: 30;
   right: var(--page-margin-desktop);
-  bottom: calc(var(--zz-toast-offset, 0px) + var(--gutter-small));
+  bottom: calc(var(--zz-toast-offset, 0px) + var(--zz-toast-gap, var(--gutter-small)));
   width: min(360px, calc(100vw - 2 * var(--page-margin-desktop)));
   pointer-events: none;   /* the empty region never blocks the page; the toast itself takes the pointer */
 }
 @media (--mobile) {
-  .zz-toast-region { left: var(--page-margin-mobile); right: var(--page-margin-mobile); width: auto; }
+  .zz-toast-region { left: var(--page-margin-mobile); right: var(--page-margin-mobile); width: auto;
+    /* phones with rounded screen corners clip a toast 8px from the bottom (Gio, decision 0052): 2 × medium-small
+       above the bottom edge, plus the safe area where the browser reports one. The shop resets the gap to
+       gutter-small while the player is open (the player already sits at the bottom) */
+    --zz-toast-gap: calc(2 * var(--medium-small) + env(safe-area-inset-bottom, 0px)); }
 }
 .zz-toast-region__slot:empty { display: none; }
 .zz-toast {
   pointer-events: auto;
   display: flex; align-items: center; gap: var(--medium-small);
-  padding: var(--medium-small); box-sizing: border-box; width: 100%;
-  background: var(--surface-base);
+  padding: calc(var(--medium-small) + 1px); box-sizing: border-box; width: 100%;   /* + the 1px stroke, in layout (0014) */
   color: var(--text-strong);
-  border: 1px solid var(--border-divider-strong);
   font-family: var(--font-sans);
+  /* border dashed [1,1], dotted (Gio, decision 0051), drawn as four 1px gradients because CSS `dashed` / `dotted`
+     cannot set the pattern. No state uses [1,1]: [4,4] / [2,2] are hover / pressed (0005), [16,16] the drop zone */
+  background-color: var(--surface-base);
+  background-repeat: no-repeat;
+  background-image:
+    repeating-linear-gradient(90deg,  var(--border-divider-strong) 0 1px, transparent 1px 2px),
+    repeating-linear-gradient(90deg,  var(--border-divider-strong) 0 1px, transparent 1px 2px),
+    repeating-linear-gradient(180deg, var(--border-divider-strong) 0 1px, transparent 1px 2px),
+    repeating-linear-gradient(180deg, var(--border-divider-strong) 0 1px, transparent 1px 2px);
+  background-size: 100% 1px, 100% 1px, 1px 100%, 1px 100%;
+  background-position: 0 0, 0 100%, 0 0, 100% 0;
 }
 .zz-toast__message { flex: 1 1 auto; min-width: 0; margin: 0; }
 .zz-toast__action, .zz-toast__dismiss { flex: none; }

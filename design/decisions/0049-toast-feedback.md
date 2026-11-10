@@ -1,6 +1,6 @@
 # 0049 — Toasts carry Undo and off-screen news; everything else stays inline
 
-`2026-11-10` · accepted (Gio), amended by [0050](0050-added-to-bag-toast.md) (Add to bag gets a toast; actions also on the page time out) · Figma: page `toast` (2177:438) → `toast` (2177:439), examples, placement desktop / mobile
+`2026-11-10` · accepted (Gio), amended by [0050](0050-added-to-bag-toast.md) (Add to bag gets a toast; actions also on the page time out) [0051](0051-toast-dashed-border.md) (dotted border) and [0052](0052-toast-clear-of-rounded-corners.md) (mobile bottom gap) · Figma: page `toast` (2177:438) → `toast` (2177:439), examples, placement desktop / mobile
 
 **Context.** Feedback today is scattered: the Add buttons change label (0046), the admin writes a status line next to its buttons, bulk actions show a message bar with Undo, the PLP announces result counts to screen readers only. Removing a bag line has no feedback and no Undo. A toast was asked for; the map below shows it has a narrow job.
 
