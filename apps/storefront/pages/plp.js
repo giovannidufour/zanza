@@ -69,7 +69,8 @@ function PlpFilters({ facets, hidden }) {
     h('p', { className: 'zz-visually-hidden', role: 'status', 'aria-live': 'polite', 'data-plp-status': '' }));
 }
 
-function Plp({ section, products, site, url }) {
+// allProducts: every product with a page (also sold / reserved / trade), so a chip reached from any PDP shows the name
+function Plp({ section, products, allProducts = products, site, url }) {
   const facets = facetsOf(products);
   return h('div', { className: 'zz-page' },
     h(SiteHeader, { site, url, section }),
@@ -78,7 +79,7 @@ function Plp({ section, products, site, url }) {
 
     // Figma: `pdp content` (sic) — 12-col grid, gap gutter-small, padding-y small; filters cols 1–3, list cols 4–12
     h('div', { className: 'plp-content' },
-      facets.length ? h(PlpFilters, { facets, hidden: hiddenFacetsOf(products) }) : null,
+      facets.length ? h(PlpFilters, { facets, hidden: hiddenFacetsOf(allProducts) }) : null,
       h('main', { className: 'plp-list' },
         h('h1', { className: 'plp-list__title' }, SECTION_LABEL[section]),
         // no device: responsive card (desktop variant on PLP - desktop, mobile variant on PLP - mobile)

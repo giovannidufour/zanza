@@ -127,7 +127,7 @@ for (const product of products) {
 
 // PLP: the listing of the "For sale" section (Figma: PLP - desktop); "For trade" has no products yet
 const forSale = products.filter(p => p.listing.section === 'sale' && p.listing.status === 'available');
-write('sale/index.html', page({ title: Plp.title('sale'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, site, url })) }));
+write('sale/index.html', page({ title: Plp.title('sale'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, allProducts: products, site, url })) }));
 
 // root: redirect to the PLP while there is no home page
 write('index.html', `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=${url('/sale/')}"><title>${escape(site.storeName)}</title>`);
