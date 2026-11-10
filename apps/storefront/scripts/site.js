@@ -10,7 +10,9 @@
    3. Soft navigation
       - internal links load the next page with fetch and swap only .zz-page, so the player and its audio keep playing
       - anything unexpected (error, other origin, page without .zz-page) falls back to a normal page load
-   4. PLP filters
+   4. PDP gallery
+      - measures the gallery's top in the document (--pdp-gallery-top), so pdp.css can fit it in the window at rest
+   5. PLP filters
       - ticking an option filters the list (OR inside a block, AND between blocks), updates the counts, the URL and
         the breadcrumbs, and announces the number of records
 
@@ -246,6 +248,22 @@
     });
   }
 
+  /* -- PDP gallery (pages/pdp.js, pdp.css, decision 0034) ----------------- */
+  var galleryCleanup = null;
+  function initGallery() {
+    if (galleryCleanup) galleryCleanup();
+    galleryCleanup = null;
+    var gallery = document.querySelector('.pdp-content__gallery');
+    if (!gallery) return;
+    function measure() {
+      gallery.style.setProperty('--pdp-gallery-top', Math.round(gallery.getBoundingClientRect().top + window.scrollY) + 'px');
+    }
+    measure();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);   // web fonts can change the header height
+    window.addEventListener('resize', measure);
+    galleryCleanup = function () { window.removeEventListener('resize', measure); };
+  }
+
   /* -- PLP filters (pages/plp.js, Figma page `filters`) --------------------
      OR inside a block, AND between blocks. Counts = records you would see by ticking that option, given the other
      blocks; an option at 0 is hidden unless ticked. State lives in the URL (?subgenre=Roots&format=7"), so a
@@ -335,6 +353,7 @@
       var target = url.hash && document.getElementById(decodeURIComponent(url.hash.slice(1)));
       if (target) target.scrollIntoView(); else window.scrollTo(0, 0);
       initHeader();
+      initGallery();
       initFilters();
       if (player && audio) render();
       // screen readers and keyboard: start from the new page's main heading, like a full load would
@@ -358,5 +377,6 @@
   }
 
   initHeader();
+  initGallery();
   initFilters();
 })();

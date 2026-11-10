@@ -9,8 +9,10 @@
   padding: var(--small) 0;                             /* Figma: paddingTop/Bottom → small */
   align-items: start;
 }
-/* Figma `gallery` (2138:1176): cols 1–4, rows 1–2, images stacked, gap gutter-small. It sticks to the top of the window and
-   scrolls on its own when taller than the window minus the open site player (decision 0033).
+/* Figma `gallery` (2138:1176): cols 1–4, rows 1–2, images stacked, gap gutter-small. It moves with the page (not
+   sticky) and scrolls on its own when taller than the space from its resting top to the bottom of the window, minus the
+   open site player: at rest the whole box is on screen, so scrolling inside shows the last image entirely (decision 0034).
+   --pdp-gallery-top = the gallery's top in the document, measured by scripts/site.js (header + breadcrumbs vary).
    Row 1 is at least as tall as image 1 (Figma: row 1 FIXED 330.67 at 1024); gallery gap = row gap, so row 2
    (you may also like) starts exactly where image 2 starts. Image side = 4 of 12 columns: (100cqw - 11 gaps) / 3 + 3 gaps. */
 .zz-page:has(> .pdp-content) { container-type: inline-size; }   /* 100cqw = page content width = .pdp-content width */
@@ -20,11 +22,9 @@
 .pdp-content__gallery {
   grid-column: 1 / span 4;
   grid-row: 1 / span 2;
-  position: sticky;
-  top: 0;
-  --zz-gallery-max-height: 100dvh;
+  --zz-gallery-max-height: calc(100dvh - var(--pdp-gallery-top, 0px));
 }
-body[data-player-open] .pdp-content__gallery { --zz-gallery-max-height: calc(100dvh - var(--site-player-height, 0px)); }
+body[data-player-open] .pdp-content__gallery { --zz-gallery-max-height: calc(100dvh - var(--pdp-gallery-top, 0px) - var(--site-player-height, 0px)); }
 .pdp-content__related { grid-column: 5 / span 8; grid-row: 2; }   /* Figma: you may also like, row 2, cols 5–12 */
 .pdp-content__info    { grid-column: 5 / span 4; grid-row: 1; }
 .pdp-content__actions { grid-column: 9 / span 4; grid-row: 1; }
@@ -37,7 +37,6 @@ body[data-player-open] .pdp-content__gallery { --zz-gallery-max-height: calc(100
 @media (--mobile) {
   .pdp-content { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: none; row-gap: var(--small); }
   .pdp-content__gallery, .pdp-content__info, .pdp-content__actions, .pdp-content__related { grid-column: 1 / -1; grid-row: auto; }
-  .pdp-content__gallery { position: static; }
   /* Figma PDP - mobile: `pdp content` padding-bottom 24 (literal, no token: open.md), then `you may also like` full
      width. Here the list is the last grid item: 24 = row gap (small) + 16, and the content padding moves below it. */
   .pdp-content { padding-bottom: 24px; }
