@@ -171,8 +171,10 @@ export declare function Player(props: PlayerProps): JSX.Element;
 export interface ProductInfoProps extends HTMLAttributes<HTMLElement> {
   /** Omitted → responsive (breakpoint `--mobile` from tokens.json, <768px placeholder). */
   device?: "desktop" | "mobile";
-  /** Figma `product name` — rendered as <h1>. */
+  /** Figma `product name` — rendered as a heading, <h1> by default. */
   title: ReactNode;
+  /** Heading level of the title. The PDP keeps 1; inside another page (the admin preview) pass a lower level. @default 1 */
+  headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
   /** Figma `price`, already formatted. */
   price?: ReactNode;
   /** Figma `release info`, e.g. "Label Format (Country)". */

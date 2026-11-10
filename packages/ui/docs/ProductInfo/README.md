@@ -11,7 +11,8 @@ Inner layout: 3-column grid, no gaps ([0012](../../../../design/decisions/0012-l
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `device` | `"desktop" \| "mobile"` |  | Omitted → responsive (breakpoint `--mobile` from tokens.json, &lt;768px placeholder). |
-| `title` * | `ReactNode` |  | Figma `product name` — rendered as &lt;h1>. |
+| `title` * | `ReactNode` |  | Figma `product name` — rendered as a heading, &lt;h1> by default. |
+| `headingLevel` | `1 \| 2 \| 3 \| 4 \| 5 \| 6` | `1` | Heading level of the title. The PDP keeps 1; inside another page (the admin preview) pass a lower level. |
 | `price` | `ReactNode` |  | Figma `price`, already formatted. |
 | `releaseInfo` | `ReactNode` |  | Figma `release info`, e.g. "Label Format (Country)". |
 | `tags` | `ReactNode` |  | A &lt;TagGroup>. |

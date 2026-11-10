@@ -258,6 +258,31 @@
     };
   }
 
+  // ── shop preview: form → the storefront's text (same mapping as apps/storefront/pages/shell.js and data/products.js) ──
+  // the shop shows the credit when it differs (Different spelling), as the database stores it
+  function lineArtistText(l) { return l.artistSpelled && l.artistCredit.trim() ? l.artistCredit.trim() : namesOf(l.artists); }
+  // "Artist - Title 1 / Title 2", or "Artist 1 - Title 1 / Artist 2 - Title 2" when a later line has its own artist;
+  // tolerant of half-filled lines (the preview fills in while typing)
+  function previewName(f) {
+    if (f.customTitle.trim()) return f.customTitle.trim();
+    var ls = f.lines.map(function (l) { return { artist: lineArtistText(l), title: l.title.trim() }; });
+    var first = ls[0].artist;
+    function join(a, t) { return [a, t].filter(Boolean).join(' - '); }
+    var own = ls.slice(1).some(function (l) { return l.artist && l.artist !== first; });
+    if (!own) return join(first, ls.map(function (l) { return l.title; }).filter(Boolean).join(' / '));
+    return ls.map(function (l) { return join(l.artist || first, l.title); }).filter(Boolean).join(' / ');
+  }
+  function previewReleaseInfo(f) {
+    var label = f.labelSpelled && f.labelCredit.trim() ? f.labelCredit.trim() : (f.label[0] || {}).name;
+    return [label, label && f.preRelease ? 'Pre' : null, f.format, f.country ? '(' + f.country + ')' : null].filter(Boolean).join(' ');
+  }
+  function previewPrice(f) {
+    var c = f.section === 'sale' ? textToCents(f.price) : null;
+    return c === null || c === undefined || isNaN(c) ? null : (c % 100 === 0 ? c / 100 : (c / 100).toFixed(2)) + '€';
+  }
+  // PDP: one tag group, subgenres then tags
+  function previewTags(f) { return (f.subgenres || []).concat(f.tags || []).map(function (t) { return t.name; }); }
+
   // ── audio preview (one at a time) ─────────────────────────────────────────
   var audio = new Audio();
 
@@ -543,8 +568,35 @@
         h(Z.Button, { hierarchy: 'secondary', href: shopUrl || undefined, disabled: !shopUrl, target: '_blank', rel: 'noopener' }, 'Preview')),
       h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : ''),
       h(Z.Input, { id: 'sku', label: 'Sku', readOnly: true, value: f.sku ? String(f.sku) : '', placeholder: 'On first save', supportText: 'Automatic-generated' }),
+      shopPreview(),
       locked ? h('p', { className: 'body-small' }, 'This copy is ' + f.status + ': it can no longer be edited here.') : null,
       isNew ? null : statusPanel());
+
+    /* Figma BACKEND → Create › side › preview (2133:933, Gio 2026-11-10, decision 0030): the PDP - mobile content
+       (gallery + product info, no header, no Add to bag) in the shop theme, filled in while the form is typed.
+       Same components as the shop; empty parts are left out. Its sample buttons play through the admin audio. */
+    function shopPreview() {
+      var title = previewName(f), tags = previewTags(f);
+      var images = f.images.slice(0, 2).map(function (x, i) { return { src: x.url, alt: i === 0 ? title : '' }; });
+      return h('section', { className: 'admin-section admin-preview', 'aria-labelledby': 'admin-preview-title' },
+        h('h2', { id: 'admin-preview-title', className: 'label-medium' }, 'Preview'),
+        h('div', { className: 'admin-preview__shop', 'data-theme': 'frontend' },
+          images.length ? h(Z.Gallery, { device: 'mobile', images: images }) : null,
+          h(Z.ProductInfo, {
+            device: 'mobile', headingLevel: 3,
+            title: title,
+            price: previewPrice(f),
+            releaseInfo: previewReleaseInfo(f) || null,
+            tags: tags.length ? h(Z.TagGroup, null, tags.map(function (n, i) { return h(Z.Tag, { key: i, size: 'large' }, n); })) : null,
+            description: f.notes.trim() || null,
+            grading: f.condition ? 'Grading: ' + f.condition : null,
+            samples: f.samples.length ? f.samples.map(function (s, i) {
+              var t = sampleTitleOf(s);
+              return h(Z.PlayerButton, { key: s.id, playing: playing === s.id, onClick: function () { togglePlay(s); },
+                'aria-label': t ? undefined : (title || 'Listing') + ', sample ' + (i + 1) }, t || null);
+            }) : null
+          })));
+    }
 
     function statusPanel() {
       var closing = f.section === 'sale' ? 'sold' : 'traded';

@@ -43,6 +43,7 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - **Radio.** Ported (`controls` → `radio`, Gio 2026-11-10). Not designed: focus (browser ring), disabled, error. Used by `Dialog` `choices` (admin merge, not built yet).
 - **Admin Listings tabs.** Figma moved the counts to the tab `suffix` (0029); `apps/admin` still writes "All 48" in the label: switch to `suffix` with the Attributes page.
 - **Dialog.** No destructive colour: the confirm button is primary, the label carries the meaning. Mobile: full width minus 16px each side (code), not drawn.
+- **Admin shop preview (0030).** Not drawn: the empty state (code: no gallery until an image is added, empty title, the green block only); the admin on mobile (the side column comes first, so the preview sits above the form: move it below?); sold/reserved listings (the preview shows the copy as for sale). The side column now scrolls on its own when the preview makes it taller than the window (code choice, keeps Publish reachable). Naming: the action panel has a "Preview" button (opens the live shop page) and the section is also "Preview": rename one (e.g. button "View in shop")? Preview padding-bottom 24 is the PDP literal (see `PDP - mobile` below).
 - **Button `layout` (hug | fill).** Not ported: the admin side buttons fill their column via the page layout.
 
 ## Accessibility risks

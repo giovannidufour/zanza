@@ -294,11 +294,11 @@
     return h('section', Object.assign({
       className: cx('zz-product-info', props.className),
       'data-device': device
-    }, omit(props, ['device', 'title', 'price', 'releaseInfo', 'tags', 'description', 'grading', 'samples', 'className', 'children'])),
+    }, omit(props, ['device', 'title', 'price', 'releaseInfo', 'tags', 'description', 'grading', 'samples', 'headingLevel', 'className', 'children'])),
       h('div', { className: 'zz-product-info__details' },
         h('div', { className: 'zz-product-info__title-block' },
           h('div', { className: 'zz-product-info__title-row' },
-            h('h1', { className: cx('zz-product-info__name', headType) }, props.title),
+            h('h' + (props.headingLevel || 1), { className: cx('zz-product-info__name', headType) }, props.title),
             props.price != null ? h('p', { className: cx('zz-product-info__price', headType) }, props.price) : null),
           props.releaseInfo ? h('p', { className: cx('zz-product-info__release', headType) }, props.releaseInfo) : null),
         props.tags ? h('div', { className: 'zz-product-info__tags' }, props.tags) : null,
