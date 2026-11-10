@@ -500,6 +500,12 @@
      so positions follow the preview while dragging. */
   var FileListContext = React.createContext(null);
 
+  var blankImage = null;   // a transparent 1×1 image, to replace the browser drag image
+  function blankDragImage() {
+    if (!blankImage) { blankImage = new Image(1, 1); blankImage.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; }
+    return blankImage;
+  }
+
   function FileList(props) {
     var listRef = React.useRef(null);
     var tops = React.useRef({});          // layout top of each row by key, for the keyboard-move slide (FLIP)
@@ -513,6 +519,7 @@
     var liveState = React.useState(''), live = liveState[0], setLive = liveState[1];
     var items = React.Children.toArray(props.children);
     var move = props.onMove;
+    React.useEffect(function () { if (move) blankDragImage(); }, [!!move]);   // loaded before the first drag
 
     function update(next) { dragRef.current = next; setDrag(next); }
     function itemName(i) { var c = items[i]; return (c && c.props && c.props.name) || ('item ' + (i + 1)); }
@@ -564,11 +571,21 @@
       try { e.dataTransfer.setData('text/plain', itemName(i)); } catch (err) { /* Firefox starts a drag only with data */ }
       var list = listRef.current, lis = list.children;
       var rows = Array.prototype.map.call(lis, function (li) { return { top: li.offsetTop, height: li.offsetHeight }; });
+      // no browser drag image (a static snapshot): the row itself follows the pointer, so its position number
+      // follows the preview, and the list shows the empty slot where it will land
+      if (blankDragImage().complete && e.dataTransfer.setDragImage) e.dataTransfer.setDragImage(blankDragImage(), 0, 0);
+      var li = lis[i];
       update({ from: i, to: i, rows: rows, gap: parseFloat(getComputedStyle(list).rowGap) || 0,
-        grab: e.clientY - lis[i].getBoundingClientRect().top });
-      // the browser snapshots the drag image right after dragstart: hide the row in the list only after that,
-      // so the pointer carries the row and the list shows the empty slot where it will land
-      setTimeout(function () { var d = dragRef.current; if (d && d.from === i) update(Object.assign({}, d, { lifted: true })); }, 0);
+        grab: e.clientY - li.getBoundingClientRect().top });
+      function follow(ev) {             // document-wide, so the row keeps following outside the list
+        var d = dragRef.current; if (!d || !ev.clientY) return;
+        li.style.transform = 'translateY(' + (ev.clientY - list.getBoundingClientRect().top - d.grab - d.rows[d.from].top) + 'px)';
+      }
+      document.addEventListener('dragover', follow);
+      li.addEventListener('dragend', function stop() {
+        document.removeEventListener('dragover', follow); li.removeEventListener('dragend', stop);
+        li.style.transform = '';         // back to its slot (or, after a drop, it already is in the new one)
+      });
     }
     // the slot of the dragged row: how many other rows have their middle above its middle, measured on the list
     // without the dragged row (fixed geometry, so the rows don't flicker while they shift)
@@ -606,9 +623,9 @@
           return h('li', {
             key: child.key || i,
             'data-key': child.key || i,
-            'data-dragged': drag && drag.lifted && drag.from === i ? 'true' : undefined,
+            'data-dragged': drag && drag.from === i ? 'true' : undefined,
             className: 'zz-file-list__item',
-            style: s.dy ? { transform: 'translateY(' + s.dy + 'px)' } : undefined,
+            style: s.dy && !(drag && drag.from === i) ? { transform: 'translateY(' + s.dy + 'px)' } : undefined,   // the dragged row follows the pointer (set in onDragStart)
             draggable: move ? true : undefined,
             onDragStart: move ? function (e) { onDragStart(i, e); } : undefined,
             // Chromium fires no drop when the pointer is over the drag source, and the dragged row is translated under it:
