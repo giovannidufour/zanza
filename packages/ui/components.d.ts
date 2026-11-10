@@ -200,6 +200,9 @@ export interface ProductInfoProps extends HTMLAttributes<HTMLElement> {
   grading?: ReactNode;
   /** Figma `cover` (boolean + text): the cover/sleeve grade below the record's, already formatted ("Cover: NM"). Omit when not graded. */
   cover?: ReactNode;
+  /** Figma `conditions` (boolean + text): the conditions comment on its own line below the cover grade, already formatted ("(Light marks)").
+   *  Same type and gap as the grade lines. Omit when there is no comment, or when it already follows the record grade (no cover line). */
+  conditions?: ReactNode;
   /** <PlayerButton>s. Desktop: columns 2–3, stacked; mobile: full width, in a row. */
   samples?: ReactNode;
 }
@@ -234,6 +237,9 @@ export interface ProductCardProps extends HTMLAttributes<HTMLElement> {
   grading?: ReactNode;
   /** Figma `cover` (boolean + text): the cover/sleeve grade below the record's, already formatted ("Cover: NM"). Omit when not graded. */
   cover?: ReactNode;
+  /** Figma `conditions` (boolean + text): the conditions comment on its own line below the cover grade, already formatted ("(Light marks)").
+   *  Same type and gap as the grade lines. Omit when there is no comment, or when it already follows the record grade (no cover line). */
+  conditions?: ReactNode;
   /** Tag labels, or `{ label, href }` for a tag that links somewhere. Rendered as a TagGroup: size large on desktop, small on mobile. */
   tags?: Array<string | { label: string; href?: string }>;
   /** <PlayerButton>s, in a row (gap 8). */

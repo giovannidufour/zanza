@@ -19,6 +19,7 @@ Inner layout: 3-column grid, no gaps ([0012](../../../../design/decisions/0012-l
 | `description` | `ReactNode` |  | Figma `Description`. |
 | `grading` | `ReactNode` |  | Figma `grading`: the record's grade, already formatted ("Record: VG+ / VG"). |
 | `cover` | `ReactNode` |  | Figma `cover` (boolean + text): the cover/sleeve grade below the record's, already formatted ("Cover: NM"). Omit when not graded. |
+| `conditions` | `ReactNode` |  |  |
 | `samples` | `ReactNode` |  | &lt;PlayerButton>s. Desktop: columns 2–3, stacked; mobile: full width, in a row. |
 
 `*` required.

@@ -305,7 +305,7 @@
 
   /* ── ProductInfo ────────────────────────────────────────────────────────
      Figma: `product info` (device=desktop | mobile). Inner grid 3 cols × 2 rows:
-     row 1 = details (title row, release info, tags, description, grading, cover), row 2 = samples
+     row 1 = details (title row, release info, tags, description, grading, cover, conditions), row 2 = samples
      (desktop: middle column; mobile: full width, horizontal). Breakpoint via CSS (`--mobile`, tokens.json).
      Type: name/price/release = body-extra-large (desktop) · body-large (mobile); responsive = both, the --mobile class wins below the breakpoint. */
   function ProductInfo(props) {
@@ -314,7 +314,7 @@
     return h('section', Object.assign({
       className: cx('zz-product-info', props.className),
       'data-device': device
-    }, omit(props, ['device', 'title', 'price', 'releaseInfo', 'tags', 'description', 'grading', 'cover', 'samples', 'headingLevel', 'className', 'children'])),
+    }, omit(props, ['device', 'title', 'price', 'releaseInfo', 'tags', 'description', 'grading', 'cover', 'conditions', 'samples', 'headingLevel', 'className', 'children'])),
       h('div', { className: 'zz-product-info__details' },
         h('div', { className: 'zz-product-info__title-block' },
           h('div', { className: 'zz-product-info__title-row' },
@@ -322,11 +322,12 @@
             props.price != null ? h('p', { className: cx('zz-product-info__price', headType) }, props.price) : null),
           props.releaseInfo ? h('p', { className: cx('zz-product-info__release', headType) }, props.releaseInfo) : null),
         props.tags ? h('div', { className: 'zz-product-info__tags' }, props.tags) : null,
-        (props.description || props.grading || props.cover)
+        (props.description || props.grading || props.cover || props.conditions)
           ? h('div', { className: 'zz-product-info__description-block' },
               props.description ? h('p', { className: 'zz-product-info__description body-medium' }, props.description) : null,
               props.grading ? h('p', { className: 'zz-product-info__grading body-medium' }, props.grading) : null,
-              props.cover ? h('p', { className: 'zz-product-info__cover body-medium' }, props.cover) : null)
+              props.cover ? h('p', { className: 'zz-product-info__cover body-medium' }, props.cover) : null,
+              props.conditions ? h('p', { className: 'zz-product-info__conditions body-medium' }, props.conditions) : null)
           : null),
       props.samples ? h('div', { className: 'zz-product-info__samples' }, props.samples) : null);
   }
@@ -366,7 +367,7 @@
       className: cx('zz-product-card', props.className),
       'data-device': device,
       'aria-labelledby': titleId
-    }, omit(props, ['device', 'image', 'href', 'title', 'releaseInfo', 'price', 'description', 'grading', 'cover', 'tags', 'samples',
+    }, omit(props, ['device', 'image', 'href', 'title', 'releaseInfo', 'price', 'description', 'grading', 'cover', 'conditions', 'tags', 'samples',
                     'onAdd', 'addLabel', 'addLabelShort', 'headingLevel', 'className', 'children'])),
       // href: the cover becomes the link to the product page (no visual change; the link style is not designed yet)
       h(props.href ? 'a' : 'div', props.href ? { className: 'zz-product-card__image', href: props.href, 'aria-labelledby': titleId } : { className: 'zz-product-card__image' },
@@ -384,11 +385,12 @@
       h('div', { className: 'zz-product-card__purchase' },
         device === 'responsive' ? [addButton('desktop'), addButton('mobile')] : addButton(device),
         props.price != null ? h('p', { className: cx('zz-product-card__price', t.head) }, props.price) : null),
-      (props.description || props.grading || props.cover)
+      (props.description || props.grading || props.cover || props.conditions)
         ? h('div', { className: 'zz-product-card__description' },
             props.description ? h('p', { className: t.meta }, props.description) : null,
             props.grading ? h('p', { className: t.meta }, props.grading) : null,
-            props.cover ? h('p', { className: t.meta }, props.cover) : null)
+            props.cover ? h('p', { className: t.meta }, props.cover) : null,
+            props.conditions ? h('p', { className: t.meta }, props.conditions) : null)
         : null);
   }
 

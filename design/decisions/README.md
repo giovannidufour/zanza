@@ -65,3 +65,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0039](0039-mobile-card-image-max-96.md) | Mobile product card: the image column is at most 96px | accepted |
 | [0040](0040-card-title-links-to-pdp.md) | The product card title links to the product page | accepted |
 | [0041](0041-plp-active-filter-replaces-breadcrumbs.md) | PLP: no breadcrumbs, only the filter reached from a link (artist, label, subgenre, tag) | accepted |
+| [0042](0042-conditions-comment-own-line.md) | The stacked conditions comment is its own line, 4px from the cover grade like every line of the block | accepted |
