@@ -9,13 +9,13 @@
   padding: var(--small) 0;                             /* Figma: paddingTop/Bottom → small */
   align-items: start;
 }
-/* Figma `gallery` (2138:1176): cols 1–4, rows 1–2, images stacked 1px apart. It sticks to the top of the window and
+/* Figma `gallery` (2138:1176): cols 1–4, rows 1–2, images stacked, gap gutter-small. It sticks to the top of the window and
    scrolls on its own when taller than the window minus the open site player (decision 0033).
-   Row 1 is at least image 1 + 1px - row gap tall (Figma: row 1 FIXED 323.67 at 1024), so row 2 (you may also like)
-   starts exactly where image 2 starts. Image side = 4 of 12 columns: (100cqw - 11 gaps) / 3 + 3 gaps. */
+   Row 1 is at least as tall as image 1 (Figma: row 1 FIXED 330.67 at 1024); gallery gap = row gap, so row 2
+   (you may also like) starts exactly where image 2 starts. Image side = 4 of 12 columns: (100cqw - 11 gaps) / 3 + 3 gaps. */
 .zz-page:has(> .pdp-content) { container-type: inline-size; }   /* 100cqw = page content width = .pdp-content width */
 .pdp-content {
-  grid-template-rows: minmax(calc((100cqw - 11 * var(--gutter-small)) / 3 + 3 * var(--gutter-small) + 1px - var(--gutter-small)), auto) auto;
+  grid-template-rows: minmax(calc((100cqw - 11 * var(--gutter-small)) / 3 + 3 * var(--gutter-small)), auto) auto;
 }
 .pdp-content__gallery {
   grid-column: 1 / span 4;

@@ -2,7 +2,7 @@
 
 The product images, two per product. Mirrors the PDP frames in Figma (`gallery` 2138:1176 on desktop, `mobile gallery` on mobile): the Figma gallery component is not designed yet.
 
-- **Desktop:** images stacked at the full width of the column, 1px apart. The box scrolls vertically on its own when it is taller than `--zz-gallery-max-height` (the page sets it; default none). No scrollbar; focusable, so the keyboard can scroll it ([0033](../../../../design/decisions/0033-pdp-gallery-scrolls-on-its-own.md)).
+- **Desktop:** images stacked at the full width of the column, gap `gutter-small`. The box scrolls vertically on its own when it is taller than `--zz-gallery-max-height` (the page sets it; default none). No scrollbar; focusable, so the keyboard can scroll it ([0033](../../../../design/decisions/0033-pdp-gallery-scrolls-on-its-own.md)).
 - **Mobile:** horizontal swipe row with scroll-snap, bleeding into the page margins ([0011](../../../../design/decisions/0011-mobile-gallery-bleed.md)). No indicators (none designed).
 
 ## API
@@ -28,4 +28,4 @@ The product images, two per product. Mirrors the PDP frames in Figma (`gallery` 
 
 ## Dimensions (Figma)
 
-Square images (1:1). Gap 1px on desktop and mobile (Figma itemSpacing 1, intentional).
+Square images (1:1). Desktop gap `gutter-small`; mobile gap 1px (Figma itemSpacing 1, intentional).

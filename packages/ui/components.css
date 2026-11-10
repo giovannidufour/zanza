@@ -626,7 +626,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    Gallery (Figma: PDP - desktop `gallery` 2138:1176 · PDP - mobile `mobile gallery`)
-   desktop: both images full width, stacked, gap 1px (Figma itemSpacing 1); the box scrolls vertically on its own
+   desktop: both images full width, stacked, gap gutter/small (Figma itemSpacing bound to gutter/small); the box scrolls vertically on its own
             once it is taller than --zz-gallery-max-height (set by the page; Figma: clip + overflow vertical)
    mobile:  horizontal swipe, one full-width square per screen, gap 1px (as in Figma)
    ═══════════════════════════════════════════════════════════════════════ */
@@ -634,7 +634,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-gallery {
   display: flex;
   flex-direction: column;
-  gap: 1px;                       /* Figma: gallery itemSpacing 1 */
+  gap: var(--gutter-small);       /* Figma: gallery itemSpacing → gutter/small */
   width: 100%;
   max-height: var(--zz-gallery-max-height, none);
   overflow-y: auto;
