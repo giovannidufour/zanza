@@ -837,3 +837,62 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-checkbox__control:checked + .zz-checkbox__box svg + svg { display: block; }
 .zz-checkbox__control:focus-visible + .zz-checkbox__box { outline: auto; }   /* browser ring: no border/focus token yet */
 /* disabled: not designed (design/open.md) */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   EntityField + EntityChip (Figma: BACKEND → Create, "DRAFT · entity chips" 2106:676; decision 0020)
+   It IS the Figma `input` with the `chips` property on (`_input chips` building block before the value) and the
+   field padding overridden to 6, so a row of 24px chips keeps the 38px of a text field (1 + 6 + 24 + 6 + 1).
+   The menu hangs 4px below the field.
+   ═══════════════════════════════════════════════════════════════════════ */
+.zz-entity-field__field { flex-wrap: wrap; row-gap: 8px; padding: 6px; }
+.zz-entity-field__chips { display: contents; list-style: none; margin: 0; padding: 0; }
+.zz-entity-field__chips > li { display: contents; }
+.zz-entity-field__control { flex: 1 1 96px; height: 24px; }   /* a chip tall: the empty field is 38 too */
+
+/* entity chip = tag item medium (surface-support-1, body-small, padding-left 8) + a 24×24 remove target (WCAG 2.5.8) */
+.zz-entity-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding-left: 8px;
+  box-sizing: border-box;
+  background: var(--surface-support-1);
+  color: var(--text-strong);
+  white-space: nowrap;
+}
+.zz-entity-chip__remove {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; flex: none;
+  margin: 0; padding: 0; border: 0; border-radius: 0;
+  background: transparent; color: var(--icon-strong); cursor: pointer;
+}
+.zz-entity-chip__remove svg { width: 16px; height: 16px; display: block; }
+.zz-entity-chip__remove:hover,
+.zz-entity-chip[data-state="hover"] .zz-entity-chip__remove { background: var(--surface-subtle); }
+/* focus: 2px text-strong outside, as drawn (TODO: no focus token yet, design/open.md) */
+.zz-entity-chip:has(.zz-entity-chip__remove:focus-visible),
+.zz-entity-chip[data-state="focus"] { outline: 2px solid var(--text-strong); outline-offset: 0; }
+.zz-entity-chip__remove:focus-visible { outline: none; }
+
+/* menu (listbox) + entity option (kind entity | alias | create; active = aria-selected) */
+.zz-entity-field__menu {
+  position: absolute; z-index: 10;
+  top: calc(100% + 4px); left: -1px; right: -1px;
+  margin: 0; padding: 0; list-style: none;
+  max-height: 288px; overflow-y: auto;
+  background: var(--surface-base);
+  border: 1px solid var(--border-divider-strong);
+}
+.zz-entity-field__menu[hidden] { display: none; }
+.zz-entity-option {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px;
+  background: var(--surface-base);
+  color: var(--text-strong);
+  cursor: pointer;
+}
+.zz-entity-option[aria-selected="true"] { background: var(--surface-subtle); }
+.zz-entity-option__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zz-entity-option__official { flex: none; color: var(--text-moderate); }
+.zz-entity-option__icon { display: inline-flex; width: 20px; height: 20px; flex: none; color: var(--icon-strong); }
+.zz-entity-option__icon svg { width: 100%; height: 100%; display: block; }

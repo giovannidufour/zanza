@@ -53,6 +53,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | DropZone | BACKEND → Create, page-local upload area | ported from page placement; Figma component pending |
 | FileList / FileItem | BACKEND → Create, page-local `uploaded list` | ported from page placement; Figma component pending |
 | Checkbox | page `controls` → `checkbox` | ported: state default / active (= checked), native input |
+| EntityField · EntityChip | `input` › `chips` + `_input chips`, `entity chip` (tags), `entity option` (input › building blocks) | ported: chips, menu (entity / alias / create), keyboard; Label = one chip |
 
 ## Open items
 

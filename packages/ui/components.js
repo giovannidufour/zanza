@@ -567,8 +567,137 @@
       h('span', { className: 'zz-checkbox__label body-medium' }, props.label || props.children));
   }
 
+  /* ── EntityField + EntityChip ──────────────────────────────────────────
+     Figma (Gio approved 2026-11-10, decision 0020): the `input` with `chips` on (field padding 6), `entity chip`
+     (page tags; state default | hover | focus) and `entity option` (page input › building blocks; kind entity | alias |
+     create × state default | active). Examples: BACKEND → Create, "Entity field (chips) · examples" (2106:676).
+     A field whose value is a list of entities (artists, labels, tags): each chosen entity is a chip, text that is not
+     a chip is not a value. Suggestions in a menu below the field (WAI-ARIA combobox + listbox, keyboard: arrows,
+     Enter, Escape, Backspace on the empty field removes the last chip). `multiple={false}`: one chip, and the text
+     box is hidden while it is there (remove the chip to change it). */
+  function XThinIcon() {      // Figma: icon/icon-x-thin
+    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M5.07538 5.07538C5.27064 4.88014 5.58723 4.88012 5.78248 5.07538L12.5 11.7929L19.2175 5.07538C19.4128 4.88012 19.7294 4.88012 19.9246 5.07538C20.1199 5.27064 20.1199 5.58723 19.9246 5.78249L13.2071 12.5L19.9246 19.2175C20.1199 19.4128 20.1199 19.7294 19.9246 19.9246C19.7294 20.1199 19.4128 20.1199 19.2175 19.9246L12.5 13.2071L5.78248 19.9246C5.58723 20.1199 5.27064 20.1199 5.07538 19.9246C4.88012 19.7294 4.88012 19.4128 5.07538 19.2175L11.7929 12.5L5.07538 5.78249C4.88012 5.58722 4.88012 5.27064 5.07538 5.07538Z', fill: 'currentColor' }));
+  }
+  function PlusSmallThinIcon() {      // Figma: icon/icon-plus-small-thin
+    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M12 6.5C12.2761 6.5 12.5 6.72386 12.5 7V11.5H17C17.2761 11.5 17.5 11.7239 17.5 12C17.5 12.2761 17.2761 12.5 17 12.5H12.5V17C12.5 17.2761 12.2761 17.5 12 17.5C11.7239 17.5 11.5 17.2761 11.5 17V12.5H7C6.72386 12.5 6.5 12.2761 6.5 12C6.5 11.7239 6.72386 11.5 7 11.5H11.5V7C11.5 6.72386 11.7239 6.5 12 6.5Z', fill: 'currentColor' }));
+  }
+  function EntityChip(props) {
+    var label = props.label !== undefined ? props.label : props.children;
+    return h('span', Object.assign({ className: cx('zz-entity-chip', props.className), 'data-state': props.state },
+      omit(props, ['label', 'children', 'className', 'onRemove', 'removeLabel', 'state'])),
+      h('span', { className: 'zz-entity-chip__label body-small' }, label),
+      h('button', { type: 'button', className: 'zz-entity-chip__remove', 'aria-label': props.removeLabel || ('Remove ' + label),
+        onClick: props.onRemove, tabIndex: props.onRemove ? undefined : -1 }, h(XThinIcon)));
+  }
+  function entityMatches(options, text, taken, limit) {
+    var t = String(text || '').trim().toLowerCase();
+    if (!t) return [];
+    var starts = [], contains = [];
+    (options || []).forEach(function (e) {
+      if (taken[e.id]) return;
+      var n = e.name.toLowerCase();
+      if (n.indexOf(t) === 0) starts.push({ entity: e, alias: null });
+      else if (n.indexOf(t) > 0) contains.push({ entity: e, alias: null });
+      else {
+        var a = (e.aliases || []).filter(function (x) { return x.toLowerCase().indexOf(t) >= 0; })[0];
+        if (a) (a.toLowerCase().indexOf(t) === 0 ? starts : contains).push({ entity: e, alias: a });
+      }
+    });
+    return starts.concat(contains).slice(0, limit || 8);
+  }
+  function EntityField(props) {
+    var id = useStableId(props.id);
+    var listId = id + '-options', supportId = id + '-support';
+    var value = props.value || [];
+    var multiple = props.multiple !== false;
+    var ts = React.useState(''), text = ts[0], setText = ts[1];
+    var os = React.useState(false), open = os[0], setOpen = os[1];
+    var as = React.useState(0), active = as[0], setActive = as[1];
+    var inputRef = React.useRef(null);
+    var taken = {};
+    value.forEach(function (v) { if (v.id) taken[v.id] = true; });
+    var matches = entityMatches(props.options, text, taken);
+    var trimmed = text.trim();
+    var exact = trimmed && (props.options || []).some(function (e) { return e.name.toLowerCase() === trimmed.toLowerCase(); }) ||
+                value.some(function (v) { return v.name.toLowerCase() === trimmed.toLowerCase(); });
+    var items = matches.map(function (m) { return { kind: m.alias ? 'alias' : 'entity', entity: m.entity, alias: m.alias }; });
+    if (trimmed && !exact && props.allowCreate !== false) items.push({ kind: 'create', name: trimmed });
+    var showMenu = open && items.length > 0;
+    var cur = Math.min(active, items.length - 1);
+    var hasError = props.error !== undefined && props.error !== null && props.error !== false && props.error !== '';
+    var support = hasError ? props.error : props.supportText;
+    var full = !multiple && value.length > 0;
+
+    function choose(item) {
+      if (!item) return;
+      var chip = item.kind === 'create' ? { id: null, name: item.name } : { id: item.entity.id, name: item.entity.name };
+      var next = multiple ? value.concat([chip]) : [chip];
+      if (props.onChange) props.onChange(next, { added: chip, alias: item.alias || null });
+      setText(''); setActive(0); setOpen(false);
+    }
+    function remove(i) {
+      var next = value.filter(function (_, j) { return j !== i; });
+      if (props.onChange) props.onChange(next, { removed: value[i] });
+      setTimeout(function () { if (inputRef.current) inputRef.current.focus(); }, 0);
+    }
+    function onKeyDown(e) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); if (!open) setOpen(true); else setActive(items.length ? (cur + 1) % items.length : 0); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(items.length ? (cur - 1 + items.length) % items.length : 0); }
+      else if (e.key === 'Enter') { if (showMenu) { e.preventDefault(); choose(items[cur]); } }
+      else if (e.key === 'Escape') { if (open) { e.preventDefault(); setOpen(false); } }
+      else if (e.key === 'Backspace' && !text && value.length) { e.preventDefault(); remove(value.length - 1); }
+    }
+    // leaving the field: an exact official name becomes its chip; anything else stays as (unsaved) text
+    function onBlur() {
+      setOpen(false);
+      var m = trimmed && (props.options || []).filter(function (e) { return !taken[e.id] && e.name.toLowerCase() === trimmed.toLowerCase(); })[0];
+      if (m) choose({ kind: 'entity', entity: m });
+    }
+    var optionId = function (i) { return id + '-option-' + i; };
+
+    return h('div', {
+      className: cx('zz-input zz-entity-field', props.className), style: props.style,
+      'data-invalid': hasError ? 'true' : undefined
+    },
+      (props.label || props.optional) ? h('label', { className: 'zz-input__top', htmlFor: id },
+        h('span', { className: 'zz-input__label body-small' }, props.label),
+        props.optional ? ' ' : null,
+        props.optional ? h('span', { className: 'zz-input__optional body-small' }, props.optionalLabel || 'Optional') : null) : null,
+      h('div', { className: 'zz-input__field zz-entity-field__field', onMouseDown: function (e) {
+          if (e.target === e.currentTarget && inputRef.current) { e.preventDefault(); inputRef.current.focus(); }
+        } },
+        value.length ? h('ul', { className: 'zz-entity-field__chips', 'aria-label': (props.label || '') + ': chosen' },
+          value.map(function (v, i) {
+            return h('li', { key: (v.id || 'new') + ':' + v.name }, h(EntityChip, { label: v.name, onRemove: function () { remove(i); } }));
+          })) : null,
+        full ? null : h('input', {
+          ref: inputRef, id: id, type: 'text', className: 'zz-input__control zz-entity-field__control body-medium',
+          role: 'combobox', 'aria-autocomplete': 'list', 'aria-expanded': showMenu ? 'true' : 'false', 'aria-controls': listId,
+          'aria-activedescendant': showMenu ? optionId(cur) : undefined,
+          'aria-invalid': hasError ? 'true' : undefined, 'aria-describedby': support ? supportId : undefined,
+          autoComplete: 'off', placeholder: props.placeholder, value: text, disabled: props.disabled,
+          onChange: function (e) { setText(e.target.value); setOpen(true); setActive(0); },
+          onFocus: function () { if (text) setOpen(true); }, onBlur: onBlur, onKeyDown: onKeyDown
+        }),
+        h('ul', { id: listId, role: 'listbox', className: 'zz-entity-field__menu', hidden: !showMenu, 'aria-label': props.label },
+          showMenu ? items.map(function (it, i) {
+            return h('li', {
+              key: it.kind + (it.entity ? it.entity.id + (it.alias || '') : it.name), id: optionId(i), role: 'option',
+              className: 'zz-entity-option body-medium', 'data-kind': it.kind, 'aria-selected': i === cur ? 'true' : 'false',
+              onMouseDown: function (e) { e.preventDefault(); }, onMouseEnter: function () { setActive(i); },
+              onClick: function () { choose(it); }
+            },
+              it.kind === 'create' ? h('span', { className: 'zz-entity-option__icon', 'aria-hidden': 'true' }, h(PlusSmallThinIcon)) : null,
+              h('span', { className: 'zz-entity-option__label' },
+                it.kind === 'create' ? (props.createLabel || 'Create') + ' “' + it.name + '”' : it.kind === 'alias' ? it.alias : it.entity.name),
+              it.kind === 'alias' ? h('span', { className: 'zz-entity-option__official body-small' }, '→ ' + it.entity.name) : null);
+          }) : null)),
+      support ? h('p', { id: supportId, className: 'zz-input__support body-small' }, support) : null);
+  }
+
   return { Button: Button, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, Tag: Tag, TagGroup: TagGroup,
            PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
            Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, DragHandleIcon: DragHandleIcon,
-           Checkbox: Checkbox, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon };
+           Checkbox: Checkbox, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon,
+           EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon };
 });

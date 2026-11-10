@@ -32,13 +32,14 @@ function artistName(list: DiscogsArtist[] | undefined, printed: boolean): string
   return list.map((a, i) => clean((printed && a.anv) || a.name) + (i < list.length - 1 ? (a.join && a.join !== "," ? ` ${a.join} ` : ", ") : ""))
     .join("").replace(/\s+/g, " ").trim();
 }
-// the official name, the credit and the Discogs id of one line (id only when the line has a single artist:
-// a combined "A & B" must not bind to A)
+// one line: the official name and the credit as text, the Discogs id when it has a single artist, and each artist
+// on its own (the admin makes one chip per artist, decision 0020)
 function credit(list: DiscogsArtist[] | undefined) {
   return {
     artist: artistName(list, false),
     artistCredit: artistName(list, true),
     artistDiscogsId: list && list.length === 1 && list[0].id ? list[0].id : null,
+    artists: (list ?? []).map((a) => ({ name: clean(a.name), credit: clean(a.anv || a.name), discogsId: a.id ?? null })),
   };
 }
 
