@@ -50,8 +50,11 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | RelatedProducts | page `PDP` → `you may also like` | ported: one layout, cards carry the device |
 | Gallery | page `PDP` → `product image` ×2, `mobile gallery` | ported from page placement; Figma component pending |
 | Input | page `input` → `input` + `_input-master` | ported: variant text field / search / select × size medium / compact; error, locked (admin) |
-| DropZone | BACKEND → Create, page-local upload area | ported from page placement; Figma component pending |
-| FileList / FileItem | BACKEND → Create, page-local `uploaded list` | ported from page placement; Figma component pending |
+| DropZone | page `uploads` → `drop zone` | ported |
+| FileList / FileItem | page `uploads` → `file item` (list = layout frame) | ported: type audio / image, state default / dragging, handle, featured, title field |
+| Divider | page `divider` → `divider` | ported |
+| ActionPanel | page `listing form` → `action panel` | ported |
+| ListingLine | page `listing form` → `listing line` | ported: removable, sample empty / uploaded, artist on label |
 | Checkbox | page `controls` → `checkbox` | ported: state default / active (= checked) / indeterminate, `label` boolean (hideLabel), native input |
 | Dialog | page `dialog` → `dialog` | ported: native `<dialog>` + showModal, surface-base, backdrop surface-scrim |
 | EntityField · EntityChip | `input` › `chips` + `_input chips`, `entity chip` (tags), `entity option` (input › building blocks) | ported: chips, menu (entity / alias / create), keyboard; Label = one chip |

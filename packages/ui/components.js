@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"}]} */
 /* packages/ui/components.js — the ONE implementation of the Zanza components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
@@ -473,7 +473,7 @@
   }
 
   /* ── DropZone ───────────────────────────────────────────────────────────
-     Figma: the page-local frame below each upload list on BACKEND → Create ("Frame 4"); no Figma component yet.
+     Figma: page `uploads` → `drop zone` (2026-11-10; was a page-local frame on BACKEND → Create).
      surface/subtle, 1px dashed [16,16] border-divider/strong, padding 24 0, a secondary Button centred.
      The button opens the file picker; files dropped on the zone arrive the same way (onFiles). */
   function DropZone(props) {
@@ -493,8 +493,8 @@
   }
 
   /* ── FileList / FileItem ────────────────────────────────────────────────
-     Figma: the page-local `uploaded list` frames on BACKEND → Create (images, the sample of a line, samples overview);
-     no Figma component yet. A row: [drag handle] · [thumbnail 40 | play] position name (featured) · [remove ×].
+     Figma: page `uploads` → `file item` (2026-11-10): type audio | image, state default | dragging (the dragged row,
+     surface/base), booleans handle (= FileList onMove), featured, title field (= children). A row: [drag handle] · [thumbnail 40 | play] position name (featured) · [remove ×].
      Gaps: list 8, row 16, content 8 (Figma). Reorder: drag a row (pointer): the other rows shift live to the order it would have on drop; or ↑ ↓ on the handle
      (keyboard), announced in a polite live region. FileList numbers the rows ("01", "02"…) in the shown order,
      so positions follow the preview while dragging. */
@@ -672,6 +672,42 @@
       hasBody ? remove : null),
       props.children || null),
       hasBody ? null : remove);
+  }
+
+  /* ── Divider ────────────────────────────────────────────────────────────
+     Figma: page `divider` → `divider` (2026-11-10): 1px, border/divider/strong, fills its container. Between the sections
+     of the admin form. A native <hr> (a thematic break for screen readers). */
+  function Divider(props) {
+    return h('hr', Object.assign({}, omit(props, ['className']), { className: cx('zz-divider', props.className) }));
+  }
+
+  /* ── ActionPanel ────────────────────────────────────────────────────────
+     Figma: page `listing form` → `action panel` (2026-11-10): surface/subtle, padding 16, a column of Buttons that fill
+     it, gap 8 (Create: Publish now · Save draft · Preview). Children = the Buttons. */
+  function ActionPanel(props) {
+    return h('div', Object.assign({}, omit(props, ['className', 'children']), { className: cx('zz-action-panel', props.className) }), props.children);
+  }
+
+  /* ── ListingLine ────────────────────────────────────────────────────────
+     Figma: page `listing form` → `listing line` (2026-11-10): one track line of a listing and its sample.
+     `fields` = 8-column grid, gap 8 × 16. removable=false (line 1): artist 4 + title 4. removable=true (line 2+,
+     here: onRemove given): artist 3 + title 4 + remove × in column 8. Row 2: "Different spelling" under the artist,
+     "Artist name on label" (`artist on label`) under the title. Then the sample (gap 8): a FileList or a DropZone
+     (decision 0022: one sample per line). The fields are slots: the page owns their state. */
+  function ListingLine(props) {
+    var removable = !!props.onRemove;
+    function cell(name, node) { return node ? h('div', { className: 'zz-listing-line__' + name }, node) : null; }
+    return h('div', Object.assign({}, omit(props, ['artist', 'title', 'spelling', 'credit', 'onRemove', 'removeLabel', 'className', 'children']), {
+      className: cx('zz-listing-line', props.className), 'data-removable': removable ? 'true' : 'false'
+    }),
+      h('div', { className: 'zz-listing-line__fields' },
+        cell('artist', props.artist),
+        cell('title', props.title),
+        removable ? h('div', { className: 'zz-listing-line__remove' },
+          h(IconButton, { icon: h(CloseIcon), 'aria-label': props.removeLabel || 'Remove line', onClick: props.onRemove })) : null,
+        cell('spelling', props.spelling),
+        cell('credit', props.credit)),
+      props.children ? h('div', { className: 'zz-listing-line__sample' }, props.children) : null);
   }
 
   /* ── Checkbox ───────────────────────────────────────────────────────────
@@ -865,6 +901,6 @@
   return { Button: Button, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, Tag: Tag, TagGroup: TagGroup,
            PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
            Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, DragHandleIcon: DragHandleIcon,
-           Checkbox: Checkbox, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog,
+           Checkbox: Checkbox, Divider: Divider, ActionPanel: ActionPanel, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog,
            EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon };
 });

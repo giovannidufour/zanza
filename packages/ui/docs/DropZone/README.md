@@ -1,6 +1,6 @@
 # DropZone
 
-The upload area under each file list of the admin: a dashed box with a secondary Button that opens the file picker; files can also be dropped on it. Figma: page-local frame ("Frame 4") on BACKEND → Create — **no Figma component yet**.
+The upload area under each file list of the admin: a dashed box with a secondary Button that opens the file picker; files can also be dropped on it. Figma: page `uploads` → `drop zone` (2026-11-10). Its button is an exposed instance: the label is set on the instance.
 
 ## API
 

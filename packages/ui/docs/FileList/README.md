@@ -1,6 +1,16 @@
 # FileList · FileItem
 
-Ordered list of uploaded files in the admin (images, the sample of a line, samples overview). Figma: page-local `uploaded list` frames on BACKEND → Create — **no Figma component yet**.
+Ordered list of uploaded files in the admin (images, the sample of a line, samples overview). Figma: page `uploads` → `file item` (2026-11-10); the list itself is a layout frame (`file list`), not a component.
+
+| Figma `file item` | Code |
+| --- | --- |
+| `type=audio` | `onTogglePlay` (+ `playing`) |
+| `type=image` | `image` |
+| `state=dragging` | set by FileList on the dragged row (surface-base) |
+| `handle` | FileList `onMove` |
+| `featured` | `featured` |
+| `title field` | children (the sample title Input) |
+| `position`, `name` | `position` (default: row number), `name` |
 
 ## API
 
