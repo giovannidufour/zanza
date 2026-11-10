@@ -25,7 +25,7 @@ One markup for both variants; CSS grid places the blocks ([0016](../../../../des
 | `description` | `ReactNode` |  | Figma `description`. Desktop: purchase column, below the price; mobile: info column, below the title. |
 | `grading` | `ReactNode` |  | Figma `grading`: the record's grade, already formatted ("Record: VG+ / VG"). |
 | `cover` | `ReactNode` |  | Figma `cover` (boolean + text): the cover/sleeve grade below the record's, already formatted ("Cover: NM"). Omit when not graded. |
-| `tags` | `string[]` |  | Tag labels. Rendered as a TagGroup: size large on desktop, small on mobile. |
+| `tags` | `Array<string \| { label: string; href?: string }>` |  | Tag labels, or `{ label, href }` for a tag that links somewhere. Rendered as a TagGroup: size large on desktop, small on mobile. |
 | `samples` | `ReactNode` |  | &lt;PlayerButton>s, in a row (gap 8). |
 | `onAdd` | `() => void` |  | Click on the add button. |
 | `addLabel` | `string` |  | Desktop button label (Figma: "Add to bag"). Default "Add to bag". |

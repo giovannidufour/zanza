@@ -6,7 +6,7 @@ const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 
-const { SECTION_LABEL, tagsOf, formatPrice, productName, releaseInfo, grading, coverGrading, SiteHeader, sampleAttrs, ProductCardFor } = require('./shell.js');
+const { SECTION_LABEL, tagsOf, tagLinksOf, formatPrice, productName, releaseInfo, grading, coverGrading, SiteHeader, sampleAttrs, ProductCardFor } = require('./shell.js');
 
 function breadcrumbItems(product, url) {
   const { listing, release } = product;
@@ -35,7 +35,7 @@ function Pdp({ product, related = [], site, url }) {
         title: productName(release),
         price: listing.section === 'sale' ? formatPrice(listing.price) : null,
         releaseInfo: releaseInfo(release),
-        tags: tagsOf(release).length ? h(Z.TagGroup, null, tagsOf(release).map((s) => h(Z.Tag, { key: s, size: 'large' }, s))) : null,
+        tags: tagsOf(release).length ? h(Z.TagGroup, null, tagLinksOf(release, url).map((t) => h(Z.Tag, { key: t.label, size: 'large', href: t.href }, t.label))) : null,
         description: copy.notes,
         grading: grading(copy),
         cover: coverGrading(copy),
