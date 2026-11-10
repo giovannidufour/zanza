@@ -11,7 +11,7 @@ Stack: `stack.md`. Questa è la **bozza** dello schema e dei flussi, da rivedere
 
 ## Tabelle
 
-**Fonte di verità: `supabase/migrations/`** (`0001` init 2026-11-09, `0002` listing form 2026-11-10, `0003` `admin_save_listing` 2026-11-10, `0004` stati di vendita e `0005` ricostruzione del sito 2026-11-10, … `0009` archivio, delete e bulk, `0010` delete di qualsiasi copia; applicate dall'editor SQL di Supabase). Qui solo il riassunto:
+**Fonte di verità: `supabase/migrations/`** (`0001` init 2026-11-09, `0002` listing form 2026-11-10, `0003` `admin_save_listing` 2026-11-10, `0004` stati di vendita e `0005` ricostruzione del sito 2026-11-10, … `0009` archivio, delete e bulk, `0010` delete di qualsiasi copia, `0011` subgenres e tag separati, `0012` attributes; applicate dall'editor SQL di Supabase). Qui solo il riassunto:
 
 | Tabella | Cosa | Note |
 |---|---|---|
@@ -60,6 +60,11 @@ Chiavi casuali e immutabili (2026-11-10): l'upload avviene prima che il listing 
 - Pre-release (0008): `releases.pre_release` (boolean, della pressatura, non dell'etichetta): checkbox "Pre-release" sotto Label; il negozio scrive "Pre" dopo il nome della label.
 - Tag (0007): stesso collegamento per nome (senza alias né id Discogs); il salvataggio riscrive `releases.style` con i nomi dei tag in ordine.
 - Dati esistenti: un'entità per nome distinto (i 21 dischi di prova hanno nomi combinati tipo "A & B" in maiuscolo: da sistemare a mano se servono).
+
+### Attributes (0012, Gio 2026-11-10, decisione di design 0034)
+- Pagina admin per artisti, label, subgenres e tag: lista con conteggio dei record, modifica (nome, alias, ID Discogs, slug), creazione a mano.
+- **Replace with** (`admin_replace_entity`): sposta i record su una o più entità e cancella la vecchia. Una = merge (nome e alias diventano alias), più di una = split. Il merge dalla lista (`admin_merge_entities`) tiene quella scelta.
+- Si elimina solo un'entità senza record (`admin_delete_entities`). I crediti stampati non cambiano mai. Cambiare nomi o collegamenti di subgenres e tag rimette in coda la ricostruzione del sito.
 
 ### Stati di vendita (0004)
 ```

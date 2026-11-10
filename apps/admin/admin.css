@@ -84,3 +84,12 @@ h1, h2, p { margin: 0; }
   overflow: hidden;
 }
 .admin-preview__shop .zz-gallery { --zz-gallery-bleed: var(--page-margin-mobile); }
+
+/* Figma BACKEND → Attributes (2123:2053, decision 0034): list = Listings grammar + a toolbar (search fill, button hug,
+   gap 16); entity page = the Create layout (main 8 + side 4) but in a 1024 frame on surface-accent, like Listings. */
+.admin-toolbar { display: flex; gap: 16px; align-items: flex-start; }
+.admin-toolbar__search { flex: 1 1 auto; min-width: 0; }
+.admin:has(.admin-page--attribute) { max-width: 1024px; }
+html:has(.admin-page--attribute) { background: var(--surface-accent); }
+.admin-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }   /* Figma `record list`, gap 8 */
+.admin-links a { color: inherit; }
