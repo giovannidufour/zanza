@@ -13,7 +13,8 @@ const formatPrice = (p) => `${p.amount % 100 === 0 ? p.amount / 100 : (p.amount 
 const productName = (r) => r.name || `${r.artist} - ${r.title}`;
 // a pre-release ("blank") of the label: "Pre" right after the label name (Gio, 2026-11-10)
 const releaseInfo = (r) => [r.label, r.label && r.pre_release ? 'Pre' : null, r.format, r.country ? `(${r.country})` : null].filter(Boolean).join(' ');
-const grading = (c) => `Grading: ${c.condition_media}`;
+// media graded per side: "VG+ / VG", only side A when side B is not graded (Gio, 2026-11-10)
+const grading = (c) => `Grading: ${[c.condition_media, c.condition_media_b].filter(Boolean).join(' / ')}`;
 const productHref = (product, url) => url(`/products/${product.listing.slug}/`);
 
 // Figma: `header` (device=desktop | mobile), the same on every page
