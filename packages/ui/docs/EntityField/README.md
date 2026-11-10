@@ -53,5 +53,5 @@ A field whose value is one or more entities (artists, labels, tags): each chosen
 | field | `surface-accent`, border `border-divider-strong` (as Input) |
 | chip | `surface-support-1`, label `text-strong` (body-small) |
 | chip remove × (icon/icon-x-thin 16) | `icon-strong`; hover `surface-subtle` |
-| menu | `surface-accent`, border `border-divider-strong` |
-| option (body-medium) | `text-strong`; active `surface-subtle`; alias official name `text-moderate` (body-small); create icon (icon/icon-plus-small-thin 20) `icon-strong` |
+| menu | `surface-base` (opaque: it floats over the form, 0023), border `border-divider-strong` |
+| option (body-medium) | `surface-base`, `text-strong`; active `surface-subtle`; alias official name `text-moderate` (body-small); create icon (icon/icon-plus-small-thin 20) `icon-strong` |
