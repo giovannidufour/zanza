@@ -23,7 +23,7 @@ Il listing `trade` passa a `reserved` quando una proposal è `accepted`, a `trad
 
 ## Modello dati (bozza)
 
-- **Release** — discogs_release_id, discogs_master_id, artist, title, label, cat_no, year, country, format (12"/7"/LP/EP), genre/style[], tracklist[], cover
+- **Release** — discogs_release_id, discogs_master_id, artist, title, label, cat_no, year, country, format (12"/7"/LP/EP), macro_genre[] (genre Discogs, es. Reggae, non mostrato), genres[] (gli style Discogs: Roots, Dancehall…), tracklist[], cover
 - **Copy** — release_id, condition_media (lato A) + condition_media_b (lato B, facoltativo: "VG+ / VG"), condition_sleeve (Goldmine: M/NM/VG+/VG/G+/G/F/P), notes, photos[], price (solo sale), section (`sale`|`trade`), status (`available`|`reserved`|`sold`|`traded`)
 - **Sample** — release_id, track_position, audio_url, duration, source
 - **Proposal** — copy_id (il disco del negozio), user_id, offered_items[] {discogs_release_id | manual{artist,title}, condition_media, condition_sleeve, photos[]}, cash_adjustment, message, status, thread[] (messaggi/controproposte)
@@ -57,7 +57,7 @@ Il player persistente (mini-player + coda) ha senso solo con (b) o (c). Con (a) 
 Non confondere con la wantlist di Crate Witch/Discogs. Qui "preferiti" è un segnalibro su una **copia** (quella copia a quel prezzo). Decidi cosa succede quando la copia è venduta: sparisce, resta come "sold", o diventa "avvisami se torna una copia di questa release" (il più utile, ma richiede di legare preferito → release, non → copy).
 
 ### 5. PLP per DJ/collezionisti: densità, non vetrina
-Il pubblico vuole scorrere 200 dischi velocemente: vista **lista** compatta (cover piccola, artista/titolo/label/anno/condizione/prezzo/play) accanto alla griglia. Filtri che contano: genere/style, formato, condizione, fascia prezzo, label, anno, "solo con sample". Ordinamenti: nuovi arrivi, prezzo, A–Z artista.
+Il pubblico vuole scorrere 200 dischi velocemente: vista **lista** compatta (cover piccola, artista/titolo/label/anno/condizione/prezzo/play) accanto alla griglia. Filtri che contano: genere (lo style Discogs), formato, condizione, fascia prezzo, label, anno, "solo con sample". Ordinamenti: nuovi arrivi, prezzo, A–Z artista.
 
 ### 6. Spedizione e tasse non sono dettagli
 Vinile = pesante e fragile. Tariffe a peso/formato per zona, packaging, assicurazione opzionale. Sede in Germania, vendita in tutto il mondo (Q5): **IVA OSS** oltre soglia in UE, dogana extra-UE, eventuale Kleinunternehmer o regime del margine (Q5b). Questo spinge verso un servizio che calcola tasse e spedizioni per te (Shopify/Stripe Tax) invece di farlo a mano.

@@ -92,8 +92,8 @@ function toProduct(row, mediaUrl) {
       year: r.year,
       country: r.country,
       format: r.format,
-      genre: r.genre,
-      style: r.style,      // subgenres (Discogs styles), in order
+      macro_genre: r.macro_genre,   // Discogs genre (Reggae), not shown as a filter (0044)
+      genres: r.genres,             // genres (Discogs styles), in order
       tags: (r.tag_rows || []).slice().sort((a, b) => a.position - b.position).map((t) => t.tag.name),   // the shop's own tags
       tracklist: r.tracklist,
       cover: photos[0] || null

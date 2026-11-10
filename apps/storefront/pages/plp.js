@@ -12,10 +12,10 @@ const { SECTION_LABEL, SiteHeader, ProductCardFor, labelRef, artistRefs } = requ
 const FORMAT_ORDER = ['7"', '10"', '12"', 'LP', 'Tape'];
 const decadeOf = (year) => (year ? `${Math.floor(year / 10) * 10}s` : null);
 
-// facet → values of one product. Subgenre = Discogs styles (release.style); Tags = the shop's own tags
-// (release.tags, migration 0011). `key` is the URL parameter.
+// facet → values of one product. Genre = Discogs styles (release.genres, 0044); Tags = the shop's own tags
+// (release.tags, migration 0011). `key` is the URL parameter. The macro genre (release.macro_genre) is not shown.
 const FACETS = [
-  { key: 'subgenre', label: 'Subgenre', values: (p) => p.release.style || [], order: 'count' },
+  { key: 'genre', label: 'Genre', values: (p) => p.release.genres || [], order: 'count' },
   { key: 'format', label: 'Format', values: (p) => (p.release.format ? [p.release.format] : []), order: 'format' },
   { key: 'decade', label: 'Decade', values: (p) => [decadeOf(p.release.year)].filter(Boolean), order: 'name' },
   { key: 'tag', label: 'Tags', values: (p) => p.release.tags || [], order: 'count' }
@@ -100,7 +100,7 @@ function Plp({ section, products, allProducts = products, site, url }) {
   const facets = facetsOf(products);
   return h('div', { className: 'zz-page' },
     h(SiteHeader, { site, url, section }),
-    // Figma `active filter` (0041): in place of the breadcrumbs, the filter reached from a link (artist, label, subgenre,
+    // Figma `active filter` (0041): in place of the breadcrumbs, the filter reached from a link (artist, label, genre,
     // tag) as a removable EntityChip, medium on desktop, large on mobile (plp.css shows one). Hidden until site.js fills it.
     h(Z.ActiveFilter, { hidden: true, 'data-plp-active': '' }),
     h('template', { 'data-plp-chip': '' },

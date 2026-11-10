@@ -161,7 +161,7 @@
 
   /* ── ActiveFilter ───────────────────────────────────────────────────────
      Figma: page `active filter` → `active filter` (device=desktop|mobile, 2026-11-10, decision 0041). The PLP's row in
-     place of the breadcrumbs: the filter reached from a link (artist, label, subgenre, tag) as one removable EntityChip
+     place of the breadcrumbs: the filter reached from a link (artist, label, genre, tag) as one removable EntityChip
      (medium on desktop, large on mobile: the consumer picks the size), padding `small`, 1px rule below — the
      breadcrumbs' frame. A labelled group, not a nav: it is not a path. Render nothing (or hide it) when no filter is active. */
   function ActiveFilter(props) {

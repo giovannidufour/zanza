@@ -25,9 +25,9 @@
         h('div', { className: 'row-hd' }, 'tag · default'), h(Z.Filter, { state: 'default', content: 'tag', label: 'Rare', count: 4 }),
         h('div', { className: 'row-hd' }, 'tag · active'), h(Z.Filter, { state: 'active', content: 'tag', label: 'Killer version', count: 3 })),
       h(Z.Filters, null,
-        h(Z.FilterBlock, { label: 'Subgenre' },
-          h(Z.Filter, { name: 'subgenre', value: 'Dancehall', label: 'Dancehall', count: 14, defaultChecked: true }),
-          h(Z.Filter, { name: 'subgenre', value: 'Roots', label: 'Roots', count: 7 })),
+        h(Z.FilterBlock, { label: 'Genre' },
+          h(Z.Filter, { name: 'genre', value: 'Dancehall', label: 'Dancehall', count: 14, defaultChecked: true }),
+          h(Z.Filter, { name: 'genre', value: 'Roots', label: 'Roots', count: 7 })),
         h(Z.FilterBlock, { label: 'Format' },
           h(Z.Filter, { name: 'format', value: '7"', label: '7”', count: 21 }),
           h(Z.Filter, { name: 'format', value: '12"', label: '12”', count: 6 })))));

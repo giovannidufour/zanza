@@ -549,7 +549,7 @@ export declare function Filter(props: FilterProps): JSX.Element;
 
 /** Mirrors the Figma component `filter block`: <fieldset> with the heading as <legend> (label/extra small), gap 16, options gap 8. */
 export interface FilterBlockProps extends HTMLAttributes<HTMLFieldSetElement> {
-  /** The facet ("Subgenre", "Format"). Figma: `Label`. */
+  /** The facet ("Genre", "Format"). Figma: `Label`. */
   label: ReactNode;
   /** Keep the heading for assistive tech only. Figma: `label` = false. */
   hideLabel?: boolean;
@@ -567,7 +567,7 @@ export declare function Filters(props: FiltersProps): JSX.Element;
 
 /** Mirrors the Figma component `filter facet`: a row of the mobile filters layer (level=main) that opens one facet's level. */
 export interface FilterFacetProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  /** The facet ("Subgenre"). label/medium, uppercase. Figma: `label`. */
+  /** The facet ("Genre"). label/medium, uppercase. Figma: `label`. */
   label: ReactNode;
   /** The ticked options ("Dancehall, Roots"), body/small text-moderate, one line. Omit when none. Figma: `value` + `value visible`. */
   value?: ReactNode;
