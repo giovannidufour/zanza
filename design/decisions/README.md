@@ -45,3 +45,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0019](0019-entity-suggestions-are-native.md) | Artist and label suggestions use the native datalist | superseded by 0020 |
 | [0020](0020-entity-fields-are-chip-inputs.md) | Entity fields are chip inputs (the `input` with chips) | accepted |
 | [0021](0021-sample-title-defaults-to-line-title.md) | The sample title defaults to its line title | accepted |
+| [0022](0022-one-sample-per-line.md) | One sample per line | accepted |
