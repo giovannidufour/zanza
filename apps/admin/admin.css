@@ -1,10 +1,12 @@
 /* apps/admin/admin.css — page layout of the admin only. Components keep their own styles (packages/ui).
    Layout mirrors Figma BACKEND → Create ("Desktop - 1", 1024): padding 24, main column 645 + gap 16 + side column 315,
    sections gap 32 separated by 1px dividers, field rows = 8-column grid, gap 16 (decision 0012).
-   Screens without a Figma frame (sign-in, listings list) reuse the same parts and are flagged in design/open.md. */
+   Listings: Figma BACKEND → Listings (2026-11-10). Sign-in has no Figma frame (design/open.md). */
 
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--surface-accent); color: var(--text-strong); font-family: var(--font-sans); }
+/* background on html only: surface-accent is translucent in the backend mode (black-a4), stacking it on body darkens it (0023) */
+html { background: var(--surface-accent); min-height: 100%; }
+body { margin: 0; color: var(--text-strong); font-family: var(--font-sans); }
 h1, h2, p { margin: 0; }
 
 .admin { padding: 24px; display: flex; flex-direction: column; gap: 24px; max-width: 1024px; }
@@ -34,14 +36,25 @@ h1, h2, p { margin: 0; }
 .admin-status { min-height: 16px; }
 .admin-status--error { color: var(--text-alert); }
 
-/* sign-in and listings (no Figma frame yet) */
+/* sign-in (no Figma frame yet) and listings (Figma BACKEND → Listings) */
 .admin-signin { max-width: 315px; display: flex; flex-direction: column; gap: 16px; }
 .admin-table-wrap { overflow-x: auto; }
 .admin-table { width: 100%; border-collapse: collapse; }
-.admin-table th, .admin-table td { text-align: left; padding: 8px 8px 8px 0; border-bottom: 1px solid var(--border-divider-strong); vertical-align: top; }
+.admin-table th, .admin-table td { text-align: left; padding: 8px 16px 8px 0; border-bottom: 1px solid var(--border-divider-strong); vertical-align: middle; }
+.admin-table th:last-child, .admin-table td:last-child { padding-right: 0; }
 .admin-table th { font-weight: 400; color: var(--text-moderate); }
 .admin-table td.num, .admin-table th.num { font-variant-numeric: tabular-nums; }
 .admin-table a { color: inherit; }
+/* Figma BACKEND → Listings (2026-11-10): first column = row selection (checkbox label=false), price right-aligned */
+.admin-table .select { width: 24px; }
+.admin-table .select .zz-checkbox { display: flex; }
+.admin-table .price { text-align: right; }
+.admin-listings { gap: 24px; }
+/* bulk bar: always rendered, fixed height (38 button + 2×8), so selecting never moves the table */
+.admin-bulk { display: flex; align-items: center; gap: 8px; min-height: 54px; padding: 8px 16px; background: var(--surface-subtle); }
+.admin-bulk__count { flex: 1 1 auto; }
+.admin-bulk__actions, .admin-bulk__message { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+.admin-bulk__message[hidden] { display: none; }
 
 @media (--mobile) {
   .admin { padding: 16px; }

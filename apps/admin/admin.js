@@ -1,5 +1,5 @@
 /* apps/admin/admin.js — the admin single-page app (React via createElement, no build step).
-   Screens: sign-in (email link) · listings · create / edit listing (Figma BACKEND → Create).
+   Screens: sign-in (email link) · listings (Figma BACKEND → Listings: bulk actions, archive, delete) · create / edit listing (Figma BACKEND → Create).
    Data: Supabase with the signed-in user's session (RLS: only public.admins can write).
    Save = one call to public.admin_save_listing (one transaction). Files go straight to R2 through
    short-lived upload URLs from the Edge Function sign-upload; the database keeps only the keys. */
@@ -16,7 +16,7 @@
                 'Folk, World, & Country', 'Classical', 'Stage & Screen', 'Non-Music', "Children's", 'Brass & Military'];   // Discogs genres
   var COUNTRIES = [['JA', 'Jamaica'], ['UK', 'UK'], ['US', 'US'], ['CA', 'Canada'], ['DE', 'Germany'], ['FR', 'France'],
                    ['IT', 'Italy'], ['NL', 'Netherlands'], ['JP', 'Japan'], ['Europe', 'Europe'], ['Unknown', 'Unknown']];
-  var STATUS_LABEL = { draft: 'Draft', available: 'Available', reserved: 'Reserved', sold: 'Sold', traded: 'Traded' };
+  var STATUS_LABEL = { draft: 'Draft', available: 'Available', reserved: 'Reserved', sold: 'Sold', traded: 'Traded', archived: 'Archived' };
   var STATUS_DONE = { draft: 'Unpublished.', available: 'Available again.', reserved: 'Reserved until you release it.', sold: 'Marked as sold.', traded: 'Marked as traded.' };
   var SLEEVES = [['original', 'Original'], ['generic', 'Generic'], ['none', 'None']];
 
@@ -401,6 +401,17 @@
       setStatusNote('');
       setMessage({ error: false, text: STATUS_DONE[res.data.status] + ' The shop updates in about 2 minutes.' });
     }
+    // archived copies come back only through admin_bulk_status (0009), to the status they had
+    async function restore() {
+      setSaving(true); setMessage(null);
+      var res = await sb.rpc('admin_bulk_status', { p_ids: [f.listingId], p_action: 'restore', p_note: statusNote || null });
+      setSaving(false);
+      var done = !res.error && res.data.done[0];
+      if (!done) { setMessage({ error: true, text: 'Not restored: ' + (res.error ? res.error.message : 'it is no longer archived.') }); return; }
+      set({ status: done.to });
+      setStatusNote('');
+      setMessage({ error: false, text: 'Restored as ' + (STATUS_LABEL[done.to] || done.to).toLowerCase() + '.' });
+    }
 
     function fileItem(listName, x, extra, children) {
       return h(Z.FileItem, Object.assign({
@@ -427,7 +438,7 @@
     function lineSamples(i) { return f.samples.filter(function (s) { return s.line === i + 1; }); }
 
     var isNew = !f.listingId;
-    var locked = f.status === 'reserved' || f.status === 'sold' || f.status === 'traded';
+    var locked = f.status === 'reserved' || f.status === 'sold' || f.status === 'traded' || f.status === 'archived';
 
     var main = h('div', { className: 'admin-main' },
       h('h1', { className: 'label-extra-large' }, isNew ? 'Create listing' : 'Edit listing'),
@@ -518,7 +529,7 @@
         f.samples.length ? h(Z.FileList, { className: 'admin-samples', onMove: moveIn('samples') }, f.samples.map(overviewSampleItem)) : null,
         h(Z.DropZone, { label: 'Browse sample', accept: 'audio/mpeg', multiple: true, onFiles: addFiles('sample', null) })));
 
-    var shopUrl = f.slug && f.status !== 'draft' && CFG.storefrontUrl ? CFG.storefrontUrl.replace(/\/$/, '') + '/products/' + f.slug + '/' : null;
+    var shopUrl = f.slug && f.status !== 'draft' && f.status !== 'archived' && CFG.storefrontUrl ? CFG.storefrontUrl.replace(/\/$/, '') + '/products/' + f.slug + '/' : null;
     var side = h('aside', { className: 'admin-side' },
       h('div', { className: 'admin-side__actions' },
         h(Z.Button, { hierarchy: 'primary', disabled: saving || locked, onClick: function () { save('available'); } }, f.status === 'available' ? 'Update' : 'Publish now'),
@@ -536,7 +547,8 @@
         available: [[closing, f.section === 'sale' ? 'Mark as sold' : 'Mark as traded'], ['reserved', 'Reserve'], ['draft', 'Unpublish']],
         reserved: [[closing, f.section === 'sale' ? 'Mark as sold' : 'Mark as traded'], ['available', 'Release']],
         sold: [['available', 'Make available again']],
-        traded: [['available', 'Make available again']]
+        traded: [['available', 'Make available again']],
+        archived: [['restore', 'Restore']]
       }[f.status] || [];
       var support = f.checkoutUntil ? 'Checkout in progress until ' + f.checkoutUntil.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '.'
         : f.soldAt && (f.status === 'sold' || f.status === 'traded') ? 'Since ' + new Date(f.soldAt).toLocaleDateString() + '.' : undefined;
@@ -545,7 +557,7 @@
         actions.length ? h(Z.Input, { id: 'status-note', label: 'Status note', optional: true, value: statusNote,
           supportText: 'Kept in the history, e.g. "sold at the fair".', onChange: function (e) { setStatusNote(e.target.value); } }) : null,
         actions.map(function (a) {
-          return h(Z.Button, { key: a[0], hierarchy: 'secondary', disabled: saving || !!f.checkoutUntil, onClick: function () { setStatus(a[0]); } }, a[1]);
+          return h(Z.Button, { key: a[0], hierarchy: 'secondary', disabled: saving || !!f.checkoutUntil, onClick: function () { a[0] === 'restore' ? restore() : setStatus(a[0]); } }, a[1]);
         }));
     }
 
@@ -561,29 +573,162 @@
     return multi ? lines.map(function (l) { return (l.artist || lines[0].artist) + ' - ' + l.title; }).join(' / ')
                  : lines[0].artist + ' - ' + lines.map(function (l) { return l.title; }).join(' / ');
   }
+  /* Figma BACKEND → Listings (2026-11-10, decision 0024): status tabs, a bulk bar that is always there (fixed height:
+     no layout shift), a table whose first column selects. Publish / Unpublish / Archive act at once and offer Undo;
+     Delete (drafts never published only) asks first in a Dialog. Each action moves only the rows it is allowed for. */
+  var TABS = [
+    ['all', 'All', function (s) { return s !== 'archived'; }],
+    ['draft', 'Drafts', function (s) { return s === 'draft'; }],
+    ['live', 'Live', function (s) { return s === 'available' || s === 'reserved'; }],
+    ['sold', 'Sold', function (s) { return s === 'sold' || s === 'traded'; }],
+    ['archived', 'Archived', function (s) { return s === 'archived'; }]
+  ];
+  var BULK = [['publish', 'Publish', 'published'], ['unpublish', 'Unpublish', 'unpublished'], ['archive', 'Archive', 'archived']];
+  var UNDO = { publish: 'unpublish', unpublish: 'publish', archive: 'restore' };
+  var DONE_VERB = { publish: 'published', unpublish: 'unpublished', archive: 'archived', restore: 'restored' };
+  var purgeAsked = false;
+  function plural(n, one, many) { return n + ' ' + (n === 1 ? one : (many || one + 's')); }
+  function deletable(r) { return r.status === 'draft' && !r.published_at; }
+
   function Listings() {
     var st = useState(null), rows = st[0], setRows = st[1];
     var er = useState(null), error = er[0], setError = er[1];
-    useEffect(function () {
-      sb.from('listings').select('id,sku,slug,status,reserved_until,section,price_cents,custom_title,created_at,release:releases(lines:release_lines(position,artist,title))')
+    var tb = useState('all'), tab = tb[0], setTab = tb[1];
+    var se = useState([]), selected = se[0], setSelected = se[1];
+    var ms = useState(null), message = ms[0], setMessage = ms[1];
+    var bs = useState(false), busy = bs[0], setBusy = bs[1];
+    var cf = useState(null), confirm = cf[0], setConfirm = cf[1];
+    var focusAfter = useRef(null);
+
+    function load() {
+      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_cents,custom_title,created_at,release:releases(lines:release_lines(position,artist,title))')
         .order('sku', { ascending: false })
         .then(function (res) { if (res.error) setError(res.error.message); else setRows(res.data); });
+    }
+    useEffect(function () {
+      load();
+      // files of deleted copies leave R2 after 7 days (Edge Function purge-media, 0009); once per visit, best effort
+      if (!purgeAsked) { purgeAsked = true; sb.functions.invoke('purge-media').catch(function () {}); }
     }, []);
+    // after a delete, focus the row that took the place of the first deleted one (never lost to <body>)
+    useEffect(function () {
+      if (!focusAfter.current || !rows) return;
+      var el = document.getElementById(focusAfter.current.id) || document.getElementById('select-all');
+      focusAfter.current = null;
+      if (el) el.focus();
+    }, [rows]);
+
     if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not load the listings: ' + error);
     if (!rows) return h('p', { className: 'body-medium' }, 'Loading…');
-    return h('div', { className: 'admin-section' },
+
+    var withStatus = rows.map(function (r) { return Object.assign({ eff: effectiveStatus(r) }, r); });
+    var current = TABS.filter(function (t) { return t[0] === tab; })[0];
+    var visible = withStatus.filter(function (r) { return current[2](r.eff); });
+    var picked = visible.filter(function (r) { return selected.indexOf(r.id) >= 0; });
+    var allOn = visible.length > 0 && picked.length === visible.length;
+    var someOn = picked.length > 0 && !allOn;
+    var byId = {}; withStatus.forEach(function (r) { byId[r.id] = r; });
+
+    function toggle(id, on) {
+      setSelected(function (cur) { return on ? cur.concat([id]) : cur.filter(function (x) { return x !== id; }); });
+    }
+    function toggleAll() { setSelected(allOn ? [] : visible.map(function (r) { return r.id; })); }
+    function pickTab(v) { setTab(v); setSelected([]); }
+    function summary(n, action, skipped) {
+      var text = plural(n, 'listing') + ' ' + DONE_VERB[action] + '.';
+      if (n === 1) text = '“' + nameOf(byId[arguments[3]] || {}) + '” ' + DONE_VERB[action] + '.';
+      if (skipped.length) {
+        var why = {};
+        skipped.forEach(function (x) { var k = STATUS_LABEL[x.status] ? STATUS_LABEL[x.status].toLowerCase() : 'not found'; why[k] = (why[k] || 0) + 1; });
+        text += ' ' + skipped.length + ' skipped (' + Object.keys(why).map(function (k) { return why[k] + ' ' + k; }).join(', ') + ').';
+      }
+      return text;
+    }
+    async function run(action, ids, isUndo) {
+      setBusy(true);
+      var res = await sb.rpc('admin_bulk_status', { p_ids: ids, p_action: action });
+      setBusy(false);
+      if (res.error) { setMessage({ error: true, text: 'Nothing changed: ' + res.error.message }); return; }
+      var done = res.data.done, skipped = res.data.skipped;
+      setSelected([]);
+      await load();
+      var text = done.length ? summary(done.length, action, skipped, done[0].id)
+                             : 'Nothing ' + DONE_VERB[action] + ': ' + plural(skipped.length, 'listing') + ' cannot be ' + DONE_VERB[action] + ' from ' + (skipped.length === 1 ? 'its' : 'their') + ' status.';
+      if (done.length && done.some(function (d) { return d.from !== 'draft' || d.to !== 'draft'; })) text += ' The shop updates in about 2 minutes.';
+      setMessage({ error: false, text: isUndo ? 'Undone: ' + text : text,
+        undo: !isUndo && done.length ? { action: UNDO[action], ids: done.map(function (d) { return d.id; }) } : null });
+    }
+    function askDelete() {
+      var ok = picked.filter(deletable), rest = picked.filter(function (r) { return !deletable(r); });
+      if (!ok.length) {
+        setMessage({ error: true, text: 'Only drafts that were never published can be deleted: archive the others.' });
+        return;
+      }
+      setConfirm({ ok: ok, rest: rest });
+    }
+    async function doDelete() {
+      var ok = confirm.ok, ids = ok.map(function (r) { return r.id; });
+      setBusy(true);
+      var res = await sb.rpc('admin_delete_listings', { p_ids: ids });
+      setBusy(false);
+      setConfirm(null);
+      if (res.error) { setMessage({ error: true, text: 'Nothing deleted: ' + res.error.message }); return; }
+      var gone = res.data.deleted;
+      var firstIdx = visible.findIndex(function (r) { return gone.indexOf(r.id) >= 0; });
+      var next = visible.slice(firstIdx + 1).filter(function (r) { return gone.indexOf(r.id) < 0; })[0];
+      focusAfter.current = { id: next ? 'select-' + next.id : 'select-all' };
+      setSelected([]);
+      await load();
+      setMessage({ error: false, text: gone.length === 1 ? '“' + nameOf(ok[0]) + '” deleted.' : plural(gone.length, 'draft') + ' deleted.' });
+    }
+
+    var counts = {}; TABS.forEach(function (t) { counts[t[0]] = withStatus.filter(function (r) { return t[2](r.eff); }).length; });
+    var bar = h('div', { className: 'admin-bulk' },
+      h('p', { className: 'admin-bulk__count body-medium', 'aria-live': 'polite' }, picked.length + ' selected'),
+      picked.length
+        ? h('div', { className: 'admin-bulk__actions' },
+            BULK.map(function (b) {
+              return h(Z.Button, { key: b[0], hierarchy: 'secondary', 'aria-busy': busy || undefined,
+                onClick: busy ? undefined : function () { run(b[0], picked.map(function (r) { return r.id; })); } }, b[1]);
+            }),
+            h(Z.Button, { hierarchy: 'secondary', onClick: busy ? undefined : askDelete }, 'Delete'))
+        : null,
+      h('div', { className: 'admin-bulk__message', role: 'status', hidden: !!picked.length },
+        message ? h('span', { className: 'body-medium' + (message.error ? ' admin-status--error' : '') }, message.text) : null,
+        message && message.undo ? h(Z.Button, { hierarchy: 'secondary', onClick: busy ? undefined : function () { run(message.undo.action, message.undo.ids, true); } }, 'Undo') : null));
+
+    var nameCount = confirm ? confirm.ok.length : 0;
+    var names = confirm ? confirm.ok.slice(0, 5).map(function (r) { return '“' + nameOf(r) + '”'; }) : [];
+    var dialog = h(Z.Dialog, { open: !!confirm, busy: busy,
+      title: 'Delete ' + plural(nameCount, 'draft') + '?', confirmLabel: 'Delete ' + plural(nameCount, 'draft'),
+      onCancel: function () { setConfirm(null); }, onConfirm: doDelete },
+      confirm ? h('p', null,
+        (confirm.ok.length > 5 ? names.join(', ') + ' and ' + (confirm.ok.length - 5) + ' more'
+                               : names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0]) +
+        (nameCount === 1 ? ' is' : ' are') + ' removed with ' + (nameCount === 1 ? 'its' : 'their') + ' photos and samples. This cannot be undone.' +
+        (confirm.rest.length ? ' ' + plural(confirm.rest.length, 'other selected listing') + (confirm.rest.length === 1 ? ' was' : ' were') + ' published: archive ' + (confirm.rest.length === 1 ? 'it' : 'them') + ' instead.' : '')) : null);
+
+    return h('div', { className: 'admin-section admin-listings' },
       h('h1', { className: 'label-extra-large' }, 'Listings'),
+      h(Z.Tabs, { value: tab, onValueChange: pickTab, 'aria-label': 'Filter by status' },
+        TABS.map(function (t) { return h(Z.Tab, { key: t[0], value: t[0], 'aria-controls': 'listings-table' }, t[1] + ' ' + counts[t[0]]); })),
+      bar,
       h('div', { className: 'admin-table-wrap' },
-        h('table', { className: 'admin-table body-small' },
-          h('thead', null, h('tr', null, ['SKU', 'Record', 'Status', 'Section', 'Price'].map(function (t) { return h('th', { key: t, className: t === 'SKU' || t === 'Price' ? 'num' : '' }, t); }))),
-          h('tbody', null, rows.map(function (r) {
+        h('table', { id: 'listings-table', className: 'admin-table body-small' },
+          h('thead', null, h('tr', null,
+            h('th', { className: 'select' }, visible.length ? h(Z.Checkbox, { id: 'select-all', hideLabel: true, label: 'Select all', checked: allOn, indeterminate: someOn, onChange: toggleAll }) : null),
+            ['SKU', 'Record', 'Status', 'Section', 'Price'].map(function (t) { return h('th', { key: t, className: t === 'SKU' ? 'num' : t === 'Price' ? 'num price' : '' }, t); }))),
+          h('tbody', null, visible.length ? visible.map(function (r) {
             return h('tr', { key: r.id },
+              h('td', { className: 'select' }, h(Z.Checkbox, { id: 'select-' + r.id, hideLabel: true, label: 'Select ' + nameOf(r),
+                checked: selected.indexOf(r.id) >= 0, onChange: function (e) { toggle(r.id, e.target.checked); } })),
               h('td', { className: 'num' }, r.sku),
               h('td', null, h('a', { href: '#edit-' + r.id }, nameOf(r))),
-              h('td', null, STATUS_LABEL[effectiveStatus(r)] || r.status),
+              h('td', null, STATUS_LABEL[r.eff] || r.status),
               h('td', null, r.section),
-              h('td', { className: 'num' }, r.price_cents === null ? '' : centsToText(r.price_cents) + ' €'));
-          })))));
+              h('td', { className: 'num price' }, r.price_cents === null ? '' : centsToText(r.price_cents) + ' €'));
+          }) : h('tr', null, h('td', { colSpan: 6 }, 'No listings here.'))))),
+      dialog);
   }
 
   function EditLoader(props) {

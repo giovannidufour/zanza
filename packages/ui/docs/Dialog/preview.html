@@ -1,0 +1,31 @@
+<!-- @dsCard group="Admin" height=260 subtitle="delete confirm" -->
+<!doctype html>
+<html data-theme="backend">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: var(--surface-accent); color: var(--text-strong); font-family: var(--font-sans); }
+  .wrap { padding: 24px; }
+  /* preview only: show the dialog in place, without the modal layer */
+  .wrap .zz-dialog { position: static; display: flex; margin: 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function () {
+  var React = window.React, ReactDOM = window.ReactDOM, Z = window.Zanza;
+  var h = React.createElement;
+  function Static() {
+    var ref = React.useRef(null);
+    React.useEffect(function () { ref.current.querySelector('dialog').setAttribute('open', ''); }, []);
+    return h('div', { className: 'wrap', ref: ref },
+      h(Z.Dialog, { open: false, title: 'Delete 2 drafts?', confirmLabel: 'Delete 2 drafts', onConfirm: function () {}, onCancel: function () {} },
+        h('p', null, 'Gregory Isaacs - Why Did You Leave and Della Grant - Colour Red / Dance Dance are removed with their photos and samples. This cannot be undone.')));
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(h(Static));
+})();
+</script>
+</body>
+</html>

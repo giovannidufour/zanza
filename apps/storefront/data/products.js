@@ -1,7 +1,7 @@
 /* apps/storefront/data/products.js — where the build gets its products from.
    Returns products in the storefront contract ({ listing, release, copy, samples }, see content/products/*.json),
    in listing order. Two sources:
-   - Supabase (default when apps/storefront/.supabase.env exists): public REST API, publishable key, drafts excluded by RLS
+   - Supabase (default when apps/storefront/.supabase.env exists): public REST API, publishable key, drafts and archived copies excluded by RLS
    - local JSON (content/products/*.json): fallback, or forced with `--source=json`
    Media columns in the DB hold storage keys; mediaUrl() turns them into URLs with site.json → mediaBaseUrl.
    Absolute URLs (imported test content) and root-relative paths ('/assets/…') pass through. */
