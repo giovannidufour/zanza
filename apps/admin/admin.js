@@ -14,7 +14,7 @@
   var GRADES = ['M', 'NM', 'NM-', 'EX+', 'EX', 'EX-', 'VG+', 'VG', 'VG-', 'G+', 'G', 'G-', 'F'];   // Q8, table public.grades
   var FORMATS = ['7"', '10"', '12"', 'LP'];
   var MACRO_GENRES = ['Reggae', 'Funk / Soul', 'Hip Hop', 'Electronic', 'Jazz', 'Latin', 'Rock', 'Pop', 'Blues',
-                      'Folk, World, & Country', 'Classical', 'Stage & Screen', 'Non-Music', "Children's", 'Brass & Military'];   // Discogs genres = our macro genre (0046)
+                      'Folk, World, & Country', 'Classical', 'Stage & Screen', 'Non-Music', "Children's", 'Brass & Military'];   // Discogs genres = our macro genre (0047)
   var COUNTRIES = [['JA', 'Jamaica'], ['UK', 'UK'], ['US', 'US'], ['CA', 'Canada'], ['DE', 'Germany'], ['FR', 'France'],
                    ['IT', 'Italy'], ['NL', 'Netherlands'], ['JP', 'Japan'], ['Europe', 'Europe'], ['Unknown', 'Unknown']];
   var STATUS_LABEL = { draft: 'Draft', available: 'Available', reserved: 'Reserved', sold: 'Sold', traded: 'Traded', archived: 'Archived' };
@@ -122,7 +122,7 @@
       customTitle: '', discogs: '', catNo: '',
       lines: [newLine()],
       label: [], labelCredit: '', labelSpelled: false, preRelease: false, country: '', year: '', format: '', section: 'sale', price: '',
-      macroGenre: '', genres: [], tags: [],   // macro genre = a Discogs genre (Reggae), not shown in the shop; genres = Discogs styles (0046); tags = the shop's own (Rare, Killer version...)
+      macroGenre: '', genres: [], tags: [],   // macro genre = a Discogs genre (Reggae), not shown in the shop; genres = Discogs styles (0047); tags = the shop's own (Rare, Killer version...)
       condition: '', conditionB: '', conditionNotes: '', sleeveType: 'generic', sleeveCondition: '',
       notes: '',
       images: [],    // { id, key, name, url, uploading }
@@ -201,7 +201,7 @@
     if (d.country && !country) skipped.push('country ' + d.country);
     var format = formatOf(d.format);
     if (!format) skipped.push('format ' + [d.format && d.format.name].concat((d.format && d.format.descriptions) || []).filter(Boolean).join(' '));
-    // Discogs: genres → our macro genre (one), styles → our genres (0046)
+    // Discogs: genres → our macro genre (one), styles → our genres (0047)
     var macroGenre = (d.genres || []).filter(function (g) { return MACRO_GENRES.indexOf(g) >= 0; })[0] || '';
     if ((d.genres || []).length > 1) skipped.push('other macro genres ' + d.genres.filter(function (g) { return g !== macroGenre; }).join(', '));
     return {
@@ -525,7 +525,7 @@
       h(Z.Divider),
 
       h('section', { className: 'admin-section' },
-        // Figma 2126:1404: Macro genre + Genres (Discogs styles, 0046), then the shop's own Tags on their own row
+        // Figma 2126:1404: Macro genre + Genres (Discogs styles, 0047), then the shop's own Tags on their own row
         h('div', { className: 'admin-row' },
           h(Z.Input, Object.assign({ className: 'span-4', id: 'macro-genre', label: 'Macro genre', variant: 'select', placeholder: '' }, bind('macroGenre')), opts(MACRO_GENRES)),
           h(Z.EntityField, { className: 'span-4', id: 'genres', label: 'Genres', optional: true, placeholder: 'Add genre',
@@ -852,7 +852,7 @@
     { key: 'tag', list: 'tags', tab: 'Tags', one: 'tag', aliases: false, discogs: false, split: true, search: 'Search tags' }
   ];
   function kindOf(key) {
-    if (key === 'subgenre') key = 'genre';   // links saved before 0046
+    if (key === 'subgenre') key = 'genre';   // links saved before 0047
     return KINDS.filter(function (k) { return k.key === key; })[0] || KINDS[0];
   }
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }

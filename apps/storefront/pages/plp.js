@@ -12,7 +12,7 @@ const { SECTION_LABEL, SiteHeader, ProductCardFor, labelRef, artistRefs } = requ
 const FORMAT_ORDER = ['7"', '10"', '12"', 'LP', 'Tape'];
 const decadeOf = (year) => (year ? `${Math.floor(year / 10) * 10}s` : null);
 
-// facet → values of one product. Genre = Discogs styles (release.genres, 0046); Tags = the shop's own tags
+// facet → values of one product. Genre = Discogs styles (release.genres, 0047); Tags = the shop's own tags
 // (release.tags, migration 0011). `key` is the URL parameter. The macro genre (release.macro_genre) is not shown.
 const FACETS = [
   { key: 'genre', label: 'Genre', values: (p) => p.release.genres || [], order: 'count' },
