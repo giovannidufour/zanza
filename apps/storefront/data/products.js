@@ -80,6 +80,7 @@ function toProduct(row, mediaUrl) {
       title: lines.map((l) => l.title).join(' / '),
       lines: lines.map((l) => ({ side: String.fromCharCode(64 + l.position), artist: l.artist, title: l.title })),
       label: r.label,
+      pre_release: !!r.pre_release,
       cat_no: r.cat_no,
       year: r.year,
       country: r.country,

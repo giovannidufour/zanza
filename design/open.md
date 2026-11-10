@@ -36,6 +36,7 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - **Sold / reserved on the storefront.** Not designed. Today the build hides non-available copies from the PLP, but the PDP of a sold or reserved copy is still built with "Add to bag". Needs: what a sold PDP shows (badge? CTA disabled? page kept for history, as in the product brief?) and how `site.js` updates CTAs live (`listing_availability` view is ready).
 - **Fetch Discogs (admin).** Built as in Figma 2104:20728 (secondary button under `Discogs match`). Not designed: the loading state (code: label unchanged, `aria-busy`, "Reading Discogs…" in the status line; the disabled look would strike the label through) and the result/error feedback (code: the side status line). Open: `Discogs match` still uses `variant=search` (magnifier) while it is a paste field until text search exists → plain input, or keep it for the coming search.
 - **Checkbox.** Ported (`controls` → `checkbox`, state default | active). Not designed: focus (code: browser ring on the box), disabled, error. Used by the admin "Different spelling" (Figma BACKEND → Create, 2026-11-10).
+- **Pre-release on the shop.** Admin checkbox from Figma (2104:21454). The shop text is Gio's spec in chat (2026-11-10): "Pre" right after the label name in the product info line ("Black Ark Pre 7\" (JA)"), same style; not drawn in the PDP/PLP frames.
 - **Button `layout` (hug | fill).** Not ported: the admin side buttons fill their column via the page layout.
 
 ## Accessibility risks

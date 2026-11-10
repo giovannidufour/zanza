@@ -120,7 +120,7 @@
       listingId: null, sku: null, status: 'draft', slug: null, checkoutUntil: null, soldAt: null,
       customTitle: '', discogs: '', catNo: '',
       lines: [newLine()],
-      label: [], labelCredit: '', labelSpelled: false, country: '', year: '', format: '', section: 'sale', price: '',
+      label: [], labelCredit: '', labelSpelled: false, preRelease: false, country: '', year: '', format: '', section: 'sale', price: '',
       tags: [], genre: '',
       condition: '', conditionNotes: '', sleeveType: 'original', sleeveCondition: '',
       notes: '',
@@ -148,6 +148,7 @@
     }) : f.lines;
     var le = r.label_entity;
     f.label = le ? [chip(le)] : r.label ? [{ id: null, name: r.label }] : [];
+    f.preRelease = !!r.pre_release;
     f.labelSpelled = !!le && differs(r.label, le.name); f.labelCredit = f.labelSpelled ? r.label : ''; f.country = r.country || ''; f.year = r.year ? String(r.year) : ''; f.format = r.format || '';
     f.section = row.section; f.price = centsToText(row.price_cents);
     var tagRows = (r.tag_rows || []).slice().sort(function (a, b) { return a.position - b.position; });
@@ -232,6 +233,7 @@
       release: {
         discogs_release_id: f.discogs ? discogsId(f.discogs) : null,
         label: f.label.length ? f.label[0].name : '', label_credit: f.labelSpelled ? f.labelCredit : '',
+        pre_release: f.preRelease,
         label_id: f.label.length ? f.label[0].id : null, label_discogs_id: f.label.length ? f.label[0].discogsId || null : null, cat_no: f.catNo, year: f.year.trim(), country: f.country, format: f.format,
         genre: f.genre ? [f.genre] : [],
         style: f.tags.map(function (t) { return t.name; }),
@@ -452,7 +454,10 @@
             options: entities && entities.labels, value: f.label, error: errors.label, onChange: setLabel }),
           h(Z.Input, Object.assign({ className: 'span-2', id: 'country', label: 'Country', variant: 'select', placeholder: '' }, bind('country')), opts(COUNTRIES)),
           h(Z.Input, Object.assign({ className: 'span-2', id: 'year', label: 'Year', optional: true, inputMode: 'numeric', maxLength: 4 }, bind('year'))),
-          h(Z.Checkbox, { className: 'span-4', label: 'Different spelling', checked: f.labelSpelled,
+          // Figma 2104:21454: a pre-release ("blank") of the same label → the shop shows "Pre" next to the label
+          h(Z.Checkbox, { className: 'span-4 row-start', label: 'Pre-release', checked: f.preRelease,
+            onChange: function (e) { set({ preRelease: e.target.checked }); } }),
+          h(Z.Checkbox, { className: 'span-4 row-start', label: 'Different spelling', checked: f.labelSpelled,
             onChange: function (e) { set({ labelSpelled: e.target.checked }); } }),
           f.labelSpelled ? h(Z.Input, Object.assign({ className: 'span-4', id: 'label-credit', label: 'Label spelled on record' }, bind('labelCredit'))) : null),
         h('div', { className: 'admin-row' },
