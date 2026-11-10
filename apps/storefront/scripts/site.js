@@ -537,7 +537,9 @@
         hidden.forEach(function (f) { draftHidden[f.key] = hiddenSel[f.key].slice(); });
         showLevel(null);
         layer.showModal();
-        var first = layer.querySelector('[data-layer-close]'); if (first) first.focus();
+        // no control is focused on open (decision 0043): the dialog itself takes focus, so screen readers hear
+        // "Filter" and Tab starts inside it, with nothing pre-selected on screen
+        layer.focus();
       };
       var close = function () { if (layer.open) layer.close(); };
       trigger.addEventListener('click', open);
@@ -552,8 +554,9 @@
       rows.forEach(function (row) {
         row.addEventListener('click', function () {
           showLevel(row.getAttribute('data-facet'));
-          var firstBox = layer.querySelector('[data-facet-block]:not([hidden]) .zz-filter:not([hidden]) input');
-          (firstBox || back).focus();
+          // the tapped row is now hidden: focus goes to the level's title, not to its first option (decision 0043)
+          title.setAttribute('tabindex', '-1');
+          title.focus();
         });
       });
       layer.addEventListener('change', renderDraft);

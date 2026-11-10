@@ -56,4 +56,8 @@ body[data-player-open] { padding-bottom: var(--site-player-height, 0px); }
    Gio 2026-11-10: same colour as the text, no underline, underlined on hover. Known a11y gap (WCAG 1.4.1: the link
    is told apart by colour/underline only on hover), accepted by Gio for now (design/open.md). */
 .site-inline-link { color: inherit; text-decoration: none; }
-.site-inline-link:hover { text-decoration: underline; }
+@media (hover: hover) { .site-inline-link:hover { text-decoration: underline; } }   /* decision 0043 */
+
+/* Programmatic focus targets (decision 0043): a heading, <main> or a dialog that only receives focus so screen readers
+   and the Tab order start there. Not controls: no ring (Claude's choice, not drawn in Figma). */
+h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus, main[tabindex="-1"]:focus, dialog[tabindex="-1"]:focus { outline: none; }

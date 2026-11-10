@@ -74,10 +74,15 @@
   --zz-btn-fg: var(--text-strong-invert);
   --zz-btn-icon: var(--icon-strong-invert);
 }
-.zz-button[data-hierarchy="primary"]:hover,
 .zz-button[data-hierarchy="primary"][data-state="hover"] {
   --zz-btn-bg: var(--action-primary-background-hover);
   --zz-btn-border: var(--action-primary-border-hover);
+}
+@media (hover: hover) {   /* touch screens keep :hover after a tap (decision 0043) */
+  .zz-button[data-hierarchy="primary"]:hover {
+    --zz-btn-bg: var(--action-primary-background-hover);
+    --zz-btn-border: var(--action-primary-border-hover);
+  }
 }
 .zz-button[data-hierarchy="primary"]:active,
 .zz-button[data-hierarchy="primary"][data-state="pressed"] {
@@ -99,10 +104,15 @@
   --zz-btn-fg: var(--text-strong);
   --zz-btn-icon: var(--icon-strong);
 }
-.zz-button[data-hierarchy="secondary"]:hover,
 .zz-button[data-hierarchy="secondary"][data-state="hover"] {
   --zz-btn-bg: var(--action-secondary-background-hover);
   --zz-btn-border: var(--action-secondary-border-hover);
+}
+@media (hover: hover) {
+  .zz-button[data-hierarchy="secondary"]:hover {
+    --zz-btn-bg: var(--action-secondary-background-hover);
+    --zz-btn-border: var(--action-secondary-border-hover);
+  }
 }
 .zz-button[data-hierarchy="secondary"]:active,
 .zz-button[data-hierarchy="secondary"][data-state="pressed"] {
@@ -135,8 +145,8 @@
   /* TODO motion: placeholder, same as Tab (no motion tokens in Figma yet) */
   transition: --zz-dash-on 150ms ease-out, --zz-dash-off 150ms ease-out, background-color 150ms ease-out;
 }
-.zz-button[data-hierarchy="secondary"]:hover,
 .zz-button[data-hierarchy="secondary"][data-state="hover"] { --zz-dash-on: 4px; --zz-dash-off: 4px; }   /* Figma: [4,4] */
+@media (hover: hover) { .zz-button[data-hierarchy="secondary"]:hover { --zz-dash-on: 4px; --zz-dash-off: 4px; } }
 .zz-button[data-hierarchy="secondary"]:active,
 .zz-button[data-hierarchy="secondary"][data-state="pressed"] { --zz-dash-on: 2px; --zz-dash-off: 2px; } /* Figma: [2,2] */
 .zz-button[data-hierarchy="secondary"]:disabled,
@@ -217,11 +227,17 @@ a.zz-tab {
 }
 @media (prefers-reduced-motion: reduce) { .zz-tab { transition: none; } }
 
-.zz-tab:hover,
 .zz-tab[data-state="hover"] {
   background-color: var(--tab-background-hover);
   --zz-dash-color: var(--tab-border-hover);
   --zz-dash-on: 4px;  --zz-dash-off: 4px;      /* Figma: dashPattern [4,4] */
+}
+@media (hover: hover) {   /* decision 0043 */
+  .zz-tab:hover {
+    background-color: var(--tab-background-hover);
+    --zz-dash-color: var(--tab-border-hover);
+    --zz-dash-on: 4px;  --zz-dash-off: 4px;
+  }
 }
 .zz-tab:active,
 .zz-tab[data-state="pressed"] {
@@ -408,8 +424,8 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
   /* type: label carries body-medium */
   white-space: nowrap;
 }
-.zz-player-button:hover,
 .zz-player-button[data-state="hover"]    { color: var(--action-floating-foreground-hover);    background: var(--action-floating-background-hover); }
+@media (hover: hover) { .zz-player-button:hover { color: var(--action-floating-foreground-hover); background: var(--action-floating-background-hover); } }   /* 0043 */
 .zz-player-button:active,
 .zz-player-button[data-state="pressed"]  { color: var(--action-floating-foreground-pressed);  background: var(--action-floating-background-pressed); }
 .zz-player-button:disabled,
@@ -431,8 +447,8 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
   appearance: none;
   -webkit-appearance: none;
 }
-.zz-icon-button:hover,
 .zz-icon-button[data-state="hover"]    { color: var(--action-floating-foreground-hover);    background: var(--action-floating-background-hover); }
+@media (hover: hover) { .zz-icon-button:hover { color: var(--action-floating-foreground-hover); background: var(--action-floating-background-hover); } }   /* 0043 */
 .zz-icon-button:active,
 .zz-icon-button[data-state="pressed"]  { color: var(--action-floating-foreground-pressed);  background: var(--action-floating-background-pressed); }
 .zz-icon-button:disabled,
@@ -852,7 +868,7 @@ a.zz-product-card__image { display: block; color: inherit; }
   appearance: none;
   -webkit-appearance: none;
 }
-.zz-file-item__handle:hover  { background: var(--action-floating-background-hover); }
+@media (hover: hover) { .zz-file-item__handle:hover { background: var(--action-floating-background-hover); } }   /* 0043 */
 .zz-file-item__handle:active { background: var(--action-floating-background-pressed); cursor: grabbing; }
 .zz-file-item__handle-icon { display: inline-flex; width: 100%; height: 100%; }
 .zz-file-item__handle-icon svg { width: 100%; height: 100%; display: block; }
@@ -922,8 +938,8 @@ a.zz-product-card__image { display: block; color: inherit; }
   background: transparent; color: var(--icon-strong); cursor: pointer;
 }
 .zz-entity-chip__remove svg { width: 16px; height: 16px; display: block; }
-.zz-entity-chip__remove:hover,
 .zz-entity-chip[data-state="hover"] .zz-entity-chip__remove { background: var(--surface-subtle); }
+@media (hover: hover) { .zz-entity-chip__remove:hover { background: var(--surface-subtle); } }   /* 0043 */
 /* focus: 2px text-strong outside, as drawn (TODO: no focus token yet, design/open.md) */
 .zz-entity-chip:has(.zz-entity-chip__remove:focus-visible),
 .zz-entity-chip[data-state="focus"] { outline: 2px solid var(--text-strong); outline-offset: 0; }

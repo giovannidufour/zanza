@@ -66,3 +66,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0040](0040-card-title-links-to-pdp.md) | The product card title links to the product page | accepted |
 | [0041](0041-plp-active-filter-replaces-breadcrumbs.md) | PLP: no breadcrumbs, only the filter reached from a link (artist, label, subgenre, tag) | accepted |
 | [0042](0042-conditions-comment-own-line.md) | The stacked conditions comment is its own line, 4px from the cover grade like every line of the block | accepted |
+| [0043](0043-hover-only-with-a-pointer-no-autofocus.md) | Hover only where the device hovers; nothing is focused on page or layer open | accepted |
