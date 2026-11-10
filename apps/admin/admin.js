@@ -88,10 +88,10 @@
   }
 
   // ── artists and labels are entities (migration 0006) ─────────────────────────
-  // A line / the release keeps: the OFFICIAL name (the field, bound to an entity), the CREDIT as printed on this
-  // record (optional, empty = same) and, when known, the entity id or its Discogs id. The database binds on save:
-  // id → Discogs id → official name or alias → new entity; a different credit is learnt as an alias.
-  function newLine(p) { return Object.assign({ id: nextId(), artist: '', artistCredit: '', artistId: null, artistDiscogsId: null, title: '' }, p); }
+  // Figma BACKEND → Create (2026-11-10): Artist / Label = the OFFICIAL name (suggestions, bound to an entity);
+  // "Different spelling" checkbox → a field for the name AS PRINTED on this record (credit). The database binds on
+  // save: id → Discogs id → official name or alias → new entity, and learns the printed spelling as an alias.
+  function newLine(p) { return Object.assign({ id: nextId(), artist: '', artistCredit: '', artistSpelled: false, artistId: null, artistDiscogsId: null, title: '' }, p); }
   // entities = { artists: [{ id, name, aliases: [] }], labels: [...] }, loaded once per form
   function findEntity(list, text) {
     var t = String(text || '').trim().toLowerCase();
@@ -103,14 +103,15 @@
     }
     return null;
   }
-  // an official field: an official name binds while typing; an alias (on leaving the field, so typing is never
-  // interrupted) becomes "official name + credit as printed"
-  function bindTyped(list, text, credit, final) {
+  // typing an official name binds while typing; an alias (on leaving the field, so typing is never interrupted)
+  // becomes "official name + Different spelling = the alias"
+  function bindTyped(list, text, final) {
     var m = findEntity(list, text);
-    if (!m || (m.alias && !final)) return { name: text, credit: credit, id: null };
-    if (m.alias) return { name: m.entity.name, credit: credit || m.alias, id: m.entity.id };
-    return { name: text, credit: credit, id: m.entity.id };
+    if (!m || (m.alias && !final)) return { name: text, id: null };
+    if (m.alias) return { name: m.entity.name, id: m.entity.id, alias: m.alias };
+    return { name: text, id: m.entity.id };
   }
+  function differs(a, b) { return !!a && !!b && a.trim().toLowerCase() !== b.trim().toLowerCase(); }
   function entityOptions(id, list) {
     var opts2 = [];
     (list || []).forEach(function (e) {
@@ -136,7 +137,7 @@
       listingId: null, sku: null, status: 'draft', slug: null, checkoutUntil: null, soldAt: null,
       customTitle: '', discogs: '', catNo: '',
       lines: [newLine()],
-      label: '', labelCredit: '', labelId: null, labelDiscogsId: null, country: '', year: '', format: '', section: 'sale', price: '',
+      label: '', labelCredit: '', labelSpelled: false, labelId: null, labelDiscogsId: null, country: '', year: '', format: '', section: 'sale', price: '',
       tags: '', genre: '',
       condition: '', conditionNotes: '', sleeveType: 'original', sleeveCondition: '',
       notes: '',
@@ -153,16 +154,16 @@
     f.checkoutUntil = checkoutUntil(row); f.soldAt = row.sold_at;
     f.customTitle = row.custom_title || ''; f.discogs = r.discogs_release_id ? String(r.discogs_release_id) : '';
     f.catNo = r.cat_no || '';
-    // the field shows the official name; the stored text is the credit (shown only when it differs)
+    // the field shows the official name; the stored text is the credit (Different spelling when it differs)
     f.lines = lines.length ? lines.map(function (l) {
       var a = ((l.credits || []).filter(function (c) { return c.position === 1; })[0] || {}).artist;
-      var credit = l.artist || '';
-      return newLine({ artist: a ? a.name : credit, artistCredit: a && credit.toLowerCase() !== a.name.toLowerCase() ? credit : '',
+      var spelled = !!a && differs(l.artist, a.name);
+      return newLine({ artist: a ? a.name : (l.artist || ''), artistCredit: spelled ? l.artist : '', artistSpelled: spelled,
                        artistId: a ? a.id : null, title: l.title || '' });
     }) : f.lines;
     var le = r.label_entity;
     f.label = le ? le.name : (r.label || ''); f.labelId = le ? le.id : null;
-    f.labelCredit = le && r.label && r.label.toLowerCase() !== le.name.toLowerCase() ? r.label : ''; f.country = r.country || ''; f.year = r.year ? String(r.year) : ''; f.format = r.format || '';
+    f.labelSpelled = !!le && differs(r.label, le.name); f.labelCredit = f.labelSpelled ? r.label : ''; f.country = r.country || ''; f.year = r.year ? String(r.year) : ''; f.format = r.format || '';
     f.section = row.section; f.price = centsToText(row.price_cents);
     f.tags = (r.style || []).join(', '); f.genre = (r.genre || [])[0] || '';
     f.condition = row.condition_media || ''; f.conditionNotes = row.condition_notes || '';
@@ -185,15 +186,16 @@
     return '';
   }
   function patchFromDiscogs(cur, d, entities) {
-    function idOf(list, name) { var m = findEntity(list, name); return m && !m.alias ? m.entity.id : null; }
     var skipped = [];
     var tracks = (d.tracks || []).filter(function (t) { return t.title; });
+    // official name + as printed (Discogs ANV); the Discogs id binds it to the right entity on save
     var first = tracks.length ? tracks[0].artist : d.artist;
     var lines = tracks.length
       ? tracks.map(function (t, i) {
           if (i > 0 && t.artist === first) return newLine({ title: t.title });   // same as line 1: left empty
-          return newLine({ artist: t.artist, artistCredit: t.artistCredit && t.artistCredit !== t.artist ? t.artistCredit : '',
-                           artistDiscogsId: t.artistDiscogsId || null, artistId: idOf(entities && entities.artists, t.artist), title: t.title });
+          var m = findEntity(entities && entities.artists, t.artist), spelled = differs(t.artistCredit, t.artist);
+          return newLine({ artist: t.artist, artistCredit: spelled ? t.artistCredit : '', artistSpelled: spelled,
+                           artistDiscogsId: t.artistDiscogsId || null, artistId: m && !m.alias ? m.entity.id : null, title: t.title });
         })
       : cur.lines;
     // samples keep their line; a line that no longer exists turns them into additional samples
@@ -207,7 +209,7 @@
     return {
       patch: {
         discogs: String(d.releaseId), lines: lines, samples: samples,
-        label: d.label || '', labelCredit: '', labelId: idOf(entities && entities.labels, d.label), labelDiscogsId: d.labelDiscogsId || null, catNo: d.catNo || '', year: d.year ? String(d.year) : '',
+        label: d.label || '', labelCredit: '', labelSpelled: false, labelId: (function (m) { return m && !m.alias ? m.entity.id : null; })(findEntity(entities && entities.labels, d.label)), labelDiscogsId: d.labelDiscogsId || null, catNo: d.catNo || '', year: d.year ? String(d.year) : '',
         country: country ? country[0] : '', format: format, genre: genre,
         tags: (d.styles || []).join(', ')
       },
@@ -235,12 +237,12 @@
       listing_id: f.listingId,
       release: {
         discogs_release_id: f.discogs ? discogsId(f.discogs) : null,
-        label: f.label, label_credit: f.labelCredit, label_id: f.labelId, label_discogs_id: f.labelDiscogsId, cat_no: f.catNo, year: f.year.trim(), country: f.country, format: f.format,
+        label: f.label, label_credit: f.labelSpelled ? f.labelCredit : '', label_id: f.labelId, label_discogs_id: f.labelDiscogsId, cat_no: f.catNo, year: f.year.trim(), country: f.country, format: f.format,
         genre: f.genre ? [f.genre] : [],
         style: f.tags.split(',').map(function (t) { return t.trim(); }).filter(Boolean)
       },
       lines: f.lines.map(function (l) {
-        return { artist: l.artist, artist_credit: l.artistCredit, artist_id: l.artistId, artist_discogs_id: l.artistDiscogsId, title: l.title };
+        return { artist: l.artist, artist_credit: l.artistSpelled ? l.artistCredit : '', artist_id: l.artistId, artist_discogs_id: l.artistDiscogsId, title: l.title };
       }),
       listing: {
         section: f.section, status: status, price_cents: textToCents(f.price),
@@ -278,21 +280,26 @@
       set(function (cur) { var lines = cur.lines.slice(); lines[i] = Object.assign({}, lines[i]); lines[i][key] = value; return { lines: lines }; });
     }
     function addLine() { set(function (cur) { return { lines: cur.lines.concat([newLine()]) }; }); }
-    // official artist / label typed or picked: bind to the entity, forget a Discogs id that no longer applies
+    // official artist / label typed or picked: bind to the entity, forget a Discogs id that no longer applies;
+    // an alias picked becomes the official name with the alias as Different spelling
     function setLineArtist(i, text, final) {
       set(function (cur) {
         var lines = cur.lines.slice(), l = lines[i];
         if (final && l.artistId) return {};
-        var b = bindTyped(entities && entities.artists, text, l.artistCredit, final);
-        lines[i] = Object.assign({}, l, { artist: b.name, artistCredit: b.credit, artistId: b.id, artistDiscogsId: final ? l.artistDiscogsId : null });
+        var b = bindTyped(entities && entities.artists, text, final), patch = { artist: b.name, artistId: b.id };
+        if (!final) patch.artistDiscogsId = null;
+        if (b.alias) { patch.artistSpelled = true; patch.artistCredit = l.artistCredit || b.alias; }
+        lines[i] = Object.assign({}, l, patch);
         return { lines: lines };
       });
     }
     function setLabel(text, final) {
       set(function (cur) {
         if (final && cur.labelId) return {};
-        var b = bindTyped(entities && entities.labels, text, cur.labelCredit, final);
-        return { label: b.name, labelCredit: b.credit, labelId: b.id, labelDiscogsId: final ? cur.labelDiscogsId : null };
+        var b = bindTyped(entities && entities.labels, text, final), patch = { label: b.name, labelId: b.id };
+        if (!final) patch.labelDiscogsId = null;
+        if (b.alias) { patch.labelSpelled = true; patch.labelCredit = cur.labelCredit || b.alias; }
+        return patch;
       });
     }
     function removeLine(i) {
@@ -417,29 +424,28 @@
         h(Z.Input, Object.assign({ id: 'custom-title', label: 'Custom title', optional: true,
           supportText: 'Replaces "Artist - Title" in the shop.' }, bind('customTitle'))),
         h(Z.Input, Object.assign({ id: 'discogs', label: 'Discogs match', optional: true, variant: 'search',
-          placeholder: 'Release URL or number', supportText: errors.discogs ? undefined : 'Paste the release link, then Fetch Discogs.' }, bind('discogs')))),
+          placeholder: 'Release URL or number', supportText: errors.discogs ? undefined : 'Paste the release link, then Fetch Discogs.' }, bind('discogs'))),
+        // Figma 2104:20728: secondary button right under Discogs match (gap 16)
+        h('div', null, h(Z.Button, { hierarchy: 'secondary', disabled: locked, 'aria-busy': fetching || undefined, onClick: fetchDiscogs }, 'Fetch Discogs'))),
       h('hr', { className: 'admin-divider' }),
-
-      // Figma 2103:20718: secondary button on its own, between the divider and the lines it fills
-      h('div', null, h(Z.Button, { hierarchy: 'secondary', disabled: locked, 'aria-busy': fetching || undefined, onClick: fetchDiscogs }, 'Fetch Discogs')),
 
       h('section', { className: 'admin-section' },
         h('div', { className: 'admin-stack' },
           f.lines.map(function (l, i) {
             var samples = lineSamples(i);
             return h('div', { key: l.id, className: 'admin-line' },
-              h('div', { className: 'admin-row' },
+              // Figma `line`: 8-column grid, gap 16 × 8; row 2 = Different spelling + Artist name on label
+              h('div', { className: 'admin-row admin-row--tight' },
                 h(Z.Input, { className: i === 0 ? 'span-4' : 'span-3', id: 'artist-' + i, label: 'Artist ' + (i + 1), optional: i > 0,
                   list: 'artist-options', autoComplete: 'off',
                   value: l.artist, error: errors['artist-' + i], onChange: function (e) { setLineArtist(i, e.target.value); }, onBlur: function (e) { setLineArtist(i, e.target.value, true); } }),
                 h(Z.Input, { className: 'span-4', id: 'title-' + i, label: 'Title ' + (i + 1),
                   value: l.title, error: errors['title-' + i], onChange: function (e) { setLine(i, 'title', e.target.value); } }),
-                i > 0 ? h(Z.IconButton, { className: 'col-8', icon: h(Z.CloseIcon), 'aria-label': 'Remove line ' + (i + 1), onClick: function () { removeLine(i); } }) : null),
-              // PROVISIONAL (not in Figma, Gio 2026-11-10): spelling printed on this record, bound to the artist above
-              l.artist ? h('div', { className: 'admin-row' },
-                h(Z.Input, { className: i === 0 ? 'span-4' : 'span-3', id: 'artist-credit-' + i, label: 'As printed', optional: true,
-                  placeholder: l.artist, supportText: l.artistId ? undefined : 'New artist: created on save.',
-                  value: l.artistCredit, onChange: function (e) { setLine(i, 'artistCredit', e.target.value); } })) : null,
+                i > 0 ? h(Z.IconButton, { className: 'col-8', icon: h(Z.CloseIcon), 'aria-label': 'Remove line ' + (i + 1), onClick: function () { removeLine(i); } }) : null,
+                h(Z.Checkbox, { className: i === 0 ? 'span-4' : 'span-3', label: 'Different spelling', checked: l.artistSpelled,
+                  onChange: function (e) { setLine(i, 'artistSpelled', e.target.checked); } }),
+                l.artistSpelled ? h(Z.Input, { className: 'span-4', id: 'artist-credit-' + i, label: 'Artist name on label',
+                  value: l.artistCredit, onChange: function (e) { setLine(i, 'artistCredit', e.target.value); } }) : null),
               h('div', { className: 'admin-line__samples' },
                 samples.length ? h(Z.FileList, null, samples.map(sampleItem)) : null,
                 h(Z.DropZone, { label: 'Browse sample', accept: 'audio/mpeg', multiple: true, onFiles: addFiles('sample', i + 1) })));
@@ -448,14 +454,14 @@
       h('hr', { className: 'admin-divider' }),
 
       h('section', { className: 'admin-section' },
-        h('div', { className: 'admin-row' },
+        h('div', { className: 'admin-row admin-row--tight' },
           h(Z.Input, { className: 'span-4', id: 'label', label: 'Label', list: 'label-options', autoComplete: 'off',
             value: f.label, error: errors.label, onChange: function (e) { setLabel(e.target.value); }, onBlur: function (e) { setLabel(e.target.value, true); } }),
           h(Z.Input, Object.assign({ className: 'span-2', id: 'country', label: 'Country', variant: 'select', placeholder: '' }, bind('country')), opts(COUNTRIES)),
-          h(Z.Input, Object.assign({ className: 'span-2', id: 'year', label: 'Year', optional: true, inputMode: 'numeric', maxLength: 4 }, bind('year')))),
-        f.label ? h('div', { className: 'admin-row' },
-          h(Z.Input, Object.assign({ className: 'span-4', id: 'label-credit', label: 'As printed', optional: true, placeholder: f.label,
-            supportText: f.labelId ? undefined : 'New label: created on save.' }, bind('labelCredit')))) : null,
+          h(Z.Input, Object.assign({ className: 'span-2', id: 'year', label: 'Year', optional: true, inputMode: 'numeric', maxLength: 4 }, bind('year'))),
+          h(Z.Checkbox, { className: 'span-4', label: 'Different spelling', checked: f.labelSpelled,
+            onChange: function (e) { set({ labelSpelled: e.target.checked }); } }),
+          f.labelSpelled ? h(Z.Input, Object.assign({ className: 'span-4', id: 'label-credit', label: 'Label spelled on record' }, bind('labelCredit'))) : null),
         h('div', { className: 'admin-row' },
           h(Z.Input, Object.assign({ className: 'span-2', id: 'format', label: 'Format', variant: 'select', placeholder: '' }, bind('format')), opts(FORMATS)),
           h(Z.Input, Object.assign({ className: 'span-2', id: 'section', label: 'Sale type', variant: 'select' }, bind('section')), opts([['sale', 'For sale'], ['trade', 'For trade']])),

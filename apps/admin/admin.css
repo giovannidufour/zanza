@@ -26,6 +26,7 @@ h1, h2, p { margin: 0; }
 .admin-line__samples { display: flex; flex-direction: column; gap: 16px; }
 
 .admin-row { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.admin-row--tight { row-gap: 8px; }                                           /* Figma `line`, Label row: gap-y 8 */
 .span-2 { grid-column: span 2; } .span-3 { grid-column: span 3; } .span-4 { grid-column: span 4; }
 .span-6 { grid-column: span 6; } .span-8 { grid-column: span 8; } .col-8 { grid-column: 8; }
 

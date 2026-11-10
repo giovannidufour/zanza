@@ -53,7 +53,7 @@ Chiavi casuali e immutabili (2026-11-10): l'upload avviene prima che il listing 
 4. Copertina: il grado è ammesso per busta `original` e `generic`, mai per `none` (0003).
 
 ### Artisti ed etichette (0006, Gio 2026-11-10)
-- Nel form: Artist/Label = nome ufficiale con suggerimenti (datalist nativo, nomi + alias "alias → ufficiale"); sotto, "As printed" opzionale = grafia sul disco.
+- Nel form (Figma BACKEND → Create, 2026-11-10): Artist/Label = nome ufficiale con suggerimenti (datalist nativo, nomi + alias "alias → ufficiale"); checkbox "Different spelling" → compare il campo "Artist name on label" / "Label spelled on record" = grafia sul disco.
 - Al salvataggio (`admin_save_listing`) il collegamento: id scelto → id Discogs → nome o alias (maiuscole indifferenti, vince il più vecchio) → entità nuova. Una grafia diversa dall'ufficiale diventa alias in automatico.
 - Fetch Discogs passa nome ufficiale, ANV (come stampato) e id Discogs dell'artista/label; con più artisti su una traccia arriva il nome combinato senza id.
 - Dati esistenti: un'entità per nome distinto (i 21 dischi di prova hanno nomi combinati tipo "A & B" in maiuscolo: da sistemare a mano se servono).

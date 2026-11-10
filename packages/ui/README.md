@@ -52,6 +52,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | Input | page `input` → `input` + `_input-master` | ported: variant text field / search / select × size medium / compact; error, locked (admin) |
 | DropZone | BACKEND → Create, page-local upload area | ported from page placement; Figma component pending |
 | FileList / FileItem | BACKEND → Create, page-local `uploaded list` | ported from page placement; Figma component pending |
+| Checkbox | page `controls` → `checkbox` | ported: state default / active (= checked), native input |
 
 ## Open items
 
