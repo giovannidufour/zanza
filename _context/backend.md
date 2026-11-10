@@ -80,7 +80,8 @@ Le pagine sono statiche, ma "sold/reserved" non può aspettare una ricostruzione
 - Un cambio a un listing pubblico (o che diventa / smette di essere pubblico) segna `site_build.pending`. Un job `pg_cron` ogni minuto chiama **una volta** il deploy hook di Pages (via `pg_net`) → negozio aggiornato in ~2 min. Le bozze e gli hold del checkout non ricostruiscono.
 - L'URL del deploy hook sta nel **Vault** di Supabase (`pages_deploy_hook`), mai nel repo. Stato e ultimo errore: tabella `site_build`.
 - Un push su `main` ricostruisce anche lui (codice nuovo).
-- GoDaddy (`npm run build:deploy`) resta solo come staging di riserva finché Pages non è verificato.
+- **Attivo e verificato 2026-11-10:** progetto Pages `store-front` → https://store-front-6fx.pages.dev (variabili `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `NODE_VERSION=20`), deploy hook `supabase-catalogue` (branch `main`); prova: `site_build.pending` → job → hook 200 → nuovo deploy.
+- GoDaddy (`npm run build:deploy`) resta solo come staging di riserva.
 
 ## Prossimi passi
 1. Gio: creare gli account Supabase, Cloudflare (R2) e Stripe (test mode). Le chiavi vanno in un `.env` git-ignored, mai in chat.

@@ -25,7 +25,7 @@ Medusa 2 (ex opzione B) scartata: costo fisso ~15 €/mese e un admin già fatto
 | Admin | SPA statica React con `packages/ui` (`apps/admin`) su **Cloudflare Pages**, progetto `store-admin` → **https://store-admin-3k1.pages.dev** (il nome senza suffisso era preso; questo URL è anche in Supabase Auth Site URL/Redirect, CORS del bucket R2 e default `ADMIN_ORIGINS` di `sign-upload`) (scelta di Gio 2026-11-10: non dipende da GoDaddy né dal blocco IP) | 0 € | `npm run deploy:admin` (wrangler) · upload diretto su R2 con URL firmato; resize immagini nel browser |
 | Checkout | **Stripe Checkout** | solo % a transazione | pagamento, indirizzo, tariffe di spedizione per zona |
 | Email transazionali | Resend (free, 3.000/mese) | 0 € | conferma ordine |
-| Storefront | statico, `build.js` legge da Supabase | 0 € | **Cloudflare Pages** collegato a GitHub, ricostruzione automatica quando cambia un listing (scelta di Gio 2026-11-10, `backend.md` → Pubblicazione). GoDaddy resta come riserva finché Pages non è verificato |
+| Storefront | statico, `build.js` legge da Supabase | 0 € | **Cloudflare Pages** progetto `store-front` → https://store-front-6fx.pages.dev, collegato a GitHub `giovannidufour/zanza`, ricostruzione automatica quando cambia un listing (scelta di Gio 2026-11-10, `backend.md` → Pubblicazione). GoDaddy resta come riserva finché Pages non è verificato |
 
 Dettaglio di schema, flussi e storage: `backend.md`.
 

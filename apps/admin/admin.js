@@ -232,7 +232,7 @@
       var d = res.data;
       set({ listingId: d.listing_id, sku: d.sku, status: d.status, slug: d.slug });
       setMessage({ error: false, text: d.status === 'available'
-        ? 'Published · SKU ' + d.sku + '. The shop shows it after the next site build.'
+        ? 'Published · SKU ' + d.sku + '. The shop updates in about 2 minutes.'
         : 'Saved as draft · SKU ' + d.sku + '.' });
       if (!cur.listingId) history.replaceState(null, '', '#edit-' + d.listing_id);
     }
@@ -246,7 +246,7 @@
       if (res.error) { setMessage({ error: true, text: 'Status not changed: ' + res.error.message }); return; }
       set({ status: res.data.status, soldAt: res.data.sold_at, checkoutUntil: null });
       setStatusNote('');
-      setMessage({ error: false, text: STATUS_DONE[res.data.status] + ' The shop shows it after the next site build.' });
+      setMessage({ error: false, text: STATUS_DONE[res.data.status] + ' The shop updates in about 2 minutes.' });
     }
 
     function fileItem(listName, x, extra) {
