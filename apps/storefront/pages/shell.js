@@ -70,6 +70,16 @@ const releaseInfoLinked = (r, url) => {
 const grading = (c) => `Record: ${[c.condition_media, c.condition_media_b].filter(Boolean).join(' / ')}`;
 // the cover/sleeve grade on its own line, only when there is one (Gio, 2026-11-10)
 const coverGrading = (c) => (c.condition_sleeve && c.sleeve_type !== 'none' ? `Cover: ${c.condition_sleeve}` : null);
+// the conditions comment, value only (Gio 2026-11-10): right after the record grade; when the cover is graded,
+// on its own line under "Cover:". Returns the { grading, cover } props of ProductCard / ProductInfo.
+function gradingProps(c) {
+  const note = (c.condition_notes || '').trim();
+  const record = grading(c);
+  const cover = coverGrading(c);
+  if (!note) return { grading: record, cover };
+  if (!cover) return { grading: `${record} ${note}`, cover: null };
+  return { grading: record, cover: [cover, h('br', { key: 'br' }), note] };
+}
 const productHref = (product, url) => url(`/products/${product.listing.slug}/`);
 
 // Figma: `header` (device=desktop | mobile), the same on every page
@@ -131,8 +141,7 @@ function ProductCardFor({ product, url, headingLevel }) {
     price: listing.section === 'sale' ? formatPrice(listing.price) : null,
     tags: tagLinksOf(release, url),
     description: copy.notes,
-    grading: grading(copy),
-    cover: coverGrading(copy),
+    ...gradingProps(copy),
     samples: samples.length ? samples.map((s, i) => h(Z.PlayerButton, Object.assign({
       key: s.track_position,
       'aria-label': `${productName(release)}, sample ${i + 1}: ${s.title}`
@@ -140,4 +149,4 @@ function ProductCardFor({ product, url, headingLevel }) {
   });
 }
 
-module.exports = { SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, productHref, SiteHeader, sampleAttrs, ProductCardFor };
+module.exports = { SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, sampleAttrs, ProductCardFor };
