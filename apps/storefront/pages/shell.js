@@ -48,16 +48,19 @@ function creditNodes(text, artists, url, k) {
   out.push(entityLink(url, 'artist', artists[artists.length - 1], rest, `${k}-last`));
   return out;
 }
-// the product name with the artists as links; a custom title stays plain text (no credits to link)
-function productNameLinked(product, url) {
+// the product name with the artists as links; a custom title stays plain text (no credits to link).
+// pdpHref (cards only, decision 0040): the record title part links to the product page. It is out of the tab order:
+// the card's cover link (named by the whole title) is the keyboard / screen reader way in.
+function productNameLinked(product, url, pdpHref) {
   const { listing, release } = product;
-  if (listing.custom_title) return productName(release);
+  const toPdp = (text, k) => pdpHref ? h('a', { key: k, className: 'site-inline-link', href: pdpHref, tabIndex: -1 }, text) : text;
+  if (listing.custom_title) return toPdp(productName(release), 'p');
   const lines = linesOf(release);
   const first = lines[0];
   const credit = (l, i) => creditNodes(l.artist || first.artist, l.artist ? lineArtists(l) : lineArtists(first), url, `a${i}`);
   const own = lines.slice(1).some((l) => l.artist && l.artist !== first.artist);
-  if (!own) return [].concat(credit(first, 0), ' - ' + lines.map((l) => l.title).join(' / '));
-  return lines.flatMap((l, i) => [].concat(i ? [' / '] : [], credit(l, i), ' - ' + l.title));
+  if (!own) return [].concat(credit(first, 0), ' - ', toPdp(lines.map((l) => l.title).join(' / '), 'p'));
+  return lines.flatMap((l, i) => [].concat(i ? [' / '] : [], credit(l, i), ' - ', toPdp(l.title, `p${i}`)));
 }
 // releaseInfo with the label as a link (the printed label, filtered by its entity)
 const releaseInfoLinked = (r, url) => {
@@ -136,7 +139,7 @@ function ProductCardFor({ product, url, headingLevel }) {
   return h(Z.ProductCard, {
     href: productHref(product, url),
     image: release.cover ? { src: url(release.cover), alt: '' } : null,
-    title: productNameLinked(product, url),
+    title: productNameLinked(product, url, productHref(product, url)),
     headingLevel,
     releaseInfo: releaseInfoLinked(release, url),
     price: listing.section === 'sale' ? formatPrice(listing.price) : null,
