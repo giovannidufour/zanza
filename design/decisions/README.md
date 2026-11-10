@@ -47,4 +47,5 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0021](0021-sample-title-defaults-to-line-title.md) | The sample title defaults to its line title | accepted |
 | [0022](0022-one-sample-per-line.md) | One sample per line | accepted |
 | [0023](0023-surface-accent-and-opaque-base.md) | `surface/accent` is the page; `surface/base` is opaque white | accepted |
-| [0024](0024-delete-drafts-archive-the-rest.md) | Delete drafts, archive the rest; bulk actions act where allowed | accepted |
+| [0024](0024-delete-drafts-archive-the-rest.md) | Delete drafts, archive the rest; bulk actions act where allowed | partly superseded by 0025 |
+| [0025](0025-every-bulk-action-confirms-delete-any.md) | Every bulk action asks first; any listing can be deleted | accepted |
