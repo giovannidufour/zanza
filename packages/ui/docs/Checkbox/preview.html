@@ -1,4 +1,4 @@
-<!-- @dsCard group="Admin" height=140 subtitle="state" -->
+<!-- @dsCard group="Admin" height=210 subtitle="state" -->
 <!doctype html>
 <html data-theme="backend">
 <head>
@@ -21,6 +21,8 @@
     h('div', { className: 'matrix' },
       h('div', { className: 'row-hd' }, 'default'), h(Z.Checkbox, { state: 'default', label: 'Different spelling' }),
       h('div', { className: 'row-hd' }, 'active'), h(Z.Checkbox, { state: 'active', label: 'Different spelling' }),
+      h('div', { className: 'row-hd' }, 'indeterminate'), h(Z.Checkbox, { state: 'indeterminate', label: 'Select all' }),
+      h('div', { className: 'row-hd' }, 'label=false'), h(Z.Checkbox, { state: 'active', hideLabel: true, label: 'Select Leopard - Me Hot' }),
       h('div', { className: 'row-hd' }, 'live'), h(Live)));
 })();
 </script>

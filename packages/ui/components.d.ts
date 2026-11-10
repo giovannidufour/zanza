@@ -353,10 +353,35 @@ export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement
   label?: ReactNode;
   /** Native checked (controlled, with onChange). Figma: state=active. */
   checked?: boolean;
+  /** Some, not all, of a group are checked (select-all of a table). Sets the native property, announced as "mixed". Figma: state=indeterminate. */
+  indeterminate?: boolean;
+  /** Hide the label visually; it stays the accessible name (e.g. "Select <record>" on a table row). Figma: `label` = false. */
+  hideLabel?: boolean;
   /** Documentation only: pins the Figma state when `checked` is not given. Do not use in product code. */
-  state?: "default" | "active";
+  state?: "default" | "active" | "indeterminate";
 }
 export declare function Checkbox(props: CheckboxProps): JSX.Element;
+
+/** Mirrors the Figma component `dialog` (page dialog). A modal confirmation on the native <dialog> (showModal):
+ *  focus trapped, Esc = cancel, focus back to the opener. Only for irreversible actions (decision 0024). */
+export interface DialogProps extends Omit<HTMLAttributes<HTMLDialogElement>, "title"> {
+  /** Shown as a modal while true. Controlled. */
+  open: boolean;
+  /** The question, with the count ("Delete 2 drafts?"). Figma: `title`. */
+  title: ReactNode;
+  /** The consequence: what goes, what is skipped. Figma: `body`. */
+  children: ReactNode;
+  /** The confirm button: verb + count ("Delete 2 drafts"). Primary. */
+  confirmLabel: ReactNode;
+  /** Secondary button; gets the initial focus. Default "Cancel". */
+  cancelLabel?: ReactNode;
+  onConfirm: () => void;
+  /** Cancel button and Esc. */
+  onCancel: () => void;
+  /** The confirmed action is running: the confirm button ignores clicks and is aria-busy. */
+  busy?: boolean;
+}
+export declare function Dialog(props: DialogProps): JSX.Element;
 
 /** One entity in an EntityField: an existing one (`id`) or a new one to create on save (`id` null). */
 export interface EntityValue {

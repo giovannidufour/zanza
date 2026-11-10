@@ -835,11 +835,35 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-checkbox__control { position: absolute; width: 24px; height: 24px; margin: 0; opacity: 0; cursor: inherit; }
 .zz-checkbox__box { display: inline-flex; width: 24px; height: 24px; flex: none; color: var(--icon-strong); }
 .zz-checkbox__box svg { width: 100%; height: 100%; display: block; }
-.zz-checkbox__box svg + svg,
+/* one of three icons: empty (default) · tick (:checked) · minus (:indeterminate wins, Figma state=indeterminate) */
+.zz-checkbox__box svg:nth-child(n+2),
 .zz-checkbox__control:checked + .zz-checkbox__box svg:first-child { display: none; }
-.zz-checkbox__control:checked + .zz-checkbox__box svg + svg { display: block; }
+.zz-checkbox__control:checked + .zz-checkbox__box svg:nth-child(2) { display: block; }
+.zz-checkbox__control:is(:indeterminate, [data-indeterminate]) + .zz-checkbox__box svg { display: none; }
+.zz-checkbox__control:is(:indeterminate, [data-indeterminate]) + .zz-checkbox__box svg:nth-child(3) { display: block; }
+/* Figma label=false: the label stays for assistive tech (e.g. "Select <record>") */
+.zz-checkbox--hide-label .zz-checkbox__label {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
 .zz-checkbox__control:focus-visible + .zz-checkbox__box { outline: auto; }   /* browser ring: no border/focus token yet */
 /* disabled: not designed (design/open.md) */
+
+/* ── Dialog (Figma: page dialog → dialog, 2026-11-10) ─────────────────── */
+.zz-dialog {
+  width: min(400px, calc(100vw - 32px)); box-sizing: border-box;
+  margin: auto; padding: 16px;
+  display: flex; flex-direction: column; gap: 24px;
+  background: var(--surface-base);                 /* opaque in every mode: never surface-accent (0023) */
+  color: var(--text-strong);
+  border: 1px solid var(--border-divider-strong);
+}
+.zz-dialog:not([open]) { display: none; }
+.zz-dialog::backdrop { background: var(--surface-scrim); }
+.zz-dialog__content { display: flex; flex-direction: column; gap: 8px; }
+.zz-dialog__title { margin: 0; text-transform: uppercase; }
+.zz-dialog__body { margin: 0; }
+.zz-dialog__body p { margin: 0; }
+.zz-dialog__actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    EntityField + EntityChip (Figma: BACKEND → Create, "DRAFT · entity chips" 2106:676; decision 0020)

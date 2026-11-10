@@ -52,7 +52,8 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | Input | page `input` → `input` + `_input-master` | ported: variant text field / search / select × size medium / compact; error, locked (admin) |
 | DropZone | BACKEND → Create, page-local upload area | ported from page placement; Figma component pending |
 | FileList / FileItem | BACKEND → Create, page-local `uploaded list` | ported from page placement; Figma component pending |
-| Checkbox | page `controls` → `checkbox` | ported: state default / active (= checked), native input |
+| Checkbox | page `controls` → `checkbox` | ported: state default / active (= checked) / indeterminate, `label` boolean (hideLabel), native input |
+| Dialog | page `dialog` → `dialog` | ported: native `<dialog>` + showModal, surface-base, backdrop surface-scrim |
 | EntityField · EntityChip | `input` › `chips` + `_input chips`, `entity chip` (tags), `entity option` (input › building blocks) | ported: chips, menu (entity / alias / create), keyboard; Label = one chip |
 
 ## Open items
