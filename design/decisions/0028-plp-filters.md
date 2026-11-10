@@ -8,3 +8,5 @@
 **Where.** `packages/ui` `Filter`, `FilterBlock`, `Filters`; `apps/storefront/pages/plp.js` (facets), `apps/storefront/scripts/site.js` (behaviour).
 
 **Update 2026-11-10 (Gio).** A filter block shows only when the current view has something to pick in it: when all its options drop to 0 (and none is ticked) the whole block hides, legend included. Facets with no values on the page are not rendered at all.
+
+**Update 2026-11-10 (Gio).** On desktop the filter column is sticky at the top of the window and scrolls on its own when it is taller than the window (minus the open site player), the same pattern as the PDP gallery (0033). Not drawn in Figma.
