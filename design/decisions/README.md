@@ -51,5 +51,8 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0025](0025-every-bulk-action-confirms-delete-any.md) | Every bulk action asks first; any listing can be deleted | accepted |
 | [0026](0026-admin-blocks-are-components-layout-stays-frames.md) | Admin blocks are components; layout stays frames | accepted |
 | [0027](0027-first-line-is-four-plus-four.md) | Line 1 is 4 + 4 columns, lines 2+ are 3 + 4 | accepted |
+| [0028](0028-plp-filters.md) | PLP filters: facets from the data, plain text, OR inside / AND between | accepted |
+| [0029](0029-counts-are-suffixes.md) | A count next to a label is the component's suffix | accepted |
 | [0030](0030-admin-shop-preview.md) | The admin shows a live shop preview, built from the shop's components | accepted |
+| [0031](0031-subgenres-and-tags.md) | Subgenres (Discogs styles) and tags (the shop's own) are separate | accepted |
 | [0032](0032-create-page-on-surface-base.md) | The create / edit page is on `surface/base` | accepted |

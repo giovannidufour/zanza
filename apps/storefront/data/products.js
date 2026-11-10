@@ -86,7 +86,8 @@ function toProduct(row, mediaUrl) {
       country: r.country,
       format: r.format,
       genre: r.genre,
-      style: r.style,
+      style: r.style,      // subgenres (Discogs styles), in order
+      tags: (r.tag_rows || []).slice().sort((a, b) => a.position - b.position).map((t) => t.tag.name),   // the shop's own tags
       tracklist: r.tracklist,
       cover: photos[0] || null
     },
@@ -117,7 +118,7 @@ function byListingOrder(a, b) {
 }
 
 async function fromSupabase(env, site, fetchImpl = fetch) {
-  const select = '*,release:releases(*,lines:release_lines(*),samples(*))';
+  const select = '*,release:releases(*,lines:release_lines(*),samples(*),tag_rows:release_tags(position,tag:tags(name)))';
   const res = await fetchImpl(`${env.SUPABASE_URL.replace(/\/$/, '')}/rest/v1/listings?select=${encodeURIComponent(select)}`, {
     headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, Accept: 'application/json' }
   });

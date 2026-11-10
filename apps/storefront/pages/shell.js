@@ -47,6 +47,10 @@ function sampleAttrs(product, s, url) {
 }
 
 // A product as a ProductCard (PLP list, PDP "More for sale"). No device: responsive card.
+// one tag group: subgenres first, then the shop's own tags (decision 0031)
+function tagsOf(release) {
+  return [...new Set([...(release.style || []), ...(release.tags || [])])];
+}
 // Figma labels the card samples 1, 2…; the accessible name keeps the product and the sample title.
 function ProductCardFor({ product, url, headingLevel }) {
   const { listing, release, copy, samples } = product;
@@ -57,7 +61,7 @@ function ProductCardFor({ product, url, headingLevel }) {
     headingLevel,
     releaseInfo: releaseInfo(release),
     price: listing.section === 'sale' ? formatPrice(listing.price) : null,
-    tags: release.style,
+    tags: tagsOf(release),
     description: copy.notes,
     grading: grading(copy),
     samples: samples.length ? samples.map((s, i) => h(Z.PlayerButton, Object.assign({
@@ -67,4 +71,4 @@ function ProductCardFor({ product, url, headingLevel }) {
   });
 }
 
-module.exports = { SECTION_LABEL, formatPrice, productName, releaseInfo, grading, productHref, SiteHeader, sampleAttrs, ProductCardFor };
+module.exports = { SECTION_LABEL, tagsOf, formatPrice, productName, releaseInfo, grading, productHref, SiteHeader, sampleAttrs, ProductCardFor };

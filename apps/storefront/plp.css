@@ -1,5 +1,5 @@
 /* apps/storefront/plp.css — page layout of the PLP (Figma: PLP - desktop, frame `pdp content`).
-   Layout only: components bring their own styles from packages/ui. The filters are a hardcoded placeholder. */
+   Layout only: components bring their own styles from packages/ui. */
 
 .plp-content {
   display: grid;
@@ -15,14 +15,9 @@
 /* the page needs an h1 for screen readers; Figma has no visible title */
 .plp-list__title { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
-/* Figma: `filters` vertical gap 16, padding-x 8 · `filter block` gap 8 · `filter` icon 16 + label, gap 8 */
-.plp-filters { display: flex; flex-direction: column; gap: 16px; padding: 0 8px; color: var(--text-strong); }
-.plp-filters__block { display: flex; flex-direction: column; gap: 8px; }
-.plp-filters__label { margin: 0; }
-.plp-filters__list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.plp-filters__item { display: flex; align-items: center; gap: 8px; }
-.plp-filters__icon { display: inline-flex; flex: none; width: 16px; height: 16px; color: var(--icon-strong); }
-.plp-filters__icon > svg { display: block; width: 100%; height: 100%; }
+/* filters: the components bring their styles (packages/ui Filters, FilterBlock, Filter) */
+.plp-item[hidden] { display: none; }
+.plp-list__empty { margin: 0; padding: 0 8px; }
 
 /* Figma PLP - mobile: no filters (where they go on mobile is not designed yet, open.md); the list is full width,
    gap 8, padding-y small (same as desktop) */
@@ -31,3 +26,5 @@
   .plp-filters { display: none; }
   .plp-list    { grid-column: 1 / -1; }
 }
+.plp-filters .zz-filter[hidden],
+.plp-filters .zz-filter-block[hidden] { display: none; }

@@ -960,3 +960,47 @@ a.zz-product-card__image { display: block; color: inherit; }
   .zz-listing-line__fields { grid-template-columns: minmax(0, 1fr); }
   .zz-listing-line[data-removable] .zz-listing-line__fields > * { grid-row: auto; grid-column: auto; }
 }
+
+/* ── shared: visually hidden, still read by assistive tech ───────────────── */
+.zz-visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ── Tab suffix (Figma: _tab-sizes `suffix`, label container gap 4, same text style) ── */
+.zz-tab__suffix { display: inline; }
+
+/* ── Dialog choices (Figma: dialog `choices`, under the body, content gap 8) ── */
+.zz-dialog__choices { display: flex; flex-direction: column; }
+
+/* ── Radio (Figma: controls → radio, 2026-11-10) ───────────────────────────
+   control 24 with the 18px icon centred, gap 8, label body/medium text/strong. Same mechanics as the checkbox. */
+.zz-radio { display: inline-flex; align-items: flex-start; gap: 8px; color: var(--text-strong); cursor: pointer; position: relative; }
+.zz-radio__control { position: absolute; width: 24px; height: 24px; margin: 0; opacity: 0; cursor: inherit; }
+.zz-radio__box { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex: none; color: var(--icon-strong); }
+.zz-radio__box svg { width: 18px; height: 18px; display: block; }
+.zz-radio__box svg:nth-child(2),
+.zz-radio__control:checked + .zz-radio__box svg:first-child { display: none; }
+.zz-radio__control:checked + .zz-radio__box svg:nth-child(2) { display: block; }
+.zz-radio__control:focus-visible + .zz-radio__box { outline: auto; }   /* browser ring: no border/focus token yet */
+.zz-radio--hide-label .zz-radio__label {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.zz-radio-group { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.zz-radio-group__legend { padding: 0; margin: 0 0 8px; }
+
+/* ── Filter / FilterBlock / Filters (Figma: page filters, 2026-11-10) ──────
+   filter: box 16, gap 8, label body/small text/strong, count body/small text/moderate (⚠ contrast, design/open.md).
+   filter block: heading label/extra small, gap 16, options gap 8. filters: blocks gap 24, padding 0 8. */
+.zz-filter { display: inline-flex; align-items: center; gap: 8px; color: var(--text-strong); cursor: pointer; position: relative; }
+.zz-filter__control { position: absolute; left: 0; top: 50%; width: 16px; height: 16px; margin: -8px 0 0; opacity: 0; cursor: inherit; }
+.zz-filter__box { display: inline-flex; width: 16px; height: 16px; flex: none; color: var(--icon-strong); }
+.zz-filter__box svg { width: 100%; height: 100%; display: block; }
+.zz-filter__box svg:nth-child(2),
+.zz-filter__control:checked + .zz-filter__box svg:first-child { display: none; }
+.zz-filter__control:checked + .zz-filter__box svg:nth-child(2) { display: block; }
+.zz-filter__control:focus-visible + .zz-filter__box { outline: auto; }   /* browser ring: no border/focus token yet */
+.zz-filter__count { color: var(--text-moderate); }
+.zz-filter-block { display: flex; flex-direction: column; gap: 16px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.zz-filter-block__label { padding: 0; margin: 0; float: left; width: 100%; }   /* float: lets the legend take part in the flex gap */
+.zz-filter-block__options { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; clear: both; }
+.zz-filters { display: flex; flex-direction: column; gap: 24px; padding: 0 8px; }

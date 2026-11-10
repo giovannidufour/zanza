@@ -87,7 +87,7 @@
     return signed.key;
   }
 
-  // ── artists, labels and tags are entities (migrations 0006, 0007) ──────────
+  // ── artists, labels, subgenres and tags are entities (migrations 0006, 0007, 0011) ──────────
   // Each field is a chip field (Z.EntityField, decision 0020): a chip = an entity { id, name } (id null = new,
   // created on save). Artist and Label also have "Different spelling" → the name AS PRINTED on this record
   // (credit); the database learns it as an alias of the official name. Binding on save: id → Discogs id →
@@ -95,7 +95,7 @@
   function newLine(p) { return Object.assign({ id: nextId(), artists: [], artistCredit: '', artistSpelled: false, title: '' }, p); }
   function chip(e) { return { id: e.id || null, name: e.name, discogsId: e.discogsId || null }; }
   function namesOf(chips) { return (chips || []).map(function (c) { return c.name; }).join(' & '); }
-  // entities = { artists | labels | tags: [{ id, name, aliases: [] }] }, loaded once per form
+  // entities = { artists | labels | subgenres | tags: [{ id, name, aliases: [] }] }, loaded once per form
   function findEntity(list, text) {
     var t = String(text || '').trim().toLowerCase();
     if (!t || !list) return null;
@@ -110,8 +110,8 @@
         return res.data.map(function (e) { return { id: e.id, name: e.name, aliases: aliases ? (e[aliases] || []).map(function (a) { return a.name; }) : [] }; });
       });
     }
-    return Promise.all([one('artists', 'artist_aliases'), one('labels', 'label_aliases'), one('tags')])
-      .then(function (r) { return { artists: r[0], labels: r[1], tags: r[2] }; });
+    return Promise.all([one('artists', 'artist_aliases'), one('labels', 'label_aliases'), one('subgenres'), one('tags')])
+      .then(function (r) { return { artists: r[0], labels: r[1], subgenres: r[2], tags: r[3] }; });
   }
 
   // ── empty form ────────────────────────────────────────────────────────────
@@ -121,7 +121,7 @@
       customTitle: '', discogs: '', catNo: '',
       lines: [newLine()],
       label: [], labelCredit: '', labelSpelled: false, preRelease: false, country: '', year: '', format: '', section: 'sale', price: '',
-      tags: [], genre: '',
+      genre: '', subgenres: [], tags: [],   // subgenres = Discogs styles; tags = the shop's own (Rare, Killer version...)
       condition: '', conditionNotes: '', sleeveType: 'original', sleeveCondition: '',
       notes: '',
       images: [],    // { id, key, name, url, uploading }
@@ -151,8 +151,10 @@
     f.preRelease = !!r.pre_release;
     f.labelSpelled = !!le && differs(r.label, le.name); f.labelCredit = f.labelSpelled ? r.label : ''; f.country = r.country || ''; f.year = r.year ? String(r.year) : ''; f.format = r.format || '';
     f.section = row.section; f.price = centsToText(row.price_cents);
-    var tagRows = (r.tag_rows || []).slice().sort(function (a, b) { return a.position - b.position; });
-    f.tags = tagRows.length ? tagRows.map(function (t) { return chip(t.tag); }) : (r.style || []).map(function (n) { return { id: null, name: n }; });
+    var byPos = function (a, b) { return a.position - b.position; };
+    var subRows = (r.subgenre_rows || []).slice().sort(byPos);
+    f.subgenres = subRows.length ? subRows.map(function (t) { return chip(t.subgenre); }) : (r.style || []).map(function (n) { return { id: null, name: n }; });
+    f.tags = (r.tag_rows || []).slice().sort(byPos).map(function (t) { return chip(t.tag); });
     f.genre = (r.genre || [])[0] || '';
     f.condition = row.condition_media || ''; f.conditionNotes = row.condition_notes || '';
     f.sleeveType = row.sleeve_type || 'original'; f.sleeveCondition = row.condition_sleeve || '';
@@ -206,7 +208,7 @@
         label: d.label ? [{ id: (findEntity(entities && entities.labels, d.label) || {}).id || null, name: d.label, discogsId: d.labelDiscogsId || null }] : [],
         labelCredit: '', labelSpelled: false, catNo: d.catNo || '', year: d.year ? String(d.year) : '',
         country: country ? country[0] : '', format: format, genre: genre,
-        tags: (d.styles || []).map(function (n) { return { id: (findEntity(entities && entities.tags, n) || {}).id || null, name: n }; })
+        subgenres: (d.styles || []).map(function (n) { return { id: (findEntity(entities && entities.subgenres, n) || {}).id || null, name: n }; })
       },
       skipped: skipped
     };
@@ -236,7 +238,8 @@
         pre_release: f.preRelease,
         label_id: f.label.length ? f.label[0].id : null, label_discogs_id: f.label.length ? f.label[0].discogsId || null : null, cat_no: f.catNo, year: f.year.trim(), country: f.country, format: f.format,
         genre: f.genre ? [f.genre] : [],
-        style: f.tags.map(function (t) { return t.name; }),
+        style: f.subgenres.map(function (t) { return t.name; }),
+        subgenres: f.subgenres.map(function (t) { return { id: t.id, name: t.name }; }),
         tags: f.tags.map(function (t) { return { id: t.id, name: t.name }; })
       },
       lines: f.lines.map(function (l) {
@@ -277,7 +280,7 @@
     var c = f.section === 'sale' ? textToCents(f.price) : null;
     return c === null || c === undefined || isNaN(c) ? null : (c % 100 === 0 ? c / 100 : (c / 100).toFixed(2)) + '€';
   }
-  // PDP: one tag group, subgenres then tags (f.subgenres arrives with the Attributes work)
+  // PDP: one tag group, subgenres then tags
   function previewTags(f) { return (f.subgenres || []).concat(f.tags || []).map(function (t) { return t.name; }); }
 
   // ── audio preview (one at a time) ─────────────────────────────────────────
@@ -521,10 +524,14 @@
       h(Z.Divider),
 
       h('section', { className: 'admin-section' },
+        // Figma 2126:1404: Genre + Subgenres (Discogs styles), then the shop's own Tags on their own row
+        h('div', { className: 'admin-row' },
+          h(Z.Input, Object.assign({ className: 'span-4', id: 'genre', label: 'Genre', variant: 'select', placeholder: '' }, bind('genre')), opts(GENRES)),
+          h(Z.EntityField, { className: 'span-4', id: 'subgenres', label: 'Subgenres', optional: true, placeholder: 'Add subgenre',
+            options: entities && entities.subgenres, value: f.subgenres, onChange: function (chips) { set({ subgenres: chips }); } })),
         h('div', { className: 'admin-row' },
           h(Z.EntityField, { className: 'span-4', id: 'tags', label: 'Tags', optional: true, placeholder: 'Add tag',
-            options: entities && entities.tags, value: f.tags, onChange: function (chips) { set({ tags: chips }); } }),
-          h(Z.Input, Object.assign({ className: 'span-4', id: 'genre', label: 'Genre', variant: 'select', placeholder: '' }, bind('genre')), opts(GENRES)))),
+            options: entities && entities.tags, value: f.tags, onChange: function (chips) { set({ tags: chips }); } }))),
       h(Z.Divider),
 
       h('section', { className: 'admin-section' },
@@ -815,7 +822,7 @@
     var st = useState(null), initial = st[0], setInitial = st[1];
     var er = useState(null), error = er[0], setError = er[1];
     useEffect(function () {
-      sb.from('listings').select('*,release:releases(*,label_entity:labels(id,name),tag_rows:release_tags(position,tag:tags(id,name)),lines:release_lines(*,credits:release_line_artists(position,artist:artists(id,name))),samples(*))').eq('id', props.id).single()
+      sb.from('listings').select('*,release:releases(*,label_entity:labels(id,name),subgenre_rows:release_subgenres(position,subgenre:subgenres(id,name)),tag_rows:release_tags(position,tag:tags(id,name)),lines:release_lines(*,credits:release_line_artists(position,artist:artists(id,name))),samples(*))').eq('id', props.id).single()
         .then(function (res) { if (res.error) setError(res.error.message); else setInitial(formFromRow(res.data)); });
     }, [props.id]);
     if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not open this listing: ' + error);
