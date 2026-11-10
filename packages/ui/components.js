@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"}]} */
 /* packages/ui/components.js — the ONE implementation of the Zanza components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
@@ -32,6 +32,10 @@
       'data-size': size
     }, omit(props, ['hierarchy', 'size', 'disabled', 'leadingIcon', 'trailingIcon', 'children', 'state', 'className', 'type', 'suffix']));
     if (props.state && props.state !== 'default') attrs['data-state'] = props.state;
+    // state="active" (Figma _button-states state=active, 2026-11-10): the button stands for the page you are on
+    // (header Bag on /bag/). A real state, not doc-only: it stays a focusable link with aria-current="page", never
+    // `disabled`, so keyboard and screen readers still reach it and hear "current page" (decision 0045).
+    if (props.state === 'active') attrs['aria-current'] = 'page';
     // icon-only (no children): Figma hides the label container; aria-label is required by the consumer
     var hasLabel = props.children !== undefined && props.children !== null && props.children !== false;
     var typeClass = (size === 'small' || size === 'extra-small') ? 'label-extra-small' : 'label-medium';   // Figma text style per size
@@ -392,6 +396,68 @@
             props.cover ? h('p', { className: t.meta }, props.cover) : null,
             props.conditions ? h('p', { className: t.meta }, props.conditions) : null)
         : null);
+  }
+
+  /* ── BagItem ────────────────────────────────────────────────────────────
+     Figma: page `Bag` → `bag item` (device=desktop | mobile × status=available | unavailable, text `notice`), 2026-11-10.
+     One line of the bag = one copy (copies are unique: no quantity, Remove only). Row: cover 96 · info (title block,
+     grade lines, samples; gap 8) · purchase (price, Remove secondary small; right-aligned, gap 8); gaps 16.
+     unavailable (sold or held by someone else's checkout): `notice` on top (label/small), no price; samples stay
+     (Gio 2026-11-10). Desktop type = ProductCard desktop, mobile = ProductCard mobile. Decision 0044. */
+  function BagItem(props) {
+    var device = props.device || 'responsive';
+    var t = CARD_TYPE[device];
+    var titleId = useId();
+    var img = props.image;
+    var unavailable = props.status === 'unavailable';
+    return h('article', Object.assign({
+      className: cx('zz-bag-item', props.className),
+      'data-device': device,
+      'data-status': unavailable ? 'unavailable' : 'available',
+      'aria-labelledby': titleId
+    }, omit(props, ['device', 'status', 'notice', 'image', 'href', 'title', 'releaseInfo', 'price', 'grading', 'cover', 'conditions',
+                    'samples', 'onRemove', 'removeLabel', 'headingLevel', 'className', 'children'])),
+      h(props.href ? 'a' : 'div', props.href ? { className: 'zz-bag-item__image', href: props.href, tabIndex: -1, 'aria-hidden': 'true' } : { className: 'zz-bag-item__image' },
+        img && img.src ? h('img', { src: img.src, alt: img.alt || '', loading: 'lazy' }) : null),
+      h('div', { className: 'zz-bag-item__info' },
+        unavailable ? h('p', { className: 'zz-bag-item__notice label-small' }, props.notice || 'Just sold') : null,
+        h('div', { className: 'zz-bag-item__title-block' },
+          h('h' + (props.headingLevel || 2), { id: titleId, className: cx('zz-bag-item__name', t.head) },
+            props.href ? h('a', { className: 'zz-bag-item__link', href: props.href }, props.title) : props.title),
+          props.releaseInfo ? h('p', { className: cx('zz-bag-item__release', t.head) }, props.releaseInfo) : null),
+        (props.grading || props.cover || props.conditions)
+          ? h('div', { className: 'zz-bag-item__description' },
+              props.grading ? h('p', { className: t.meta }, props.grading) : null,
+              props.cover ? h('p', { className: t.meta }, props.cover) : null,
+              props.conditions ? h('p', { className: t.meta }, props.conditions) : null)
+          : null,
+        props.samples ? h('div', { className: 'zz-bag-item__samples' }, props.samples) : null),
+      h('div', { className: 'zz-bag-item__purchase' },
+        !unavailable && props.price != null ? h('p', { className: cx('zz-bag-item__price', t.head) }, props.price) : null,
+        h(Button, { hierarchy: 'secondary', size: 'small', className: 'zz-bag-item__remove', onClick: props.onRemove, 'aria-describedby': titleId },
+          props.removeLabel || 'Remove')));
+  }
+
+  /* ── BagSummary ─────────────────────────────────────────────────────────
+     Figma: page `Bag` → `bag summary` (2026-11-10). Column, gap 8: divider · subtotal row · shipping row (label left,
+     value right, body/medium) · Checkout (primary, large, fill) · note (body/small). Shipping and tax are computed by
+     Stripe Checkout, so the bag only knows the subtotal (decision 0044). */
+  function BagSummary(props) {
+    return h('section', Object.assign({
+      className: cx('zz-bag-summary', props.className),
+      'aria-label': props['aria-label'] || 'Summary'
+    }, omit(props, ['subtotalLabel', 'subtotal', 'shippingLabel', 'shipping', 'checkoutLabel', 'onCheckout', 'checkoutDisabled', 'checkoutProps', 'note', 'className', 'children', 'aria-label'])),
+      h(Divider),
+      h('dl', { className: 'zz-bag-summary__rows' },
+        h('div', { className: 'zz-bag-summary__row' },
+          h('dt', { className: 'body-medium' }, props.subtotalLabel || 'Subtotal'),
+          h('dd', { className: 'body-medium' }, props.subtotal)),
+        h('div', { className: 'zz-bag-summary__row' },
+          h('dt', { className: 'body-medium' }, props.shippingLabel || 'Shipping'),
+          h('dd', { className: 'body-medium' }, props.shipping || 'Calculated at checkout'))),
+      h(Button, Object.assign({ hierarchy: 'primary', size: 'large', className: 'zz-bag-summary__checkout', onClick: props.onCheckout, disabled: !!props.checkoutDisabled },
+        props.checkoutProps || {}), props.checkoutLabel || 'Checkout'),
+      props.note ? h('p', { className: 'zz-bag-summary__note body-small' }, props.note) : null);
   }
 
   /* ── RelatedProducts ────────────────────────────────────────────────────
@@ -1063,7 +1129,7 @@
   }
 
   return { Button: Button, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, ActiveFilter: ActiveFilter, Tag: Tag, TagGroup: TagGroup,
-           PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
+           PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, BagItem: BagItem, BagSummary: BagSummary, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
            Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, DragHandleIcon: DragHandleIcon,
            Checkbox: Checkbox, Divider: Divider, ActionPanel: ActionPanel, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog,
            EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon,

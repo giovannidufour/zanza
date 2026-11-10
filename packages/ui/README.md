@@ -37,7 +37,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 
 | Component | Figma | Status |
 | --- | --- | --- |
-| Button | page `buttons` → section `button` | ported: hierarchy × size × state, `suffix` |
+| Button | page `buttons` → section `button` | ported: hierarchy × size × state (incl. `active` = current page, aria-current), `suffix` |
 | Tabs / Tab | page `tabs` → `tab group`, `tab` | ported: controlled selection, 4 states, `suffix` (counts, 0029) |
 | Header | page `header` → `header` | ported: device desktop/mobile or responsive, composition of Button + Tabs |
 | Breadcrumbs | page `breadcrumbs` → `breadcrumbs` | ported (PDP; PLP uses ActiveFilter, 0041) |
@@ -48,6 +48,8 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | Player | page `player` → `player` + `_player controls` | ported: desktop / mobile / responsive, presentational (site owns playback) |
 | ProductInfo | page `PDP` → `product info` | ported: desktop / mobile / responsive |
 | ProductCard | page `PDP` → `product card` | ported: desktop / mobile / responsive |
+| BagItem | page `Bag` → `bag item` | ported: desktop / mobile / responsive × status available / unavailable (`notice`) |
+| BagSummary | page `Bag` → `bag summary` | ported: subtotal, shipping "Calculated at checkout", Checkout, note |
 | RelatedProducts | page `PDP` → `you may also like` | ported: one layout, cards carry the device |
 | Gallery | page `PDP` → `product image` ×2, `mobile gallery` | ported from page placement; Figma component pending |
 | Input | page `input` → `input` + `_input-master` | ported: variant text field / search / select × size medium / compact; error, locked (admin) |

@@ -125,6 +125,22 @@
   --zz-btn-border: var(--action-secondary-border-disabled);
 }
 
+/* active = the current page (Figma state=active, 2026-11-10; decision 0045). Label text/strong on both hierarchies;
+   no hover / pressed look and no pointer: it does not go anywhere new. Comes after hover/pressed so it wins. */
+.zz-button[data-hierarchy="primary"][data-state="active"],
+.zz-button[data-hierarchy="primary"][aria-current="page"] {
+  --zz-btn-bg: var(--action-primary-background-active);
+  --zz-btn-border: var(--action-primary-border-active);
+  --zz-btn-fg: var(--text-strong);
+  --zz-btn-icon: var(--icon-strong);
+}
+.zz-button[data-hierarchy="secondary"][data-state="active"],
+.zz-button[data-hierarchy="secondary"][aria-current="page"] {
+  --zz-btn-bg: var(--action-secondary-background-active);
+  --zz-btn-border: var(--action-secondary-border-active);
+}
+.zz-button[data-state="active"], .zz-button[aria-current="page"] { cursor: default; }
+
 /* secondary border: same logic as Tab — Figma 1px inside stroke, solid (default, disabled), dashPattern [4,4] (hover),
    [2,2] (pressed). Drawn as four 1px repeating gradients (see Tab below for the @property registration),
    so solid → dashed animates. The colour is --zz-btn-border (action-secondary-border-*). */
@@ -151,6 +167,8 @@
 .zz-button[data-hierarchy="secondary"][data-state="pressed"] { --zz-dash-on: 2px; --zz-dash-off: 2px; } /* Figma: [2,2] */
 .zz-button[data-hierarchy="secondary"]:disabled,
 .zz-button[data-hierarchy="secondary"][data-state="disabled"] { --zz-dash-on: 4px; --zz-dash-off: 0px; } /* Figma: solid */
+.zz-button[data-hierarchy="secondary"][data-state="active"],
+.zz-button[data-hierarchy="secondary"][aria-current="page"] { --zz-dash-on: 4px; --zz-dash-off: 0px; } /* Figma: solid, also on hover */
 @media (prefers-reduced-motion: reduce) { .zz-button[data-hierarchy="secondary"] { transition: none; } }
 
 /* disabled: label struck through (Figma: textDecoration STRIKETHROUGH on both hierarchies) */
@@ -633,6 +651,43 @@ a.zz-product-card__image { display: block; color: inherit; }
   .zz-product-card[data-device="responsive"] .zz-product-card__add[data-device="desktop"] { display: none; }
   .zz-product-card[data-device="responsive"] .zz-product-card__add[data-device="mobile"]  { display: inline-flex; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BagItem (Figma: page Bag → `bag item`, device=desktop | mobile × status=available | unavailable; decision 0044)
+   Row: cover 96 · info (gap 8) · purchase (right-aligned, gap 8); gaps 16. Type classes come from components.js.
+   ═══════════════════════════════════════════════════════════════════════ */
+.zz-bag-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--medium-small);                   /* Figma: itemSpacing → dimension/medium-small */
+  color: var(--text-strong);
+  font-family: var(--font-sans);
+}
+.zz-bag-item p, .zz-bag-item h1, .zz-bag-item h2, .zz-bag-item h3, .zz-bag-item h4 { margin: 0; }
+.zz-bag-item__image { flex: none; width: 96px; height: 96px; display: block; }   /* Figma: product image 96 × 96 */
+.zz-bag-item__image > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.zz-bag-item__info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: var(--small); }
+.zz-bag-item__title-block { display: flex; flex-direction: column; min-width: 0; }
+.zz-bag-item__link { color: inherit; text-decoration: none; }
+@media (hover: hover) { .zz-bag-item__link:hover { text-decoration: underline; } }   /* as .site-inline-link (decision 0043) */
+.zz-bag-item__description { display: flex; flex-direction: column; gap: 4px; }
+.zz-bag-item__samples { display: flex; flex-wrap: wrap; gap: 8px; }
+.zz-bag-item__purchase { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: var(--small); }
+/* mobile: samples padding-top 8 (Figma: copied from the mobile product card) */
+.zz-bag-item[data-device="mobile"] .zz-bag-item__samples { padding-top: 8px; }
+@media (--mobile) { .zz-bag-item[data-device="responsive"] .zz-bag-item__samples { padding-top: 8px; } }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BagSummary (Figma: page Bag → `bag summary`; decision 0044)
+   Column gap 8: divider · rows (label | value, space-between) · Checkout (primary large, fill) · note.
+   ═══════════════════════════════════════════════════════════════════════ */
+.zz-bag-summary { display: flex; flex-direction: column; gap: var(--small); color: var(--text-strong); font-family: var(--font-sans); }
+.zz-bag-summary__rows { display: flex; flex-direction: column; gap: var(--small); margin: 0; }
+.zz-bag-summary__row { display: flex; justify-content: space-between; gap: var(--small); }
+.zz-bag-summary__row dt, .zz-bag-summary__row dd { margin: 0; }
+.zz-bag-summary__row dd { text-align: right; }
+.zz-bag-summary__checkout { width: 100%; }   /* Figma: button layout=fill */
+.zz-bag-summary__note { margin: 0; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    RelatedProducts (Figma: PDP `you may also like`, device=desktop | mobile — same layout, only the cards differ)
