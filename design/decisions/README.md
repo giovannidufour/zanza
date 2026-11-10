@@ -72,3 +72,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0046](0046-added-to-bag-label.md) | A copy in the bag: its Add buttons read "Added to bag" and open the bag | accepted |
 | [0047](0047-added-to-bag-tick.md) | "Added to bag" carries a tick as its trailing icon | accepted |
 | [0048](0048-macro-genre-and-genre.md) | Genre = the Discogs style (was "subgenre"); the Discogs genre is the macro genre, not shown | accepted |
+| [0049](0049-toast-feedback.md) | Toasts carry Undo and off-screen news; everything else stays inline | accepted |

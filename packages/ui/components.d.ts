@@ -504,6 +504,31 @@ export interface DialogProps extends Omit<HTMLAttributes<HTMLDialogElement>, "ti
 }
 export declare function Dialog(props: DialogProps): JSX.Element;
 
+/** Figma: page `toast` → `toast` (2177:439). Decision 0049: confirms a done action whose result left the view, or
+ *  brings off-screen news; never an error. One look, no types. Shown through ToastRegion + packages/ui/toast.js. */
+export interface ToastProps extends HTMLAttributes<HTMLDivElement> {
+  /** What happened, past tense, two lines at most ("Removed from bag."). Figma: `message`. */
+  message: ReactNode;
+  /** One verb ("Undo", "View bag"): a secondary small Button. Omit for no action. Figma: `action`. A toast with an action never times out. */
+  actionLabel?: ReactNode;
+  onAction?: () => void;
+  /** The × IconButton. Figma: `dismiss`. Default true. */
+  dismiss?: boolean;
+  onDismiss?: () => void;
+  /** Accessible name of the ×. Default "Dismiss". */
+  dismissLabel?: string;
+}
+export declare function Toast(props: ToastProps): JSX.Element;
+
+/** The one place toasts appear: fixed at the bottom of the viewport, a visually hidden live region (role=status,
+ *  polite) present at load, an empty slot and a template of the Toast. Render it once per page, outside the swapped
+ *  page content; the behaviour is `ZanzaToast.show()` in packages/ui/toast.js. */
+export interface ToastRegionProps extends HTMLAttributes<HTMLElement> {
+  /** Landmark name. Default "Notifications". */
+  "aria-label"?: string;
+}
+export declare function ToastRegion(props: ToastRegionProps): JSX.Element;
+
 /** One entity in an EntityField: an existing one (`id`) or a new one to create on save (`id` null). */
 export interface EntityValue {
   id: string | null;

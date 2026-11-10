@@ -25,7 +25,7 @@
       - "Add to bag" (card, PDP, player) adds; then the button reads "Added to bag" ("Added" on the mobile card) and
         opens the bag; the header Bag shows the count in brackets on every page
       - /bag/ (pages/bag.js) shows the lines of the bag, the subtotal of the available ones, or the empty state;
-        Remove takes a line out. Checkout is not wired yet (create-checkout + Stripe, _context/backend.md)
+        Remove takes a line out and shows a toast with Undo (packages/ui/toast.js, decision 0049). Checkout is not wired yet (create-checkout + Stripe, _context/backend.md)
 
    Looks live in base.css and packages/ui/components.css; this file only sets attributes and text. */
 (function () {
@@ -749,11 +749,24 @@
       var lines = Array.prototype.filter.call(document.querySelectorAll('[data-bag-line]'), function (x) { return !x.hidden; });
       var i = lines.indexOf(li);
       var next = lines[i + 1] || lines[i - 1];
-      var name = li.querySelector('.zz-bag-item__name');
-      removeFromBag(li.getAttribute('data-bag-line'));
-      announce((name ? name.textContent + ' removed.' : 'Removed.'));
+      var id = li.getAttribute('data-bag-line');
+      var at = readBag().indexOf(id);
+      removeFromBag(id);
       var focusEl = next ? next.querySelector('.zz-bag-item__remove') : document.querySelector('[data-bag-page] h1');
       if (focusEl) { if (!next) focusEl.setAttribute('tabindex', '-1'); focusEl.focus(); }
+      // the line is gone: a toast with Undo (decision 0049); Undo puts the copy back where it was
+      if (window.ZanzaToast) {
+        window.ZanzaToast.show({ message: 'Removed from bag.', actionLabel: 'Undo', returnFocus: focusEl, onAction: function () {
+          var ids = readBag();
+          if (ids.indexOf(id) === -1) { ids.splice(at < 0 ? ids.length : Math.min(at, ids.length), 0, id); writeBag(ids); }
+          window.ZanzaToast.show({ message: 'Undone.' });
+          var back = document.querySelector('[data-bag-line="' + id + '"] .zz-bag-item__remove');
+          if (back) back.focus();
+        } });
+      } else {
+        var name = li.querySelector('.zz-bag-item__name');
+        announce(name ? name.textContent + ' removed.' : 'Removed.');
+      }
     }
   });
   // another tab changed the bag

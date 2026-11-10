@@ -43,6 +43,7 @@ const files = {
   'components.css': expandMedia(fs.readFileSync(path.join(UI, 'components.css'), 'utf8')),
   'admin.css': expandMedia(fs.readFileSync(path.join(APP, 'admin.css'), 'utf8')),
   'components.js': fs.readFileSync(path.join(UI, 'components.js'), 'utf8'),
+  'toast.js': fs.readFileSync(path.join(UI, 'toast.js'), 'utf8'),
   'config.js': `window.ADMIN_CONFIG = ${JSON.stringify(config, null, 2)};\n`,
   'admin.js': fs.readFileSync(path.join(APP, 'admin.js'), 'utf8')
 };

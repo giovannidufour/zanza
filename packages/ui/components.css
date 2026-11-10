@@ -1178,3 +1178,38 @@ a.zz-product-card__image { display: block; color: inherit; }
   appearance: none; -webkit-appearance: none;
 }
 .zz-select-button:has(.zz-select-button__control:focus-visible) { outline: auto; }   /* no border/focus token yet */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Toast + ToastRegion (Figma: page `toast` → `toast` 2177:439; decision 0049)
+   The look mirrors `dialog`: surface-base (opaque, 0023), 1px border-divider-strong, padding and gap medium-small,
+   message body/medium text-strong, no radius, no shadow. Action = Button secondary small, dismiss = IconButton ×.
+   Region: fixed at the bottom of the viewport, gutter-small above whatever is docked there (--zz-toast-offset: the
+   shop sets it to the player height while the player is open). Desktop: right-aligned at the page margin, 360 wide
+   (Figma). Mobile: full width minus the page margins.
+   ═══════════════════════════════════════════════════════════════════════ */
+.zz-toast-region {
+  position: fixed; z-index: 30;
+  right: var(--page-margin-desktop);
+  bottom: calc(var(--zz-toast-offset, 0px) + var(--gutter-small));
+  width: min(360px, calc(100vw - 2 * var(--page-margin-desktop)));
+  pointer-events: none;   /* the empty region never blocks the page; the toast itself takes the pointer */
+}
+@media (--mobile) {
+  .zz-toast-region { left: var(--page-margin-mobile); right: var(--page-margin-mobile); width: auto; }
+}
+.zz-toast-region__slot:empty { display: none; }
+.zz-toast {
+  pointer-events: auto;
+  display: flex; align-items: center; gap: var(--medium-small);
+  padding: var(--medium-small); box-sizing: border-box; width: 100%;
+  background: var(--surface-base);
+  color: var(--text-strong);
+  border: 1px solid var(--border-divider-strong);
+  font-family: var(--font-sans);
+}
+.zz-toast__message { flex: 1 1 auto; min-width: 0; margin: 0; }
+.zz-toast__action, .zz-toast__dismiss { flex: none; }
+/* enter: fade + rise. TODO motion: 150ms ease-out is the DS placeholder (no motion tokens); none with reduced motion */
+.zz-toast-region .zz-toast { animation: zz-toast-in 150ms ease-out; }
+@keyframes zz-toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .zz-toast-region .zz-toast { animation: none; } }

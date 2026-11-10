@@ -51,6 +51,8 @@ html { background: var(--surface-accent); }
 @media (prefers-reduced-motion: reduce) { .site-player, .site-player[data-open] { transition: none; } }
 /* while it is open, the page reserves its height so the end of the content is never covered (height set by site.js) */
 body[data-player-open] { padding-bottom: var(--site-player-height, 0px); }
+/* toasts (packages/ui ToastRegion, decision 0049) sit gutter-small above the player while it is open */
+body[data-player-open] .site-toasts { --zz-toast-offset: var(--site-player-height, 0px); }
 
 /* a link inside running text (artist in the product name, label in the release info → the PLP filtered by it).
    Gio 2026-11-10: same colour as the text, no underline, underlined on hover. Known a11y gap (WCAG 1.4.1: the link

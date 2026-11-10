@@ -27,6 +27,11 @@
     return CFG.mediaBaseUrl ? CFG.mediaBaseUrl.replace(/\/$/, '') + '/' + key : '';
   }
   function fileNameOf(key) { return String(key || '').split('/').pop(); }
+  // a done action whose rows left the view: packages/ui toast.js (decision 0049); the region is rendered at the end of this file
+  function toast(message, onUndo) {
+    if (!window.ZanzaToast) return;
+    window.ZanzaToast.show({ message: message, actionLabel: onUndo ? 'Undo' : null, onAction: onUndo || null });
+  }
   var uid = 0;
   function nextId() { return 'u' + (++uid); }
   function opts(list) {
@@ -737,8 +742,11 @@
       var text = done.length ? summary(done.length, action, skipped, done[0].id)
                              : 'Nothing ' + DONE_VERB[action] + ': ' + plural(skipped.length, 'listing') + ' cannot be ' + DONE_VERB[action] + ' from ' + (skipped.length === 1 ? 'its' : 'their') + ' status.';
       if (done.length && done.some(function (d) { return d.from !== 'draft' || d.to !== 'draft'; })) text += ' The shop updates in about 2 minutes.';
-      setMessage({ error: false, text: isUndo ? 'Undone: ' + text : text,
-        undo: !isUndo && done.length ? { action: UNDO[action], ids: done.map(function (d) { return d.id; }) } : null });
+      if (!done.length) { setMessage({ error: true, text: text }); return; }   // nothing happened: inline, like errors
+      // done: the rows left this tab, so the result and its Undo are a toast (decision 0049)
+      setMessage(null);
+      var undo = isUndo ? null : { action: UNDO[action], ids: done.map(function (d) { return d.id; }) };
+      toast(isUndo ? 'Undone: ' + text : text, undo ? function () { run(undo.action, undo.ids, true); } : null);
     }
     function ask(action) {
       var ok = picked.filter(ACTION[action].ok), rest = picked.filter(function (r) { return !ACTION[action].ok(r); });
@@ -764,7 +772,8 @@
       await load();
       var text = gone.length === 1 ? '“' + nameOf(ok.filter(function (r) { return r.id === gone[0]; })[0] || {}) + '” deleted.' : plural(gone.length, 'listing') + ' deleted.';
       if (kept) text += ' ' + plural(kept, 'listing') + ' kept (an order or a checkout holds ' + (kept === 1 ? 'it' : 'them') + ').';
-      setMessage({ error: false, text: text });
+      setMessage(null);
+      toast(text);   // the rows are gone: a toast, no Undo (delete is final, 0025)
     }
     function confirmed() {
       var c = confirm;
@@ -785,7 +794,7 @@
         : null,
       h('div', { className: 'admin-bulk__message', role: 'status', hidden: !!picked.length },
         message ? h('span', { className: 'body-medium' + (message.error ? ' admin-status--error' : '') }, message.text) : null,
-        message && message.undo ? h(Z.Button, { hierarchy: 'secondary', onClick: busy ? undefined : function () { run(message.undo.action, message.undo.ids, true); } }, 'Undo') : null));
+        null));
 
     var dialog = null;
     if (confirm) {
@@ -925,12 +934,14 @@
       await load();
       if (c.action === 'delete') {
         var gone = res.data.deleted.length, skipped = res.data.skipped.length;
-        setMessage({ error: false, text: (gone === 1 ? '“' + c.free[0].name + '” deleted.' : plural(gone, kind.one) + ' deleted.') +
-          (skipped ? ' ' + plural(skipped, kind.one) + ' skipped (on records).' : '') });
+        setMessage(null);
+        toast((gone === 1 ? '“' + c.free[0].name + '” deleted.' : plural(gone, kind.one) + ' deleted.') +
+          (skipped ? ' ' + plural(skipped, kind.one) + ' skipped (on records).' : ''));
       } else {
         var kept = c.rows.filter(function (r) { return r.id === keep; })[0];
-        setMessage({ error: false, text: plural(c.rows.length - 1, kind.one) + ' merged into “' + kept.name + '”.' +
-          (kind.key === 'genre' || kind.key === 'tag' ? ' The shop updates in about 2 minutes.' : '') });
+        setMessage(null);
+        toast(plural(c.rows.length - 1, kind.one) + ' merged into “' + kept.name + '”.' +
+          (kind.key === 'genre' || kind.key === 'tag' ? ' The shop updates in about 2 minutes.' : ''));
       }
     }
 
@@ -1210,4 +1221,6 @@
   }
 
   window.ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+  // the toast region (decision 0049): its own root, rendered once and never again, so toast.js owns what goes in it
+  window.ReactDOM.createRoot(document.getElementById('toasts')).render(h(Z.ToastRegion));
 })();
