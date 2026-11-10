@@ -63,8 +63,6 @@ const playerHtml = renderToStaticMarkup(React.createElement(Z.Player, {
 // the toast region (decision 0049): one per page, outside .zz-page like the player, so a toast survives soft navigation
 const toastRegionHtml = renderToStaticMarkup(React.createElement(Z.ToastRegion, { className: 'site-toasts' }));
 
-// the tick of "Added to bag" (decision 0046): scripts/site.js clones it into the Button's trailing icon slot
-const tickTemplate = `<template id="zz-icon-tick">${renderToStaticMarkup(React.createElement('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, React.createElement(Z.TickLargeThinIcon)))}</template>`;
 
 function page({ title: t, body }) {
   return `<!doctype html>
@@ -89,7 +87,6 @@ function page({ title: t, body }) {
 ${body}
 ${playerHtml}
 ${toastRegionHtml}
-${tickTemplate}
 </body>
 </html>
 `;

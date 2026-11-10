@@ -22,8 +22,8 @@
    6. Bag (decision 0044)
       - the bag = the listing ids in localStorage ('zanza-bag'), in the order they were added; a copy is unique, so an
         id is in the bag once (no quantity). Adding does NOT hold the copy: the hold starts at checkout
-      - "Add to bag" (card, PDP, player) adds and shows the toast "Added to bag." + View bag (decision 0050); then the button reads "Added to bag" ("Added" on the mobile card) and
-        opens the bag; the header Bag shows the count in brackets on every page
+      - "Add to bag" (card, PDP, player) adds and shows the toast "Added to bag." + View bag (decision 0050); then the button reads "Remove" and takes the copy out
+        again, with a toast + Undo (decision 0054); the header Bag shows the count in brackets on every page
       - /bag/ (pages/bag.js) shows the lines of the bag, the subtotal of the available ones, or the empty state;
         Remove takes a line out and shows a toast with Undo (packages/ui/toast.js, decision 0049). Checkout is not wired yet (create-checkout + Stripe, _context/backend.md)
 
@@ -699,9 +699,9 @@
 
   function initBag() { renderBag(); }
 
-  // a copy already in the bag: its Add buttons read "Added to bag" (mobile card: "Added") + a tick, Gio 2026-11-10. Not
-  // disabled (no strikethrough): still a working button, it opens the bag. The default label is kept in
-  // data-label-default so a Remove brings it back.
+  // a copy already in the bag: its Add buttons read "Remove" and take it out of the bag (Gio 2026-11-10, decision 0054,
+  // replaces "Added to bag" + tick of 0046 / 0047). Same Button, label only. The default label is kept in
+  // data-label-default so it comes back when the copy leaves the bag.
   function syncAddButton(btn, id, ids) {
     var label = btn.querySelector('.zz-button__label');
     var text = label && label.firstChild;
@@ -709,17 +709,8 @@
     if (!btn.hasAttribute('data-label-default')) btn.setAttribute('data-label-default', text.nodeValue);
     var def = btn.getAttribute('data-label-default');
     var inBag = !!id && (ids || readBag()).indexOf(id) !== -1;
-    var added = /^add$/i.test(def) ? 'Added' : 'Added to bag';
-    text.nodeValue = inBag ? added : def;
+    text.nodeValue = inBag ? 'Remove' : def;
     btn.setAttribute('data-in-bag', inBag ? 'true' : 'false');
-    // Figma: `trailing icon` on, icon-tick-large-thin (Gio 2026-11-10); the icon comes from the page's template
-    var tick = btn.querySelector('[data-added-tick]');
-    var tpl = document.getElementById('zz-icon-tick');
-    if (inBag && !tick && tpl && tpl.content.firstElementChild) {
-      tick = tpl.content.firstElementChild.cloneNode(true);
-      tick.setAttribute('data-added-tick', '');
-      btn.appendChild(tick);
-    } else if (!inBag && tick) tick.parentNode.removeChild(tick);
   }
   function syncAddButtons(ids) {
     Array.prototype.forEach.call(document.querySelectorAll('[data-listing-id] .zz-product-card__add'), function (b) {
@@ -732,22 +723,35 @@
     var cur = typeof current === 'function' ? current() : null;
     if (add && cur) syncAddButton(add, cur.listing, ids);
   }
-  // Add on a copy already in the bag opens the bag (the header Bag link, so the soft navigation keeps the player)
-  function addOrOpen(id) {
+  // the Add buttons toggle: Add to bag, or Remove when the copy is already in the bag (decision 0054)
+  function addOrRemove(id, btn) {
     if (!id) return;
-    if (readBag().indexOf(id) === -1) { addToBag(id); return; }
-    var link = document.querySelector('a[data-bag-count]');
-    if (link) link.click();
+    if (readBag().indexOf(id) === -1) addToBag(id);
+    else removeWithUndo(id, btn);
+  }
+  // take a copy out of the bag with a toast + Undo (decision 0049); Undo puts it back where it was
+  function removeWithUndo(id, returnFocus, onUndo) {
+    var at = readBag().indexOf(id);
+    removeFromBag(id);
+    if (!window.ZanzaToast) { announce('Removed from bag.'); return; }
+    window.ZanzaToast.show({ message: 'Removed from bag.', actionLabel: 'Undo', returnFocus: returnFocus, onAction: function () {
+      var ids = readBag();
+      if (ids.indexOf(id) === -1) { ids.splice(at < 0 ? ids.length : Math.min(at, ids.length), 0, id); writeBag(ids); }
+      window.ZanzaToast.show({ message: 'Undone.' });
+      if (onUndo) onUndo();
+      else if (returnFocus && document.contains(returnFocus)) returnFocus.focus();
+    } });
   }
 
   document.addEventListener('click', function (e) {
     var t = e.target;
     if (!t || !t.closest) return;
     var card = t.closest('.zz-product-card__add');
-    if (card) { var holder = card.closest('[data-listing-id]'); if (holder) addOrOpen(holder.getAttribute('data-listing-id')); return; }
+    if (card) { var holder = card.closest('[data-listing-id]'); if (holder) addOrRemove(holder.getAttribute('data-listing-id'), card); return; }
     var cta = t.closest('[data-add-to-bag]');
-    if (cta) { addOrOpen(cta.getAttribute('data-add-to-bag')); return; }
-    if (t.closest('.site-player__add')) { var cur = typeof current === 'function' ? current() : null; if (cur) addOrOpen(cur.listing); return; }
+    if (cta) { addOrRemove(cta.getAttribute('data-add-to-bag'), cta); return; }
+    var padd = t.closest('.site-player__add');
+    if (padd) { var cur = typeof current === 'function' ? current() : null; if (cur) addOrRemove(cur.listing, padd); return; }
     var remove = t.closest('.zz-bag-item__remove');
     if (remove) {
       var li = remove.closest('[data-bag-line]');
@@ -757,23 +761,12 @@
       var i = lines.indexOf(li);
       var next = lines[i + 1] || lines[i - 1];
       var id = li.getAttribute('data-bag-line');
-      var at = readBag().indexOf(id);
-      removeFromBag(id);
       var focusEl = next ? next.querySelector('.zz-bag-item__remove') : document.querySelector('[data-bag-page] h1');
+      removeWithUndo(id, focusEl, function () {
+        var back = document.querySelector('[data-bag-line="' + id + '"] .zz-bag-item__remove');
+        if (back) back.focus();
+      });
       if (focusEl) { if (!next) focusEl.setAttribute('tabindex', '-1'); focusEl.focus(); }
-      // the line is gone: a toast with Undo (decision 0049); Undo puts the copy back where it was
-      if (window.ZanzaToast) {
-        window.ZanzaToast.show({ message: 'Removed from bag.', actionLabel: 'Undo', returnFocus: focusEl, onAction: function () {
-          var ids = readBag();
-          if (ids.indexOf(id) === -1) { ids.splice(at < 0 ? ids.length : Math.min(at, ids.length), 0, id); writeBag(ids); }
-          window.ZanzaToast.show({ message: 'Undone.' });
-          var back = document.querySelector('[data-bag-line="' + id + '"] .zz-bag-item__remove');
-          if (back) back.focus();
-        } });
-      } else {
-        var name = li.querySelector('.zz-bag-item__name');
-        announce(name ? name.textContent + ' removed.' : 'Removed.');
-      }
     }
   });
   // another tab changed the bag
