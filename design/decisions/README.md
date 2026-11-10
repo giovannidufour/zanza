@@ -58,3 +58,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0032](0032-create-page-on-surface-base.md) | The create / edit page is on `surface/base` | accepted |
 | [0033](0033-pdp-gallery-scrolls-on-its-own.md) | PDP desktop gallery: images stacked, the column scrolls on its own | accepted |
 | [0034](0034-attributes-page.md) | Attributes: one admin page for artists, labels, subgenres and tags; removing a used one goes through Replace with | accepted |
+| [0035](0035-media-graded-per-side.md) | The record is graded per side: `VG+ / VG`, side B optional | accepted |

@@ -11,7 +11,7 @@ Stack: `stack.md`. Questa è la **bozza** dello schema e dei flussi, da rivedere
 
 ## Tabelle
 
-**Fonte di verità: `supabase/migrations/`** (`0001` init 2026-11-09, `0002` listing form 2026-11-10, `0003` `admin_save_listing` 2026-11-10, `0004` stati di vendita e `0005` ricostruzione del sito 2026-11-10, … `0009` archivio, delete e bulk, `0010` delete di qualsiasi copia, `0011` subgenres e tag separati, `0012` attributes; applicate dall'editor SQL di Supabase). Qui solo il riassunto:
+**Fonte di verità: `supabase/migrations/`** (`0001` init 2026-11-09, `0002` listing form 2026-11-10, `0003` `admin_save_listing` 2026-11-10, `0004` stati di vendita e `0005` ricostruzione del sito 2026-11-10, … `0009` archivio, delete e bulk, `0010` delete di qualsiasi copia, … `0012` attributes, `0013` grading per lato; applicate dall'editor SQL di Supabase). Qui solo il riassunto:
 
 | Tabella | Cosa | Note |
 |---|---|---|
@@ -20,7 +20,7 @@ Stack: `stack.md`. Questa è la **bozza** dello schema e dei flussi, da rivedere
 | `release_lines` | artista/titolo per lato (riga 1 = lato A…), dal form "Create listing" | artista vuoto = stesso della riga 1 (non mostrato). Nome mostrato: `custom_title`, altrimenti "Artist - Title 1 / Title 2" (o "Artist 1 - Title 1 / Artist 2 - Title 2") |
 | `tags`, `release_tags` (0007) | tag (= styles Discogs) come entità con `slug` (filtri PLP futuri), in ordine per release | `releases.style` resta = i nomi dei tag, così il negozio non cambia |
 | `artists`, `labels` (0006) | entità con nome **ufficiale**, `slug` (pagina futura), id Discogs | `artist_aliases` / `label_aliases` = altre grafie. Le righe le collegano con `release_line_artists` (più artisti per riga, in ordine, con "&"/"feat."); la release con `label_id`. `release_lines.artist` e `releases.label` restano = il **credito come stampato** su quel disco (lo mostra il negozio) |
-| `listings` | la copia pubblicata (copy + listing del brief) | `section`, `status`, `price_cents`, `condition_media` → `grades`, `sleeve_type` (`original`/`generic`/`none`) + `condition_sleeve` → `grades`, `photo_keys[]` (la **prima è la featured/cover**), `sku` (automatico), `custom_title`, `condition_notes`, `reserved_until`, `import_source` (solo test) |
+| `listings` | la copia pubblicata (copy + listing del brief) | `section`, `status`, `price_cents`, `condition_media` (lato A) + `condition_media_b` (lato B, facoltativo, 0013) → `grades`, `sleeve_type` (`original`/`generic`/`none`) + `condition_sleeve` → `grades`, `photo_keys[]` (la **prima è la featured/cover**), `sku` (automatico), `custom_title`, `condition_notes`, `reserved_until`, `import_source` (solo test) |
 | `samples` | clip della release | `audio_key`, `line_id` (sample del lato; vuoto = "additional"), `sort` = ordine nel player |
 | `orders`, `order_items` | ordini Stripe | li scrivono solo le Edge Functions; prezzo copiato al momento dell'acquisto |
 | `admins` | l'operatore (Gio) | riga aggiunta a mano dopo la registrazione all'admin |
