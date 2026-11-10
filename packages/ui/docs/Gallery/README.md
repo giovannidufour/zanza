@@ -2,7 +2,7 @@
 
 The product images, two per product. Mirrors the PDP placement in Figma (`product image` ×2 on desktop, `mobile gallery` on mobile): the Figma gallery component is not designed yet.
 
-- **Desktop:** image 1 full width of its column, image 2 below at half width, same gutter.
+- **Desktop:** image 1 and image 2 stacked, both full width of the gallery column (4 page columns), gap `gutter-small`.
 - **Mobile:** horizontal swipe row with scroll-snap, bleeding into the page margins ([0011](../../../../design/decisions/0011-mobile-gallery-bleed.md)). No indicators (none designed).
 
 ## API

@@ -381,7 +381,7 @@
   }
 
   /* ── Gallery ────────────────────────────────────────────────────────────
-     Figma: PDP `product image` ×2 (desktop: big + half-width below; mobile: `mobile gallery`, horizontal swipe).
+     Figma: PDP `product image` ×2 (desktop: stacked, both full width; mobile: `mobile gallery`, horizontal swipe).
      The Figma gallery component is not designed yet: this mirrors the PDP placement. */
   function Gallery(props) {
     var images = props.images || [];
