@@ -283,6 +283,10 @@
         if (count) count.textContent = n;
         b.closest('.zz-filter').hidden = n === 0 && !b.checked;
       });
+      // a block shows only when something in the current view can be picked (Gio, 2026-11-10)
+      Array.prototype.forEach.call(root.querySelectorAll('.zz-filter-block'), function (block) {
+        block.hidden = !block.querySelector('.zz-filter:not([hidden])');
+      });
       var empty = document.querySelector('[data-plp-empty]'); if (empty) empty.hidden = shown > 0;
       var status = root.querySelector('[data-plp-status]');
       if (status && announce) status.textContent = shown + (shown === 1 ? ' record' : ' records');

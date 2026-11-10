@@ -26,4 +26,5 @@
   .plp-filters { display: none; }
   .plp-list    { grid-column: 1 / -1; }
 }
-.plp-filters .zz-filter[hidden] { display: none; }
+.plp-filters .zz-filter[hidden],
+.plp-filters .zz-filter-block[hidden] { display: none; }
