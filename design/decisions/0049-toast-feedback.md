@@ -1,6 +1,6 @@
 # 0049 — Toasts carry Undo and off-screen news; everything else stays inline
 
-`2026-11-10` · **proposed** (to review with Gio; no code until accepted) · Figma: page `toast` (2177:438) → `toast` (2177:439), examples, placement desktop / mobile
+`2026-11-10` · accepted (Gio) · Figma: page `toast` (2177:438) → `toast` (2177:439), examples, placement desktop / mobile
 
 **Context.** Feedback today is scattered: the Add buttons change label (0046), the admin writes a status line next to its buttons, bulk actions show a message bar with Undo, the PLP announces result counts to screen readers only. Removing a bag line has no feedback and no Undo. A toast was asked for; the map below shows it has a narrow job.
 
@@ -35,4 +35,4 @@
 
 **Rule.** Before adding feedback, place it in the map: a toast only for a done action whose result left the view, or for off-screen news; errors and anything needing an answer are inline or in a Dialog. One toast at a time, one action at most; a toast with an action never times out.
 
-**Where.** Figma page `toast`. Code: not built (`packages/ui` Toast + one region in `apps/storefront/build.js` / `apps/admin`, `scripts/site.js`).
+**Where.** `packages/ui/components.js` (Toast, ToastRegion), `components.css`, `toast.js` (behaviour, shared); `apps/storefront/build.js` (region + `js/toast.js` on every page), `base.css` (offset above the player), `scripts/site.js` (bag Remove + Undo); `apps/admin/index.html`, `build.js`, `admin.js` (Listings bulk actions + Undo, delete; Attributes delete, merge). Built: rows 2 and 13 of the map; row 4 waits for the live check.

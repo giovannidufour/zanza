@@ -41,6 +41,9 @@ const css = {
 const cssHref = (name) => url(`/css/${name}.css?v=${hashOf(css[name])}`);
 const siteJs = fs.readFileSync(path.join(APP, 'scripts/site.js'));
 const siteJsHref = url(`/js/site.js?v=${hashOf(siteJs)}`);
+// toast behaviour (decision 0049): the same file as the admin, straight from packages/ui
+const toastJs = fs.readFileSync(path.join(UI, 'toast.js'));
+const toastJsHref = url(`/js/toast.js?v=${hashOf(toastJs)}`);
 const { Pdp, title } = require('./pages/pdp.js');
 const Plp = require('./pages/plp.js');
 const Bag = require('./pages/bag.js');
@@ -56,6 +59,9 @@ const playerHtml = renderToStaticMarkup(React.createElement(Z.Player, {
     React.createElement(Z.Button, { hierarchy: 'secondary', size: 'small', className: 'site-player__add' }, 'Add to bag'),
     React.createElement(Z.Button, { hierarchy: 'secondary', size: 'small', className: 'site-player__view', href: url('/') }, 'View'))
 }));
+
+// the toast region (decision 0049): one per page, outside .zz-page like the player, so a toast survives soft navigation
+const toastRegionHtml = renderToStaticMarkup(React.createElement(Z.ToastRegion, { className: 'site-toasts' }));
 
 // the tick of "Added to bag" (decision 0046): scripts/site.js clones it into the Button's trailing icon slot
 const tickTemplate = `<template id="zz-icon-tick">${renderToStaticMarkup(React.createElement('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, React.createElement(Z.TickLargeThinIcon)))}</template>`;
@@ -76,11 +82,13 @@ function page({ title: t, body }) {
 <link rel="stylesheet" href="${cssHref('pdp')}">
 <link rel="stylesheet" href="${cssHref('plp')}">
 <link rel="stylesheet" href="${cssHref('bag')}">
+<script src="${toastJsHref}" defer></script>
 <script src="${siteJsHref}" defer></script>
 </head>
 <body>
 ${body}
 ${playerHtml}
+${toastRegionHtml}
 ${tickTemplate}
 </body>
 </html>
@@ -114,6 +122,7 @@ write('css/pdp.css', css.pdp);
 write('css/plp.css', css.plp);
 write('css/bag.css', css.bag);
 write('js/site.js', siteJs);
+write('js/toast.js', toastJs);
 for (const f of fs.readdirSync(path.join(APP, 'public'))) write('assets/' + f, fs.readFileSync(path.join(APP, 'public', f)));
 
 const order = new Map(products.map((p, i) => [p, i]));

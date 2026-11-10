@@ -868,6 +868,32 @@
           props.confirmLabel)));
   }
 
+  /* ── Toast / ToastRegion ────────────────────────────────────────────────
+     Figma: page `toast` → `toast` (2177:439; props message, action, dismiss). Decision 0049: a toast confirms a done
+     action whose result left the view (Undo) or brings off-screen news; never an error. One look, no types.
+     Toast is presentational. ToastRegion is the one place toasts appear: fixed at the bottom of the viewport, with a
+     visually hidden live region (role=status) that exists at load and a <template> of the toast; the behaviour
+     (show, replace, 6 s timeout with pause, Esc, focus return) is packages/ui/toast.js, the same file in the shop
+     (no framework) and the admin. */
+  function Toast(props) {
+    var showAction = props.actionLabel !== undefined && props.actionLabel !== null && props.actionLabel !== false;
+    var showDismiss = props.dismiss !== false;
+    return h('div', Object.assign({ className: cx('zz-toast', props.className) },
+      omit(props, ['message', 'actionLabel', 'onAction', 'dismiss', 'onDismiss', 'dismissLabel', 'className'])),
+      h('p', { className: 'zz-toast__message body-medium', 'data-toast-message': '' }, props.message),
+      showAction ? h(Button, { hierarchy: 'secondary', size: 'small', className: 'zz-toast__action', 'data-toast-action': '',
+        onClick: props.onAction }, props.actionLabel) : null,
+      showDismiss ? h(IconButton, { className: 'zz-toast__dismiss', 'data-toast-dismiss': '', icon: h(CloseIcon),
+        'aria-label': props.dismissLabel || 'Dismiss', onClick: props.onDismiss }) : null);
+  }
+  function ToastRegion(props) {
+    return h('section', Object.assign({ className: cx('zz-toast-region', props.className), 'aria-label': props['aria-label'] || 'Notifications',
+      'data-toast-region': '' }, omit(props, ['className', 'aria-label'])),
+      h('p', { className: 'zz-visually-hidden', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true', 'data-toast-announcer': '' }),
+      h('div', { className: 'zz-toast-region__slot', 'data-toast-slot': '' }),
+      h('template', { 'data-toast-template': '' }, h(Toast, { message: '', actionLabel: 'Undo' })));
+  }
+
   /* ── Radio / RadioGroup ─────────────────────────────────────────────────
      Figma: page `controls` → `radio` (Gio, 2026-11-10; state default | active, boolean `label`). Same anatomy as the
      checkbox: a 24px control (icon/icon-radio-empty ↔ icon/icon-radio-dot, 18px, centred), gap 8, label body/medium
@@ -1134,7 +1160,7 @@
   return { Button: Button, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, ActiveFilter: ActiveFilter, Tag: Tag, TagGroup: TagGroup,
            PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, BagItem: BagItem, BagSummary: BagSummary, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
            Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, DragHandleIcon: DragHandleIcon,
-           Checkbox: Checkbox, Divider: Divider, ActionPanel: ActionPanel, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog,
+           Checkbox: Checkbox, Divider: Divider, ActionPanel: ActionPanel, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog, Toast: Toast, ToastRegion: ToastRegion,
            EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon, TickLargeThinIcon: TickLargeThinIcon,
            Radio: Radio, RadioGroup: RadioGroup, RadioEmptyIcon: RadioEmptyIcon, RadioDotIcon: RadioDotIcon,
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
