@@ -21,7 +21,7 @@ const FACETS = [
   { key: 'tag', label: 'Tags', values: (p) => p.release.tags || [], order: 'count' }
 ];
 // filters with no list in the column (Gio 2026-11-10: not all labels always visible). Reached by a link
-// (?label=…); while active they show as a removable chip above the list.
+// (?label=…); while active it shows as a removable chip at the end of the breadcrumbs (one at a time: a new link replaces it).
 // Values are entity slugs (label / artist), so a misspelt credit still matches; `refs` give the names.
 const HIDDEN_FACETS = [
   { key: 'artist', label: 'Artist', refs: (p) => artistRefs(p.release) },
@@ -59,9 +59,6 @@ function PlpFilters({ facets, hidden, sorts }) {
     'data-hidden-facets': JSON.stringify(hidden) },
     h(Z.Filters, null,
       h(Z.SelectButton, { prefix: 'Sort:', className: 'plp-filters__sort', 'aria-label': 'Sort', 'data-plp-sort': '', defaultValue: 'newest', options: sorts }),
-      // active hidden filters (label) on top of the column (Gio 2026-11-10): one EntityChip each, built by site.js
-      h('div', { className: 'plp-active', hidden: true, 'data-plp-active': '' }),
-      h('template', { 'data-plp-chip': '' }, h(Z.EntityChip, { label: '' })),
       facets.map((f) => h(Z.FilterBlock, { key: f.key, label: f.label },
         f.options.map((o) => h(Z.Filter, {
           key: o.value, name: f.key, value: o.value, label: optionLabel(f.key, o.value), count: o.count,
@@ -105,6 +102,11 @@ function Plp({ section, products, allProducts = products, site, url }) {
     h(SiteHeader, { site, url, section }),
     // Figma: "For sale / Dancehall / 7”" = the section + the applied filters (site.js rewrites it on change)
     h(Z.Breadcrumbs, { items: [{ label: SECTION_LABEL[section], href: null }], 'data-plp-breadcrumbs': '', 'data-section-label': SECTION_LABEL[section] }),
+    // active artist / label filter = Breadcrumbs `active` (Figma `breadcrumbs` → active filters, 2026-11-10): an EntityChip,
+    // medium on desktop, large on mobile (plp.css shows one). site.js fills it from these templates
+    h('template', { 'data-plp-chip': '' },
+      h(Z.EntityChip, { label: '', className: 'plp-chip plp-chip--desktop' }),
+      h(Z.EntityChip, { label: '', size: 'large', className: 'plp-chip plp-chip--mobile' })),
     // Figma `PLP header` (device=mobile, Gio 2026-11-10): mobile only (plp.css). "Filter" + applied count (site.js)
     h(Z.PlpHeader, { className: 'plp-header',
       filters: facets.length ? h(Z.Button, { hierarchy: 'secondary', size: 'small', 'aria-haspopup': 'dialog', 'data-plp-open': '' }, 'Filter') : h('span'),

@@ -292,7 +292,7 @@
   /* -- PLP filters (pages/plp.js, Figma page `filters`) --------------------
      OR inside a block, AND between blocks. Counts = records you would see by ticking that option, given the other
      blocks; an option at 0 is hidden unless ticked. State lives in the URL (?subgenre=Roots&format=7"), so a
-     filtered list can be shared and Back restores it. Breadcrumbs = section + ticked options.
+     filtered list can be shared and Back restores it. Breadcrumbs = section + ticked options + the active artist / label chip.
      The column's checkboxes are the applied state. On mobile (Figma `filters layer`, 2026-11-10) the layer has its
      own checkboxes: a draft, copied from the column when the layer opens and back to it on Apply; closing discards
      it. Levels: main (applied recap + one row per facet) and facet (the options of one facet). */
@@ -361,21 +361,21 @@
       return chip;
     }
 
-    var active = document.querySelector('[data-plp-active]');
+    // the active artist / label filter: chips at the end of the breadcrumbs (Breadcrumbs `active`, Figma 2026-11-10).
+    // Two per filter from the template (medium desktop, large mobile; plp.css shows one)
     var chipTemplate = document.querySelector('template[data-plp-chip]');
-    function renderActive() {
-      if (!active || !chipTemplate) return;
-      active.textContent = '';
-      chipsOf(selected()).forEach(function (c) {
-        active.appendChild(makeChip(chipTemplate, c.text, function () {
+    function activeChips(c) {
+      var frag = document.createDocumentFragment();
+      Array.prototype.forEach.call(chipTemplate.content.children, function (tpl) {
+        var holder = document.createElement('template'); holder.content.appendChild(tpl.cloneNode(true));
+        frag.appendChild(makeChip(holder, c.text, function () {
           hiddenSel[c.key] = hiddenSel[c.key].filter(function (x) { return x !== c.value; });
-          renderActive();
           apply(true);
-          var next = active.querySelector('.zz-entity-chip__remove') || root.querySelector('input');
+          var next = root.querySelector('input');
           if (next) next.focus();   // the removed button is gone: keep keyboard focus on the page
         }));
       });
-      active.hidden = !active.firstChild;
+      return frag;
     }
     function applySort() {
       if (!list) return;
@@ -404,12 +404,11 @@
       if (sort !== 'newest') q.set('sort', sort);
       var qs = q.toString();
       history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
-      // breadcrumbs: section / ticked options (Figma "For sale / Dancehall / 7in")
+      // breadcrumbs: section / ticked options (Figma "For sale / Dancehall / 7in") / [active artist or label chip]
       var nav = document.querySelector('[data-plp-breadcrumbs]');
       var ol = nav && nav.querySelector('ol');
       if (ol) {
         var labels = [nav.getAttribute('data-section-label')];
-        hidden.forEach(function (f) { hiddenSel[f.key].forEach(function (x) { labels.push((f.names || {})[x] || x); }); });
         boxes.forEach(function (b) { if (b.checked) labels.push(b.getAttribute('data-facet-label') || b.value); });
         ol.textContent = '';
         labels.forEach(function (text, i) {
@@ -418,6 +417,11 @@
           var span = document.createElement('span'); span.textContent = text;
           if (i === labels.length - 1) span.setAttribute('aria-current', 'page');
           li.appendChild(span); ol.appendChild(li);
+        });
+        if (chipTemplate) chipsOf(s).forEach(function (c) {
+          var sep = document.createElement('li'); sep.className = 'zz-breadcrumbs__sep'; sep.setAttribute('aria-hidden', 'true'); sep.textContent = '/'; ol.appendChild(sep);
+          var li = document.createElement('li'); li.className = 'zz-breadcrumbs__active';
+          li.appendChild(activeChips(c)); ol.appendChild(li);
         });
       }
     }
@@ -550,7 +554,6 @@
           b.checked = draftBoxes.some(function (d) { return d.name === b.name && d.value === b.value && d.checked; });
         });
         hidden.forEach(function (f) { hiddenSel[f.key] = draftHidden[f.key].slice(); });
-        renderActive();
         apply(true);
         close();
         window.scrollTo(0, 0);
@@ -558,7 +561,6 @@
     }
 
     root.addEventListener('change', function () { apply(true); });
-    renderActive();
     applySort();
     apply(false);
   }
