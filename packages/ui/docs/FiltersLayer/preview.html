@@ -25,7 +25,7 @@
           sort: h(Z.SelectButton, { 'aria-label': 'Sort', defaultValue: 'newest', options: [{ value: 'newest', label: 'Newest' }, { value: 'price-asc', label: 'Lowest price' }] }) }),
         h(Z.FilterFacet, { label: 'Subgenre', value: 'Dancehall, Roots' })),
       h('div', { className: 'frame' },
-        h(Z.FiltersLayer, { level: 'main', title: 'Filters', applied: chips, applyCount: 21 },
+        h(Z.FiltersLayer, { level: 'main', title: 'Filter', applied: chips, applyCount: 21 },
           h(Z.FilterFacet, { label: 'Subgenre', value: 'Dancehall' }),
           h(Z.FilterFacet, { label: 'Format', value: '7”' }),
           h(Z.FilterFacet, { label: 'Decade' }),

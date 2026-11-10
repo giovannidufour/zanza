@@ -563,7 +563,7 @@ export declare function FilterFacet(props: FilterFacetProps): JSX.Element;
 export interface FiltersLayerProps extends HTMLAttributes<HTMLDivElement> {
   /** main = applied recap + FilterFacet rows; facet = the options of one facet, with Back. Figma: `level`. @default "main" */
   level?: "main" | "facet";
-  /** Bar title: "Filters" on main, the facet name on facet. Figma: `facet` (level=facet). */
+  /** Bar title: "Filter" on main, the facet name on facet. Figma: `facet` (level=facet). */
   title: ReactNode;
   /** Applied filters as EntityChip size=large (level=main). Figma: `applied`. */
   applied?: ReactNode;
