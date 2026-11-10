@@ -1,8 +1,8 @@
 -- 0011 subgenres and tags are two lists (Gio, 2026-11-10). Until now `tags` held the Discogs styles.
 -- · subgenres: the musical styles (Dancehall, Roots…), filled by Fetch Discogs, drive the shop filters;
 --   release_subgenres keeps their order; releases.style stays equal to their names (shop unchanged).
--- · tags: Gio's own labels (Rare, Killer version), never from Discogs. Today's rows move to subgenres, so tags
---   starts empty. Same ids are kept, so nothing that points at a subgenre id breaks.
+-- · tags: Gio's own labels (Rare, Killer version), never from Discogs. Today's rows move to subgenres, except the
+--   names listed in keep_as_tag. Same ids are kept, so nothing that points at a subgenre id breaks.
 -- · Shop (decision 0028): PLP filter blocks Subgenre and Tags; PDP tag group = subgenres, then tags.
 -- · admin_save_listing: release.subgenres = [{ id, name }] (new); release.tags = Gio's tags. A payload without
 --   "subgenres" (admin before this migration) is read as before: its "tags" are subgenres.
@@ -23,11 +23,27 @@ create table public.release_subgenres (
 );
 create index release_subgenres_subgenre on public.release_subgenres (subgenre_id);
 
--- existing data: every tag so far is a Discogs style → a subgenre (same id, name, slug, order)
-insert into public.subgenres (id, name, slug, created_at) select id, name, slug, created_at from public.tags;
-insert into public.release_subgenres (release_id, subgenre_id, position) select release_id, tag_id, position from public.release_tags;
-delete from public.release_tags;
-delete from public.tags;
+-- existing data: the tags so far are Discogs styles → subgenres (same id, name, slug, order), except the
+-- names Gio marked as his own tags, which stay tags. Positions are renumbered in both lists.
+create temp table keep_as_tag (name text primary key);
+insert into keep_as_tag values ('rare');   -- lower-case names (Gio, 2026-11-10)
+
+insert into public.subgenres (id, name, slug, created_at)
+  select id, name, slug, created_at from public.tags where lower(name) not in (select name from keep_as_tag);
+insert into public.release_subgenres (release_id, subgenre_id, position)
+  select rt.release_id, rt.tag_id, row_number() over (partition by rt.release_id order by rt.position)
+    from public.release_tags rt join public.subgenres g on g.id = rt.tag_id;
+delete from public.release_tags where tag_id in (select id from public.subgenres);
+delete from public.tags where id in (select id from public.subgenres);
+update public.release_tags rt set position = n.pos
+  from (select release_id, tag_id, row_number() over (partition by release_id order by position) pos from public.release_tags) n
+ where n.release_id = rt.release_id and n.tag_id = rt.tag_id;
+-- the shop reads releases.style: it lists subgenres only
+update public.releases r set style = coalesce((select array_agg(g.name order by rs.position) from public.release_subgenres rs
+                                               join public.subgenres g on g.id = rs.subgenre_id where rs.release_id = r.id), '{}')
+ where exists (select 1 from public.release_subgenres where release_id = r.id)
+    or exists (select 1 from public.release_tags where release_id = r.id);
+drop table keep_as_tag;
 
 create function public.resolve_subgenre(p_id uuid, p_name text) returns uuid
   language plpgsql set search_path = ''
