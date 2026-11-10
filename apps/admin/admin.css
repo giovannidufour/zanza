@@ -1,0 +1,50 @@
+/* apps/admin/admin.css — page layout of the admin only. Components keep their own styles (packages/ui).
+   Layout mirrors Figma BACKEND → Create ("Desktop - 1", 1024): padding 24, main column 645 + gap 16 + side column 315,
+   sections gap 32 separated by 1px dividers, field rows = 8-column grid, gap 16 (decision 0012).
+   Screens without a Figma frame (sign-in, listings list) reuse the same parts and are flagged in design/open.md. */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--surface-base); color: var(--text-strong); font-family: var(--font-sans); }
+h1, h2, p { margin: 0; }
+
+.admin { padding: 24px; display: flex; flex-direction: column; gap: 24px; max-width: 1024px; }
+
+/* top bar (not in Figma): who is signed in + navigation */
+.admin-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.admin-bar__nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.admin-page { display: grid; grid-template-columns: minmax(0, 645fr) minmax(0, 315fr); gap: 16px; align-items: start; }
+.admin-main { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
+.admin-side { display: flex; flex-direction: column; gap: 24px; position: sticky; top: 24px; }
+.admin-side__actions { display: flex; flex-direction: column; gap: 8px; padding: 16px; background: var(--surface-subtle); }
+.admin-side__actions .zz-button { width: 100%; }
+
+.admin-divider { height: 1px; background: var(--border-divider-strong); border: 0; margin: 0; }
+.admin-section { display: flex; flex-direction: column; gap: 16px; }
+.admin-stack { display: flex; flex-direction: column; gap: 24px; }           /* Figma: Frame 1 / list, gap 24 */
+.admin-line { display: flex; flex-direction: column; gap: 8px; }              /* line + its sample, gap 8 */
+.admin-line__samples { display: flex; flex-direction: column; gap: 16px; }
+
+.admin-row { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.span-2 { grid-column: span 2; } .span-3 { grid-column: span 3; } .span-4 { grid-column: span 4; }
+.span-6 { grid-column: span 6; } .span-8 { grid-column: span 8; } .col-8 { grid-column: 8; }
+
+.admin-status { min-height: 16px; }
+.admin-status--error { color: var(--text-alert); }
+
+/* sign-in and listings (no Figma frame yet) */
+.admin-signin { max-width: 315px; display: flex; flex-direction: column; gap: 16px; }
+.admin-table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table th, .admin-table td { text-align: left; padding: 8px 8px 8px 0; border-bottom: 1px solid var(--border-divider-strong); vertical-align: top; }
+.admin-table th { font-weight: 400; color: var(--text-moderate); }
+.admin-table td.num, .admin-table th.num { font-variant-numeric: tabular-nums; }
+.admin-table a { color: inherit; }
+
+@media (--mobile) {
+  .admin { padding: 16px; }
+  .admin-page { grid-template-columns: minmax(0, 1fr); }
+  .admin-side { position: static; order: -1; }
+  .admin-row { grid-template-columns: minmax(0, 1fr); }
+  .admin-row > * { grid-column: auto; }
+}

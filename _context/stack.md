@@ -1,71 +1,71 @@
-# Zanza — Stack (opzioni, 2026-10-31)
+# Zanza — Stack (decisione 2026-11-09)
 
-Vincoli dati da Gio: **headless**, appoggiarsi a **servizi terzi**, codice in **inglese**.
+Vincoli dati da Gio: **headless**, appoggiarsi a **servizi terzi**, codice in **inglese**, **costo fisso il più vicino possibile a 0**.
 
-## Cosa deve fare il backend
-| Capacità | Chi la dà "gratis" | Chi NO |
+## Decisione: Supabase + Stripe Checkout + admin custom ✅
+
+Scelta da Gio il 2026-11-09 (era l'opzione C della versione del 31/10).
+
+**Perché (input di Gio, 2026-11-09):**
+- un solo venditore e un solo operatore (Gio) → niente ruoli, niente marketplace
+- volume basso: ~40 dischi all'avvio, poi 10–20 a settimana
+- ogni disco è **sempre una copia unica** → inventario = una riga per copia, niente SKU/quantità
+- budget: risparmiare il più possibile
+- l'interfaccia di creazione dei listing la disegna Gio (fa parte del prodotto)
+- i sample li registra Gio dai suoi dischi
+
+Medusa 2 (ex opzione B) scartata: costo fisso ~15 €/mese e un admin già fatto, mentre Gio lo vuole disegnare lui; resi, magazzino multi-unità e multi-operatore non servono. **Quando rivalutarla:** più venditori, più operatori, resi/rimborsi frequenti, o oltre ~5.000 copie.
+
+## Architettura
+
+| Pezzo | Servizio | Costo | Note |
+|---|---|---|---|
+| DB + auth admin + funzioni server | **Supabase** (free) | 0 € | Postgres, RLS, Edge Functions. ⚠️ il piano free si mette in pausa dopo 7 giorni di inattività |
+| File: cover, foto, sample | **Cloudflare R2** | 0 € fino a 10 GB, nessun costo di traffico | nel DB solo la **chiave** (`samples/<release_id>/A.mp3`), mai l'URL completo |
+| Admin | SPA statica React con `packages/ui` (`apps/admin`) su **Cloudflare Pages**, progetto `store-admin` → **https://store-admin-3k1.pages.dev** (il nome senza suffisso era preso; questo URL è anche in Supabase Auth Site URL/Redirect, CORS del bucket R2 e default `ADMIN_ORIGINS` di `sign-upload`) (scelta di Gio 2026-11-10: non dipende da GoDaddy né dal blocco IP) | 0 € | `npm run deploy:admin` (wrangler) · upload diretto su R2 con URL firmato; resize immagini nel browser |
+| Checkout | **Stripe Checkout** | solo % a transazione | pagamento, indirizzo, tariffe di spedizione per zona |
+| Email transazionali | Resend (free, 3.000/mese) | 0 € | conferma ordine |
+| Storefront | statico, `build.js` legge da Supabase | 0 € | **Cloudflare Pages** collegato a GitHub, ricostruzione automatica quando cambia un listing (scelta di Gio 2026-11-10, `backend.md` → Pubblicazione). GoDaddy resta come riserva finché Pages non è verificato |
+
+Dettaglio di schema, flussi e storage: `backend.md`.
+
+### Account creati (2026-11-09, tutti con l'email personale di Gio)
+| Servizio | Cosa | Note |
 |---|---|---|
-| Catalogo, carrello, checkout, pagamenti, tasse, spedizioni, ordini, resi, account | un commerce engine | — |
-| Inventario **per copia** con hold al checkout | parzialmente (quantità=1) | il "hold" va spesso costruito |
-| **Proposal di scambio** (stati, thread, controproposte) | nessuno | va costruito sempre |
-| Sample audio (storage, CDN, player) | storage+CDN | player custom sempre |
+| Supabase | org "Gios" (free) → progetto `store-staging`, ref `hhpknvyfypqipxufmbys`, regione eu-central-1 (Frankfurt) | "Automatically expose new tables" **off**, "automatic RLS" **on**. Password DB nel password manager di Gio. Nella stessa org c'è un progetto non correlato in pausa ("love planner"): il free tier conta i progetti *attivi* (max 2) |
+| Cloudflare R2 | stesso account Cloudflare di gio-d.xyz, bucket `store-media` (Standard, posizione automatica EEUR) | lettura pubblica via Public Development URL `https://pub-a98e506f6d2e48c49301fca9123a3b20.r2.dev` (attivato 2026-11-10; rate-limited, da sostituire con dominio custom in produzione). Scrittura solo con URL firmato da `sign-upload` |
+| Stripe | account `acct_1RGEAj2LZr7JToM4`, paese **Germany**, solo **sandbox/test** | non attivare i pagamenti live prima di Q5b e del nome. Fuso orario account = Europe/Berlin (impostato il 2026-11-10) |
 
-→ La domanda non è "quale commerce", ma **dove vive il dominio Trade**, perché è custom in ogni caso.
+Chiavi API: mai in chat né nel repo; andranno in un `.env` git-ignored sul Mac.
 
-## Tre architetture
+**GoDaddy serve solo file statici.** Nessuna richiesta di admin, upload o API passa da lì (hosting condiviso PHP/MySQL, e il firewall banna gli IP che fanno raffiche di richieste).
 
-### A — Shopify (Storefront API) + Next.js + Supabase per il Trade
-- Shopify fa tutto il commerce (checkout, Stripe/Shop Pay, IVA, spedizioni, fatture): **vai live prima**
-- Trade proposals, sample metadata in **Supabase** (Postgres + Auth + Storage)
-- ❌ **Due identità** (customer Shopify + user Supabase) da collegare: è il debito strutturale di questa opzione. Mitigazione: Shopify Customer Account API come unico login, Supabase riceve `shopify_customer_id`
-- ❌ hold sul carrello: Shopify non riserva, serve logica tua o accettare la race (raro con pochi utenti)
-- 💶 ~€27/mese Shopify Basic + Supabase free + Vercel free
+## Cosa scriviamo noi (e Medusa avrebbe dato pronto)
+- hold della copia al checkout + rilascio alla scadenza
+- webhook Stripe → `sold` + ordine
+- email di conferma
+- ordini/rimborsi: **dalla dashboard Stripe, a mano** (ok per il volume attuale)
 
-### B — Medusa 2 (open source) + Next.js  ← **raccomandata**
-- Commerce engine headless completo (prodotti, cart, checkout, ordini, clienti, Stripe, tasse, spedizioni) e **moduli custom**: il Trade diventa un modulo nel **medesimo backend**, stessa identità, stesso admin
-- Inventario già per unità; hold = reservation nativa di Medusa
-- Admin pronto (si estende con widget per lookup Discogs e proposte)
-- ❌ devi hostare: Node + Postgres + Redis (Railway/Render ~€10–20/mese) oppure Medusa Cloud
-- ❌ più superficie da capire all'inizio; il Mac non ha Postgres → sviluppo nel container/Docker
-- 💶 ~€15/mese infra + Stripe a transazione
+## Portabilità (staging → nuovo dominio)
+Tutto ciò che dipende dal dominio vive in configurazione, mai nel DB o nel codice:
+`basePath`, base URL dei media, URL Supabase, origini CORS, URL di successo/annullamento del checkout, webhook Stripe, mittente email.
+Non legare un sottodominio media a `gio-d.xyz`: usare l'URL pubblico di R2 finché non c'è il dominio definitivo.
+**Al cambio dominio:** storefront e admin su **Cloudflare Pages** (gratis, ricostruzione automatica quando si pubblica dall'admin), GoDaddy dismesso. *Proposta, da confermare.*
 
-### C — Supabase + Stripe Checkout, commerce "a mano"
-- Un solo DB, un solo auth, tutto tuo; Stripe Checkout + Stripe Tax + shipping rates evitano di scrivere pagamenti/IVA
-- Perfetto per "1 copia = 1 prodotto": products/holds/orders sono tre tabelle
-- ❌ ordini, resi, rimborsi, fatture, email transazionali: tutto da scrivere. Sembra poco, cresce sempre
-- 💶 quasi zero fisso
+## Tasse e spedizioni (Gio ha sede a Berlino, vende in tutto il mondo)
+Da verificare con uno **Steuerberater** prima del checkout:
+- **Kleinunternehmer (§19 UStG)**: se applicabile, niente IVA in fattura → tutto molto più semplice
+- **Differenzbesteuerung** (regime del margine) per l'usato comprato da privati
+- UE B2C oltre la soglia: IVA OSS; extra-UE: senza IVA ma con dogana (CN22/CN23)
 
-**Perché B:** è l'unica in cui Sale e Trade stanno in **un solo modello di dominio** (single source of truth per utenti, copie, stati) — che è esattamente il criterio che usi per i design system. A è più veloce ma nasce con due verità; C è più leggera ma ti fa reinventare il commerce.
-**Quando scegliere A invece:** se Q1/Q4 dicono "poche centinaia di dischi, voglio vendere entro un mese" e il Trade può essere un MVP con email.
+**Proposta:** partire con **UE + UK/CH/US** e tariffe fisse per zona e formato, poi allargare.
 
-## Servizi terzi (indipendenti dalla scelta A/B/C)
-| Bisogno | Servizio | Note |
+## Servizi rimandati
+| Bisogno | Servizio | Quando |
 |---|---|---|
-| Frontend | **Next.js (App Router) su Vercel** | layout radice persistente → il player audio non si ferma cambiando pagina. Astro non basta (navigazione full-page) |
-| Pagamenti | Stripe | in A è dentro Shopify |
-| Audio sample | **Cloudflare R2** (o Bunny) + CDN | mp3 128 kbps, 30–60 s, nome file = `{release_id}-{track}.mp3`; player con **Zustand** store globale |
-| Immagini | Cloudinary o Vercel Image | cover dalla Discogs import, foto delle copie dall'admin |
-| Ricerca/filtri PLP | DB finché < ~2k dischi; poi **Meilisearch** | facet: genre, format, condition, price, label, year, has_sample |
-| Email | Resend | ordine, proposal ricevuta/controproposta/accettata |
-| Lookup catalogo (admin) | Discogs API | solo lato admin, import una tantum — vedi brief §2 e `Vinyl Swap/_context/discogs-api.md` |
-| Contenuti editoriali (opz.) | Sanity / MDX | solo se servono pagine "about", "guide alle condizioni" ecc. |
-| Analytics | Plausible | niente GA: i ToU Discogs vietano esportare dati verso terzi |
+| Ricerca/filtri PLP | Postgres finché < ~2k copie, poi Meilisearch | non prima di un anno al ritmo attuale |
+| Analytics | Plausible | i ToU Discogs vietano di esportare dati verso terzi (niente GA) |
+| Trade (proposals) | tabelle in più nello stesso Supabase | dopo il checkout; Q2 aperta |
+| Frontend Next.js | — | solo se il sito statico + `site.js` non basta più (carrello/account) |
 
-## Struttura repo proposta (monorepo, inglese)
-```
-zanza/
-  apps/
-    storefront/      # Next.js
-    backend/         # Medusa (B) · api/ (C) · assente in A
-  packages/
-    ui/              # design system (token → CSS vars, componenti)
-    shared/          # types, Discogs client, condition grading enums
-  docs/
-```
-Il DS vive in `packages/ui` come layer separato dal frontend, con i token generati dalle variabili Figma (stessa logica di `Crate Witch/design-system/`, ma codice nuovo).
-
-## Primo passo tecnico
-1. Chiudere Q1–Q3
-2. Spike di 1 giorno: Medusa 2 in Docker nel container + un modulo `trade` con l'entità `Proposal` e la state machine. Se regge, è B; se è un incubo, A.
-
-_Last updated: 2026-10-31_
+_Last updated: 2026-11-10_

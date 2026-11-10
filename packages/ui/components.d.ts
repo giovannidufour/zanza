@@ -251,3 +251,94 @@ export interface GalleryProps extends HTMLAttributes<HTMLDivElement> {
   images: GalleryImage[];
 }
 export declare function Gallery(props: GalleryProps): JSX.Element;
+
+/** Mirrors the Figma component `input` (type text field | search | select) over the building block `_input-master`
+ *  (size × state default | filled | error | locked). Admin forms; render inside data-theme="backend".
+ *  Props not listed here go to the native <input> / <select> (name, value, onChange, required, disabled…). */
+export interface InputProps {
+  /** Figma `type` (renamed: `type` is the native input attribute). search adds the magnifying glass, select the chevron. @default "text-field" */
+  variant?: "text-field" | "search" | "select";
+  /** Figma `size`. medium = 38px field, compact = 30px. @default "medium" */
+  size?: "medium" | "compact";
+  /** Figma `label`. Rendered as a <label> (body-small). Without it, pass `aria-label`. */
+  label?: ReactNode;
+  /** Figma `optional`: shows "Optional" right-aligned in the label row (part of the accessible name). */
+  optional?: boolean;
+  /** Text of the optional marker. Default "Optional". */
+  optionalLabel?: string;
+  /** Figma `support text` (emphasis neutral). Linked with aria-describedby. */
+  supportText?: ReactNode;
+  /** Figma state=error: alert border + this message in place of the support text (emphasis alert); sets aria-invalid. */
+  error?: ReactNode;
+  /** Figma `prefix`, e.g. "€". Visual only: say it in the label too. */
+  prefix?: ReactNode;
+  /** Figma `suffix`. Visual only. */
+  suffix?: ReactNode;
+  /** Figma `leading icon` (20px). Default: SearchIcon for search, none otherwise. */
+  leadingIcon?: ReactNode;
+  /** Figma `trailing icon` (20px). Default: ChevronDownIcon for select, none otherwise. */
+  trailingIcon?: ReactNode;
+  /** Figma state=locked: read-only, surface-subtle, no border (e.g. the automatic SKU). A locked select is disabled. */
+  readOnly?: boolean;
+  /** Placeholder text. For select: the empty first option (Figma "Select"). */
+  placeholder?: string;
+  /** For select: the <option>s. */
+  children?: ReactNode;
+  /** id of the native control; generated when omitted. */
+  id?: string;
+  /** On the wrapper. */
+  className?: string;
+}
+export declare function Input(props: InputProps & Record<string, unknown>): JSX.Element;
+
+/** Upload area under each file list (Figma: page-local frame on BACKEND → Create, no component yet): dashed box with a
+ *  secondary Button that opens the file picker; files can also be dropped on it. */
+export interface DropZoneProps extends Omit<HTMLAttributes<HTMLDivElement>, "onDrop"> {
+  /** Button label, e.g. "Browse image". */
+  label: ReactNode;
+  /** Native accept, e.g. "image/*" or "audio/mpeg". */
+  accept?: string;
+  /** Allow several files. */
+  multiple?: boolean;
+  /** Called with the picked or dropped files. Filter by type in the handler: `accept` does not apply to drops. */
+  onFiles?: (files: File[]) => void;
+  /** Disables the button and ignores drops. */
+  disabled?: boolean;
+  /** Name of the hidden file input. */
+  name?: string;
+}
+export declare function DropZone(props: DropZoneProps): JSX.Element;
+
+/** Ordered list of uploaded files (Figma: page-local `uploaded list`). Numbers its FileItems 01, 02… and handles reordering. */
+export interface FileListProps extends HTMLAttributes<HTMLOListElement> {
+  /** Called when a row is dragged onto another, or moved with ↑ ↓ on its handle. Omit for a fixed order (no handles). */
+  onMove?: (from: number, to: number) => void;
+  /** <FileItem>s, each with a stable key. */
+  children?: ReactNode;
+}
+export declare function FileList(props: FileListProps): JSX.Element;
+
+/** One uploaded file: [drag handle] · [thumbnail | play] position name (featured) · [remove]. */
+export interface FileItemProps extends HTMLAttributes<HTMLDivElement> {
+  /** File name, e.g. "sample-name.mp3". Also names the buttons for screen readers. */
+  name: string;
+  /** Shown before the name. Default: the row number inside FileList, two digits ("01"). */
+  position?: ReactNode;
+  /** Image file: the 40 × 40 thumbnail (empty = surface-support-1). */
+  image?: { src?: string; alt?: string };
+  /** Shows "(featured)". The admin sets it on the first image (the featured image is always position 1). */
+  featured?: boolean;
+  /** Text of the featured marker. Default "(featured)". */
+  featuredLabel?: string;
+  /** Audio file: pause icon instead of play. */
+  playing?: boolean;
+  /** Audio file: shows the play / pause IconButton. */
+  onTogglePlay?: () => void;
+  /** Shows the remove (×) IconButton. */
+  onRemove?: () => void;
+  /** Accessible name of the remove button. Default "Remove <name>". */
+  removeLabel?: string;
+  /** Accessible name of the drag handle. Default "Move <name>, position n of m (arrow up / down)". */
+  reorderLabel?: string;
+}
+export declare function FileItem(props: FileItemProps): JSX.Element;

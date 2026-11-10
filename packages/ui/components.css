@@ -684,3 +684,144 @@ a.zz-product-card__image { display: block; color: inherit; }
   }
   .zz-gallery[data-device="responsive"] .zz-gallery__item { flex: 0 0 100%; scroll-snap-align: start; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Admin forms (Figma page BACKEND → Create). Render inside [data-theme="backend"]:
+   surface-base is white there (Figma mode `backend`).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Input (Figma: input + _input-master) ──
+   Column, gap 4: top content (label · Optional) / field / support text.
+   Field: 1px border-divider-strong, surface-base, padding 8 (compact 4), gap 8 (compact 4), strokes included in
+   layout (0014) → 38px (compact 30px). Text: label + Optional + support body-small, value + affixes body-medium. */
+.zz-input {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  color: var(--text-strong);
+}
+.zz-input__top { display: flex; align-items: flex-start; gap: 8px; }
+.zz-input__label { flex: 1 1 0; min-width: 0; color: var(--text-strong); }
+.zz-input__optional { flex: none; color: var(--text-moderate); }
+
+.zz-input__field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  box-sizing: border-box;
+  border: 1px solid var(--border-divider-strong);
+  border-radius: 0;
+  background: var(--surface-base);
+  cursor: text;
+}
+.zz-input[data-size="compact"] .zz-input__field { gap: 4px; padding: 4px; }
+
+.zz-input__control {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 20px;            /* body-medium line height: the field is 38 = 1 + 8 + 20 + 8 + 1 */
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-strong);
+  font: inherit;           /* overridden by the body-medium class on the element */
+  appearance: none;
+  -webkit-appearance: none;
+  /* focus: not designed (design/open.md) — the browser outline is kept on purpose, never removed */
+}
+.zz-input__control::placeholder { color: var(--text-moderate); opacity: 1; }
+.zz-input__control::-webkit-search-decoration,
+.zz-input__control::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+/* select: native element, chevron drawn by the trailing icon on top of it; "Select" placeholder = the empty option */
+.zz-input[data-variant="select"] .zz-input__field { cursor: pointer; }
+.zz-input[data-variant="select"] .zz-input__control { cursor: inherit; padding-right: 28px; margin-right: -28px; }   /* the 20px chevron + 8px gap stay clickable */
+.zz-input[data-variant="select"] .zz-input__control:has(option[value=""]:checked) { color: var(--text-moderate); }
+.zz-input[data-variant="select"][data-size="compact"] .zz-input__control { padding-right: 24px; margin-right: -24px; }
+
+.zz-input__affix { flex: none; color: var(--text-strong); white-space: nowrap; }
+.zz-input__icon { display: inline-flex; flex: none; width: 20px; height: 20px; color: var(--icon-strong); }
+.zz-input__icon svg { width: 100%; height: 100%; display: block; }
+.zz-input__icon--trailing { pointer-events: none; }
+
+.zz-input__support { margin: 0; color: var(--text-strong); }
+
+/* state=error: field border + support text in the alert colour (PROVISIONAL tokens, see tokens.json / open.md) */
+.zz-input[data-invalid="true"] .zz-input__field { border-color: var(--border-alert); }
+.zz-input[data-invalid="true"] .zz-input__support { color: var(--text-alert); }
+
+/* state=locked (readOnly): surface-subtle, no stroke (Figma) → field 36px (compact 28px); value in text-moderate as drawn */
+.zz-input[data-locked="true"] .zz-input__field { border: 0; padding: 8px; background: var(--surface-subtle); cursor: default; }
+.zz-input[data-locked="true"][data-size="compact"] .zz-input__field { padding: 4px; }
+.zz-input[data-locked="true"] .zz-input__control { color: var(--text-moderate); }
+
+/* ── DropZone (Figma: page-local "Frame 4" under each upload list) ──
+   surface-subtle, 1px dashed [16,16] border-divider-strong (four gradients, as the outlined controls in 0005),
+   the button centred → 88px with a medium Button. No drag-over state in Figma. */
+.zz-drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 25px 1px;       /* Figma padding 24 0 + the 1px stroke, included in layout (0014): the dashes are a background → 88px */
+  box-sizing: border-box;
+  background-color: var(--surface-subtle);
+  background-repeat: no-repeat;
+  background-image:
+    repeating-linear-gradient(90deg,  var(--border-divider-strong) 0 16px, transparent 16px 32px),
+    repeating-linear-gradient(90deg,  var(--border-divider-strong) 0 16px, transparent 16px 32px),
+    repeating-linear-gradient(180deg, var(--border-divider-strong) 0 16px, transparent 16px 32px),
+    repeating-linear-gradient(180deg, var(--border-divider-strong) 0 16px, transparent 16px 32px);
+  background-size: 100% 1px, 100% 1px, 1px 100%, 1px 100%;
+  background-position: 0 0, 0 100%, 0 0, 100% 0;
+}
+
+/* ── FileList / FileItem (Figma: page-local `uploaded list`) ──
+   List gap 8. Row: gap 16 between handle · content · remove; content gap 8, top-aligned (image rows),
+   centred with a play button (audio rows). Thumbnail 40 × 40, surface-support-1 when empty. */
+.zz-file-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.zz-file-list__item { display: block; }
+
+.zz-file-item { display: inline-flex; align-items: flex-start; gap: 16px; color: var(--text-strong); }
+.zz-file-item__content { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+.zz-file-item[data-media="audio"] .zz-file-item__content { align-items: center; }
+.zz-file-item__position,
+.zz-file-item__featured { flex: none; white-space: nowrap; }
+.zz-file-item__name { min-width: 0; overflow-wrap: anywhere; }
+
+.zz-file-item__thumb {
+  display: block;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  background: var(--surface-support-1);
+  overflow: hidden;
+}
+.zz-file-item__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* drag handle: 24 × 24 icon, chromeless (no Figma states: it reuses the floating colours of IconButton) */
+.zz-file-item__handle {
+  display: inline-flex;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--action-floating-background-default);
+  color: var(--action-floating-foreground-default);
+  cursor: grab;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.zz-file-item__handle:hover  { background: var(--action-floating-background-hover); }
+.zz-file-item__handle:active { background: var(--action-floating-background-pressed); cursor: grabbing; }
+.zz-file-item__handle-icon { display: inline-flex; width: 100%; height: 100%; }
+.zz-file-item__handle-icon svg { width: 100%; height: 100%; display: block; }

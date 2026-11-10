@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"RelatedProducts"},{"name":"Gallery"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"}]} */
 /* packages/ui/components.js — the ONE implementation of the Zanza components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
@@ -398,6 +398,155 @@
       }));
   }
 
+  /* ══ Admin forms ═══════════════════════════════════════════════════════
+     Used by the admin (Figma page BACKEND → Create). Render inside data-theme="backend" (Figma mode `backend`). */
+
+  function SearchIcon() {        // Figma: icon/icon-magnifying-glass
+    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M11.3613 1.68359C16.3162 1.68363 20.3336 5.70051 20.334 10.6553C20.334 13.1749 19.2928 15.4502 17.6201 17.0801L22.4941 21.7676C22.6929 21.9589 22.6988 22.2756 22.5078 22.4746C22.3164 22.6734 21.9997 22.6796 21.8008 22.4883L16.8633 17.7393C15.3435 18.9214 13.4357 19.6279 11.3613 19.6279C6.40638 19.6278 2.38965 15.6103 2.38965 10.6553C2.39002 5.7006 6.40661 1.68377 11.3613 1.68359ZM11.3613 2.68359C6.95889 2.68377 3.39002 6.25288 3.38965 10.6553C3.38965 15.058 6.95866 18.6278 11.3613 18.6279C15.7641 18.6279 19.334 15.0581 19.334 10.6553C19.3336 6.2528 15.7639 2.68363 11.3613 2.68359Z', fill: 'currentColor' }));
+  }
+  function ChevronDownIcon() {   // Figma: icon/icon-chevron-down-small-thin
+    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M17.6465 9.14652C17.8417 8.95126 18.1583 8.95126 18.3535 9.14652C18.5487 9.34179 18.5488 9.6583 18.3535 9.85355L12.3535 15.8536C12.1583 16.0488 11.8417 16.0488 11.6465 15.8536L5.64648 9.85355C5.45122 9.65829 5.45122 9.34178 5.64648 9.14652C5.84175 8.95126 6.15825 8.95126 6.35352 9.14652L12 14.793L17.6465 9.14652Z', fill: 'currentColor' }));
+  }
+  function DragHandleIcon() {    // Figma: icon/hamburger-menu-ultra at 24 (the `drag handle` instance)
+    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M24 16H0V15H24V16ZM24 12H0V11H24V12ZM24 8H0V7H24V8Z', fill: 'currentColor' }));
+  }
+
+  var idCounter = 0;
+  function useStableId(given) {   // React 18 useId when available (SSR-safe), else a counter
+    var auto = React.useId ? React.useId() : React.useState(function () { return 'zz-' + (++idCounter); })[0];
+    return given || auto;
+  }
+
+  /* ── Input ──────────────────────────────────────────────────────────────
+     Figma: `input` (type text field | search | select) over the building block `_input-master`
+     (size medium | compact × state default | filled | error | locked), support text = `_input-master-support text`.
+     `type` is renamed `variant` (it would clash with the native input type). States map to the platform:
+     filled = has a value (:placeholder-shown), error = `error` (aria-invalid), locked = `readOnly`.
+     Every prop not listed in InputProps goes to the native control (name, value, onChange, required…). */
+  function Input(props) {
+    var variant = props.variant || 'text-field';
+    var size = props.size || 'medium';
+    var id = useStableId(props.id);
+    var supportId = id + '-support';
+    var hasError = props.error !== undefined && props.error !== null && props.error !== false && props.error !== '';
+    var support = hasError ? props.error : props.supportText;
+    var locked = !!props.readOnly;
+    var leading = props.leadingIcon !== undefined ? props.leadingIcon : (variant === 'search' ? h(SearchIcon) : null);
+    var trailing = props.trailingIcon !== undefined ? props.trailingIcon : (variant === 'select' ? h(ChevronDownIcon) : null);
+    var own = ['variant', 'size', 'label', 'optional', 'optionalLabel', 'supportText', 'error', 'prefix', 'suffix',
+               'leadingIcon', 'trailingIcon', 'className', 'style', 'id', 'children', 'placeholder', 'readOnly'];
+    var controlAttrs = Object.assign({
+      id: id,
+      className: 'zz-input__control body-medium',
+      'aria-invalid': hasError ? 'true' : undefined,
+      'aria-describedby': support ? supportId : undefined
+    }, omit(props, own));
+    var control;
+    if (variant === 'select') {
+      // locked select: a select has no readOnly, so it is disabled (value still visible)
+      control = h('select', Object.assign(controlAttrs, { disabled: locked || props.disabled }),
+        props.placeholder !== undefined ? h('option', { value: '' }, props.placeholder) : null,
+        props.children);
+    } else {
+      control = h('input', Object.assign({ type: variant === 'search' ? 'search' : 'text' }, controlAttrs,
+        { placeholder: props.placeholder, readOnly: locked }));
+    }
+    return h('div', {
+      className: cx('zz-input', props.className),
+      style: props.style,
+      'data-variant': variant,
+      'data-size': size,
+      'data-invalid': hasError ? 'true' : undefined,
+      'data-locked': locked ? 'true' : undefined
+    },
+      (props.label || props.optional) ? h('label', { className: 'zz-input__top', htmlFor: id },
+        h('span', { className: 'zz-input__label body-small' }, props.label),
+        props.optional ? ' ' : null,   // whitespace between the two names (not rendered in the flex row)
+        props.optional ? h('span', { className: 'zz-input__optional body-small' }, props.optionalLabel || 'Optional') : null) : null,
+      h('div', { className: 'zz-input__field' },
+        leading ? h('span', { className: 'zz-input__icon', 'aria-hidden': 'true' }, leading) : null,
+        props.prefix ? h('span', { className: 'zz-input__affix body-medium', 'aria-hidden': 'true' }, props.prefix) : null,
+        control,
+        props.suffix ? h('span', { className: 'zz-input__affix body-medium', 'aria-hidden': 'true' }, props.suffix) : null,
+        trailing ? h('span', { className: 'zz-input__icon zz-input__icon--trailing', 'aria-hidden': 'true' }, trailing) : null),
+      support ? h('p', { id: supportId, className: 'zz-input__support body-small' }, support) : null);
+  }
+
+  /* ── DropZone ───────────────────────────────────────────────────────────
+     Figma: the page-local frame below each upload list on BACKEND → Create ("Frame 4"); no Figma component yet.
+     surface/subtle, 1px dashed [16,16] border-divider/strong, padding 24 0, a secondary Button centred.
+     The button opens the file picker; files dropped on the zone arrive the same way (onFiles). */
+  function DropZone(props) {
+    var inputRef = React.useRef(null);
+    function pick(list) {
+      var files = Array.prototype.slice.call(list || []);
+      if (files.length && props.onFiles) props.onFiles(files);
+    }
+    return h('div', Object.assign({
+      className: cx('zz-drop-zone', props.className),
+      onDragOver: function (e) { if (!props.disabled) e.preventDefault(); },
+      onDrop: function (e) { e.preventDefault(); if (!props.disabled) pick(e.dataTransfer.files); }
+    }, omit(props, ['label', 'accept', 'multiple', 'onFiles', 'disabled', 'className', 'name'])),
+      h(Button, { hierarchy: 'secondary', size: 'medium', disabled: props.disabled, onClick: function () { inputRef.current && inputRef.current.click(); } }, props.label),
+      h('input', { ref: inputRef, type: 'file', name: props.name, accept: props.accept, multiple: props.multiple, hidden: true, tabIndex: -1,
+        onChange: function (e) { pick(e.target.files); e.target.value = ''; } }));
+  }
+
+  /* ── FileList / FileItem ────────────────────────────────────────────────
+     Figma: the page-local `uploaded list` frames on BACKEND → Create (images, the sample of a line, samples overview);
+     no Figma component yet. A row: [drag handle] · [thumbnail 40 | play] position name (featured) · [remove ×].
+     Gaps: list 8, row 16, content 8 (Figma). Reorder: drag a row onto another (pointer), or ↑ ↓ on the handle (keyboard).
+     FileList numbers the rows ("01", "02"…), so positions never drift after a reorder. */
+  var FileListContext = React.createContext(null);
+
+  function FileList(props) {
+    var dragFrom = React.useRef(null);
+    var items = React.Children.toArray(props.children);
+    var move = props.onMove;
+    return h('ol', Object.assign({ className: cx('zz-file-list', props.className) }, omit(props, ['onMove', 'children', 'className'])),
+      items.map(function (child, i) {
+        return h('li', {
+          key: child.key || i,
+          className: 'zz-file-list__item',
+          draggable: move ? true : undefined,
+          onDragStart: move ? function (e) { dragFrom.current = i; e.dataTransfer.effectAllowed = 'move'; } : undefined,
+          onDragOver: move ? function (e) { if (dragFrom.current !== null) e.preventDefault(); } : undefined,
+          onDrop: move ? function (e) { e.preventDefault(); var from = dragFrom.current; dragFrom.current = null; if (from !== null && from !== i) move(from, i); } : undefined,
+          onDragEnd: move ? function () { dragFrom.current = null; } : undefined
+        }, h(FileListContext.Provider, { value: { index: i, count: items.length, move: move } }, child));
+      }));
+  }
+
+  function FileItem(props) {
+    var ctx = React.useContext(FileListContext) || { index: 0, count: 1 };
+    var position = props.position !== undefined ? props.position : String(ctx.index + 1).padStart(2, '0');
+    var name = props.name;
+    function onHandleKey(e) {
+      if (!ctx.move) return;
+      if (e.key === 'ArrowUp' && ctx.index > 0) { e.preventDefault(); ctx.move(ctx.index, ctx.index - 1); }
+      if (e.key === 'ArrowDown' && ctx.index < ctx.count - 1) { e.preventDefault(); ctx.move(ctx.index, ctx.index + 1); }
+    }
+    var playable = !!props.onTogglePlay;
+    return h('div', Object.assign({
+      className: cx('zz-file-item', props.className),
+      'data-media': props.image ? 'image' : (playable ? 'audio' : undefined)
+    }, omit(props, ['name', 'position', 'image', 'featured', 'featuredLabel', 'playing', 'onTogglePlay', 'onRemove', 'removeLabel', 'reorderLabel', 'className'])),
+      ctx.move ? h('button', {
+        type: 'button', className: 'zz-file-item__handle',
+        'aria-label': props.reorderLabel || ('Move ' + name + ', position ' + (ctx.index + 1) + ' of ' + ctx.count + ' (arrow up / down)'),
+        onKeyDown: onHandleKey
+      }, h('span', { className: 'zz-file-item__handle-icon', 'aria-hidden': 'true' }, h(DragHandleIcon))) : null,
+      h('div', { className: 'zz-file-item__content' },
+        props.image ? h('span', { className: 'zz-file-item__thumb' }, props.image.src ? h('img', { src: props.image.src, alt: props.image.alt || '' }) : null) : null,
+        playable ? h(IconButton, { 'data-playing': props.playing ? 'true' : 'false', 'aria-pressed': !!props.playing, 'aria-label': (props.playing ? 'Pause ' : 'Play ') + name,
+          icon: h(PlayPauseIcons), onClick: props.onTogglePlay }) : null,
+        h('span', { className: 'zz-file-item__position body-medium' }, position),
+        h('span', { className: 'zz-file-item__name body-medium' }, name),
+        props.featured ? h('span', { className: 'zz-file-item__featured body-medium' }, props.featuredLabel || '(featured)') : null),
+      props.onRemove ? h(IconButton, { className: 'zz-file-item__remove', icon: h(CloseIcon), 'aria-label': props.removeLabel || ('Remove ' + name), onClick: props.onRemove }) : null);
+  }
+
   return { Button: Button, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, Tag: Tag, TagGroup: TagGroup,
-           PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon };
+           PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
+           Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, DragHandleIcon: DragHandleIcon };
 });

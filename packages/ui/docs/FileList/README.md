@@ -1,0 +1,47 @@
+# FileList · FileItem
+
+Ordered list of uploaded files in the admin (images, the sample of a line, samples overview). Figma: page-local `uploaded list` frames on BACKEND → Create — **no Figma component yet**.
+
+## API
+
+<!-- api: FileListProps FileItemProps -->
+<!-- generated from components.d.ts by build-docs.js: edit the .d.ts, not this table -->
+### FileList
+
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `onMove` | `(from: number, to: number) => void` |  | Called when a row is dragged onto another, or moved with ↑ ↓ on its handle. Omit for a fixed order (no handles). |
+| `children` | `ReactNode` |  | &lt;FileItem>s, each with a stable key. |
+
+### FileItem
+
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `name` * | `string` |  | File name, e.g. "sample-name.mp3". Also names the buttons for screen readers. |
+| `position` | `ReactNode` |  | Shown before the name. Default: the row number inside FileList, two digits ("01"). |
+| `image` | `{ src?: string; alt?: string }` |  | Image file: the 40 × 40 thumbnail (empty = surface-support-1). |
+| `featured` | `boolean` |  | Shows "(featured)". The admin sets it on the first image (the featured image is always position 1). |
+| `featuredLabel` | `string` |  | Text of the featured marker. Default "(featured)". |
+| `playing` | `boolean` |  | Audio file: pause icon instead of play. |
+| `onTogglePlay` | `() => void` |  | Audio file: shows the play / pause IconButton. |
+| `onRemove` | `() => void` |  | Shows the remove (×) IconButton. |
+| `removeLabel` | `string` |  | Accessible name of the remove button. Default "Remove &lt;name>". |
+| `reorderLabel` | `string` |  | Accessible name of the drag handle. Default "Move &lt;name>, position n of m (arrow up / down)". |
+
+`*` required.
+<!-- /api -->
+
+## Behaviour
+
+- FileList numbers the rows `01`, `02`… so a reorder never leaves stale positions.
+- Reorder (only with `onMove`): drag a row onto another, or focus the handle and press ↑ ↓.
+- The featured image is always position 1: the admin sets `featured` on the first image (Gio, 2026-11-10).
+- Play and remove are `IconButton`s, named "Play / Pause / Remove <file name>".
+
+## Tokens
+
+Text `text-strong` · empty thumbnail `surface-support-1` · handle, play and remove: `action-floating-*` ([0007](../../../../design/decisions/0007-floating-actions-foreground-background.md)).
+
+## Dimensions (Figma)
+
+List gap 8 · row gap 16 (handle · content · remove) · content gap 8, top-aligned (image rows) or centred (audio rows) · thumbnail 40 × 40 · handle, play and remove 24 × 24 · text body-medium.

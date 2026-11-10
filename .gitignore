@@ -5,3 +5,5 @@ packages/ui/tokens.css
 packages/ui/artifact/
 .deploy.env
 apps/storefront/_to_delete/
+.supabase.env
+apps/admin/dist/

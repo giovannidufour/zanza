@@ -1,0 +1,36 @@
+<!-- @dsCard group="Admin" height=520 subtitle="variant · size × state (backend theme)" -->
+<!doctype html>
+<html data-theme="backend">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: var(--surface-base); color: var(--text-strong); font-family: var(--font-sans); }
+  .grid { display: grid; grid-template-columns: 80px 318px 318px; gap: 16px 24px; align-items: start; padding: 24px; }
+  .hd { font: 400 12px/14px var(--font-sans); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function () {
+  var React = window.React, ReactDOM = window.ReactDOM, Z = window.Zanza, h = React.createElement;
+  var common = { label: 'Label', optional: true, prefix: 'Prefix', suffix: 'Suffix', supportText: 'Support text', placeholder: 'Placeholder' };
+  function row(name, extra) {
+    return [h('div', { key: name + 'h', className: 'hd' }, name)].concat(['medium', 'compact'].map(function (size) {
+      return h(Z.Input, Object.assign({ key: name + size, size: size }, common, extra));
+    }));
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div', { className: 'grid' },
+    h('div', null), h('div', { className: 'hd' }, 'medium'), h('div', { className: 'hd' }, 'compact'),
+    row('default', {}),
+    row('filled', { defaultValue: 'Value' }),
+    row('error', { error: 'Support text' }),
+    row('locked', { readOnly: true }),
+    h('div', { className: 'hd' }, 'variant'),
+    h(Z.Input, { label: 'Discogs match', optional: true, variant: 'search', placeholder: 'Search' }),
+    h(Z.Input, { label: 'Format', variant: 'select', placeholder: 'Select' }, h('option', null, '7"'), h('option', null, '12"'), h('option', null, 'LP'))));
+})();
+</script>
+</body>
+</html>

@@ -18,6 +18,7 @@ Deliberately minimal. Nothing is added here that is not defined in Figma.
 A palette of black, white, acid green (accent) and light blue (support-1) — plus a black alpha ramp (`black-a0` … `black-a80`) for states and overlays.
 
 - The page is `surface-base` (→ `accent` → `acid-green`). Text on it is `text-strong` (black, ~16:1).
+- Two themes = the two Figma modes of `color`: `frontend` (the shop, `:root`) and `backend` (the admin, `data-theme="backend"`: `surface-base` is white). See decision 0017.
 - `text-accent` is acid green and is only legal on dark grounds: never on `surface-base`.
 - Buttons use `action-{primary|secondary}-{background|border}-{default|hover|pressed|disabled}`.
 
@@ -48,6 +49,9 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | ProductCard | page `PDP` → `product card` | ported: desktop / mobile / responsive |
 | RelatedProducts | page `PDP` → `you may also like` | ported: one layout, cards carry the device |
 | Gallery | page `PDP` → `product image` ×2, `mobile gallery` | ported from page placement; Figma component pending |
+| Input | page `input` → `input` + `_input-master` | ported: variant text field / search / select × size medium / compact; error, locked (admin) |
+| DropZone | BACKEND → Create, page-local upload area | ported from page placement; Figma component pending |
+| FileList / FileItem | BACKEND → Create, page-local `uploaded list` | ported from page placement; Figma component pending |
 
 ## Open items
 

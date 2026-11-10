@@ -25,6 +25,17 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - **Sample audio.** `audio_url` must be a direct file (mp3/aac/ogg). Sample B uses a reggaefever.ch URL (hotlinking and rights to verify); sample A is still a generated test tone (`public/test-sample-a.mp3`). Depends on Q3.
 - **Home link.** `/zanza/` is a meta-refresh page, so the soft navigation falls back to a full load there and the audio stops. Fixes itself with a real home page.
 
+- **Alert colour (input error).** `#ff5d16` is a literal in Figma, no variable: code ships it as PROVISIONAL `text-alert` / `border-alert`. Contrast: 3.1:1 on white (fails 1.4.3 for the 14px message), 2.4:1 on acid green (fails 1.4.11 for the border too). Proposal: Figma variables `text/alert` + `border/alert`, text value darker (e.g. ~#c23c00 = 5.3:1 on white). `emphasis=success` `#009951` (3.7:1) has the same problem; not ported.
+- **`text/moderate` contrast.** black-a48 = ~3.6:1 on white, less on `surface/subtle`: fails 1.4.3 for placeholder, "Optional" and the locked value. The locked value (SKU) is real information: proposal `text/strong` for it, keep `moderate` for the placeholder only.
+- **Input focus.** Same gap as above (Focus state): inputs keep the browser outline, never removed, until a `border/focus` exists.
+- **Tags as chips.** Gio (2026-11-10): tags must be chips. The Figma `Tags` field is still a plain input; a chip input (Tag with remove ×, suggestions list, keyboard) is not designed → not built.
+- **DropZone drag-over state.** Not designed: dropping works, no visual feedback. Dashed [16,16] is a static pattern, distinct from the [4,4]/[2,2] hover/pressed of 0005.
+- **FileList reorder without dragging.** Pointer reorder is drag-only (WCAG 2.5.7 needs a single-pointer alternative); keyboard ↑ ↓ on the handle is in code. Proposal: "move up / down" in a row menu, or arrows next to the handle.
+- **Admin blocks without a Figma component.** Upload area and `uploaded list` rows are page-local frames on BACKEND → Create; code has `DropZone`, `FileList`, `FileItem`. Make them Figma components (`drop zone`, `file item`).
+- **Admin status panel.** No Figma frame for sale states. Code (2026-11-10, BACKEND → Create side column, below SKU): read-only `Status` input (like SKU), optional `Status note` input, one secondary Button per allowed transition ("Mark as sold/traded", "Reserve", "Release", "Unpublish", "Make available again"). Listings table shows the status as text. Gio (2026-11-10): keep it as is, provisional until a Figma frame exists.
+- **Sold / reserved on the storefront.** Not designed. Today the build hides non-available copies from the PLP, but the PDP of a sold or reserved copy is still built with "Add to bag". Needs: what a sold PDP shows (badge? CTA disabled? page kept for history, as in the product brief?) and how `site.js` updates CTAs live (`listing_availability` view is ready).
+- **Button `layout` (hug | fill).** Not ported: the admin side buttons fill their column via the page layout.
+
 ## Accessibility risks
 
 - **IconButton** is exactly 24px: needs ≥ 24px clear space from neighbouring targets.
@@ -42,6 +53,9 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - `PDP - mobile` › `pdp content`: padding-bottom 24 literal, no token for 24 (scale has 8 / 16) → add one (e.g. `medium`) or use 16.
 - `PLP - desktop`: content frame named `pdp content`, list frame `Frame 46`, card instances `Frame 43/44/45` → `plp content`, `product list`, `product card`.
 - `header` mobile: store-name frame named `logo` (desktop: `store name`).
+- `_input-master`: compact + filled has gap 2, every other variant 4 (code: 4) · `_input-master-support text` uses body/extra small (12/14) but its instances inside the master render body/small (14/16) (code: body-small) · error colour `#ff5d16` unbound (see Pending).
+- BACKEND → Create: frames unnamed (`Frame 1`…`Frame 16`) · `uploaded list` texts unbound `#000000` → `text/strong` · the × in the rows is a bare `icon/icon-x-ultra`, not an `icon button` (the remove-line × is one) · SKU `input` instance (2095:19818) has an unbound white fill.
+- Descriptions copied from another project: `button`, `_button-states`, `_button-sizes` ("Codice: .cw-button · ui_button()", `text/faint`, `icon/delicate`, sizes 40/32/22/18 that are not Zanza's) · icons `icon-x-ultra` and `hamburger-menu-ultra` described as "play audio campione…".
 - `player`: native-player placeholder fill unbound (placeholder only, fine).
 - Icons: hamburger lines have a white stroke · `icon-pencil` uses unbound `#212121`.
 

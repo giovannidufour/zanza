@@ -60,7 +60,7 @@ Non confondere con la wantlist di Crate Witch/Discogs. Qui "preferiti" è un seg
 Il pubblico vuole scorrere 200 dischi velocemente: vista **lista** compatta (cover piccola, artista/titolo/label/anno/condizione/prezzo/play) accanto alla griglia. Filtri che contano: genere/style, formato, condizione, fascia prezzo, label, anno, "solo con sample". Ordinamenti: nuovi arrivi, prezzo, A–Z artista.
 
 ### 6. Spedizione e tasse non sono dettagli
-Vinile = pesante e fragile. Tariffe a peso/formato per zona, packaging, assicurazione opzionale. Se vendi in EU oltre l'Italia: **IVA OSS**. Se vendi usato: regime del margine. Questo spinge verso un servizio che calcola tasse e spedizioni per te (Shopify/Stripe Tax) invece di farlo a mano.
+Vinile = pesante e fragile. Tariffe a peso/formato per zona, packaging, assicurazione opzionale. Sede in Germania, vendita in tutto il mondo (Q5): **IVA OSS** oltre soglia in UE, dogana extra-UE, eventuale Kleinunternehmer o regime del margine (Q5b). Questo spinge verso un servizio che calcola tasse e spedizioni per te (Shopify/Stripe Tax) invece di farlo a mano.
 
 ### 7. Cosa NON mettere nell'MVP (proposta)
 - proposte di scambio tra utenti (P2P) — è Vinyl Swap, altro progetto

@@ -1,0 +1,6 @@
+{
+  "title": "Store admin",
+  "mediaBaseUrl": "https://pub-a98e506f6d2e48c49301fca9123a3b20.r2.dev",
+  "storefrontUrl": "https://gio-d.xyz/zanza",
+  "note": "Domain-dependent values live here (stack.md → Portabilità). SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY come from apps/storefront/.supabase.env (git-ignored): the publishable key is public by design, the admin is protected by Auth + RLS."
+}

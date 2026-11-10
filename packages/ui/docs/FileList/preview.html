@@ -1,0 +1,33 @@
+<!-- @dsCard group="Admin" height=300 subtitle="images · sample of a line · samples overview" -->
+<!doctype html>
+<html data-theme="backend">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>html, body { margin: 0; background: var(--surface-base); color: var(--text-strong); font-family: var(--font-sans); } .wrap { padding: 24px; display: grid; gap: 32px; } .hd { font: 400 12px/14px var(--font-sans); margin-bottom: 8px; }</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function () {
+  var React = window.React, ReactDOM = window.ReactDOM, Z = window.Zanza, h = React.createElement;
+  function Demo() {
+    var s = React.useState([{ id: 'a', name: 'sample-name1.mp3' }, { id: 'b', name: 'sample-name2.mp3' }]), items = s[0], set = s[1];
+    var p = React.useState(null), playing = p[0], setPlaying = p[1];
+    function move(from, to) { var n = items.slice(); n.splice(to, 0, n.splice(from, 1)[0]); set(n); }
+    return h('div', { className: 'wrap' },
+      h('div', null, h('div', { className: 'hd' }, 'images'),
+        h(Z.FileList, { onMove: function () {} }, h(Z.FileItem, { key: 'i', name: 'image-name-01.jpg', image: {}, featured: true, onRemove: function () {} }))),
+      h('div', null, h('div', { className: 'hd' }, 'sample of a line'),
+        h(Z.FileList, null, h(Z.FileItem, { key: 's', name: 'sample-name.mp3', onTogglePlay: function () {}, onRemove: function () {} }))),
+      h('div', null, h('div', { className: 'hd' }, 'samples overview (reorder: drag, or ↑ ↓ on the handle)'),
+        h(Z.FileList, { onMove: move }, items.map(function (it) {
+          return h(Z.FileItem, { key: it.id, name: it.name, playing: playing === it.id,
+            onTogglePlay: function () { setPlaying(playing === it.id ? null : it.id); }, onRemove: function () {} });
+        }))));
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(h(Demo));
+})();
+</script>
+</body>
+</html>

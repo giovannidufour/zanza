@@ -2,5 +2,13 @@
   "storeName": "Store-name",
   "lang": "en",
   "outputDir": "zanza",
-  "basePath": "/zanza"
+  "basePath": "/zanza",
+  "mediaBaseUrl": "https://pub-a98e506f6d2e48c49301fca9123a3b20.r2.dev",
+  "targets": {
+    "pages": {
+      "basePath": "",
+      "outputDir": "",
+      "note": "Cloudflare Pages (npm run build:pages): served from the web root. The top-level values are the GoDaddy staging (gio-d.xyz/zanza)."
+    }
+  }
 }

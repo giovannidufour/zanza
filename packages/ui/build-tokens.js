@@ -11,13 +11,13 @@ const t = JSON.parse(fs.readFileSync(src, 'utf8'));
 
 const lines = [`/* ${t.name} — generated from tokens.json by build-tokens.js. Do not edit. */`, ':root {'];
 
-// color: a string value, or an alias "{other}" -> var(--other). One theme today.
-const theme = t.color.themes[0].id;
-for (const tok of t.color.tokens) {
-  const raw = typeof tok.value === 'string' ? tok.value : tok.value[theme];
-  const m = /^\{(.+)\}$/.exec(raw);
-  lines.push(`  --${tok.name}: ${m ? `var(--${m[1]})` : raw};`);
-}
+// color: a string value (same in every theme), or { <themeId>: value } per Figma mode.
+// An alias "{other}" -> var(--other). The first theme is :root; the others are emitted below as
+// [data-theme="<id>"] blocks that redeclare only the tokens whose value differs.
+const themes = t.color.themes.map(th => th.id);
+const cssValue = raw => { const m = /^\{(.+)\}$/.exec(raw); return m ? `var(--${m[1]})` : raw; };
+const valueIn = (tok, id) => (typeof tok.value === 'string' ? tok.value : tok.value[id]);
+for (const tok of t.color.tokens) lines.push(`  --${tok.name}: ${cssValue(valueIn(tok, themes[0]))};`);
 
 // spacing, radius, shadow, any other list family
 for (const [family, def] of Object.entries(t)) {
@@ -32,6 +32,14 @@ lines.push('');
 lines.push('  /* type families */');
 for (const [key, stack] of Object.entries(t.type.families)) lines.push(`  --font-${key}: ${stack};`);
 lines.push('}');
+
+// other themes (Figma modes of the `color` collection), e.g. backend = the admin
+for (const id of themes.slice(1)) {
+  const diff = t.color.tokens.filter(tok => typeof tok.value === 'object' && tok.value[id] !== undefined && tok.value[id] !== tok.value[themes[0]]);
+  lines.push('', `[data-theme="${id}"] {`);
+  for (const tok of diff) lines.push(`  --${tok.name}: ${cssValue(tok.value[id])};`);
+  lines.push('}');
+}
 
 // type styles as classes (mirror of Figma text styles). The class carries the sizes; components only apply it.
 function styleRule(selector, g, s, indent = '') {

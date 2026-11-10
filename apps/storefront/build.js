@@ -1,6 +1,8 @@
 /* apps/storefront/build.js — static build.
-   content/products/*.json → dist/products/<slug>/index.html, dist/sale/index.html (PLP) (+ css, assets).
-   Upload the whole `dist/` folder to the web root. Run: npm run build */
+   products (Supabase, or content/products/*.json: see data/products.js) → dist/products/<slug>/index.html,
+   dist/sale/index.html (PLP) (+ css, assets). `--source=json` forces the local JSON.
+   Upload the whole `dist/` folder to the web root. Run: npm run build
+   Cloudflare Pages: `npm run build:pages` (= --target=pages --source=supabase: root basePath, never the local JSON). */
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -11,7 +13,11 @@ const crypto = require('crypto');
 const ROOT = path.resolve(__dirname, '../..');
 const UI = path.join(ROOT, 'packages/ui');
 const APP = __dirname;
-const site = JSON.parse(fs.readFileSync(path.join(APP, 'site.json'), 'utf8'));
+// `--target=pages` (Cloudflare Pages) overrides site.json with site.json → targets.pages (e.g. basePath '' = web root)
+const targetArg = (process.argv.find(a => a.startsWith('--target=')) || '').split('=')[1];
+const siteFile = JSON.parse(fs.readFileSync(path.join(APP, 'site.json'), 'utf8'));
+if (targetArg && !(siteFile.targets || {})[targetArg]) throw new Error(`site.json has no targets.${targetArg}`);
+const site = Object.assign({}, siteFile, targetArg ? siteFile.targets[targetArg] : {});
 // dist/<outputDir>/ is the folder to upload; basePath is where it will live on the domain ('' = web root)
 const BASE = (site.basePath || '').replace(/\/$/, '');
 const DIST = path.join(APP, 'dist', site.outputDir || '');
@@ -81,6 +87,15 @@ function write(rel, content) {
   console.log('  ' + rel);
 }
 
+// products, in listing order
+const { loadProducts } = require('./data/products.js');
+const sourceArg = (process.argv.find(a => a.startsWith('--source=')) || '').split('=')[1];
+
+async function main() {
+const { products, source } = await loadProducts(site, { source: sourceArg });
+console.log(`products: ${products.length} from ${source}`);
+
+// only now that the data is here: a failed fetch must not leave an empty dist/
 fs.rmSync(path.join(APP, 'dist'), { recursive: true, force: true });
 console.log(`dist/${site.outputDir || ''}  (basePath: '${BASE || '/'}')`);
 
@@ -93,9 +108,7 @@ write('css/plp.css', css.plp);
 write('js/site.js', siteJs);
 for (const f of fs.readdirSync(path.join(APP, 'public'))) write('assets/' + f, fs.readFileSync(path.join(APP, 'public', f)));
 
-// products
-const dir = path.join(APP, 'content/products');
-const products = fs.readdirSync(dir).filter(f => f.endsWith('.json')).map(f => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')));
+const order = new Map(products.map((p, i) => [p, i]));
 // "More for sale" (PDP): up to 3 other available products of the same section, most shared styles first, then
 // listing order. Placeholder logic until the backend provides recommendations.
 const RELATED_COUNT = 3;
@@ -104,7 +117,7 @@ function relatedTo(product) {
   return products
     .filter(p => p !== product && p.listing.section === product.listing.section && p.listing.status === 'available')
     .map(p => ({ p, score: p.release.style.filter(s => styles.has(s)).length }))
-    .sort((a, b) => b.score - a.score || a.p.listing.id.localeCompare(b.p.listing.id))
+    .sort((a, b) => b.score - a.score || order.get(a.p) - order.get(b.p))
     .slice(0, RELATED_COUNT).map(x => x.p);
 }
 for (const product of products) {
@@ -113,10 +126,11 @@ for (const product of products) {
 }
 
 // PLP: the listing of the "For sale" section (Figma: PLP - desktop); "For trade" has no products yet
-const forSale = products.filter(p => p.listing.section === 'sale' && p.listing.status === 'available')
-  .sort((a, b) => a.listing.id.localeCompare(b.listing.id));   // listing order = id order
+const forSale = products.filter(p => p.listing.section === 'sale' && p.listing.status === 'available');
 write('sale/index.html', page({ title: Plp.title('sale'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, site, url })) }));
 
 // root: redirect to the PLP while there is no home page
 write('index.html', `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=${url('/sale/')}"><title>${escape(site.storeName)}</title>`);
 console.log(`done: ${products.length} product page(s), 1 listing (${forSale.length} for sale)`);
+}
+main().catch((err) => { console.error(err.message || err); process.exit(1); });
