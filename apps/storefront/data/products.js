@@ -100,7 +100,8 @@ function toProduct(row, mediaUrl) {
     },
     samples: (r.samples || []).slice().sort((a, b) => a.sort - b.sort).map((s) => ({
       track_position: s.track_position,
-      title: s.title,
+      // the admin form does not ask a title per sample: a sample on a line plays that line's track
+      title: s.title || ((lines.find((l) => l.id === s.line_id) || {}).title) || null,
       audio_url: mediaUrl(s.audio_key),
       duration: s.duration_s,
       source: s.source

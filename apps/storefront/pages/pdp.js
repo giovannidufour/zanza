@@ -39,7 +39,11 @@ function Pdp({ product, related = [], site, url }) {
         description: copy.notes,
         grading: grading(copy),
         // each PlayerButton carries what the site player needs (scripts/site.js): the product's samples are its queue
-        samples: samples.length ? samples.map((s) => h(Z.PlayerButton, Object.assign({ key: s.track_position }, sampleAttrs(product, s, url)), s.title)) : null
+        // label = the track title when there is one; without it the button is icon-only and keeps an accessible name
+        samples: samples.length ? samples.map((s, i) => h(Z.PlayerButton, Object.assign({
+          key: s.track_position,
+          'aria-label': s.title ? undefined : `${productName(release)}, sample ${i + 1}`
+        }, sampleAttrs(product, s, url)), s.title || null)) : null
       }),
       h('div', { className: 'pdp-content__actions' },
         h(Z.Button, { hierarchy: 'primary', size: 'large', className: 'pdp-content__cta' }, 'Add to bag')),
