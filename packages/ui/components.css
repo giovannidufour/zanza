@@ -1181,7 +1181,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    Toast + ToastRegion (Figma: page `toast` → `toast` 2177:439; decision 0049)
-   The look: surface-base (opaque, 0023), 1px border-divider-strong dashed [1,1] (0051), padding and gap medium-small,
+   The look: surface-base (opaque, 0023), 1px border-divider-strong dashed [16,16] (0053), padding and gap medium-small,
    message body/medium text-strong, no radius, no shadow. Action = Button secondary small, dismiss = IconButton ×.
    Region: fixed at the bottom of the viewport, gutter-small above whatever is docked there (--zz-toast-offset: the
    shop sets it to the player height while the player is open). Desktop: right-aligned at the page margin, 360 wide
@@ -1208,15 +1208,15 @@ a.zz-product-card__image { display: block; color: inherit; }
   padding: calc(var(--medium-small) + 1px); box-sizing: border-box; width: 100%;   /* + the 1px stroke, in layout (0014) */
   color: var(--text-strong);
   font-family: var(--font-sans);
-  /* border dashed [1,1], dotted (Gio, decision 0051), drawn as four 1px gradients because CSS `dashed` / `dotted`
-     cannot set the pattern. No state uses [1,1]: [4,4] / [2,2] are hover / pressed (0005), [16,16] the drop zone */
+  /* border dashed [16,16] (Gio, decision 0053), the static dash of the drop zone, drawn as four 1px gradients because
+     CSS `dashed` cannot set the pattern. Not [4,4] / [2,2]: those are hover / pressed of controls (0005) */
   background-color: var(--surface-base);
   background-repeat: no-repeat;
   background-image:
-    repeating-linear-gradient(90deg,  var(--border-divider-strong) 0 1px, transparent 1px 2px),
-    repeating-linear-gradient(90deg,  var(--border-divider-strong) 0 1px, transparent 1px 2px),
-    repeating-linear-gradient(180deg, var(--border-divider-strong) 0 1px, transparent 1px 2px),
-    repeating-linear-gradient(180deg, var(--border-divider-strong) 0 1px, transparent 1px 2px);
+    repeating-linear-gradient(90deg,  var(--border-divider-strong) 0 16px, transparent 16px 32px),
+    repeating-linear-gradient(90deg,  var(--border-divider-strong) 0 16px, transparent 16px 32px),
+    repeating-linear-gradient(180deg, var(--border-divider-strong) 0 16px, transparent 16px 32px),
+    repeating-linear-gradient(180deg, var(--border-divider-strong) 0 16px, transparent 16px 32px);
   background-size: 100% 1px, 100% 1px, 1px 100%, 1px 100%;
   background-position: 0 0, 0 100%, 0 0, 100% 0;
 }
