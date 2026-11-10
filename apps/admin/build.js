@@ -1,5 +1,5 @@
 /* apps/admin/build.js — builds the admin (a static single-page app) into apps/admin/dist/.
-   Deployed to Cloudflare Pages (project store-admin): `npm run deploy:admin`.
+   Deployed to Cloudflare Pages (project store-admin) by GitHub Actions on every push to main (.github/workflows/deploy-admin.yml); `npm run deploy:admin` still works by hand.
    Same components and tokens as the shop (packages/ui); the admin renders in the Figma mode `backend` (decision 0017). */
 'use strict';
 const fs = require('fs');
