@@ -60,3 +60,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0034](0034-attributes-page.md) | Attributes: one admin page for artists, labels, subgenres and tags; removing a used one goes through Replace with | accepted |
 | [0035](0035-media-graded-per-side.md) | The record is graded per side: `VG+ / VG`, side B optional | accepted |
 | [0036](0036-pdp-gallery-moves-with-the-page.md) | PDP desktop gallery moves with the page and fits the window at rest | accepted |
+| [0037](0037-record-and-cover-grade-lines.md) | Grading reads `Record: …`, plus `Cover: …` when the cover is graded | accepted |

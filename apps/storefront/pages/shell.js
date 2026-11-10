@@ -13,8 +13,10 @@ const formatPrice = (p) => `${p.amount % 100 === 0 ? p.amount / 100 : (p.amount 
 const productName = (r) => r.name || `${r.artist} - ${r.title}`;
 // a pre-release ("blank") of the label: "Pre" right after the label name (Gio, 2026-11-10)
 const releaseInfo = (r) => [r.label, r.label && r.pre_release ? 'Pre' : null, r.format, r.country ? `(${r.country})` : null].filter(Boolean).join(' ');
-// media graded per side: "VG+ / VG", only side A when side B is not graded (Gio, 2026-11-10)
-const grading = (c) => `Grading: ${[c.condition_media, c.condition_media_b].filter(Boolean).join(' / ')}`;
+// the record graded per side: "Record: VG+ / VG", only side A when side B is not graded (Gio, 2026-11-10)
+const grading = (c) => `Record: ${[c.condition_media, c.condition_media_b].filter(Boolean).join(' / ')}`;
+// the cover/sleeve grade on its own line, only when there is one (Gio, 2026-11-10)
+const coverGrading = (c) => (c.condition_sleeve && c.sleeve_type !== 'none' ? `Cover: ${c.condition_sleeve}` : null);
 const productHref = (product, url) => url(`/products/${product.listing.slug}/`);
 
 // Figma: `header` (device=desktop | mobile), the same on every page
@@ -65,6 +67,7 @@ function ProductCardFor({ product, url, headingLevel }) {
     tags: tagsOf(release),
     description: copy.notes,
     grading: grading(copy),
+    cover: coverGrading(copy),
     samples: samples.length ? samples.map((s, i) => h(Z.PlayerButton, Object.assign({
       key: s.track_position,
       'aria-label': `${productName(release)}, sample ${i + 1}: ${s.title}`
@@ -72,4 +75,4 @@ function ProductCardFor({ product, url, headingLevel }) {
   });
 }
 
-module.exports = { SECTION_LABEL, tagsOf, formatPrice, productName, releaseInfo, grading, productHref, SiteHeader, sampleAttrs, ProductCardFor };
+module.exports = { SECTION_LABEL, tagsOf, formatPrice, productName, releaseInfo, grading, coverGrading, productHref, SiteHeader, sampleAttrs, ProductCardFor };

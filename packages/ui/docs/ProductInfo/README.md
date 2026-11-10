@@ -1,6 +1,6 @@
 # ProductInfo
 
-The text block of a product page: name + price, release info, tags, description, grading, sample players. Figma: `product info` (device=desktop | mobile).
+The text block of a product page: name + price, release info, tags, description, grading, cover grade, sample players. Figma: `product info` (device=desktop | mobile).
 
 Inner layout: 3-column grid, no gaps ([0012](../../../../design/decisions/0012-layout-mirrors-figma-grid.md)). Row 1 = details, full width. Row 2 = samples: **desktop columns 2–3, stacked (gap 8); mobile full width, in a row (gap 16, padding-bottom 8).**
 
@@ -17,17 +17,18 @@ Inner layout: 3-column grid, no gaps ([0012](../../../../design/decisions/0012-l
 | `releaseInfo` | `ReactNode` |  | Figma `release info`, e.g. "Label Format (Country)". |
 | `tags` | `ReactNode` |  | A &lt;TagGroup>. |
 | `description` | `ReactNode` |  | Figma `Description`. |
-| `grading` | `ReactNode` |  | Figma `Grading: …`, already formatted. |
+| `grading` | `ReactNode` |  | Figma `grading`: the record's grade, already formatted ("Record: VG+ / VG"). |
+| `cover` | `ReactNode` |  | Figma `cover` (boolean + text): the cover/sleeve grade below the record's, already formatted ("Cover: NM"). Omit when not graded. |
 | `samples` | `ReactNode` |  | &lt;PlayerButton>s. Desktop: columns 2–3, stacked; mobile: full width, in a row. |
 
 `*` required.
 <!-- /api -->
 
-All text formatting (price, grading label) is done by the page, not here.
+All text formatting (price, grading and cover labels) is done by the page, not here.
 
 ## Tokens
 
-Text `text-strong`. Type: name, price, release info `body-extra-large` (desktop) / `body-large` (mobile); description and grading `body-medium`. Title row gap `gutter-small`.
+Text `text-strong`. Type: name, price, release info `body-extra-large` (desktop) / `body-large` (mobile); description, grading and cover `body-medium`. Title row gap `gutter-small`.
 
 ## Dimensions (Figma)
 
