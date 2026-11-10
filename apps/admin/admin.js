@@ -122,7 +122,7 @@
       lines: [newLine()],
       label: [], labelCredit: '', labelSpelled: false, preRelease: false, country: '', year: '', format: '', section: 'sale', price: '',
       genre: '', subgenres: [], tags: [],   // subgenres = Discogs styles; tags = the shop's own (Rare, Killer version...)
-      condition: '', conditionB: '', conditionNotes: '', sleeveType: 'original', sleeveCondition: '',
+      condition: '', conditionB: '', conditionNotes: '', sleeveType: 'generic', sleeveCondition: '',
       notes: '',
       images: [],    // { id, key, name, url, uploading }
       samples: []    // { id, key, name, url, line (1-based) | null, uploading }
@@ -542,8 +542,8 @@
         h('div', { className: 'admin-row' },
           h(Z.Input, Object.assign({ className: 'span-8', id: 'condition-notes', label: 'Conditions comment', optional: true }, bind('conditionNotes')))),
         h('div', { className: 'admin-row' },
-          h(Z.Input, Object.assign({ className: 'span-4', id: 'sleeve-type', label: 'Cover/sleeve', variant: 'select' }, bind('sleeveType')), opts(SLEEVES)),
-          f.sleeveType !== 'none' ? h(Z.Input, Object.assign({ className: 'span-4', id: 'sleeve-condition', label: 'Cover/sleeve conditions', optional: true, variant: 'select', placeholder: '' }, bind('sleeveCondition')), opts(GRADES)) : null)),
+          h(Z.Input, Object.assign({ className: 'span-4', id: 'sleeve-type', label: 'Cover', variant: 'select' }, bind('sleeveType')), opts(SLEEVES)),
+          f.sleeveType !== 'none' ? h(Z.Input, Object.assign({ className: 'span-4', id: 'sleeve-condition', label: 'Cover conditions', optional: true, variant: 'select', placeholder: '' }, bind('sleeveCondition')), opts(GRADES)) : null)),
       h(Z.Divider),
 
       h('section', { className: 'admin-section' },
