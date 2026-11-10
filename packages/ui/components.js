@@ -137,8 +137,7 @@
 
   /* ── Breadcrumbs ────────────────────────────────────────────────────────
      Figma: `breadcrumbs` (device=desktop|mobile). `trail` = body/medium items separated by "/", padding `small`, one line
-     (scrolls sideways when too long), 1px rule below. `active` (Figma boolean `active filters`, 2026-11-10): the active
-     artist / label filter as one removable entity chip after a last "/" — not repeated as a text crumb. */
+     (scrolls sideways when too long), 1px rule below. PDP only: the PLP shows ActiveFilter instead (0041). */
   function Breadcrumbs(props) {
     var items = props.items || [];
     var nodes = [];
@@ -152,16 +151,27 @@
           ? h('a', { href: href }, label)
           : h('span', last ? { 'aria-current': 'page' } : null, label)));
     });
-    if (props.active) {
-      nodes.push(h('li', { key: 'sep-active', className: 'zz-breadcrumbs__sep', 'aria-hidden': 'true' }, '/'));
-      nodes.push(h('li', { key: 'active', className: 'zz-breadcrumbs__active' }, props.active));
-    }
     return h('nav', Object.assign({
       className: cx('zz-breadcrumbs', props.className),
       'aria-label': props['aria-label'] || 'Breadcrumb'
-    }, omit(props, ['items', 'active', 'className', 'aria-label'])),
+    }, omit(props, ['items', 'className', 'aria-label'])),
       h('ol', { className: 'zz-breadcrumbs__list body-medium' }, nodes),
       h('div', { className: 'zz-breadcrumbs__rule', role: 'presentation' }));
+  }
+
+  /* ── ActiveFilter ───────────────────────────────────────────────────────
+     Figma: page `active filter` → `active filter` (device=desktop|mobile, 2026-11-10, decision 0041). The PLP's row in
+     place of the breadcrumbs: the filter reached from a link (artist, label, subgenre, tag) as one removable EntityChip
+     (medium on desktop, large on mobile: the consumer picks the size), padding `small`, 1px rule below — the
+     breadcrumbs' frame. A labelled group, not a nav: it is not a path. Render nothing (or hide it) when no filter is active. */
+  function ActiveFilter(props) {
+    return h('div', Object.assign({
+      className: cx('zz-active-filter', props.className),
+      role: 'group',
+      'aria-label': props['aria-label'] || 'Active filter'
+    }, omit(props, ['className', 'aria-label', 'children'])),
+      h('div', { className: 'zz-active-filter__row' }, props.children),
+      h('div', { className: 'zz-active-filter__rule', role: 'presentation' }));
   }
 
   /* ── Tag / TagGroup ─────────────────────────────────────────────────────
@@ -1050,7 +1060,7 @@
       support ? h('p', { id: supportId, className: 'zz-input__support body-small' }, support) : null);
   }
 
-  return { Button: Button, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, Tag: Tag, TagGroup: TagGroup,
+  return { Button: Button, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, ActiveFilter: ActiveFilter, Tag: Tag, TagGroup: TagGroup,
            PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
            Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, DragHandleIcon: DragHandleIcon,
            Checkbox: Checkbox, Divider: Divider, ActionPanel: ActionPanel, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog,

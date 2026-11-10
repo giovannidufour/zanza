@@ -292,7 +292,8 @@
   /* -- PLP filters (pages/plp.js, Figma page `filters`) --------------------
      OR inside a block, AND between blocks. Counts = records you would see by ticking that option, given the other
      blocks; an option at 0 is hidden unless ticked. State lives in the URL (?subgenre=Roots&format=7"), so a
-     filtered list can be shared and Back restores it. Breadcrumbs = section + ticked options + the active artist / label chip.
+     filtered list can be shared and Back restores it. Active filter row (0041, in place of the breadcrumbs) = the filter
+     reached from a link: artist / label (no checkbox) or the subgenre / tag a card's tag linked to, one removable chip.
      The column's checkboxes are the applied state. On mobile (Figma `filters layer`, 2026-11-10) the layer has its
      own checkboxes: a draft, copied from the column when the layer opens and back to it on Apply; closing discards
      it. Levels: main (applied recap + one row per facet) and facet (the options of one facet). */
@@ -313,6 +314,18 @@
     var params = new URLSearchParams(location.search);
     boxes.forEach(function (b) { b.checked = params.getAll(b.name).indexOf(b.value) !== -1; });
     var hiddenSel = {}; hidden.forEach(function (f) { hiddenSel[f.key] = params.getAll(f.key); });
+    // the link filter (0041): a page opened on exactly one subgenre / tag value (a card's tag link: a new click replaces
+    // it) shows that value as a chip until it is unticked. Decided once per history entry and kept in history.state,
+    // so reload and Back keep it, while ticking the same option by hand never makes a chip.
+    var linked = null;
+    var st = history.state || {};
+    if (st.plpLinkedDone) linked = st.plpLinked || null;
+    else {
+      var vals = []; params.forEach(function (v, k) { if (keys.indexOf(k) !== -1) vals.push({ key: k, value: v }); });
+      var box = vals.length === 1 && boxes.filter(function (b) { return b.name === vals[0].key && b.value === vals[0].value; })[0];
+      if (box) linked = vals[0];
+      history.replaceState(Object.assign({}, st, { plpLinkedDone: true, plpLinked: linked }), '');
+    }
     var sortSelects = Array.prototype.slice.call(document.querySelectorAll('[data-plp-sort]'));
     var sort = params.get('sort') || 'newest';
 
@@ -351,6 +364,17 @@
       hidden.forEach(function (f) { s[f.key].forEach(function (x) { out.push({ key: f.key, value: x, text: f.label + ': ' + ((f.names || {})[x] || x) }); }); });
       return out;
     }
+    var LINK_LABEL = { subgenre: 'Subgenre', tag: 'Tag' };
+    // the row's chips: the hidden-facet chips, else the linked subgenre / tag while still ticked
+    function rowChipsOf(s) {
+      var out = chipsOf(s);
+      if (linked && s[linked.key] && s[linked.key].indexOf(linked.value) !== -1) {
+        var b = boxes.filter(function (x) { return x.name === linked.key && x.value === linked.value; })[0];
+        out.push({ key: linked.key, value: linked.value, box: b,
+          text: (LINK_LABEL[linked.key] || linked.key) + ': ' + ((b && b.getAttribute('data-facet-label')) || linked.value) });
+      }
+      return out;
+    }
     function makeChip(template, text, onRemove) {
       var chip = template.content.firstElementChild.cloneNode(true);
       chip.querySelector('.zz-entity-chip__label').textContent = text;
@@ -361,15 +385,16 @@
       return chip;
     }
 
-    // the active artist / label filter: chips at the end of the breadcrumbs (Breadcrumbs `active`, Figma 2026-11-10).
-    // Two per filter from the template (medium desktop, large mobile; plp.css shows one)
+    // the active filter row (Figma `active filter`, 0041): two chips per filter from the template (medium desktop,
+    // large mobile; plp.css shows one)
     var chipTemplate = document.querySelector('template[data-plp-chip]');
     function activeChips(c) {
       var frag = document.createDocumentFragment();
       Array.prototype.forEach.call(chipTemplate.content.children, function (tpl) {
         var holder = document.createElement('template'); holder.content.appendChild(tpl.cloneNode(true));
         frag.appendChild(makeChip(holder, c.text, function () {
-          hiddenSel[c.key] = hiddenSel[c.key].filter(function (x) { return x !== c.value; });
+          if (c.box) c.box.checked = false;
+          else hiddenSel[c.key] = hiddenSel[c.key].filter(function (x) { return x !== c.value; });
           apply(true);
           var next = root.querySelector('input');
           if (next) next.focus();   // the removed button is gone: keep keyboard focus on the page
@@ -404,25 +429,14 @@
       if (sort !== 'newest') q.set('sort', sort);
       var qs = q.toString();
       history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
-      // breadcrumbs: section / ticked options (Figma "For sale / Dancehall / 7in") / [active artist or label chip]
-      var nav = document.querySelector('[data-plp-breadcrumbs]');
-      var ol = nav && nav.querySelector('ol');
-      if (ol) {
-        var labels = [nav.getAttribute('data-section-label')];
-        boxes.forEach(function (b) { if (b.checked) labels.push(b.getAttribute('data-facet-label') || b.value); });
-        ol.textContent = '';
-        labels.forEach(function (text, i) {
-          if (i > 0) { var sep = document.createElement('li'); sep.className = 'zz-breadcrumbs__sep'; sep.setAttribute('aria-hidden', 'true'); sep.textContent = '/'; ol.appendChild(sep); }
-          var li = document.createElement('li'); li.className = 'zz-breadcrumbs__item';
-          var span = document.createElement('span'); span.textContent = text;
-          if (i === labels.length - 1) span.setAttribute('aria-current', 'page');
-          li.appendChild(span); ol.appendChild(li);
-        });
-        if (chipTemplate) chipsOf(s).forEach(function (c) {
-          var sep = document.createElement('li'); sep.className = 'zz-breadcrumbs__sep'; sep.setAttribute('aria-hidden', 'true'); sep.textContent = '/'; ol.appendChild(sep);
-          var li = document.createElement('li'); li.className = 'zz-breadcrumbs__active';
-          li.appendChild(activeChips(c)); ol.appendChild(li);
-        });
+      // active filter row (0041): the link filter's chip; hidden when there is none
+      var row = document.querySelector('[data-plp-active]');
+      var holder = row && row.querySelector('.zz-active-filter__row');
+      if (holder && chipTemplate) {
+        holder.textContent = '';
+        var chips = rowChipsOf(s);
+        chips.forEach(function (c) { holder.appendChild(activeChips(c)); });
+        row.hidden = !chips.length;
       }
     }
     // Button suffix (packages/ui Button `suffix`): created or removed in place

@@ -1,7 +1,7 @@
 /* apps/storefront/pages/plp.js — Product listing page of a section (Figma: PLP - desktop).
    A pure function: products in, React tree out. Filters (Figma: page `filters`, 2026-11-10) are built from the
    products of the page; scripts/site.js applies them in the browser (OR inside a block, AND between blocks,
-   counts, URL, breadcrumbs). Mobile (Figma 2026-11-10): the column is hidden; `PLP header` ("Filter (n)" + sort)
+   counts, URL, active filter row). Mobile (Figma 2026-11-10): the column is hidden; `PLP header` ("Filter (n)" + sort)
    opens `filters layer`, a full-screen native dialog with nested levels whose ticks are a draft until Apply. */
 'use strict';
 const React = require('react');
@@ -21,13 +21,13 @@ const FACETS = [
   { key: 'tag', label: 'Tags', values: (p) => p.release.tags || [], order: 'count' }
 ];
 // filters with no list in the column (Gio 2026-11-10: not all labels always visible). Reached by a link
-// (?label=…); while active it shows as a removable chip at the end of the breadcrumbs (one at a time: a new link replaces it).
+// (?label=…); while active it shows as a removable chip in the active filter row (one at a time: a new link replaces it).
 // Values are entity slugs (label / artist), so a misspelt credit still matches; `refs` give the names.
 const HIDDEN_FACETS = [
   { key: 'artist', label: 'Artist', refs: (p) => artistRefs(p.release) },
   { key: 'label', label: 'Label', refs: (p) => [labelRef(p.release)].filter(Boolean) }
 ].map((f) => Object.assign(f, { values: (p) => f.refs(p).map((r) => r.slug) }));
-// slug → name of each hidden facet on the page (chip and breadcrumb text)
+// slug → name of each hidden facet on the page (chip text)
 function hiddenFacetsOf(products) {
   return HIDDEN_FACETS.map((f) => {
     const names = {};
@@ -100,10 +100,9 @@ function Plp({ section, products, allProducts = products, site, url }) {
   const facets = facetsOf(products);
   return h('div', { className: 'zz-page' },
     h(SiteHeader, { site, url, section }),
-    // Figma: "For sale / Dancehall / 7”" = the section + the applied filters (site.js rewrites it on change)
-    h(Z.Breadcrumbs, { items: [{ label: SECTION_LABEL[section], href: null }], 'data-plp-breadcrumbs': '', 'data-section-label': SECTION_LABEL[section] }),
-    // active artist / label filter = Breadcrumbs `active` (Figma `breadcrumbs` → active filters, 2026-11-10): an EntityChip,
-    // medium on desktop, large on mobile (plp.css shows one). site.js fills it from these templates
+    // Figma `active filter` (0041): in place of the breadcrumbs, the filter reached from a link (artist, label, subgenre,
+    // tag) as a removable EntityChip, medium on desktop, large on mobile (plp.css shows one). Hidden until site.js fills it.
+    h(Z.ActiveFilter, { hidden: true, 'data-plp-active': '' }),
     h('template', { 'data-plp-chip': '' },
       h(Z.EntityChip, { label: '', className: 'plp-chip plp-chip--desktop' }),
       h(Z.EntityChip, { label: '', size: 'large', className: 'plp-chip plp-chip--mobile' })),
