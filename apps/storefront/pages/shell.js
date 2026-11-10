@@ -73,7 +73,8 @@ const coverGrading = (c) => (c.condition_sleeve && c.sleeve_type !== 'none' ? `C
 // the conditions comment, value only (Gio 2026-11-10): right after the record grade; when the cover is graded,
 // on its own line under "Cover:". Returns the { grading, cover } props of ProductCard / ProductInfo.
 function gradingProps(c) {
-  const note = (c.condition_notes || '').trim();
+  const text = (c.condition_notes || '').trim();
+  const note = text ? `(${text})` : '';   // always in brackets (Gio 2026-11-10)
   const record = grading(c);
   const cover = coverGrading(c);
   if (!note) return { grading: record, cover };
