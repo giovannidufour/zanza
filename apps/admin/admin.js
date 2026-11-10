@@ -331,6 +331,11 @@
       return function (files) {
         var wanted = files.filter(function (file) { return kind === 'photo' ? /^image\//.test(file.type) : file.type === 'audio/mpeg'; });
         if (wanted.length < files.length) setMessage({ error: true, text: (files.length - wanted.length) + ' file(s) skipped: ' + (kind === 'photo' ? 'images only (jpg, png, webp).' : 'samples must be mp3.') });
+        // one sample per line (Gio, 2026-11-10): more go in the samples overview as additional samples
+        if (kind === 'sample' && line && wanted.length > 1) {
+          setMessage({ error: true, text: 'One sample per line: ' + (wanted.length - 1) + ' file(s) skipped. Add more in Samples overview.' });
+          wanted = wanted.slice(0, 1);
+        }
         wanted.forEach(function (file) {
           var item = { id: nextId(), key: null, name: file.name, url: URL.createObjectURL(file), uploading: true, line: line === undefined ? null : line };
           var listName = kind === 'photo' ? 'images' : 'samples';
@@ -456,7 +461,8 @@
                   value: l.artistCredit, onChange: function (e) { setLine(i, 'artistCredit', e.target.value); } }) : null),
               h('div', { className: 'admin-line__samples' },
                 samples.length ? h(Z.FileList, null, samples.map(sampleItem)) : null,
-                h(Z.DropZone, { label: 'Browse sample', accept: 'audio/mpeg', multiple: true, onFiles: addFiles('sample', i + 1) })));
+                // one sample per line: the drop zone goes away once the line has one (back if it is removed)
+                samples.length ? null : h(Z.DropZone, { label: 'Browse sample', accept: 'audio/mpeg', multiple: false, onFiles: addFiles('sample', i + 1) })));
           })),
         h('div', null, h(Z.Button, { hierarchy: 'secondary', onClick: addLine }, 'Add line'))),
       h('hr', { className: 'admin-divider' }),
