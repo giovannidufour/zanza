@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"}]} */
 /* packages/ui/components.js — the ONE implementation of the Zanza components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
@@ -30,14 +30,17 @@
       className: cx('zz-button', props.className),
       'data-hierarchy': hierarchy,
       'data-size': size
-    }, omit(props, ['hierarchy', 'size', 'disabled', 'leadingIcon', 'trailingIcon', 'children', 'state', 'className', 'type']));
+    }, omit(props, ['hierarchy', 'size', 'disabled', 'leadingIcon', 'trailingIcon', 'children', 'state', 'className', 'type', 'suffix']));
     if (props.state && props.state !== 'default') attrs['data-state'] = props.state;
     // icon-only (no children): Figma hides the label container; aria-label is required by the consumer
     var hasLabel = props.children !== undefined && props.children !== null && props.children !== false;
     var typeClass = (size === 'small' || size === 'extra-small') ? 'label-extra-small' : 'label-medium';   // Figma text style per size
     return h(isLink ? 'a' : 'button', attrs,
       props.leadingIcon ? h('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, props.leadingIcon) : null,
-      hasLabel ? h('span', { className: cx('zz-button__label', typeClass) }, props.children) : null,
+      // Figma `suffix` (label container gap 4, same text style): a count next to the label (0029)
+      hasLabel ? h('span', { className: cx('zz-button__label', typeClass) }, props.children,
+        props.suffix !== undefined && props.suffix !== null && props.suffix !== false
+          ? h('span', { className: 'zz-button__suffix' }, props.suffix) : null) : null,
       props.trailingIcon ? h('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, props.trailingIcon) : null);
   }
 
@@ -832,8 +835,8 @@
     return h('label', { className: cx('zz-filter', props.className), 'data-content': content, style: props.style },
       h('input', attrs),
       h('span', { className: 'zz-filter__box', 'aria-hidden': 'true' }, h(SquareIcon), h(SquareTickIcon)),
-      content === 'tag' ? h(Tag, { size: 'medium', className: 'zz-filter__tag' }, label) : h('span', { className: 'zz-filter__label body-small' }, label),
-      hasCount ? h('span', { className: 'zz-filter__count body-small' }, props.count) : null);
+      content === 'tag' ? h(Tag, { size: 'medium', className: 'zz-filter__tag' }, label) : h('span', { className: 'zz-filter__label body-small body-medium--mobile' }, label),
+      hasCount ? h('span', { className: cx('zz-filter__count body-small', content === 'label' && 'body-medium--mobile') }, props.count) : null);
   }
   function FilterBlock(props) {
     return h('fieldset', Object.assign({ className: cx('zz-filter-block', props.className) },
@@ -843,6 +846,73 @@
   }
   function Filters(props) {
     return h('div', Object.assign({ className: cx('zz-filters', props.className) }, omit(props, ['children', 'className'])), props.children);
+  }
+
+  /* ── FilterFacet / FiltersLayer / PlpHeader / SelectButton (mobile filters, Figma page `filters`, 2026-11-10) ──
+     Gio: on mobile the filters open in a full-screen layer with nested levels (no accordion). `filters layer`
+     (level main | facet): top bar (back on facet · title label/medium · close), body, actions sticky at the bottom
+     (Reset secondary + Apply primary, large, the count as Apply's suffix, 0029). level=main: "Applied" recap
+     (entity chips, large) + one `filter facet` per facet; level=facet: the options of one facet (`filter`).
+     `PLP header` (device=mobile): "Filter" + the number of applied filters as suffix, and the sort, a native select
+     drawn as a small secondary button with a trailing chevron (Gio: every select opens the native dropdown). */
+  function ChevronRightIcon() {   // Figma: icon/icon-chevron-right-small-thin (= chevron-down turned)
+    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('g', { transform: 'rotate(-90 12 12)' }, ChevronDownIcon().props.children));
+  }
+  function ChevronLeftIcon() {    // Figma: icon/icon-chevron-left-small-thin
+    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('g', { transform: 'rotate(90 12 12)' }, ChevronDownIcon().props.children));
+  }
+  function FilterFacet(props) {
+    var hasValue = props.value !== undefined && props.value !== null && props.value !== false && props.value !== '';
+    return h('button', Object.assign({ type: 'button', className: cx('zz-filter-facet', props.className) },
+      omit(props, ['label', 'value', 'className', 'children'])),
+      h('span', { className: 'zz-filter-facet__label label-medium' }, props.label),
+      hasValue ? h('span', { className: 'zz-filter-facet__value body-small' }, props.value) : null,
+      h('span', { className: 'zz-filter-facet__chevron', 'aria-hidden': 'true' }, h(ChevronRightIcon)));
+  }
+  function FiltersLayer(props) {
+    var level = props.level || 'main';
+    var titleId = useId();
+    var hasApplied = props.applied !== undefined && props.applied !== null && props.applied !== false;
+    return h('div', Object.assign({ className: cx('zz-filters-layer', props.className), 'data-level': level,
+      role: props.role || 'group', 'aria-labelledby': titleId },
+      omit(props, ['level', 'title', 'applied', 'appliedLabel', 'children', 'className', 'onBack', 'onClose', 'backLabel',
+        'closeLabel', 'onApply', 'onReset', 'applyLabel', 'applyCount', 'resetLabel', 'role'])),
+      h('div', { className: 'zz-filters-layer__bar' },
+        h(IconButton, { className: 'zz-filters-layer__back', icon: h(ChevronLeftIcon), 'aria-label': props.backLabel || 'Back to filters',
+          onClick: props.onBack, hidden: level !== 'facet', 'data-layer-back': '' }),
+        h('h2', { id: titleId, className: 'zz-filters-layer__title label-medium', 'data-layer-title': '' }, props.title),
+        h(IconButton, { className: 'zz-filters-layer__close', icon: h(XThinIcon), 'aria-label': props.closeLabel || 'Close filters',
+          onClick: props.onClose, 'data-layer-close': '' })),
+      h('div', { className: 'zz-filters-layer__body' },
+        hasApplied || props.appliedLabel ? h('div', { className: 'zz-filters-layer__applied', hidden: level !== 'main' || !hasApplied, 'data-layer-applied': '' },
+          h('p', { className: 'zz-filters-layer__applied-label label-extra-small' }, props.appliedLabel || 'Applied'),
+          h('div', { className: 'zz-filters-layer__chips', 'data-layer-chips': '' }, props.applied)) : null,
+        props.children),
+      h('div', { className: 'zz-filters-layer__actions' },
+        h(Button, { hierarchy: 'secondary', size: 'large', onClick: props.onReset, 'data-layer-reset': '' }, props.resetLabel || 'Reset'),
+        h(Button, { hierarchy: 'primary', size: 'large', className: 'zz-filters-layer__apply', onClick: props.onApply,
+          suffix: props.applyCount, 'data-layer-apply': '' }, props.applyLabel || 'Apply')));
+  }
+  function PlpHeader(props) {
+    return h('div', Object.assign({ className: cx('zz-plp-header', props.className) }, omit(props, ['filters', 'sort', 'className'])),
+      h('div', { className: 'zz-plp-header__controls' }, props.filters, props.sort),
+      h('div', { className: 'zz-plp-header__rule', 'aria-hidden': 'true' }));
+  }
+  // a native <select> drawn as a Button (Figma: button + trailing icon chevron-down): the select is invisible over
+  // the button, so the platform picker opens (Gio, 2026-11-10). The visible text is the selected option's label.
+  function SelectButton(props) {
+    var options = props.options || [];
+    var value = props.value !== undefined ? props.value : props.defaultValue;
+    var current = options.filter(function (o) { return o.value === value; })[0] || options[0] || { label: '' };
+    var size = props.size || 'small';
+    return h('span', { className: cx('zz-button zz-select-button', props.className), 'data-hierarchy': props.hierarchy || 'secondary', 'data-size': size, 'data-layout': props.layout || 'hug' },
+      h('span', { className: cx('zz-button__label', (size === 'small' || size === 'extra-small') ? 'label-extra-small' : 'label-medium') },
+        props.prefix ? h('span', { className: 'zz-button__prefix' }, props.prefix) : null,   // Figma `prefix` ("Sort:", desktop)
+        h('span', { 'data-select-label': '' }, current.label)),
+      h('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, h(ChevronDownIcon)),
+      h('select', Object.assign({ className: 'zz-select-button__control' },
+        omit(props, ['options', 'className', 'hierarchy', 'size', 'layout', 'prefix'])),
+        options.map(function (o) { return h('option', { key: o.value, value: o.value }, o.label); })));
   }
 
   /* ── EntityField + EntityChip ──────────────────────────────────────────
@@ -861,9 +931,10 @@
   }
   function EntityChip(props) {
     var label = props.label !== undefined ? props.label : props.children;
-    return h('span', Object.assign({ className: cx('zz-entity-chip', props.className), 'data-state': props.state },
-      omit(props, ['label', 'children', 'className', 'onRemove', 'removeLabel', 'state'])),
-      h('span', { className: 'zz-entity-chip__label body-small' }, label),
+    var size = props.size || 'medium';   // Figma `size` (2026-11-10): medium 24px | large 44px (mobile, body/medium, × 44 × 44)
+    return h('span', Object.assign({ className: cx('zz-entity-chip', props.className), 'data-state': props.state, 'data-size': size },
+      omit(props, ['label', 'children', 'className', 'onRemove', 'removeLabel', 'state', 'size'])),
+      h('span', { className: cx('zz-entity-chip__label', size === 'large' ? 'body-medium' : 'body-small') }, label),
       h('button', { type: 'button', className: 'zz-entity-chip__remove', 'aria-label': props.removeLabel || ('Remove ' + label),
         onClick: props.onRemove, tabIndex: props.onRemove ? undefined : -1 }, h(XThinIcon)));
   }
@@ -979,5 +1050,6 @@
            Checkbox: Checkbox, Divider: Divider, ActionPanel: ActionPanel, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog,
            EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon,
            Radio: Radio, RadioGroup: RadioGroup, RadioEmptyIcon: RadioEmptyIcon, RadioDotIcon: RadioDotIcon,
-           Filter: Filter, FilterBlock: FilterBlock, Filters: Filters };
+           Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
+           FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon };
 });

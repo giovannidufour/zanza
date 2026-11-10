@@ -37,7 +37,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 
 | Component | Figma | Status |
 | --- | --- | --- |
-| Button | page `buttons` → section `button` | ported: hierarchy × size × state |
+| Button | page `buttons` → section `button` | ported: hierarchy × size × state, `suffix` |
 | Tabs / Tab | page `tabs` → `tab group`, `tab` | ported: controlled selection, 4 states, `suffix` (counts, 0029) |
 | Header | page `header` → `header` | ported: device desktop/mobile or responsive, composition of Button + Tabs |
 | Breadcrumbs | page `breadcrumbs` → `breadcrumbs` | ported |
@@ -58,8 +58,9 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | Checkbox | page `controls` → `checkbox` | ported: state default / active (= checked) / indeterminate, `label` boolean (hideLabel), native input |
 | Dialog | page `dialog` → `dialog` | ported: native `<dialog>` + showModal, surface-base, backdrop surface-scrim, `choices` (radio group) |
 | Radio · RadioGroup | page `controls` → `radio` | ported: state default / active, `label` boolean (hideLabel), native radio in a fieldset |
-| Filter · FilterBlock · Filters | page `filters` → `filter`, `filter block`, `filters` | ported: content label / tag × state, count; shop PLP (0028) |
-| EntityField · EntityChip | `input` › `chips` + `_input chips`, `entity chip` (tags), `entity option` (input › building blocks) | ported: chips, menu (entity / alias / create), keyboard; Label = one chip |
+| Filter · FilterBlock · Filters | page `filters` → `filter`, `filter block`, `filters` | ported: content label / tag × state × device (responsive), count; shop PLP (0028) |
+| FiltersLayer · FilterFacet · PlpHeader · SelectButton | page `filters` → `filters layer`, `filter facet`, `PLP header` | ported: mobile filters, level main / facet, sticky actions; sort = native select as a button (0038) |
+| EntityField · EntityChip | `input` › `chips` + `_input chips`, `entity chip` (tags), `entity option` (input › building blocks) | ported: chips, menu (entity / alias / create), keyboard; Label = one chip; chip size medium / large |
 
 ## Open items
 

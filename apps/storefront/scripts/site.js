@@ -15,6 +15,9 @@
    5. PLP filters
       - ticking an option filters the list (OR inside a block, AND between blocks), updates the counts, the URL and
         the breadcrumbs, and announces the number of records
+      - sort (native select, mobile and desktop) reorders the list; in the URL as ?sort=
+      - mobile: "Filter (n)" opens the filters layer (native modal dialog, levels main / facet); its ticks are a draft
+        until Apply, close discards, Reset clears the draft (decision 0038)
 
    Looks live in base.css and packages/ui/components.css; this file only sets attributes and text. */
 (function () {
@@ -289,11 +292,15 @@
   /* -- PLP filters (pages/plp.js, Figma page `filters`) --------------------
      OR inside a block, AND between blocks. Counts = records you would see by ticking that option, given the other
      blocks; an option at 0 is hidden unless ticked. State lives in the URL (?subgenre=Roots&format=7"), so a
-     filtered list can be shared and Back restores it. Breadcrumbs = section + ticked options. */
+     filtered list can be shared and Back restores it. Breadcrumbs = section + ticked options.
+     The column's checkboxes are the applied state. On mobile (Figma `filters layer`, 2026-11-10) the layer has its
+     own checkboxes: a draft, copied from the column when the layer opens and back to it on Apply; closing discards
+     it. Levels: main (applied recap + one row per facet) and facet (the options of one facet). */
   function initFilters() {
     var root = document.querySelector('[data-plp-filters]');
     if (!root) return;
     var items = Array.prototype.slice.call(document.querySelectorAll('.plp-item'));
+    var list = items.length ? items[0].parentNode : null;
     var boxes = Array.prototype.slice.call(root.querySelectorAll('input[type="checkbox"]'));
     var keys = []; boxes.forEach(function (b) { if (keys.indexOf(b.name) === -1) keys.push(b.name); });
     // hidden facets (label): no checkbox; the value comes from the URL and shows as a removable chip
@@ -306,84 +313,253 @@
     var params = new URLSearchParams(location.search);
     boxes.forEach(function (b) { b.checked = params.getAll(b.name).indexOf(b.value) !== -1; });
     var hiddenSel = {}; hidden.forEach(function (f) { hiddenSel[f.key] = params.getAll(f.key); });
+    var sortSelects = Array.prototype.slice.call(document.querySelectorAll('[data-plp-sort]'));
+    var sort = params.get('sort') || 'newest';
 
-    function selected() {
+    function selectionOf(checkboxes, hiddenState) {
       var s = {}; keys.forEach(function (k) { s[k] = []; });
-      boxes.forEach(function (b) { if (b.checked) s[b.name].push(b.value); });
-      hidden.forEach(function (f) { s[f.key] = hiddenSel[f.key].slice(); });
+      checkboxes.forEach(function (b) { if (b.checked) s[b.name].push(b.value); });
+      hidden.forEach(function (f) { s[f.key] = hiddenState[f.key].slice(); });
       return s;
     }
-    var active = document.querySelector('[data-plp-active]');
-    var chipTemplate = document.querySelector('template[data-plp-chip]');
-    function renderActive() {
-      if (!active || !chipTemplate) return;
-      active.textContent = '';
-      hidden.forEach(function (f) {
-        hiddenSel[f.key].forEach(function (value) {
-          var chip = chipTemplate.content.firstElementChild.cloneNode(true);
-          var text = f.label + ': ' + ((f.names || {})[value] || value);
-          chip.querySelector('.zz-entity-chip__label').textContent = text;
-          var btn = chip.querySelector('.zz-entity-chip__remove');
-          btn.setAttribute('aria-label', 'Remove filter ' + text);
-          btn.removeAttribute('tabindex');
-          btn.addEventListener('click', function () {
-            hiddenSel[f.key] = hiddenSel[f.key].filter(function (x) { return x !== value; });
-            renderActive();
-            apply(true);
-            var next = active.querySelector('.zz-entity-chip__remove') || root.querySelector('input');
-            if (next) next.focus();   // the removed button is gone: keep keyboard focus on the page
-          });
-          active.appendChild(chip);
-        });
-      });
-      active.hidden = !active.firstChild;
-    }
+    function selected() { return selectionOf(boxes, hiddenSel); }
     function matches(v, s, skip) {
       return keys.every(function (k) {
         if (k === skip || !s[k].length) return true;
         return s[k].some(function (x) { return v[k].indexOf(x) !== -1; });
       });
     }
-    function apply(announce) {
-      var s = selected(), shown = 0;
-      items.forEach(function (el, i) { var ok = matches(values[i], s); el.hidden = !ok; if (ok) shown++; });
-      boxes.forEach(function (b) {
+    function shownFor(s) { var n = 0; values.forEach(function (v) { if (matches(v, s)) n++; }); return n; }
+    function appliedCount(s) { var n = 0; keys.forEach(function (k) { n += s[k].length; }); return n; }
+    // counts and visibility of a set of checkboxes for selection s (column or layer)
+    function refreshOptions(checkboxes, s, scope) {
+      checkboxes.forEach(function (b) {
         var n = 0; values.forEach(function (v) { if (v[b.name].indexOf(b.value) !== -1 && matches(v, s, b.name)) n++; });
         var count = b.closest('.zz-filter').querySelector('.zz-filter__count');
         if (count) count.textContent = n;
         b.closest('.zz-filter').hidden = n === 0 && !b.checked;
       });
       // a block shows only when something in the current view can be picked (Gio, 2026-11-10)
-      Array.prototype.forEach.call(root.querySelectorAll('.zz-filter-block'), function (block) {
-        block.hidden = !block.querySelector('.zz-filter:not([hidden])');
+      Array.prototype.forEach.call(scope.querySelectorAll('.zz-filter-block'), function (block) {
+        block.setAttribute('data-empty', block.querySelector('.zz-filter:not([hidden])') ? 'false' : 'true');
+        if (scope === root) block.hidden = block.getAttribute('data-empty') === 'true';
       });
+    }
+    // a removable chip: "Label: Kesta" (hidden facet) or the option's label
+    function chipsOf(s, checkboxes) {
+      var out = [];
+      hidden.forEach(function (f) { s[f.key].forEach(function (x) { out.push({ key: f.key, value: x, text: f.label + ': ' + ((f.names || {})[x] || x) }); }); });
+      return out;
+    }
+    function makeChip(template, text, onRemove) {
+      var chip = template.content.firstElementChild.cloneNode(true);
+      chip.querySelector('.zz-entity-chip__label').textContent = text;
+      var btn = chip.querySelector('.zz-entity-chip__remove');
+      btn.setAttribute('aria-label', 'Remove filter ' + text);
+      btn.removeAttribute('tabindex');
+      btn.addEventListener('click', onRemove);
+      return chip;
+    }
+
+    var active = document.querySelector('[data-plp-active]');
+    var chipTemplate = document.querySelector('template[data-plp-chip]');
+    function renderActive() {
+      if (!active || !chipTemplate) return;
+      active.textContent = '';
+      chipsOf(selected()).forEach(function (c) {
+        active.appendChild(makeChip(chipTemplate, c.text, function () {
+          hiddenSel[c.key] = hiddenSel[c.key].filter(function (x) { return x !== c.value; });
+          renderActive();
+          apply(true);
+          var next = active.querySelector('.zz-entity-chip__remove') || root.querySelector('input');
+          if (next) next.focus();   // the removed button is gone: keep keyboard focus on the page
+        }));
+      });
+      active.hidden = !active.firstChild;
+    }
+    function applySort() {
+      if (!list) return;
+      var sorted = items.slice().sort(function (a, b) {
+        var pa = +a.getAttribute('data-price'), pb = +b.getAttribute('data-price');
+        var oa = +a.getAttribute('data-order'), ob = +b.getAttribute('data-order');
+        if (sort === 'price-asc') return (pa - pb) || (oa - ob);
+        if (sort === 'price-desc') return (pb - pa) || (oa - ob);
+        return oa - ob;
+      });
+      var empty = list.querySelector('[data-plp-empty]');
+      sorted.forEach(function (el) { list.insertBefore(el, empty); });
+    }
+    function apply(announce) {
+      var s = selected(), shown = 0;
+      items.forEach(function (el, i) { var ok = matches(values[i], s); el.hidden = !ok; if (ok) shown++; });
+      refreshOptions(boxes, s, root);
       var empty = document.querySelector('[data-plp-empty]'); if (empty) empty.hidden = shown > 0;
       var status = root.querySelector('[data-plp-status]');
       if (status && announce) status.textContent = shown + (shown === 1 ? ' record' : ' records');
+      // mobile trigger: "Filter" + the number of applied filters as suffix (Figma `PLP header`, 0029)
+      if (trigger) setSuffix(trigger, appliedCount(s) ? '(' + appliedCount(s) + ')' : null);
       // URL
       var q = new URLSearchParams();
       keys.forEach(function (k) { s[k].forEach(function (x) { q.append(k, x); }); });
+      if (sort !== 'newest') q.set('sort', sort);
       var qs = q.toString();
       history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
       // breadcrumbs: section / ticked options (Figma "For sale / Dancehall / 7in")
       var nav = document.querySelector('[data-plp-breadcrumbs]');
-      var list = nav && nav.querySelector('ol');
-      if (list) {
+      var ol = nav && nav.querySelector('ol');
+      if (ol) {
         var labels = [nav.getAttribute('data-section-label')];
         hidden.forEach(function (f) { hiddenSel[f.key].forEach(function (x) { labels.push((f.names || {})[x] || x); }); });
         boxes.forEach(function (b) { if (b.checked) labels.push(b.getAttribute('data-facet-label') || b.value); });
-        list.textContent = '';
+        ol.textContent = '';
         labels.forEach(function (text, i) {
-          if (i > 0) { var sep = document.createElement('li'); sep.className = 'zz-breadcrumbs__sep'; sep.setAttribute('aria-hidden', 'true'); sep.textContent = '/'; list.appendChild(sep); }
+          if (i > 0) { var sep = document.createElement('li'); sep.className = 'zz-breadcrumbs__sep'; sep.setAttribute('aria-hidden', 'true'); sep.textContent = '/'; ol.appendChild(sep); }
           var li = document.createElement('li'); li.className = 'zz-breadcrumbs__item';
           var span = document.createElement('span'); span.textContent = text;
           if (i === labels.length - 1) span.setAttribute('aria-current', 'page');
-          li.appendChild(span); list.appendChild(li);
+          li.appendChild(span); ol.appendChild(li);
         });
       }
     }
+    // Button suffix (packages/ui Button `suffix`): created or removed in place
+    function setSuffix(button, text) {
+      var label = button.querySelector('.zz-button__label');
+      var el = label && label.querySelector('.zz-button__suffix');
+      if (text === null) { if (el) el.remove(); return; }
+      if (!el && label) { el = document.createElement('span'); el.className = 'zz-button__suffix'; label.appendChild(el); }
+      if (el) el.textContent = text;
+    }
+
+    // -- mobile: trigger, sort, layer --
+    var trigger = document.querySelector('[data-plp-open]');
+    var layer = document.querySelector('[data-plp-layer]');
+    // sort: a native select on mobile (PLP header) and on desktop (top of the column), kept in sync
+    sortSelects.forEach(function (sel) {
+      sel.value = sort;
+      if (sel.value !== sort) { sort = 'newest'; sel.value = sort; }
+    });
+    var syncSort = function () {
+      sortSelects.forEach(function (sel) {
+        sel.value = sort;
+        var label = sel.parentNode.querySelector('[data-select-label]');
+        if (label && sel.selectedIndex >= 0) label.textContent = sel.options[sel.selectedIndex].text;
+      });
+    };
+    syncSort();
+    sortSelects.forEach(function (sel) {
+      sel.addEventListener('change', function (e) { e.stopPropagation(); sort = sel.value; syncSort(); applySort(); apply(false); });
+    });
+    if (layer && trigger && layer.showModal) {
+      var draftBoxes = Array.prototype.slice.call(layer.querySelectorAll('input[type="checkbox"]'));
+      var draftHidden = {};
+      var rows = Array.prototype.slice.call(layer.querySelectorAll('[data-facet]'));
+      var blocks = Array.prototype.slice.call(layer.querySelectorAll('[data-facet-block]'));
+      var panel = layer.querySelector('.zz-filters-layer');
+      var title = layer.querySelector('[data-layer-title]');
+      var back = layer.querySelector('[data-layer-back]');
+      var appliedBox = layer.querySelector('[data-layer-applied]');
+      var chipsBox = layer.querySelector('[data-layer-chips]');
+      var applyBtn = layer.querySelector('[data-layer-apply]');
+      var layerChip = layer.querySelector('template[data-layer-chip]');
+      var currentFacet = null;
+      var draft = function () { return selectionOf(draftBoxes, draftHidden); };
+      var labelOf = function (b) { return b.getAttribute('data-facet-label') || b.value; };
+
+      var renderDraft = function () {
+        var s = draft();
+        refreshOptions(draftBoxes, s, layer);
+        // facet rows: value = ticked options; a facet with nothing to pick in this view is hidden (as the column)
+        rows.forEach(function (row) {
+          var key = row.getAttribute('data-facet');
+          var picked = draftBoxes.filter(function (b) { return b.name === key && b.checked; }).map(labelOf);
+          var value = row.querySelector('.zz-filter-facet__value');
+          if (picked.length) {
+            if (!value) { value = document.createElement('span'); value.className = 'zz-filter-facet__value body-small'; row.insertBefore(value, row.querySelector('.zz-filter-facet__chevron')); }
+            value.textContent = picked.join(', ');
+          } else if (value) value.remove();
+          row.setAttribute('aria-label', row.getAttribute('data-facet-label') + (picked.length ? ', ' + picked.join(', ') : ''));
+          var block = blocks.filter(function (bl) { return bl.getAttribute('data-facet-block') === key; })[0];
+          row.hidden = block && block.getAttribute('data-empty') === 'true';
+        });
+        // "Applied" recap: every ticked option, then label / artist (Figma order)
+        chipsBox.textContent = '';
+        draftBoxes.forEach(function (b) {
+          if (!b.checked) return;
+          chipsBox.appendChild(makeChip(layerChip, labelOf(b), function () { b.checked = false; renderDraft(); focusAfterRemove(); }));
+        });
+        chipsOf(s).forEach(function (c) {
+          chipsBox.appendChild(makeChip(layerChip, c.text, function () {
+            draftHidden[c.key] = draftHidden[c.key].filter(function (x) { return x !== c.value; });
+            renderDraft(); focusAfterRemove();
+          }));
+        });
+        appliedBox.hidden = currentFacet !== null || !chipsBox.firstChild;
+        // Apply + the records the draft gives (suffix, 0029). 0 stays enabled: the page shows its empty state.
+        setSuffix(applyBtn, String(shownFor(s)));
+      };
+      var focusAfterRemove = function () {
+        var next = chipsBox.querySelector('.zz-entity-chip__remove') || rows.filter(function (r) { return !r.hidden; })[0] || applyBtn;
+        if (next) next.focus();
+      };
+      var showLevel = function (key) {
+        currentFacet = key;
+        panel.setAttribute('data-level', key ? 'facet' : 'main');
+        var row = key && rows.filter(function (r) { return r.getAttribute('data-facet') === key; })[0];
+        title.textContent = key ? row.getAttribute('data-facet-label') : 'Filters';
+        back.hidden = !key;
+        layer.querySelector('[data-layer-facets]').hidden = !!key;
+        blocks.forEach(function (bl) { bl.hidden = bl.getAttribute('data-facet-block') !== key; });
+        renderDraft();
+        layer.querySelector('.zz-filters-layer__body').scrollTop = 0;
+      };
+      var open = function () {
+        draftBoxes.forEach(function (d) {
+          d.checked = boxes.some(function (b) { return b.name === d.name && b.value === d.value && b.checked; });
+        });
+        hidden.forEach(function (f) { draftHidden[f.key] = hiddenSel[f.key].slice(); });
+        showLevel(null);
+        layer.showModal();
+        var first = layer.querySelector('[data-layer-close]'); if (first) first.focus();
+      };
+      var close = function () { if (layer.open) layer.close(); };
+      trigger.addEventListener('click', open);
+      layer.addEventListener('close', function () { trigger.focus(); });
+      layer.querySelector('[data-layer-close]').addEventListener('click', close);
+      back.addEventListener('click', function () {
+        var from = currentFacet;
+        showLevel(null);
+        var row = rows.filter(function (r) { return r.getAttribute('data-facet') === from; })[0];
+        if (row) row.focus();
+      });
+      rows.forEach(function (row) {
+        row.addEventListener('click', function () {
+          showLevel(row.getAttribute('data-facet'));
+          var firstBox = layer.querySelector('[data-facet-block]:not([hidden]) .zz-filter:not([hidden]) input');
+          (firstBox || back).focus();
+        });
+      });
+      layer.addEventListener('change', renderDraft);
+      // Reset: clears the draft (every facet), the layer stays open; Apply confirms
+      layer.querySelector('[data-layer-reset]').addEventListener('click', function () {
+        draftBoxes.forEach(function (d) { d.checked = false; });
+        hidden.forEach(function (f) { draftHidden[f.key] = []; });
+        renderDraft();
+      });
+      applyBtn.addEventListener('click', function () {
+        boxes.forEach(function (b) {
+          b.checked = draftBoxes.some(function (d) { return d.name === b.name && d.value === b.value && d.checked; });
+        });
+        hidden.forEach(function (f) { hiddenSel[f.key] = draftHidden[f.key].slice(); });
+        renderActive();
+        apply(true);
+        close();
+        window.scrollTo(0, 0);
+      });
+    }
+
     root.addEventListener('change', function () { apply(true); });
     renderActive();
+    applySort();
     apply(false);
   }
 

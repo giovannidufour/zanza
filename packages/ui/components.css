@@ -1012,3 +1012,86 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-filter-block__label { padding: 0; margin: 0; float: left; width: 100%; }   /* float: lets the legend take part in the flex gap */
 .zz-filter-block__options { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; clear: both; }
 .zz-filters { display: flex; flex-direction: column; gap: 24px; padding: 0 8px; }
+
+/* filter device=mobile (Figma 2026-11-10, Gio): box 24, label + count body-medium (class body-medium--mobile),
+   padding-y small → 40px row (Gio accepts < 44, design/open.md). The row is the <label>: all of it is the target. */
+@media (--mobile) {
+  .zz-filter[data-content="label"] { display: flex; width: 100%; box-sizing: border-box; padding: var(--small) 0; }
+  .zz-filter__box { width: 24px; height: 24px; }
+  .zz-filter__control { width: 24px; height: 24px; margin-top: -12px; }
+}
+
+/* ── Button suffix (Figma `_button-sizes` → suffix): same text style, label container gap 4 (0029) ── */
+.zz-button__suffix, .zz-button__prefix { display: inline; }
+
+/* ── IconButton: the hidden attribute wins over display:inline-flex ── */
+.zz-icon-button[hidden] { display: none; }
+
+/* ── EntityChip size=large (Figma 2026-11-10, mobile): 44px, padding-left medium-small, label body-medium,
+   remove target 44 × 44 with a 24px icon ── */
+.zz-entity-chip[data-size="large"] { height: 44px; padding-left: var(--medium-small); }
+.zz-entity-chip[data-size="large"] .zz-entity-chip__remove { width: 44px; height: 44px; }
+.zz-entity-chip[data-size="large"] .zz-entity-chip__remove svg { width: 24px; height: 24px; }
+
+/* ── FilterFacet (Figma `filter facet`): a row of the main level, opens the facet's level. Padding-y medium-small,
+   gap small, 1px border-divider-strong at the bottom; label label-medium (uppercase), value body-small text-moderate
+   (one line, ellipsis), chevron 24. Hover / pressed / focus not designed (design/open.md): browser focus ring. ── */
+.zz-filter-facet {
+  display: flex; align-items: center; gap: var(--small);
+  width: 100%; box-sizing: border-box; margin: 0;
+  padding: var(--medium-small) 0;
+  border: 0; border-bottom: 1px solid var(--border-divider-strong); border-radius: 0;
+  background: transparent; color: var(--text-strong); font: inherit; text-align: left; cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+}
+.zz-filter-facet__label { flex: 1 1 auto; min-width: 0; text-transform: uppercase; }
+.zz-filter-facet__value { flex: 0 1 auto; min-width: 0; color: var(--text-moderate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zz-filter-facet__chevron { display: inline-flex; flex: none; width: 24px; height: 24px; color: var(--icon-strong); }
+.zz-filter-facet__chevron svg { width: 100%; height: 100%; display: block; }
+
+/* ── FiltersLayer (Figma `filters layer`, level main | facet): a full-height column on surface-accent.
+   Bar: padding medium-small × page-margin-mobile, gap small, bottom border. Body: scrolls on its own, padding
+   medium-small (top small on level=facet), gap medium-small. Actions: sticky at the bottom (they sit outside the
+   scrolling body), padding small × page-margin-mobile, gap small, top border, surface-accent (Gio). ── */
+.zz-filters-layer { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; background: var(--surface-accent); color: var(--text-strong); }
+.zz-filters-layer [hidden] { display: none !important; }
+.zz-filters-layer__bar {
+  display: flex; align-items: center; gap: var(--small); flex: none;
+  padding: var(--medium-small) var(--page-margin-mobile);
+  border-bottom: 1px solid var(--border-divider-strong);
+}
+.zz-filters-layer__title { flex: 1 1 auto; min-width: 0; margin: 0; text-transform: uppercase; }
+.zz-filters-layer__body {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: var(--medium-small);
+  padding: var(--medium-small) var(--page-margin-mobile);
+}
+.zz-filters-layer[data-level="facet"] .zz-filters-layer__body { padding-top: var(--small); }
+.zz-filters-layer__applied { display: flex; flex-direction: column; gap: var(--small); }
+.zz-filters-layer__applied-label { margin: 0; text-transform: uppercase; }
+.zz-filters-layer__chips { display: flex; flex-wrap: wrap; gap: 4px; }   /* Figma: 4, as tag group (no token) */
+.zz-filters-layer__actions {
+  display: flex; gap: var(--small); flex: none;
+  padding: var(--small) var(--page-margin-mobile);
+  border-top: 1px solid var(--border-divider-strong);
+  background: var(--surface-accent);
+}
+.zz-filters-layer__apply { flex: 1 1 auto; }
+/* the facet level shows one FilterBlock: its heading is the bar title, options gap 0 (rows carry the padding) */
+.zz-filters-layer .zz-filter-block__options { gap: 0; align-items: stretch; }
+
+/* ── PlpHeader (Figma `PLP header`, device=mobile): filters trigger and sort, space-between, padding-y small,
+   1px border-divider-strong under ── */
+.zz-plp-header { display: flex; flex-direction: column; }
+.zz-plp-header__controls { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: var(--small) 0; }
+.zz-plp-header__rule { height: 1px; background: var(--border-divider-strong); }
+
+/* ── SelectButton: a native select invisible over a Button look (Figma: button + trailing chevron-down) ── */
+.zz-select-button { position: relative; }
+.zz-select-button[data-layout="fill"] { display: flex; width: 100%; }   /* Figma button layout=fill (desktop sort) */
+.zz-select-button__control {
+  position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer;
+  font-size: 16px;   /* iOS zooms into a focused select under 16px */
+  appearance: none; -webkit-appearance: none;
+}
+.zz-select-button:has(.zz-select-button__control:focus-visible) { outline: auto; }   /* no border/focus token yet */
