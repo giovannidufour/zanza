@@ -19,10 +19,10 @@
     "year": null,
     "country": "JA",
     "format": "7\"",
-    "genre": [
+    "macro_genre": [
       "Reggae"
     ],
-    "style": [
+    "genres": [
       "Dancehall"
     ],
     "tracklist": [],

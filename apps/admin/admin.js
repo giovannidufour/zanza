@@ -1,6 +1,6 @@
 /* apps/admin/admin.js — the admin single-page app (React via createElement, no build step).
    Screens: sign-in (email link) · listings (Figma BACKEND → Listings: bulk actions, archive, delete) · create / edit listing (Figma BACKEND → Create)
-   · attributes: artists, labels, subgenres, tags (Figma BACKEND → Attributes).
+   · attributes: artists, labels, genres, tags (Figma BACKEND → Attributes).
    Data: Supabase with the signed-in user's session (RLS: only public.admins can write).
    Save = one call to public.admin_save_listing (one transaction). Files go straight to R2 through
    short-lived upload URLs from the Edge Function sign-upload; the database keeps only the keys. */
@@ -13,8 +13,8 @@
   // ── vocabularies ──────────────────────────────────────────────────────────
   var GRADES = ['M', 'NM', 'NM-', 'EX+', 'EX', 'EX-', 'VG+', 'VG', 'VG-', 'G+', 'G', 'G-', 'F'];   // Q8, table public.grades
   var FORMATS = ['7"', '10"', '12"', 'LP'];
-  var GENRES = ['Reggae', 'Funk / Soul', 'Hip Hop', 'Electronic', 'Jazz', 'Latin', 'Rock', 'Pop', 'Blues',
-                'Folk, World, & Country', 'Classical', 'Stage & Screen', 'Non-Music', "Children's", 'Brass & Military'];   // Discogs genres
+  var MACRO_GENRES = ['Reggae', 'Funk / Soul', 'Hip Hop', 'Electronic', 'Jazz', 'Latin', 'Rock', 'Pop', 'Blues',
+                      'Folk, World, & Country', 'Classical', 'Stage & Screen', 'Non-Music', "Children's", 'Brass & Military'];   // Discogs genres = our macro genre (0048)
   var COUNTRIES = [['JA', 'Jamaica'], ['UK', 'UK'], ['US', 'US'], ['CA', 'Canada'], ['DE', 'Germany'], ['FR', 'France'],
                    ['IT', 'Italy'], ['NL', 'Netherlands'], ['JP', 'Japan'], ['Europe', 'Europe'], ['Unknown', 'Unknown']];
   var STATUS_LABEL = { draft: 'Draft', available: 'Available', reserved: 'Reserved', sold: 'Sold', traded: 'Traded', archived: 'Archived' };
@@ -88,7 +88,7 @@
     return signed.key;
   }
 
-  // ── artists, labels, subgenres and tags are entities (migrations 0006, 0007, 0011) ──────────
+  // ── artists, labels, genres and tags are entities (migrations 0006, 0007, 0011, 0014) ─────
   // Each field is a chip field (Z.EntityField, decision 0020): a chip = an entity { id, name } (id null = new,
   // created on save). Artist and Label also have "Different spelling" → the name AS PRINTED on this record
   // (credit); the database learns it as an alias of the official name. Binding on save: id → Discogs id →
@@ -96,7 +96,7 @@
   function newLine(p) { return Object.assign({ id: nextId(), artists: [], artistCredit: '', artistSpelled: false, title: '' }, p); }
   function chip(e) { return { id: e.id || null, name: e.name, discogsId: e.discogsId || null }; }
   function namesOf(chips) { return (chips || []).map(function (c) { return c.name; }).join(' & '); }
-  // entities = { artists | labels | subgenres | tags: [{ id, name, aliases: [] }] }, loaded once per form
+  // entities = { artists | labels | genres | tags: [{ id, name, aliases: [] }] }, loaded once per form
   function findEntity(list, text) {
     var t = String(text || '').trim().toLowerCase();
     if (!t || !list) return null;
@@ -111,8 +111,8 @@
         return res.data.map(function (e) { return { id: e.id, name: e.name, aliases: aliases ? (e[aliases] || []).map(function (a) { return a.name; }) : [] }; });
       });
     }
-    return Promise.all([one('artists', 'artist_aliases'), one('labels', 'label_aliases'), one('subgenres'), one('tags')])
-      .then(function (r) { return { artists: r[0], labels: r[1], subgenres: r[2], tags: r[3] }; });
+    return Promise.all([one('artists', 'artist_aliases'), one('labels', 'label_aliases'), one('genres'), one('tags')])
+      .then(function (r) { return { artists: r[0], labels: r[1], genres: r[2], tags: r[3] }; });
   }
 
   // ── empty form ────────────────────────────────────────────────────────────
@@ -122,7 +122,7 @@
       customTitle: '', discogs: '', catNo: '',
       lines: [newLine()],
       label: [], labelCredit: '', labelSpelled: false, preRelease: false, country: '', year: '', format: '', section: 'sale', price: '',
-      genre: '', subgenres: [], tags: [],   // subgenres = Discogs styles; tags = the shop's own (Rare, Killer version...)
+      macroGenre: '', genres: [], tags: [],   // macro genre = a Discogs genre (Reggae), not shown in the shop; genres = Discogs styles (0048); tags = the shop's own (Rare, Killer version...)
       condition: '', conditionB: '', conditionNotes: '', sleeveType: 'generic', sleeveCondition: '',
       notes: '',
       images: [],    // { id, key, name, url, uploading }
@@ -153,10 +153,10 @@
     f.labelSpelled = !!le && differs(r.label, le.name); f.labelCredit = f.labelSpelled ? r.label : ''; f.country = r.country || ''; f.year = r.year ? String(r.year) : ''; f.format = r.format || '';
     f.section = row.section; f.price = centsToText(row.price_cents);
     var byPos = function (a, b) { return a.position - b.position; };
-    var subRows = (r.subgenre_rows || []).slice().sort(byPos);
-    f.subgenres = subRows.length ? subRows.map(function (t) { return chip(t.subgenre); }) : (r.style || []).map(function (n) { return { id: null, name: n }; });
+    var genreRows = (r.genre_rows || []).slice().sort(byPos);
+    f.genres = genreRows.length ? genreRows.map(function (t) { return chip(t.genre); }) : (r.genres || []).map(function (n) { return { id: null, name: n }; });
     f.tags = (r.tag_rows || []).slice().sort(byPos).map(function (t) { return chip(t.tag); });
-    f.genre = (r.genre || [])[0] || '';
+    f.macroGenre = (r.macro_genre || [])[0] || '';
     f.condition = row.condition_media || ''; f.conditionB = row.condition_media_b || ''; f.conditionNotes = row.condition_notes || '';
     f.sleeveType = row.sleeve_type || 'original'; f.sleeveCondition = row.condition_sleeve || '';
     f.notes = row.notes || '';
@@ -201,15 +201,16 @@
     if (d.country && !country) skipped.push('country ' + d.country);
     var format = formatOf(d.format);
     if (!format) skipped.push('format ' + [d.format && d.format.name].concat((d.format && d.format.descriptions) || []).filter(Boolean).join(' '));
-    var genre = (d.genres || []).filter(function (g) { return GENRES.indexOf(g) >= 0; })[0] || '';
-    if ((d.genres || []).length > 1) skipped.push('other genres ' + d.genres.filter(function (g) { return g !== genre; }).join(', '));
+    // Discogs: genres → our macro genre (one), styles → our genres (0048)
+    var macroGenre = (d.genres || []).filter(function (g) { return MACRO_GENRES.indexOf(g) >= 0; })[0] || '';
+    if ((d.genres || []).length > 1) skipped.push('other macro genres ' + d.genres.filter(function (g) { return g !== macroGenre; }).join(', '));
     return {
       patch: {
         discogs: String(d.releaseId), lines: lines, samples: samples,
         label: d.label ? [{ id: (findEntity(entities && entities.labels, d.label) || {}).id || null, name: d.label, discogsId: d.labelDiscogsId || null }] : [],
         labelCredit: '', labelSpelled: false, catNo: d.catNo || '', year: d.year ? String(d.year) : '',
-        country: country ? country[0] : '', format: format, genre: genre,
-        subgenres: (d.styles || []).map(function (n) { return { id: (findEntity(entities && entities.subgenres, n) || {}).id || null, name: n }; })
+        country: country ? country[0] : '', format: format, macroGenre: macroGenre,
+        genres: (d.styles || []).map(function (n) { return { id: (findEntity(entities && entities.genres, n) || {}).id || null, name: n }; })
       },
       skipped: skipped
     };
@@ -238,9 +239,8 @@
         label: f.label.length ? f.label[0].name : '', label_credit: f.labelSpelled ? f.labelCredit : '',
         pre_release: f.preRelease,
         label_id: f.label.length ? f.label[0].id : null, label_discogs_id: f.label.length ? f.label[0].discogsId || null : null, cat_no: f.catNo, year: f.year.trim(), country: f.country, format: f.format,
-        genre: f.genre ? [f.genre] : [],
-        style: f.subgenres.map(function (t) { return t.name; }),
-        subgenres: f.subgenres.map(function (t) { return { id: t.id, name: t.name }; }),
+        macro_genre: f.macroGenre ? [f.macroGenre] : [],
+        genres: f.genres.map(function (t) { return { id: t.id, name: t.name }; }),
         tags: f.tags.map(function (t) { return { id: t.id, name: t.name }; })
       },
       lines: f.lines.map(function (l) {
@@ -281,8 +281,8 @@
     var c = f.section === 'sale' ? textToCents(f.price) : null;
     return c === null || c === undefined || isNaN(c) ? null : (c % 100 === 0 ? c / 100 : (c / 100).toFixed(2)) + '€';
   }
-  // PDP: one tag group, subgenres then tags
-  function previewTags(f) { return (f.subgenres || []).concat(f.tags || []).map(function (t) { return t.name; }); }
+  // PDP: one tag group, genres then tags
+  function previewTags(f) { return (f.genres || []).concat(f.tags || []).map(function (t) { return t.name; }); }
 
   // ── audio preview (one at a time) ─────────────────────────────────────────
   var audio = new Audio();
@@ -525,11 +525,11 @@
       h(Z.Divider),
 
       h('section', { className: 'admin-section' },
-        // Figma 2126:1404: Genre + Subgenres (Discogs styles), then the shop's own Tags on their own row
+        // Figma 2126:1404: Macro genre + Genres (Discogs styles, 0048), then the shop's own Tags on their own row
         h('div', { className: 'admin-row' },
-          h(Z.Input, Object.assign({ className: 'span-4', id: 'genre', label: 'Genre', variant: 'select', placeholder: '' }, bind('genre')), opts(GENRES)),
-          h(Z.EntityField, { className: 'span-4', id: 'subgenres', label: 'Subgenres', optional: true, placeholder: 'Add subgenre',
-            options: entities && entities.subgenres, value: f.subgenres, onChange: function (chips) { set({ subgenres: chips }); } })),
+          h(Z.Input, Object.assign({ className: 'span-4', id: 'macro-genre', label: 'Macro genre', variant: 'select', placeholder: '' }, bind('macroGenre')), opts(MACRO_GENRES)),
+          h(Z.EntityField, { className: 'span-4', id: 'genres', label: 'Genres', optional: true, placeholder: 'Add genre',
+            options: entities && entities.genres, value: f.genres, onChange: function (chips) { set({ genres: chips }); } })),
         h('div', { className: 'admin-row' },
           h(Z.EntityField, { className: 'span-4', id: 'tags', label: 'Tags', optional: true, placeholder: 'Add tag',
             options: entities && entities.tags, value: f.tags, onChange: function (chips) { set({ tags: chips }); } }))),
@@ -831,7 +831,7 @@
     var st = useState(null), initial = st[0], setInitial = st[1];
     var er = useState(null), error = er[0], setError = er[1];
     useEffect(function () {
-      sb.from('listings').select('*,release:releases(*,label_entity:labels(id,name),subgenre_rows:release_subgenres(position,subgenre:subgenres(id,name)),tag_rows:release_tags(position,tag:tags(id,name)),lines:release_lines(*,credits:release_line_artists(position,artist:artists(id,name))),samples(*))').eq('id', props.id).single()
+      sb.from('listings').select('*,release:releases(*,label_entity:labels(id,name),genre_rows:release_genres(position,genre:genres(id,name)),tag_rows:release_tags(position,tag:tags(id,name)),lines:release_lines(*,credits:release_line_artists(position,artist:artists(id,name))),samples(*))').eq('id', props.id).single()
         .then(function (res) { if (res.error) setError(res.error.message); else setInitial(formFromRow(res.data)); });
     }, [props.id]);
     if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not open this listing: ' + error);
@@ -841,17 +841,20 @@
 
   // ── Attributes ────────────────────────────────────────────────────────────
   /* Figma BACKEND → Attributes (2123:2053, Gio 2026-11-10, decision 0034): one page with tabs Artists · Labels ·
-     Subgenres · Tags (count = tab suffix, 0029), same grammar as Listings (toolbar, bulk bar always rendered, table
+     Genres · Tags (count = tab suffix, 0029), same grammar as Listings (toolbar, bulk bar always rendered, table
      whose first column selects). Each entity has its own page (same layout as Create listing). Database: migration
      0012 (admin_attributes, admin_entity, admin_save_entity, admin_replace_entity, admin_merge_entities, admin_delete_entities).
      Routes: #attributes/<kind> · #attributes/<kind>/<id> · #attributes/<kind>/new */
   var KINDS = [
     { key: 'artist', list: 'artists', tab: 'Artists', one: 'artist', aliases: true, discogs: true, split: true, search: 'Search name or spelling' },
     { key: 'label', list: 'labels', tab: 'Labels', one: 'label', aliases: true, discogs: true, split: false, search: 'Search name or spelling' },
-    { key: 'subgenre', list: 'subgenres', tab: 'Subgenres', one: 'subgenre', aliases: false, discogs: false, split: true, search: 'Search subgenres' },
+    { key: 'genre', list: 'genres', tab: 'Genres', one: 'genre', aliases: false, discogs: false, split: true, search: 'Search genres' },
     { key: 'tag', list: 'tags', tab: 'Tags', one: 'tag', aliases: false, discogs: false, split: true, search: 'Search tags' }
   ];
-  function kindOf(key) { return KINDS.filter(function (k) { return k.key === key; })[0] || KINDS[0]; }
+  function kindOf(key) {
+    if (key === 'subgenre') key = 'genre';   // links saved before 0048
+    return KINDS.filter(function (k) { return k.key === key; })[0] || KINDS[0];
+  }
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
   function quoted(list) {
     var names = list.slice(0, 5).map(function (x) { return '“' + x + '”'; });
@@ -927,7 +930,7 @@
       } else {
         var kept = c.rows.filter(function (r) { return r.id === keep; })[0];
         setMessage({ error: false, text: plural(c.rows.length - 1, kind.one) + ' merged into “' + kept.name + '”.' +
-          (kind.key === 'subgenre' || kind.key === 'tag' ? ' The shop updates in about 2 minutes.' : '') });
+          (kind.key === 'genre' || kind.key === 'tag' ? ' The shop updates in about 2 minutes.' : '') });
       }
     }
 
@@ -1046,7 +1049,7 @@
         return;
       }
       if (isNew) { location.hash = '#attributes/' + kind.key + '/' + res.data; return; }
-      setMessage({ error: false, text: 'Saved.' + (kind.key === 'subgenre' || kind.key === 'tag' ? ' The shop updates in about 2 minutes.' : '') });
+      setMessage({ error: false, text: 'Saved.' + (kind.key === 'genre' || kind.key === 'tag' ? ' The shop updates in about 2 minutes.' : '') });
     }
     async function doDelete() {
       setSaving(true);

@@ -77,6 +77,7 @@ Componenti portati: tabella in `packages/ui/README.md`. Aperti: `design/open.md`
 - **listing** = una copy pubblicata, in sezione `sale` o `trade`
 - **proposal** = proposta di scambio inviata da un utente su un listing `trade`
 - **sample** = clip audio di una traccia (30–60 s), non la traccia intera
+- **genre** = lo style Discogs (Roots, Dancehall…): è quello che il negozio mostra e filtra. **macro genre** = il genre Discogs (quasi sempre Reggae), salvato ma non mostrato. Fino al 2026-11-10 si chiamavano subgenre e genre (decisione 0048)
 
 ## Come aggiornare i file
 

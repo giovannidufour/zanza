@@ -21,9 +21,9 @@ for (const file of fs.readdirSync(SRC).filter((f) => f.endsWith('.json')).sort()
   const rid = id('release', l.slug);
   lines.push(`
 -- ${l.slug}
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
-values (${rid}, ${r.discogs_release_id ?? 'null'}, ${r.discogs_master_id ?? 'null'}, ${q(r.label)}, ${q(r.cat_no)}, ${r.year ?? 'null'}, ${q(r.country)}, ${q(r.format)}, ${arr(r.genre)}, ${arr(r.style)}, ${json(r.tracklist || [])})
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
+values (${rid}, ${r.discogs_release_id ?? 'null'}, ${r.discogs_master_id ?? 'null'}, ${q(r.label)}, ${q(r.cat_no)}, ${r.year ?? 'null'}, ${q(r.country)}, ${q(r.format)}, ${arr(r.macro_genre)}, ${arr(r.genres)}, ${json(r.tracklist || [])})
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (${id('line', l.slug + ':1')}, ${rid}, 1, ${q(r.artist)}, ${q(r.title)})
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;

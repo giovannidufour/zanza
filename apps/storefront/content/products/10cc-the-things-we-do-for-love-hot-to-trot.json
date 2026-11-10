@@ -25,11 +25,11 @@
     "year": null,
     "country": null,
     "format": "7\"",
-    "genre": [
+    "macro_genre": [
       "Pop",
       "Rock"
     ],
-    "style": [
+    "genres": [
       "Pop",
       "Rock"
     ],

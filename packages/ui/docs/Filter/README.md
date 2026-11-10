@@ -19,7 +19,7 @@ The shop filter column (PLP). Figma: page `filters` (Gio's sketch, cleaned 2026-
 
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `label` * | `ReactNode` |  | The facet ("Subgenre", "Format"). Figma: `Label`. |
+| `label` * | `ReactNode` |  | The facet ("Genre", "Format"). Figma: `Label`. |
 | `hideLabel` | `boolean` |  | Keep the heading for assistive tech only. Figma: `label` = false. |
 | `children` * | `ReactNode` |  | &lt;Filter> elements. Figma: slot. |
 

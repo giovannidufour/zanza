@@ -27,7 +27,7 @@ The shop's mobile filters (decision [0038](../../../../design/decisions/0038-mob
 
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `label` * | `ReactNode` |  | The facet ("Subgenre"). label/medium, uppercase. Figma: `label`. |
+| `label` * | `ReactNode` |  | The facet ("Genre"). label/medium, uppercase. Figma: `label`. |
 | `value` | `ReactNode` |  | The ticked options ("Dancehall, Roots"), body/small text-moderate, one line. Omit when none. Figma: `value` + `value visible`. |
 
 ### PlpHeader

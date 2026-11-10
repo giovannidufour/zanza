@@ -25,10 +25,10 @@
     "year": null,
     "country": null,
     "format": "7\"",
-    "genre": [
+    "macro_genre": [
       "Reggae"
     ],
-    "style": [
+    "genres": [
       "90's Dancehall"
     ],
     "tracklist": [],
