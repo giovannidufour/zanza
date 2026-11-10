@@ -62,3 +62,5 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0036](0036-pdp-gallery-moves-with-the-page.md) | PDP desktop gallery moves with the page and fits the window at rest | accepted |
 | [0037](0037-record-and-cover-grade-lines.md) | Grading reads `Record: …`, plus `Cover: …` when the cover is graded | accepted |
 | [0038](0038-mobile-filters-layer.md) | Mobile filters: full-screen layer, nested levels, draft until Apply; sort is a native select | accepted |
+| [0039](0039-mobile-card-image-max-96.md) | Mobile product card: the image column is at most 96px | accepted |
+| [0040](0040-card-title-links-to-pdp.md) | The product card title links to the product page | accepted |

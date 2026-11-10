@@ -5,7 +5,7 @@ A release in a list: cover, name and release info, tags, sample players, add but
 One markup for both variants; CSS grid places the blocks ([0016](../../../../design/decisions/0016-one-markup-blocks-placed-by-grid.md)):
 
 - **Desktop:** 9-column grid, gap `gutter-small`. Image cols 1–2 (square) · info cols 3–5 (title block, tags, samples; gap 16) · purchase cols 6–9 (button fill, price; gap 8) with description + grading + cover below it.
-- **Mobile:** 12-column grid, gap `gutter-small`. Image 4 cols · info (title block, description, tags, samples) fills · purchase hugs, right-aligned (button hug, price). 16 below the content.
+- **Mobile:** 12-column grid, gap `gutter-small`. Image 4 cols, max 96px (0039) · info (title block, description, tags, samples) fills · purchase hugs, right-aligned (button hug, price). 16 below the content.
 
 ## API
 
