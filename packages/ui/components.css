@@ -760,7 +760,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-input[data-locked="true"][data-size="compact"] .zz-input__field { padding: 4px; }
 .zz-input[data-locked="true"] .zz-input__control { color: var(--text-moderate); }
 
-/* ── DropZone (Figma: page-local "Frame 4" under each upload list) ──
+/* ── DropZone (Figma: `uploads` → `drop zone`) ──
    surface-subtle, 1px dashed [16,16] border-divider-strong (four gradients, as the outlined controls in 0005),
    the button centred → 88px with a medium Button. No drag-over state in Figma. */
 .zz-drop-zone {
@@ -782,7 +782,7 @@ a.zz-product-card__image { display: block; color: inherit; }
   background-position: 0 0, 0 100%, 0 0, 100% 0;
 }
 
-/* ── FileList / FileItem (Figma: page-local `uploaded list`) ──
+/* ── FileList / FileItem (Figma: `uploads` → `file item`; the list is a layout frame) ──
    List gap 8. Row: gap 16 between handle · content · remove; content gap 8, top-aligned (image rows),
    centred with a play button (audio rows). Thumbnail 40 × 40, surface-support-1 when empty. */
 .zz-file-list { position: relative; display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }   /* relative: rows' offsetTop is measured from the list */
@@ -931,3 +931,32 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-entity-option__official { flex: none; color: var(--text-moderate); }
 .zz-entity-option__icon { display: inline-flex; width: 20px; height: 20px; flex: none; color: var(--icon-strong); }
 .zz-entity-option__icon svg { width: 100%; height: 100%; display: block; }
+
+/* ── Divider (Figma: `divider` → `divider`) ── 1px border/divider/strong, full width. */
+.zz-divider { display: block; height: 1px; margin: 0; border: 0; background: var(--border-divider-strong); }
+
+/* ── ActionPanel (Figma: `listing form` → `action panel`) ── surface/subtle, padding 16, Buttons fill, gap 8. */
+.zz-action-panel { display: flex; flex-direction: column; gap: 8px; padding: 16px; background: var(--surface-subtle); }
+.zz-action-panel > .zz-button { width: 100%; }
+
+/* ── ListingLine (Figma: `listing form` → `listing line`) ──
+   line: fields + sample, gap 8. fields: 8-column grid, column gap 16, row gap 8 (Figma grid auto layout, 0012).
+   removable=false: artist 1–4, title 5–8. removable=true: artist 1–3, title 4–7, remove × in 8.
+   Row 2: spelling under the artist, credit under the title. Sample: gap 16 (Figma `sample`). */
+.zz-listing-line { display: flex; flex-direction: column; gap: 8px; }
+.zz-listing-line__fields { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px 16px; align-items: start; }
+.zz-listing-line__fields > * { display: flex; flex-direction: column; min-width: 0; }   /* cells blockify their field, as direct grid items would */
+.zz-listing-line__artist   { grid-row: 1; grid-column: 1 / span 4; }
+.zz-listing-line__title    { grid-row: 1; grid-column: 5 / span 4; }
+.zz-listing-line__spelling { grid-row: 2; grid-column: 1 / span 4; }
+.zz-listing-line__credit   { grid-row: 2; grid-column: 5 / span 4; }
+.zz-listing-line[data-removable="true"] .zz-listing-line__artist   { grid-column: 1 / span 3; }
+.zz-listing-line[data-removable="true"] .zz-listing-line__title    { grid-column: 4 / span 4; }
+.zz-listing-line[data-removable="true"] .zz-listing-line__spelling { grid-column: 1 / span 3; }
+.zz-listing-line[data-removable="true"] .zz-listing-line__credit   { grid-column: 4 / span 4; }
+.zz-listing-line__remove   { grid-row: 1; grid-column: 8; align-items: flex-start; }
+.zz-listing-line__sample { display: flex; flex-direction: column; gap: 16px; }
+@media (--mobile) {   /* not drawn: one column in source order, as the other admin rows */
+  .zz-listing-line__fields { grid-template-columns: minmax(0, 1fr); }
+  .zz-listing-line[data-removable] .zz-listing-line__fields > * { grid-row: auto; grid-column: auto; }
+}

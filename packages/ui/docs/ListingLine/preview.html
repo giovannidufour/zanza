@@ -1,0 +1,32 @@
+<!-- @dsCard group="Admin" height=520 subtitle="line 1 with its sample · line 2 empty, different spelling" -->
+<!doctype html>
+<html data-theme="backend">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>html, body { margin: 0; background: var(--surface-accent); color: var(--text-strong); font-family: var(--font-sans); } .wrap { padding: 24px; max-width: 645px; display: grid; gap: 32px; }</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function () {
+  var React = window.React, ReactDOM = window.ReactDOM, Z = window.Zanza, h = React.createElement;
+  function Demo() {
+    var s = React.useState(true), spelled = s[0], setSpelled = s[1];
+    return h('div', { className: 'wrap' },
+      h(Z.ListingLine, {
+        artist: h(Z.Input, { id: 'a1', label: 'Artist 1' }), title: h(Z.Input, { id: 't1', label: 'Title 1' }),
+        spelling: h(Z.Checkbox, { label: 'Different spelling' })
+      }, h(Z.FileList, null, h(Z.FileItem, { key: 's', name: 'sample-name.mp3', onTogglePlay: function () {}, onRemove: function () {} }))),
+      h(Z.ListingLine, {
+        onRemove: function () {}, removeLabel: 'Remove line 2',
+        artist: h(Z.Input, { id: 'a2', label: 'Artist 2', optional: true }), title: h(Z.Input, { id: 't2', label: 'Title 2' }),
+        spelling: h(Z.Checkbox, { label: 'Different spelling', checked: spelled, onChange: function (e) { setSpelled(e.target.checked); } }),
+        credit: spelled ? h(Z.Input, { id: 'c2', label: 'Artist name on label' }) : null
+      }, h(Z.DropZone, { label: 'Browse sample', accept: 'audio/mpeg' })));
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(h(Demo));
+})();
+</script>
+</body>
+</html>

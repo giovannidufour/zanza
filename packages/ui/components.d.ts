@@ -291,7 +291,7 @@ export interface InputProps {
 }
 export declare function Input(props: InputProps & Record<string, unknown>): JSX.Element;
 
-/** Upload area under each file list (Figma: page-local frame on BACKEND → Create, no component yet): dashed box with a
+/** Mirrors the Figma component `drop zone` (page `uploads`): upload area under each file list, a dashed box with a
  *  secondary Button that opens the file picker; files can also be dropped on it. */
 export interface DropZoneProps extends Omit<HTMLAttributes<HTMLDivElement>, "onDrop"> {
   /** Button label, e.g. "Browse image". */
@@ -309,7 +309,7 @@ export interface DropZoneProps extends Omit<HTMLAttributes<HTMLDivElement>, "onD
 }
 export declare function DropZone(props: DropZoneProps): JSX.Element;
 
-/** Ordered list of uploaded files (Figma: page-local `uploaded list`). Numbers its FileItems 01, 02… and handles reordering. */
+/** Ordered list of uploaded files (Figma: a layout frame `file list` of `file item` instances). Numbers its FileItems 01, 02… and handles reordering. */
 export interface FileListProps extends HTMLAttributes<HTMLOListElement> {
   /** Called on drop after dragging a row (the other rows shift live to preview the new order), or when a row is moved with ↑ ↓ on its handle. Omit for a fixed order (no handles). */
   onMove?: (from: number, to: number) => void;
@@ -318,7 +318,8 @@ export interface FileListProps extends HTMLAttributes<HTMLOListElement> {
 }
 export declare function FileList(props: FileListProps): JSX.Element;
 
-/** One uploaded file: [drag handle] · [thumbnail | play] position name (featured) · [remove]. */
+/** Mirrors the Figma component `file item` (page `uploads`): [drag handle] · [thumbnail | play] position name (featured) · [remove].
+ *  Figma `type` = `image` given or `onTogglePlay` given · `state=dragging` = set by FileList while the row is dragged · `handle` = FileList `onMove` · `title field` = children. */
 export interface FileItemProps extends HTMLAttributes<HTMLDivElement> {
   /** File name, e.g. "sample-name.mp3". Also names the buttons for screen readers. */
   name: string;
@@ -345,6 +346,37 @@ export interface FileItemProps extends HTMLAttributes<HTMLDivElement> {
   children?: ReactNode;
 }
 export declare function FileItem(props: FileItemProps): JSX.Element;
+
+/** Mirrors the Figma component `divider` (page `divider`): a 1px rule in border/divider/strong, full width. Renders <hr>. */
+export interface DividerProps extends HTMLAttributes<HTMLHRElement> {}
+export declare function Divider(props: DividerProps): JSX.Element;
+
+/** Mirrors the Figma component `action panel` (page `listing form`): surface/subtle, padding 16, a column of Buttons that fill it, gap 8. */
+export interface ActionPanelProps extends HTMLAttributes<HTMLDivElement> {
+  /** The Buttons, primary first (Figma: `primary`, `secondary`, `tertiary`; `tertiary` boolean = pass two or three). */
+  children?: ReactNode;
+}
+export declare function ActionPanel(props: ActionPanelProps): JSX.Element;
+
+/** Mirrors the Figma component `listing line` (page `listing form`): one track line of a listing and its sample.
+ *  The fields are slots placed on an 8-column grid; the page owns their state. */
+export interface ListingLineProps extends HTMLAttributes<HTMLDivElement> {
+  /** Artist field (EntityField). Columns 1–4, or 1–3 when removable. */
+  artist: ReactNode;
+  /** Title field (Input). Columns 5–8, or 4–7 when removable. */
+  title: ReactNode;
+  /** The "Different spelling" Checkbox, row 2 under the artist. */
+  spelling?: ReactNode;
+  /** "Artist name on label" Input, row 2 under the title. Figma: `artist on label` boolean. Pass it only when `spelling` is checked. */
+  credit?: ReactNode;
+  /** Figma `removable=true` (line 2+): shows the remove × in column 8 and narrows the artist to 3 columns. Omit for line 1. */
+  onRemove?: () => void;
+  /** Accessible name of the remove button, e.g. "Remove line 2". Default "Remove line". */
+  removeLabel?: string;
+  /** The sample, below the fields (gap 8). Figma `sample`: uploaded = a FileList with one FileItem, empty = a DropZone (decision 0022). */
+  children?: ReactNode;
+}
+export declare function ListingLine(props: ListingLineProps): JSX.Element;
 
 /** Mirrors the Figma component `checkbox` (page `controls`, state default | active). A native checkbox (decision 0018):
  *  every prop that is not listed here goes to the <input>; the whole row is the clickable <label>. */

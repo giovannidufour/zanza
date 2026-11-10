@@ -450,33 +450,32 @@
           placeholder: 'Release URL or number', supportText: errors.discogs ? undefined : 'Paste the release link, then Fetch Discogs.' }, bind('discogs'))),
         // Figma 2104:20728: secondary button right under Discogs match (gap 16)
         h('div', null, h(Z.Button, { hierarchy: 'secondary', disabled: locked, 'aria-busy': fetching || undefined, onClick: fetchDiscogs }, 'Fetch Discogs'))),
-      h('hr', { className: 'admin-divider' }),
+      h(Z.Divider),
 
       h('section', { className: 'admin-section' },
         h('div', { className: 'admin-stack' },
           f.lines.map(function (l, i) {
             var samples = lineSamples(i);
-            return h('div', { key: l.id, className: 'admin-line' },
-              // Figma `line`: 8-column grid, gap 16 × 8; row 2 = Different spelling + Artist name on label
-              h('div', { className: 'admin-row admin-row--tight' },
-                h(Z.EntityField, { className: i === 0 ? 'span-4' : 'span-3', id: 'artist-' + i, label: 'Artist ' + (i + 1), optional: i > 0,
-                  placeholder: l.artists.length ? 'Add artist' : (i > 0 ? 'Same as line 1' : 'Search or create'),
-                  options: entities && entities.artists, value: l.artists, error: errors['artist-' + i],
-                  onChange: function (chips, info) { setLineArtists(i, chips, info); } }),
-                h(Z.Input, { className: 'span-4', id: 'title-' + i, label: 'Title ' + (i + 1),
-                  value: l.title, error: errors['title-' + i], onChange: function (e) { setLine(i, 'title', e.target.value); } }),
-                i > 0 ? h(Z.IconButton, { className: 'col-8', icon: h(Z.CloseIcon), 'aria-label': 'Remove line ' + (i + 1), onClick: function () { removeLine(i); } }) : null,
-                h(Z.Checkbox, { className: i === 0 ? 'span-4' : 'span-3', label: 'Different spelling', checked: l.artistSpelled,
-                  onChange: function (e) { setLine(i, 'artistSpelled', e.target.checked); } }),
-                l.artistSpelled ? h(Z.Input, { className: 'span-4', id: 'artist-credit-' + i, label: 'Artist name on label',
-                  value: l.artistCredit, onChange: function (e) { setLine(i, 'artistCredit', e.target.value); } }) : null),
-              h('div', { className: 'admin-line__samples' },
-                samples.length ? h(Z.FileList, null, samples.map(sampleItem)) : null,
-                // one sample per line: the drop zone goes away once the line has one (back if it is removed)
-                samples.length ? null : h(Z.DropZone, { label: 'Browse sample', accept: 'audio/mpeg', multiple: false, onFiles: addFiles('sample', i + 1) })));
+            // Figma `listing line`: removable = line 2+ (onRemove); the sample is a FileList or a DropZone (0022)
+            return h(Z.ListingLine, { key: l.id,
+              onRemove: i > 0 ? function () { removeLine(i); } : undefined, removeLabel: 'Remove line ' + (i + 1),
+              artist: h(Z.EntityField, { id: 'artist-' + i, label: 'Artist ' + (i + 1), optional: i > 0,
+                placeholder: l.artists.length ? 'Add artist' : (i > 0 ? 'Same as line 1' : 'Search or create'),
+                options: entities && entities.artists, value: l.artists, error: errors['artist-' + i],
+                onChange: function (chips, info) { setLineArtists(i, chips, info); } }),
+              title: h(Z.Input, { id: 'title-' + i, label: 'Title ' + (i + 1),
+                value: l.title, error: errors['title-' + i], onChange: function (e) { setLine(i, 'title', e.target.value); } }),
+              spelling: h(Z.Checkbox, { label: 'Different spelling', checked: l.artistSpelled,
+                onChange: function (e) { setLine(i, 'artistSpelled', e.target.checked); } }),
+              credit: l.artistSpelled ? h(Z.Input, { id: 'artist-credit-' + i, label: 'Artist name on label',
+                value: l.artistCredit, onChange: function (e) { setLine(i, 'artistCredit', e.target.value); } }) : null
+            },
+              // one sample per line: the drop zone goes away once the line has one (back if it is removed)
+              samples.length ? h(Z.FileList, null, samples.map(sampleItem))
+                : h(Z.DropZone, { label: 'Browse sample', accept: 'audio/mpeg', multiple: false, onFiles: addFiles('sample', i + 1) }));
           })),
         h('div', null, h(Z.Button, { hierarchy: 'secondary', onClick: addLine }, 'Add line'))),
-      h('hr', { className: 'admin-divider' }),
+      h(Z.Divider),
 
       h('section', { className: 'admin-section' },
         h('div', { className: 'admin-row admin-row--tight' },
@@ -494,14 +493,14 @@
           h(Z.Input, Object.assign({ className: 'span-2', id: 'format', label: 'Format', variant: 'select', placeholder: '' }, bind('format')), opts(FORMATS)),
           h(Z.Input, Object.assign({ className: 'span-2', id: 'section', label: 'Sale type', variant: 'select' }, bind('section')), opts([['sale', 'For sale'], ['trade', 'For trade']])),
           h(Z.Input, Object.assign({ className: 'span-2', id: 'price', label: 'Price', suffix: '€', inputMode: 'decimal', optional: f.section === 'trade' }, bind('price'))))),
-      h('hr', { className: 'admin-divider' }),
+      h(Z.Divider),
 
       h('section', { className: 'admin-section' },
         h('div', { className: 'admin-row' },
           h(Z.EntityField, { className: 'span-4', id: 'tags', label: 'Tags', optional: true, placeholder: 'Add tag',
             options: entities && entities.tags, value: f.tags, onChange: function (chips) { set({ tags: chips }); } }),
           h(Z.Input, Object.assign({ className: 'span-4', id: 'genre', label: 'Genre', variant: 'select', placeholder: '' }, bind('genre')), opts(GENRES)))),
-      h('hr', { className: 'admin-divider' }),
+      h(Z.Divider),
 
       h('section', { className: 'admin-section' },
         h('div', { className: 'admin-row' },
@@ -510,11 +509,11 @@
         h('div', { className: 'admin-row' },
           h(Z.Input, Object.assign({ className: 'span-2', id: 'sleeve-type', label: 'Cover/sleeve', variant: 'select' }, bind('sleeveType')), opts(SLEEVES)),
           f.sleeveType !== 'none' ? h(Z.Input, Object.assign({ className: 'span-3', id: 'sleeve-condition', label: 'Cover/sleeve conditions', optional: true, variant: 'select', placeholder: '' }, bind('sleeveCondition')), opts(GRADES)) : null)),
-      h('hr', { className: 'admin-divider' }),
+      h(Z.Divider),
 
       h('section', { className: 'admin-section' },
         h(Z.Input, Object.assign({ id: 'notes', label: 'Description / comment', optional: true }, bind('notes')))),
-      h('hr', { className: 'admin-divider' }),
+      h(Z.Divider),
 
       h('section', { className: 'admin-section' },
         h('h2', { className: 'label-medium' }, 'Images'),
@@ -522,7 +521,7 @@
           return fileItem('images', x, { image: { src: x.url }, featured: i === 0 });
         })) : null,
         h(Z.DropZone, { label: 'Browse image', accept: 'image/jpeg,image/png,image/webp', multiple: true, onFiles: addFiles('photo') })),
-      h('hr', { className: 'admin-divider' }),
+      h(Z.Divider),
 
       h('section', { className: 'admin-section' },
         h('h2', { className: 'label-medium' }, 'Samples overview'),
@@ -531,7 +530,7 @@
 
     var shopUrl = f.slug && f.status !== 'draft' && f.status !== 'archived' && CFG.storefrontUrl ? CFG.storefrontUrl.replace(/\/$/, '') + '/products/' + f.slug + '/' : null;
     var side = h('aside', { className: 'admin-side' },
-      h('div', { className: 'admin-side__actions' },
+      h(Z.ActionPanel, null,
         h(Z.Button, { hierarchy: 'primary', disabled: saving || locked, onClick: function () { save('available'); } }, f.status === 'available' ? 'Update' : 'Publish now'),
         h(Z.Button, { hierarchy: 'secondary', disabled: saving || locked || f.status === 'available', onClick: function () { save('draft'); } }, 'Save draft'),
         h(Z.Button, { hierarchy: 'secondary', href: shopUrl || undefined, disabled: !shopUrl, target: '_blank', rel: 'noopener' }, 'Preview')),

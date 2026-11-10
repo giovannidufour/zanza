@@ -1,6 +1,7 @@
 /* apps/admin/admin.css — page layout of the admin only. Components keep their own styles (packages/ui).
    Layout mirrors Figma BACKEND → Create ("Desktop - 1", 1024): padding 24, main column 645 + gap 16 + side column 315,
-   sections gap 32 separated by 1px dividers, field rows = 8-column grid, gap 16 (decision 0012).
+   sections gap 32 separated by Divider, field rows = 8-column grid, gap 16 (decision 0012).
+   Track lines, the action panel and dividers are DS components (ListingLine, ActionPanel, Divider): only page layout here.
    Listings: Figma BACKEND → Listings (2026-11-10). Sign-in has no Figma frame (design/open.md). */
 
 * { box-sizing: border-box; }
@@ -18,17 +19,12 @@ h1, h2, p { margin: 0; }
 .admin-page { display: grid; grid-template-columns: minmax(0, 645fr) minmax(0, 315fr); gap: 16px; align-items: start; }
 .admin-main { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
 .admin-side { display: flex; flex-direction: column; gap: 24px; position: sticky; top: 24px; }
-.admin-side__actions { display: flex; flex-direction: column; gap: 8px; padding: 16px; background: var(--surface-subtle); }
-.admin-side__actions .zz-button { width: 100%; }
 
-.admin-divider { height: 1px; background: var(--border-divider-strong); border: 0; margin: 0; }
 .admin-section { display: flex; flex-direction: column; gap: 16px; }
 .admin-stack { display: flex; flex-direction: column; gap: 24px; }           /* Figma: Frame 1 / list, gap 24 */
-.admin-line { display: flex; flex-direction: column; gap: 8px; }              /* line + its sample, gap 8 */
-.admin-line__samples { display: flex; flex-direction: column; gap: 16px; }
 
 .admin-row { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 16px; align-items: start; }
-.admin-row--tight { row-gap: 8px; }                                           /* Figma `line`, Label row: gap-y 8 */
+.admin-row--tight { row-gap: 8px; }                                           /* Figma `label row`: gap-y 8 */
 .span-2 { grid-column: span 2; } .span-3 { grid-column: span 3; } .span-4 { grid-column: span 4; }
 .span-6 { grid-column: span 6; } .span-8 { grid-column: span 8; } .col-8 { grid-column: 8; }
 .span-4.row-start { grid-column: 1 / span 4; }                                       /* a new grid row (Figma: checkbox rows under Label) */

@@ -1,0 +1,22 @@
+<!-- @dsCard group="Admin" height=200 subtitle="side column of the listing form" -->
+<!doctype html>
+<html data-theme="backend">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>html, body { margin: 0; background: var(--surface-accent); color: var(--text-strong); font-family: var(--font-sans); } .wrap { padding: 24px; max-width: 315px; display: grid; gap: 32px; }</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function () {
+  var React = window.React, ReactDOM = window.ReactDOM, Z = window.Zanza, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div', { className: 'wrap' },
+    h(Z.ActionPanel, null,
+      h(Z.Button, { hierarchy: 'primary' }, 'Publish now'),
+      h(Z.Button, { hierarchy: 'secondary' }, 'Save draft'),
+      h(Z.Button, { hierarchy: 'secondary', disabled: true }, 'Preview'))));
+})();
+</script>
+</body>
+</html>
