@@ -10,6 +10,13 @@
   align-items: start;
 }
 .plp-filters { grid-column: 1 / span 3; }
+/* Gio 2026-11-10: the filter column stays in view and scrolls on its own (same pattern as the PDP gallery, 0033):
+   sticky at the top, at most the window minus the open site player. Its checkboxes are focusable, so no tabindex. */
+.plp-filters {
+  position: sticky; top: 0;
+  max-height: 100dvh; overflow-y: auto; overscroll-behavior: contain;
+}
+body[data-player-open] .plp-filters { max-height: calc(100dvh - var(--site-player-height, 0px)); }
 .plp-list    { grid-column: 4 / span 9; display: flex; flex-direction: column; gap: 8px; min-width: 0; }   /* Figma: Frame 46, gap 8 */
 
 /* the page needs an h1 for screen readers; Figma has no visible title */

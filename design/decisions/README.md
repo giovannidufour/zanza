@@ -57,5 +57,6 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0031](0031-subgenres-and-tags.md) | Subgenres (Discogs styles) and tags (the shop's own) are separate | accepted |
 | [0032](0032-create-page-on-surface-base.md) | The create / edit page is on `surface/base` | accepted |
 | [0033](0033-pdp-gallery-scrolls-on-its-own.md) | PDP desktop gallery: images stacked, the column scrolls on its own | partly superseded by 0036 (not sticky) |
+| [0034](0034-attributes-page.md) | Attributes: one admin page for artists, labels, subgenres and tags; removing a used one goes through Replace with | accepted |
 | [0035](0035-media-graded-per-side.md) | The record is graded per side: `VG+ / VG`, side B optional | accepted |
 | [0036](0036-pdp-gallery-moves-with-the-page.md) | PDP desktop gallery moves with the page and fits the window at rest | accepted |

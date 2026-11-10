@@ -1,5 +1,6 @@
 /* apps/admin/admin.js — the admin single-page app (React via createElement, no build step).
-   Screens: sign-in (email link) · listings (Figma BACKEND → Listings: bulk actions, archive, delete) · create / edit listing (Figma BACKEND → Create).
+   Screens: sign-in (email link) · listings (Figma BACKEND → Listings: bulk actions, archive, delete) · create / edit listing (Figma BACKEND → Create)
+   · attributes: artists, labels, subgenres, tags (Figma BACKEND → Attributes).
    Data: Supabase with the signed-in user's session (RLS: only public.admins can write).
    Save = one call to public.admin_save_listing (one transaction). Files go straight to R2 through
    short-lived upload URLs from the Edge Function sign-upload; the database keeps only the keys. */
@@ -801,7 +802,7 @@
     return h('div', { className: 'admin-section admin-listings' },
       h('h1', { className: 'label-extra-large' }, 'Listings'),
       h(Z.Tabs, { value: tab, onValueChange: pickTab, 'aria-label': 'Filter by status' },
-        TABS.map(function (t) { return h(Z.Tab, { key: t[0], value: t[0], 'aria-controls': 'listings-table' }, t[1] + ' ' + counts[t[0]]); })),
+        TABS.map(function (t) { return h(Z.Tab, { key: t[0], value: t[0], suffix: String(counts[t[0]]), 'aria-controls': 'listings-table' }, t[1]); })),
       bar,
       h('div', { className: 'admin-table-wrap' },
         h('table', { id: 'listings-table', className: 'admin-table body-small' },
@@ -831,6 +832,306 @@
     if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not open this listing: ' + error);
     if (!initial) return h('p', { className: 'body-medium' }, 'Loading…');
     return h(ListingForm, { initial: initial });
+  }
+
+  // ── Attributes ────────────────────────────────────────────────────────────
+  /* Figma BACKEND → Attributes (2123:2053, Gio 2026-11-10, decision 0034): one page with tabs Artists · Labels ·
+     Subgenres · Tags (count = tab suffix, 0029), same grammar as Listings (toolbar, bulk bar always rendered, table
+     whose first column selects). Each entity has its own page (same layout as Create listing). Database: migration
+     0012 (admin_attributes, admin_entity, admin_save_entity, admin_replace_entity, admin_merge_entities, admin_delete_entities).
+     Routes: #attributes/<kind> · #attributes/<kind>/<id> · #attributes/<kind>/new */
+  var KINDS = [
+    { key: 'artist', list: 'artists', tab: 'Artists', one: 'artist', aliases: true, discogs: true, split: true, search: 'Search name or spelling' },
+    { key: 'label', list: 'labels', tab: 'Labels', one: 'label', aliases: true, discogs: true, split: false, search: 'Search name or spelling' },
+    { key: 'subgenre', list: 'subgenres', tab: 'Subgenres', one: 'subgenre', aliases: false, discogs: false, split: true, search: 'Search subgenres' },
+    { key: 'tag', list: 'tags', tab: 'Tags', one: 'tag', aliases: false, discogs: false, split: true, search: 'Search tags' }
+  ];
+  function kindOf(key) { return KINDS.filter(function (k) { return k.key === key; })[0] || KINDS[0]; }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function quoted(list) {
+    var names = list.slice(0, 5).map(function (x) { return '“' + x + '”'; });
+    if (list.length > 5) return names.join(', ') + ' and ' + (list.length - 5) + ' more';
+    return names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0];
+  }
+  // a database error "field: message" → { field, text }
+  function fieldError(msg) { var m = /^(name|slug|discogs_id): (.*)$/.exec(msg || ''); return m ? { field: m[1], text: cap(m[2]) + '.' } : null; }
+  // Merge: pre-selected = the one with a Discogs ID, then the most records (Figma notes)
+  function bestToKeep(rows) {
+    return rows.slice().sort(function (a, b) { return (b.discogs_id ? 1 : 0) - (a.discogs_id ? 1 : 0) || b.records - a.records; })[0];
+  }
+
+  function Attributes(props) {
+    var kind = kindOf(props.kind);
+    var st = useState(null), data = st[0], setData = st[1];
+    var er = useState(null), error = er[0], setError = er[1];
+    var qs = useState(''), query = qs[0], setQuery = qs[1];
+    var se = useState([]), selected = se[0], setSelected = se[1];
+    var ms = useState(null), message = ms[0], setMessage = ms[1];
+    var bs = useState(false), busy = bs[0], setBusy = bs[1];
+    var cf = useState(null), confirm = cf[0], setConfirm = cf[1];
+    var kp = useState(null), keep = kp[0], setKeep = kp[1];
+
+    function load() {
+      return sb.rpc('admin_attributes').then(function (res) { if (res.error) setError(res.error.message); else setData(res.data); });
+    }
+    useEffect(function () { load(); }, []);
+    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not load the attributes: ' + error);
+    if (!data) return h('p', { className: 'body-medium' }, 'Loading…');
+
+    var rows = data[kind.list] || [];
+    var q = query.trim().toLowerCase();
+    var visible = q ? rows.filter(function (r) {
+      return r.name.toLowerCase().indexOf(q) >= 0 || (r.aliases || []).some(function (a) { return a.toLowerCase().indexOf(q) >= 0; });
+    }) : rows;
+    var picked = visible.filter(function (r) { return selected.indexOf(r.id) >= 0; });
+    var allOn = visible.length > 0 && picked.length === visible.length;
+    var someOn = picked.length > 0 && !allOn;
+
+    function pickTab(v) { setSelected([]); setMessage(null); setQuery(''); location.hash = '#attributes/' + v; }
+    function toggle(id, on) { setSelected(function (cur) { return on ? cur.concat([id]) : cur.filter(function (x) { return x !== id; }); }); }
+    function toggleAll() { setSelected(allOn ? [] : visible.map(function (r) { return r.id; })); }
+
+    function askDelete() {
+      var free = picked.filter(function (r) { return !r.records; }), linked = picked.filter(function (r) { return r.records; });
+      if (!free.length) {
+        setMessage({ error: true, text: (picked.length === 1 ? '“' + picked[0].name + '” is' : 'All of them are') +
+          ' on records: open ' + (picked.length === 1 ? 'it' : 'each one') + ' and use Replace with to move the records first.' });
+        return;
+      }
+      setConfirm({ action: 'delete', free: free, linked: linked });
+    }
+    function askMerge() {
+      setKeep(bestToKeep(picked).id);
+      setConfirm({ action: 'merge', rows: picked });
+    }
+    async function confirmed() {
+      var c = confirm;
+      setBusy(true);
+      var res = c.action === 'delete'
+        ? await sb.rpc('admin_delete_entities', { p_kind: kind.key, p_ids: c.free.map(function (r) { return r.id; }) })
+        : await sb.rpc('admin_merge_entities', { p_kind: kind.key, p_keep: keep, p_others: c.rows.filter(function (r) { return r.id !== keep; }).map(function (r) { return r.id; }) });
+      setBusy(false);
+      setConfirm(null);
+      if (res.error) { setMessage({ error: true, text: 'Nothing changed: ' + res.error.message }); return; }
+      setSelected([]);
+      await load();
+      if (c.action === 'delete') {
+        var gone = res.data.deleted.length, skipped = res.data.skipped.length;
+        setMessage({ error: false, text: (gone === 1 ? '“' + c.free[0].name + '” deleted.' : plural(gone, kind.one) + ' deleted.') +
+          (skipped ? ' ' + plural(skipped, kind.one) + ' skipped (on records).' : '') });
+      } else {
+        var kept = c.rows.filter(function (r) { return r.id === keep; })[0];
+        setMessage({ error: false, text: plural(c.rows.length - 1, kind.one) + ' merged into “' + kept.name + '”.' +
+          (kind.key === 'subgenre' || kind.key === 'tag' ? ' The shop updates in about 2 minutes.' : '') });
+      }
+    }
+
+    var bar = h('div', { className: 'admin-bulk' },
+      h('p', { className: 'admin-bulk__count body-medium', 'aria-live': 'polite' }, picked.length + ' selected'),
+      picked.length
+        ? h('div', { className: 'admin-bulk__actions' },
+            picked.length > 1 ? h(Z.Button, { hierarchy: 'secondary', 'aria-busy': busy || undefined, onClick: busy ? undefined : askMerge }, 'Merge') : null,
+            h(Z.Button, { hierarchy: 'secondary', 'aria-busy': busy || undefined, onClick: busy ? undefined : askDelete }, 'Delete'))
+        : null,
+      h('div', { className: 'admin-bulk__message', role: 'status', hidden: !!picked.length },
+        message ? h('span', { className: 'body-medium' + (message.error ? ' admin-status--error' : '') }, message.text) : null));
+
+    var dialog;
+    if (confirm && confirm.action === 'delete') {
+      var n = confirm.free.length, sk = confirm.linked;
+      var body = quoted(confirm.free.map(function (r) { return r.name; })) + (n === 1 ? ' is' : ' are') + ' removed. ' +
+        (n === 1 ? 'It is' : 'They are') + ' not on any record.';
+      if (sk.length) body += ' ' + quoted(sk.map(function (r) { return r.name; })) + (sk.length === 1 ? ' is' : ' are') + ' skipped: ' +
+        (sk.length === 1 ? 'it is' : 'they are') + ' on records. Open ' + (sk.length === 1 ? 'it' : 'each one') + ' and use Replace with to move ' + (sk.length === 1 ? 'them' : 'their records') + ' first.';
+      dialog = h(Z.Dialog, { open: true, busy: busy, title: 'Delete ' + plural(n, kind.one) + '?', confirmLabel: 'Delete ' + plural(n, kind.one),
+        onCancel: function () { setConfirm(null); }, onConfirm: confirmed }, h('p', null, body));
+    } else if (confirm && confirm.action === 'merge') {
+      var m = confirm.rows.length, others = m - 1;
+      dialog = h(Z.Dialog, { open: true, busy: busy, title: 'Merge ' + plural(m, kind.one) + '?', confirmLabel: 'Merge ' + plural(m, kind.one),
+        onCancel: function () { setConfirm(null); }, onConfirm: confirmed,
+        choices: h(Z.RadioGroup, { legend: 'Keep which ' + kind.one, hideLegend: true, value: keep, onValueChange: setKeep },
+          confirm.rows.map(function (r) {
+            return h(Z.Radio, { key: r.id, value: r.id, label: [r.name, plural(r.records, 'record')].concat(r.discogs_id ? ['Discogs ' + r.discogs_id] : []).join(' · ') });
+          })) },
+        h('p', null, 'Keep one. ' + (others === 1 ? 'The other’s records move' : 'The others’ records move') + ' to it' +
+          (kind.aliases ? ', ' + (others === 1 ? 'its name and spellings become' : 'their names and spellings become') + ' aliases' : '') +
+          ', then ' + (others === 1 ? 'it is' : 'they are') + ' deleted.'));
+    } else dialog = h(Z.Dialog, { open: false, title: '', confirmLabel: '', onCancel: function () {}, onConfirm: function () {} }, '');
+
+    var cols = kind.aliases ? ['Name', 'Also written as', 'Discogs', 'Records'] : ['Name', 'Records'];
+    return h('div', { className: 'admin-section admin-listings' },
+      h('h1', { className: 'label-extra-large' }, 'Attributes'),
+      h(Z.Tabs, { value: kind.key, onValueChange: pickTab, 'aria-label': 'Attribute type' },
+        KINDS.map(function (k) { return h(Z.Tab, { key: k.key, value: k.key, suffix: String((data[k.list] || []).length), 'aria-controls': 'attributes-table' }, k.tab); })),
+      h('div', { className: 'admin-toolbar' },
+        h(Z.Input, { className: 'admin-toolbar__search', variant: 'search', 'aria-label': kind.search, placeholder: kind.search, value: query,
+          onChange: function (e) { setQuery(e.target.value); setSelected([]); } }),
+        h(Z.Button, { hierarchy: 'secondary', href: '#attributes/' + kind.key + '/new' }, 'New ' + kind.one)),
+      bar,
+      h('div', { className: 'admin-table-wrap' },
+        h('table', { id: 'attributes-table', className: 'admin-table body-small' },
+          h('thead', null, h('tr', null,
+            h('th', { className: 'select' }, visible.length ? h(Z.Checkbox, { id: 'select-all', hideLabel: true, label: 'Select all', checked: allOn, indeterminate: someOn, onChange: toggleAll }) : null),
+            cols.map(function (t) { return h('th', { key: t, className: t === 'Records' ? 'num price' : '' }, t); }))),
+          h('tbody', null, visible.length ? visible.map(function (r) {
+            return h('tr', { key: r.id },
+              h('td', { className: 'select' }, h(Z.Checkbox, { id: 'select-' + r.id, hideLabel: true, label: 'Select ' + r.name,
+                checked: selected.indexOf(r.id) >= 0, onChange: function (e) { toggle(r.id, e.target.checked); } })),
+              h('td', null, h('a', { href: '#attributes/' + kind.key + '/' + r.id }, r.name)),
+              kind.aliases ? h('td', null, (r.aliases || []).join(', ') || '—') : null,
+              kind.aliases ? h('td', { className: 'num' }, r.discogs_id || '—') : null,
+              h('td', { className: 'num price' }, r.records));
+          }) : h('tr', null, h('td', { colSpan: cols.length + 1 }, q ? 'Nothing matches “' + query.trim() + '”.' : 'No ' + kind.list + ' yet.'))))),
+      dialog);
+  }
+
+  /* Figma BACKEND → Attributes › Artist - desktop · edit (2123:3216) and · split confirm (2123:4664) */
+  function AttributeForm(props) {
+    var kind = kindOf(props.kind), isNew = props.id === 'new';
+    var st = useState(null), f = st[0], setF = st[1];
+    var ls = useState(null), lists = ls[0], setLists = ls[1];
+    var rs = useState([]), records = rs[0], setRecords = rs[1];
+    var cs = useState(0), n = cs[0], setCount = cs[1];   // records = listings on it (from the database, not from the loaded rows)
+    var er = useState(null), error = er[0], setError = er[1];
+    var fe = useState({}), errors = fe[0], setErrors = fe[1];
+    var ms = useState(null), message = ms[0], setMessage = ms[1];
+    var sv = useState(false), saving = sv[0], setSaving = sv[1];
+    var rp = useState([]), replace = rp[0], setReplace = rp[1];
+    var cf = useState(null), confirm = cf[0], setConfirm = cf[1];
+    var slugTouched = useRef(!isNew);
+
+    useEffect(function () {
+      sb.rpc('admin_attributes').then(function (res) { if (!res.error) setLists(res.data); });
+      if (isNew) { setF({ name: '', slug: '', discogs: '', aliases: [] }); return; }
+      sb.rpc('admin_entity', { p_kind: kind.key, p_id: props.id }).then(function (res) {
+        if (res.error) { setError(res.error.message); return; }
+        var e = res.data;
+        setF({ name: e.name, slug: e.slug, discogs: e.discogs_id ? String(e.discogs_id) : '',
+               aliases: (e.aliases || []).map(function (a) { return { id: null, name: a }; }) });
+        setCount(e.listing_ids.length);
+        if (e.listing_ids.length) {
+          sb.from('listings').select('id,sku,slug,status,reserved_until,custom_title,release:releases(lines:release_lines(position,artist,title))')
+            .in('id', e.listing_ids).order('sku', { ascending: false })
+            .then(function (r2) { if (!r2.error) setRecords(r2.data); });
+        }
+      });
+    }, []);
+    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not open this ' + kind.one + ': ' + error);
+    if (!f) return h('p', { className: 'body-medium' }, 'Loading…');
+
+    function set(patch) { setF(function (cur) { return Object.assign({}, cur, patch); }); }
+    function setName(e) {
+      var v = e.target.value;
+      set(slugTouched.current ? { name: v } : { name: v, slug: v.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') });
+    }
+    async function save() {
+      var e = {};
+      if (!f.name.trim()) e.name = 'Enter a name.';
+      if (f.discogs.trim() && !/^\d+$/.test(f.discogs.trim())) e.discogs_id = 'Use the number only, e.g. 50582.';
+      setErrors(e);
+      if (Object.keys(e).length) { setMessage({ error: true, text: 'Check the highlighted fields.' }); return; }
+      setSaving(true); setMessage(null);
+      var res = await sb.rpc('admin_save_entity', { p_kind: kind.key, p_id: isNew ? null : props.id,
+        p: { name: f.name, slug: f.slug, discogs_id: f.discogs.trim(), aliases: f.aliases.map(function (a) { return a.name; }) } });
+      setSaving(false);
+      if (res.error) {
+        var fe2 = fieldError(res.error.message);
+        if (fe2) { var x = {}; x[fe2.field] = fe2.text; setErrors(x); setMessage({ error: true, text: fe2.text }); }
+        else setMessage({ error: true, text: 'Not saved: ' + res.error.message });
+        return;
+      }
+      if (isNew) { location.hash = '#attributes/' + kind.key + '/' + res.data; return; }
+      setMessage({ error: false, text: 'Saved.' + (kind.key === 'subgenre' || kind.key === 'tag' ? ' The shop updates in about 2 minutes.' : '') });
+    }
+    async function doDelete() {
+      setSaving(true);
+      var res = await sb.rpc('admin_delete_entities', { p_kind: kind.key, p_ids: [props.id] });
+      setSaving(false); setConfirm(null);
+      if (res.error) { setMessage({ error: true, text: 'Not deleted: ' + res.error.message }); return; }
+      if (!res.data.deleted.length) { setMessage({ error: true, text: 'Not deleted: it is on records.' }); return; }
+      location.hash = '#attributes/' + kind.key;
+    }
+    async function doReplace() {
+      setSaving(true);
+      // a new name typed in Replace with is created first (same as in Create listing)
+      var ids = [];
+      for (var i = 0; i < replace.length; i++) {
+        if (replace[i].id) { ids.push(replace[i].id); continue; }
+        var c = await sb.rpc('admin_save_entity', { p_kind: kind.key, p_id: null, p: { name: replace[i].name } });
+        if (c.error) { setSaving(false); setConfirm(null); setMessage({ error: true, text: 'Nothing changed: ' + c.error.message }); return; }
+        ids.push(c.data);
+      }
+      var res = await sb.rpc('admin_replace_entity', { p_kind: kind.key, p_id: props.id, p_targets: ids });
+      setSaving(false); setConfirm(null);
+      if (res.error) { setMessage({ error: true, text: 'Nothing changed: ' + res.error.message }); return; }
+      location.hash = '#attributes/' + kind.key + '/' + ids[0];
+    }
+
+    var options = lists ? (lists[kind.list] || []).filter(function (x) { return x.id !== props.id; })
+      .map(function (x) { return { id: x.id, name: x.name, aliases: x.aliases || [] }; }) : null;
+    var title = isNew ? 'New ' + kind.one : (f.name.trim() || cap(kind.one));
+
+    var main = h('div', { className: 'admin-main' },
+      h('h1', { className: 'label-extra-large' }, title),
+      h('section', { className: 'admin-section' },
+        h('div', { className: 'admin-row' },
+          h(Z.Input, { className: 'span-8', id: 'name', label: 'Name', value: f.name, onChange: setName, error: errors.name,
+            supportText: kind.key === 'artist' || kind.key === 'label' ? 'Official name. The shop shows each record’s credit as printed.' : undefined })),
+        kind.aliases ? h('div', { className: 'admin-row' },
+          h(Z.EntityField, { className: 'span-8', id: 'aliases', label: 'Also written as', optional: true, placeholder: 'Add a spelling',
+            options: [], createLabel: 'Add', value: f.aliases, onChange: function (chips) { set({ aliases: chips }); },
+            supportText: 'Typing one of these in a listing suggests this ' + kind.one + '.' })) : null,
+        h('div', { className: 'admin-row' },
+          kind.discogs ? h(Z.Input, { className: 'span-4', id: 'discogs-id', label: 'Discogs ID', optional: true, inputMode: 'numeric',
+            value: f.discogs, error: errors.discogs_id, onChange: function (e) { set({ discogs: e.target.value }); } }) : null,
+          h(Z.Input, { className: 'span-4', id: 'slug', label: 'Slug', value: f.slug, error: errors.slug,
+            onChange: function (e) { slugTouched.current = true; set({ slug: e.target.value }); },
+            supportText: f.slug ? 'Page address: /' + kind.list + '/' + f.slug : 'Made from the name on save.' }))),
+      isNew ? null : h(Z.Divider),
+      isNew ? null : h('section', { className: 'admin-section', 'aria-labelledby': 'records-title' },
+        h('h2', { id: 'records-title', className: 'label-medium' }, 'Records ' + n),   // Figma: one text "Records 2"
+        n ? h('ul', { className: 'admin-links body-small' }, records.map(function (r) {
+          return h('li', { key: r.id }, h('a', { href: '#edit-' + r.id }, [String(r.sku).padStart(4, '0'), nameOf(r), STATUS_LABEL[effectiveStatus(r)] || r.status].join(' · ')));
+        })) : h('p', { className: 'body-small' }, 'Not on any record.')),
+      isNew || !n ? null : h(Z.Divider),
+      isNew || !n ? null : h('section', { className: 'admin-section', 'aria-labelledby': 'replace-title' },
+        h('h2', { id: 'replace-title', className: 'label-medium' }, kind.split ? 'Merge or split' : 'Merge'),
+        h('div', { className: 'admin-row' },
+          h(Z.EntityField, { className: 'span-8', id: 'replace', label: 'Replace with', placeholder: 'Type ' + (kind.key === 'artist' ? 'an ' : 'a ') + kind.one,
+            multiple: kind.split, options: options, value: replace, onChange: function (chips) { setReplace(chips); },
+            supportText: kind.split
+              ? 'Moves its records to the ' + kind.list + ' you pick, then deletes it. One ' + kind.one + ' = merge' + (kind.aliases ? ': its name and spellings become aliases' : '') + '. Two or more = split a combined name.'
+              : 'Moves its records to the ' + kind.one + ' you pick, then deletes it. Its name and spellings become aliases.' })),
+        h('div', null, h(Z.Button, { hierarchy: 'secondary', disabled: saving || !replace.length, onClick: function () { setConfirm('replace'); } }, 'Replace'))));
+
+    var why = n ? 'On ' + plural(n, 'record') + ': ' + (kind.split ? 'merge or split it' : 'merge it into another ' + kind.one) + ' to remove it.' : null;
+    var side = h('aside', { className: 'admin-side' },
+      h(Z.ActionPanel, null,
+        h(Z.Button, { hierarchy: 'primary', disabled: saving, onClick: save }, isNew ? 'Create' : 'Save'),
+        isNew ? h(Z.Button, { hierarchy: 'secondary', href: '#attributes/' + kind.key }, 'Cancel')
+              : h(Z.Button, { hierarchy: 'secondary', disabled: saving || n > 0, 'aria-describedby': n ? 'delete-why' : undefined,
+                  onClick: function () { setConfirm('delete'); } }, 'Delete')),
+      why ? h('p', { id: 'delete-why', className: 'body-small' }, why) : null,
+      h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : ''));
+
+    var dialog;
+    if (confirm === 'delete') {
+      dialog = h(Z.Dialog, { open: true, busy: saving, title: 'Delete 1 ' + kind.one + '?', confirmLabel: 'Delete 1 ' + kind.one,
+        onCancel: function () { setConfirm(null); }, onConfirm: doDelete }, h('p', null, '“' + f.name + '” is removed. It is not on any record.'));
+    } else if (confirm === 'replace') {
+      var targets = replace.map(function (x) { return x.name; }), split = replace.length > 1;
+      var recText = n !== 1 ? 'Its ' + n + ' records are' : records[0] ? 'Its record “' + nameOf(records[0]) + '” is' : 'Its record is';
+      var how = kind.key === 'artist' ? 'credited to' : kind.key === 'label' ? 'moved to' : 'tagged';
+      dialog = h(Z.Dialog, { open: true, busy: saving,
+        title: (split ? 'Split into ' + plural(replace.length, kind.one) : 'Merge into “' + targets[0] + '”') + '?',
+        confirmLabel: split ? 'Split and delete' : 'Merge and delete',
+        onCancel: function () { setConfirm(null); }, onConfirm: doReplace },
+        h('p', null, recText + ' ' + how + ' ' + quoted(targets) + ', then “' + f.name + '” is deleted.' +
+          (!split && kind.aliases ? ' “' + f.name + '” and its spellings become aliases of “' + targets[0] + '”.' : '') +
+          (kind.key === 'artist' || kind.key === 'label' ? ' The credit printed on the record does not change.' : ' The shop updates in about 2 minutes.')));
+    } else dialog = h(Z.Dialog, { open: false, title: '', confirmLabel: '', onCancel: function () {}, onConfirm: function () {} }, '');
+
+    return h('div', { className: 'admin-page admin-page--attribute' }, main, side, dialog);
   }
 
   // ── Sign-in ───────────────────────────────────────────────────────────────
@@ -884,12 +1185,15 @@
     else if (!isAdmin) body = h('p', { className: 'body-medium', role: 'alert' }, 'This account has no admin access.');
     else if (hash === '#new') body = h(ListingForm, { key: 'new-' + route.visit, initial: emptyForm() });
     else if (/^#edit-/.test(hash)) body = h(EditLoader, { key: hash + route.visit, id: hash.slice(6) });
+    else if (/^#attributes\/[a-z]+\/[^/]+$/.test(hash)) body = h(AttributeForm, { key: hash + route.visit, kind: hash.split('/')[1], id: hash.split('/')[2] });
+    else if (/^#attributes/.test(hash)) body = h(Attributes, { key: 'attributes', kind: hash.split('/')[1] || 'artist' });
     else body = h(Listings, { key: 'list-' + route.visit });
 
     return h('div', { className: 'admin' },
       session ? h('header', { className: 'admin-bar' },
         h('nav', { className: 'admin-bar__nav', 'aria-label': 'Admin' },
           h(Z.Button, { hierarchy: 'secondary', size: 'small', href: '#' }, 'Listings'),
+          h(Z.Button, { hierarchy: 'secondary', size: 'small', href: '#attributes' }, 'Attributes'),
           h(Z.Button, { hierarchy: 'primary', size: 'small', href: '#new' }, 'Create listing')),
         h('div', { className: 'admin-bar__nav' },
           h('span', { className: 'body-small' }, session.user.email),
