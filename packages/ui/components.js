@@ -710,7 +710,7 @@
      padding 16, gap 24; content = title (label/large, uppercase) + body (body/medium), gap 8; actions right-aligned,
      gap 8: secondary Cancel + primary confirm. Backdrop = surface/scrim.
      Native <dialog> opened with showModal(): focus is trapped, Esc cancels, focus returns to the opener on close.
-     For irreversible actions only (decision 0024); initial focus on Cancel. */
+     Admin: before every bulk action (decision 0025); initial focus on Cancel. */
   function Dialog(props) {
     var ref = React.useRef(null);
     var titleId = useId(), bodyId = useId();

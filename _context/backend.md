@@ -11,7 +11,7 @@ Stack: `stack.md`. Questa è la **bozza** dello schema e dei flussi, da rivedere
 
 ## Tabelle
 
-**Fonte di verità: `supabase/migrations/`** (`0001` init 2026-11-09, `0002` listing form 2026-11-10, `0003` `admin_save_listing` 2026-11-10, `0004` stati di vendita e `0005` ricostruzione del sito 2026-11-10, … `0009` archivio, delete e bulk; applicate dall'editor SQL di Supabase). Qui solo il riassunto:
+**Fonte di verità: `supabase/migrations/`** (`0001` init 2026-11-09, `0002` listing form 2026-11-10, `0003` `admin_save_listing` 2026-11-10, `0004` stati di vendita e `0005` ricostruzione del sito 2026-11-10, … `0009` archivio, delete e bulk, `0010` delete di qualsiasi copia; applicate dall'editor SQL di Supabase). Qui solo il riassunto:
 
 | Tabella | Cosa | Note |
 |---|---|---|
@@ -75,9 +75,9 @@ available ──► sold / traded diretto (venduto fuori dal sito: fiera, Discog
 - **Storico:** `listing_status_log` registra ogni cambio (chi, quando, nota), da qualunque parte arrivi (form, admin, Edge Functions).
 - **Lettura pubblica dal vivo:** vista `listing_availability` (id, slug, section, status effettivo), bozze escluse. La userà `site.js`.
 
-### Archiviare ed eliminare (0009, Gio 2026-11-10)
-- **Elimina** = hard delete, solo bozze mai pubblicate e senza ordini (`admin_delete_listings`). Va via anche la release se nessun'altra copia la usa. Le chiavi media finiscono in `media_trash`.
-- **Archivia** = stato `archived` per tutto ciò che è stato pubblicato: fuori dal negozio (RLS) e dalla lista di default dell'admin, storico e ordini restano. `archived_from` ricorda lo stato di prima; **Restore** lo riporta lì. Una copia archiviata è in sola lettura: form e `admin_set_status` non la muovono (trigger `guard_archived`).
+### Archiviare ed eliminare (0009–0010, Gio 2026-11-10)
+- **Elimina** = hard delete di qualsiasi copia (0010, Gio 2026-11-10), tranne quelle con un ordine (gli ordini sono registri contabili: archiviale) o con un checkout in corso (`admin_delete_listings`). Va via anche la release se nessun'altra copia la usa. Le chiavi media finiscono in `media_trash`. Ogni azione bulk chiede conferma.
+- **Archivia** = stato `archived`, il modo reversibile: fuori dal negozio (RLS) e dalla lista di default dell'admin, storico e ordini restano. `archived_from` ricorda lo stato di prima; **Restore** lo riporta lì. Una copia archiviata è in sola lettura: form e `admin_set_status` non la muovono (trigger `guard_archived`).
 - **Bulk** = `admin_bulk_status(ids, publish | unpublish | archive | restore)`, una transazione; ogni copia passa solo se la transizione è ammessa, le altre tornano in `skipped`. L'admin offre Undo (azione inversa sugli id cambiati).
 - **Pulizia R2**: `media_trash` raccoglie anche le foto tolte nel form e i sample rimossi o sostituiti. La Edge Function `purge-media` (chiamata dall'admin all'apertura di Listings) cancella da R2 solo le chiavi in cestino da più di 7 giorni e non più usate da nessun listing o sample. Gli upload abbandonati prima del salvataggio non sono nel DB: restano su R2.
 

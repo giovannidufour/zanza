@@ -573,9 +573,9 @@
     return multi ? lines.map(function (l) { return (l.artist || lines[0].artist) + ' - ' + l.title; }).join(' / ')
                  : lines[0].artist + ' - ' + lines.map(function (l) { return l.title; }).join(' / ');
   }
-  /* Figma BACKEND → Listings (2026-11-10, decision 0024): status tabs, a bulk bar that is always there (fixed height:
-     no layout shift), a table whose first column selects. Publish / Unpublish / Archive act at once and offer Undo;
-     Delete (drafts never published only) asks first in a Dialog. Each action moves only the rows it is allowed for. */
+  /* Figma BACKEND → Listings (2026-11-10, decisions 0024, 0025): status tabs, a bulk bar that is always there (fixed
+     height: no layout shift), a table whose first column selects. Every action asks first in a Dialog; Publish /
+     Unpublish / Archive then offer Undo. Each action moves only the rows it is allowed for. */
   var TABS = [
     ['all', 'All', function (s) { return s !== 'archived'; }],
     ['draft', 'Drafts', function (s) { return s === 'draft'; }],
@@ -583,12 +583,27 @@
     ['sold', 'Sold', function (s) { return s === 'sold' || s === 'traded'; }],
     ['archived', 'Archived', function (s) { return s === 'archived'; }]
   ];
-  var BULK = [['publish', 'Publish', 'published'], ['unpublish', 'Unpublish', 'unpublished'], ['archive', 'Archive', 'archived']];
+  var BULK = [['publish', 'Publish'], ['unpublish', 'Unpublish'], ['archive', 'Archive'], ['delete', 'Delete']];
   var UNDO = { publish: 'unpublish', unpublish: 'publish', archive: 'restore' };
-  var DONE_VERB = { publish: 'published', unpublish: 'unpublished', archive: 'archived', restore: 'restored' };
+  var DONE_VERB = { publish: 'published', unpublish: 'unpublished', archive: 'archived', restore: 'restored', delete: 'deleted' };
   var purgeAsked = false;
   function plural(n, one, many) { return n + ' ' + (n === 1 ? one : (many || one + 's')); }
-  function deletable(r) { return r.status === 'draft' && !r.published_at; }
+  // a live Stripe checkout holds the copy (reserved with an expiry; a manual hold has none)
+  function inCheckout(r) { return r.eff === 'reserved' && !!r.reserved_until; }
+  function ordered(r) { return !!(r.orders && r.orders[0] && r.orders[0].count); }
+  /* Gio 2026-11-10 (decision 0025): every bulk action asks first. Which selected rows it applies to (the database
+     applies the same rules) and what the dialog says about them. */
+  var ACTION = {
+    publish:   { ok: function (r) { return r.eff === 'draft'; },
+                 one: 'goes live in the shop in about 2 minutes.', many: 'go live in the shop in about 2 minutes.' },
+    unpublish: { ok: function (r) { return r.eff === 'available'; },
+                 one: 'leaves the shop and goes back to drafts.', many: 'leave the shop and go back to drafts.' },
+    archive:   { ok: function (r) { return r.eff !== 'archived' && !inCheckout(r); },
+                 one: 'leaves the shop: you find it under Archived and can restore it.', many: 'leave the shop: you find them under Archived and can restore them.' },
+    delete:    { ok: function (r) { return !ordered(r) && !inCheckout(r); },
+                 one: 'is removed with its photos and samples, and its page leaves the shop. This cannot be undone.',
+                 many: 'are removed with their photos and samples, and their pages leave the shop. This cannot be undone.' }
+  };
 
   function Listings() {
     var st = useState(null), rows = st[0], setRows = st[1];
@@ -601,7 +616,7 @@
     var focusAfter = useRef(null);
 
     function load() {
-      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_cents,custom_title,created_at,release:releases(lines:release_lines(position,artist,title))')
+      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_cents,custom_title,created_at,orders:order_items(count),release:releases(lines:release_lines(position,artist,title))')
         .order('sku', { ascending: false })
         .then(function (res) { if (res.error) setError(res.error.message); else setRows(res.data); });
     }
@@ -658,28 +673,37 @@
       setMessage({ error: false, text: isUndo ? 'Undone: ' + text : text,
         undo: !isUndo && done.length ? { action: UNDO[action], ids: done.map(function (d) { return d.id; }) } : null });
     }
-    function askDelete() {
-      var ok = picked.filter(deletable), rest = picked.filter(function (r) { return !deletable(r); });
+    function ask(action) {
+      var ok = picked.filter(ACTION[action].ok), rest = picked.filter(function (r) { return !ACTION[action].ok(r); });
       if (!ok.length) {
-        setMessage({ error: true, text: 'Only drafts that were never published can be deleted: archive the others.' });
+        setMessage({ error: true, text: 'None of the selected listings can be ' + DONE_VERB[action] + ' from ' + (picked.length === 1 ? 'its' : 'their') + ' status.' });
+        setSelected([]);
         return;
       }
-      setConfirm({ ok: ok, rest: rest });
+      setConfirm({ action: action, ok: ok, rest: rest });
     }
-    async function doDelete() {
-      var ok = confirm.ok, ids = ok.map(function (r) { return r.id; });
+    async function doDelete(ok) {
+      var ids = ok.map(function (r) { return r.id; });
       setBusy(true);
       var res = await sb.rpc('admin_delete_listings', { p_ids: ids });
       setBusy(false);
       setConfirm(null);
       if (res.error) { setMessage({ error: true, text: 'Nothing deleted: ' + res.error.message }); return; }
-      var gone = res.data.deleted;
+      var gone = res.data.deleted, kept = res.data.skipped.length;
       var firstIdx = visible.findIndex(function (r) { return gone.indexOf(r.id) >= 0; });
       var next = visible.slice(firstIdx + 1).filter(function (r) { return gone.indexOf(r.id) < 0; })[0];
       focusAfter.current = { id: next ? 'select-' + next.id : 'select-all' };
       setSelected([]);
       await load();
-      setMessage({ error: false, text: gone.length === 1 ? '“' + nameOf(ok[0]) + '” deleted.' : plural(gone.length, 'draft') + ' deleted.' });
+      var text = gone.length === 1 ? '“' + nameOf(ok.filter(function (r) { return r.id === gone[0]; })[0] || {}) + '” deleted.' : plural(gone.length, 'listing') + ' deleted.';
+      if (kept) text += ' ' + plural(kept, 'listing') + ' kept (an order or a checkout holds ' + (kept === 1 ? 'it' : 'them') + ').';
+      setMessage({ error: false, text: text });
+    }
+    function confirmed() {
+      var c = confirm;
+      if (c.action === 'delete') { doDelete(c.ok); return; }
+      setConfirm(null);
+      run(c.action, c.ok.map(function (r) { return r.id; }));
     }
 
     var counts = {}; TABS.forEach(function (t) { counts[t[0]] = withStatus.filter(function (r) { return t[2](r.eff); }).length; });
@@ -689,24 +713,29 @@
         ? h('div', { className: 'admin-bulk__actions' },
             BULK.map(function (b) {
               return h(Z.Button, { key: b[0], hierarchy: 'secondary', 'aria-busy': busy || undefined,
-                onClick: busy ? undefined : function () { run(b[0], picked.map(function (r) { return r.id; })); } }, b[1]);
-            }),
-            h(Z.Button, { hierarchy: 'secondary', onClick: busy ? undefined : askDelete }, 'Delete'))
+                onClick: busy ? undefined : function () { ask(b[0]); } }, b[1]);
+            }))
         : null,
       h('div', { className: 'admin-bulk__message', role: 'status', hidden: !!picked.length },
         message ? h('span', { className: 'body-medium' + (message.error ? ' admin-status--error' : '') }, message.text) : null,
         message && message.undo ? h(Z.Button, { hierarchy: 'secondary', onClick: busy ? undefined : function () { run(message.undo.action, message.undo.ids, true); } }, 'Undo') : null));
 
-    var nameCount = confirm ? confirm.ok.length : 0;
-    var names = confirm ? confirm.ok.slice(0, 5).map(function (r) { return '“' + nameOf(r) + '”'; }) : [];
-    var dialog = h(Z.Dialog, { open: !!confirm, busy: busy,
-      title: 'Delete ' + plural(nameCount, 'draft') + '?', confirmLabel: 'Delete ' + plural(nameCount, 'draft'),
-      onCancel: function () { setConfirm(null); }, onConfirm: doDelete },
-      confirm ? h('p', null,
-        (confirm.ok.length > 5 ? names.join(', ') + ' and ' + (confirm.ok.length - 5) + ' more'
-                               : names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0]) +
-        (nameCount === 1 ? ' is' : ' are') + ' removed with ' + (nameCount === 1 ? 'its' : 'their') + ' photos and samples. This cannot be undone.' +
-        (confirm.rest.length ? ' ' + plural(confirm.rest.length, 'other selected listing') + (confirm.rest.length === 1 ? ' was' : ' were') + ' published: archive ' + (confirm.rest.length === 1 ? 'it' : 'them') + ' instead.' : '')) : null);
+    var dialog = null;
+    if (confirm) {
+      var n = confirm.ok.length, verb = BULK.filter(function (x) { return x[0] === confirm.action; })[0][1];
+      var names = confirm.ok.slice(0, 5).map(function (r) { return '“' + nameOf(r) + '”'; });
+      var list = n > 5 ? names.join(', ') + ' and ' + (n - 5) + ' more'
+               : names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0];
+      var what = n === 1 ? ACTION[confirm.action].one : ACTION[confirm.action].many;
+      var rest = confirm.rest.length;
+      var restText = !rest ? '' : ' ' + plural(rest, 'other selected listing') + ' cannot be ' + DONE_VERB[confirm.action] +
+        (confirm.action === 'delete' ? ' (an order or a checkout holds ' + (rest === 1 ? 'it' : 'them') + ')' : ' from ' + (rest === 1 ? 'its' : 'their') + ' status') + ' and stays as it is.';
+      if (rest > 1) restText = restText.replace(' stays as it is.', ' stay as they are.');
+      dialog = h(Z.Dialog, { open: true, busy: busy,
+        title: verb + ' ' + plural(n, 'listing') + '?', confirmLabel: verb + ' ' + plural(n, 'listing'),
+        onCancel: function () { setConfirm(null); }, onConfirm: confirmed },
+        h('p', null, list + ' ' + what + restText));
+    } else dialog = h(Z.Dialog, { open: false, title: '', confirmLabel: '', onCancel: function () {}, onConfirm: function () {} }, '');
 
     return h('div', { className: 'admin-section admin-listings' },
       h('h1', { className: 'label-extra-large' }, 'Listings'),

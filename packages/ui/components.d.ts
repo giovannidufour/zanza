@@ -363,15 +363,15 @@ export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement
 export declare function Checkbox(props: CheckboxProps): JSX.Element;
 
 /** Mirrors the Figma component `dialog` (page dialog). A modal confirmation on the native <dialog> (showModal):
- *  focus trapped, Esc = cancel, focus back to the opener. Only for irreversible actions (decision 0024). */
+ *  focus trapped, Esc = cancel, focus back to the opener. Admin: before every bulk action (decision 0025). */
 export interface DialogProps extends Omit<HTMLAttributes<HTMLDialogElement>, "title"> {
   /** Shown as a modal while true. Controlled. */
   open: boolean;
-  /** The question, with the count ("Delete 2 drafts?"). Figma: `title`. */
+  /** The question, with the count ("Delete 2 listings?"). Figma: `title`. */
   title: ReactNode;
   /** The consequence: what goes, what is skipped. Figma: `body`. */
   children: ReactNode;
-  /** The confirm button: verb + count ("Delete 2 drafts"). Primary. */
+  /** The confirm button: verb + count ("Delete 2 listings"). Primary. */
   confirmLabel: ReactNode;
   /** Secondary button; gets the initial focus. Default "Cancel". */
   cancelLabel?: ReactNode;

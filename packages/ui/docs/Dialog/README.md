@@ -1,6 +1,6 @@
 # Dialog
 
-A modal confirmation for irreversible actions. Figma: page `dialog` → `dialog` (2026-11-10, first used on BACKEND → Listings, "delete confirm").
+A modal confirmation before an action (admin: every bulk action, decision 0025). Figma: page `dialog` → `dialog` (2026-11-10, first used on BACKEND → Listings, "delete confirm").
 
 ## API
 
@@ -9,9 +9,9 @@ A modal confirmation for irreversible actions. Figma: page `dialog` → `dialog`
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `open` * | `boolean` |  | Shown as a modal while true. Controlled. |
-| `title` * | `ReactNode` |  | The question, with the count ("Delete 2 drafts?"). Figma: `title`. |
+| `title` * | `ReactNode` |  | The question, with the count ("Delete 2 listings?"). Figma: `title`. |
 | `children` * | `ReactNode` |  | The consequence: what goes, what is skipped. Figma: `body`. |
-| `confirmLabel` * | `ReactNode` |  | The confirm button: verb + count ("Delete 2 drafts"). Primary. |
+| `confirmLabel` * | `ReactNode` |  | The confirm button: verb + count ("Delete 2 listings"). Primary. |
 | `cancelLabel` | `ReactNode` |  | Secondary button; gets the initial focus. Default "Cancel". |
 | `onConfirm` * | `() => void` |  |  |
 | `onCancel` * | `() => void` |  | Cancel button and Esc. |
@@ -21,9 +21,9 @@ A modal confirmation for irreversible actions. Figma: page `dialog` → `dialog`
 <!-- /api -->
 
 - Native `<dialog>` opened with `showModal()`: the browser traps focus, makes the page inert, and Esc fires `cancel` (→ `onCancel`). Closing returns focus to the element that opened it.
-- Initial focus on Cancel: the safe choice for an action that cannot be undone.
+- Initial focus on Cancel: the safe choice.
 - Title = the question with the count, body = the consequence (what goes, what is skipped), confirm label = verb + count. No destructive colour exists: the label carries the meaning.
-- Reversible actions get no dialog: they show the result with Undo (decision [0024](../../../../design/decisions/0024-delete-drafts-archive-the-rest.md)).
+- Reversible actions also show the result with Undo after they ran (decision [0025](../../../../design/decisions/0025-every-bulk-action-confirms-delete-any.md)).
 
 ## Tokens
 
