@@ -1,6 +1,6 @@
 # ActiveFilter
 
-PLP only: the filter reached from a link (artist, label, subgenre, tag) as one removable chip, in the place of the breadcrumbs, with the same frame (padding `small`, 1px rule below). Figma: page `active filter` → `active filter` (device=desktop | mobile). Decision [0041](../../../../design/decisions/0041-plp-active-filter-replaces-breadcrumbs.md).
+PLP only: the filter reached from a link (artist, label, genre, tag) as one removable chip, in the place of the breadcrumbs, with the same frame (padding `small`, 1px rule below). Figma: page `active filter` → `active filter` (device=desktop | mobile). Decision [0041](../../../../design/decisions/0041-plp-active-filter-replaces-breadcrumbs.md).
 
 ## API
 

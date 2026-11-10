@@ -54,7 +54,7 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0028](0028-plp-filters.md) | PLP filters: facets from the data, plain text, OR inside / AND between | accepted |
 | [0029](0029-counts-are-suffixes.md) | A count next to a label is the component's suffix | accepted |
 | [0030](0030-admin-shop-preview.md) | The admin shows a live shop preview, built from the shop's components | accepted |
-| [0031](0031-subgenres-and-tags.md) | Subgenres (Discogs styles) and tags (the shop's own) are separate | accepted |
+| [0031](0031-subgenres-and-tags.md) | Subgenres (Discogs styles) and tags (the shop's own) are separate | accepted · names changed by 0048 |
 | [0032](0032-create-page-on-surface-base.md) | The create / edit page is on `surface/base` | accepted |
 | [0033](0033-pdp-gallery-scrolls-on-its-own.md) | PDP desktop gallery: images stacked, the column scrolls on its own | partly superseded by 0036 (not sticky) |
 | [0034](0034-attributes-page.md) | Attributes: one admin page for artists, labels, subgenres and tags; removing a used one goes through Replace with | accepted |
@@ -71,4 +71,5 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0045](0045-button-active-is-the-current-page.md) | Button `active` = the current page: a link with aria-current, never disabled | accepted |
 | [0046](0046-added-to-bag-label.md) | A copy in the bag: its Add buttons read "Added to bag" and open the bag | accepted |
 | [0047](0047-added-to-bag-tick.md) | "Added to bag" carries a tick as its trailing icon | accepted |
+| [0048](0048-macro-genre-and-genre.md) | Genre = the Discogs style (was "subgenre"); the Discogs genre is the macro genre, not shown | accepted |
 | [0049](0049-toast-feedback.md) | Toasts carry Undo and off-screen news; everything else stays inline | accepted |

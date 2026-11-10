@@ -16,9 +16,10 @@ Stack: `stack.md`. Questa è la **bozza** dello schema e dei flussi, da rivedere
 | Tabella | Cosa | Note |
 |---|---|---|
 | `grades` | scala di Gio (Q8): `M, NM, NM-, EX+, EX, EX-, VG+, VG, VG-, G+, G, G-, F` | `rank` 1 = migliore → filtri "da VG+ in su" |
-| `releases` | la pressatura | label, paese, anno, formato, `genre`/`style` text[] (style = "Tags" nell'admin) |
+| `releases` | la pressatura | label, paese, anno, formato, `macro_genre` text[] (genre Discogs, es. Reggae: non mostrato), `genres` text[] (copia ordinata dei nomi di `genres`, letta dal negozio) |
 | `release_lines` | artista/titolo per lato (riga 1 = lato A…), dal form "Create listing" | artista vuoto = stesso della riga 1 (non mostrato). Nome mostrato: `custom_title`, altrimenti "Artist - Title 1 / Title 2" (o "Artist 1 - Title 1 / Artist 2 - Title 2") |
-| `tags`, `release_tags` (0007) | tag (= styles Discogs) come entità con `slug` (filtri PLP futuri), in ordine per release | `releases.style` resta = i nomi dei tag, così il negozio non cambia |
+| `genres`, `release_genres` (0011, rinominati in 0014) | generi (= styles Discogs: Roots, Dancehall…) come entità con `slug`, in ordine per release; filtro Genre della PLP | `releases.genres` resta = i loro nomi in ordine. Fino alla 0014 si chiamavano `subgenres` |
+| `tags`, `release_tags` (0007, 0011) | tag di Gio (Rare, Killer version…), mai da Discogs, in ordine per release | filtro Tags della PLP |
 | `artists`, `labels` (0006) | entità con nome **ufficiale**, `slug` (pagina futura), id Discogs | `artist_aliases` / `label_aliases` = altre grafie. Le righe le collegano con `release_line_artists` (più artisti per riga, in ordine, con "&"/"feat."); la release con `label_id`. `release_lines.artist` e `releases.label` restano = il **credito come stampato** su quel disco (lo mostra il negozio) |
 | `listings` | la copia pubblicata (copy + listing del brief) | `section`, `status`, `price_cents`, `condition_media` (lato A) + `condition_media_b` (lato B, facoltativo, 0013) → `grades`, `sleeve_type` (`original`/`generic`/`none`) + `condition_sleeve` → `grades`, `photo_keys[]` (la **prima è la featured/cover**), `sku` (automatico), `custom_title`, `condition_notes`, `reserved_until`, `import_source` (solo test) |
 | `samples` | clip della release | `audio_key`, `line_id` (sample del lato; vuoto = "additional"), `sort` = ordine nel player |
@@ -48,7 +49,7 @@ Chiavi casuali e immutabili (2026-11-10): l'upload avviene prima che il listing 
 ## Flussi
 
 ### Creare un listing (admin)
-1. **Fetch Discogs** (2026-11-10, Figma 2103:20718): incolli link o numero della release in "Discogs match" → il pulsante chiama l'Edge Function `discogs-lookup` (solo admin, User-Agent proprio, token opzionale `DISCOGS_TOKEN` nei secret; niente cache, ToU 6 h) e riempie **solo i campi della release**: righe artista/titolo (una per traccia; artista vuoto se uguale alla riga 1), label, cat. no (non mostrato, salvato), anno, paese, formato, genere (il primo), tag (= styles). Prezzo, condizioni, note, foto e sample restano; i sample di righe sparite diventano "additional". Valori fuori dai vocabolari del form (paese, formato, altri generi) vengono elencati nel messaggio, non inventati. Foto Discogs: non importate (diritti). La ricerca per testo (serve il token) arriverà nella stessa funzione.
+1. **Fetch Discogs** (2026-11-10, Figma 2103:20718): incolli link o numero della release in "Discogs match" → il pulsante chiama l'Edge Function `discogs-lookup` (solo admin, User-Agent proprio, token opzionale `DISCOGS_TOKEN` nei secret; niente cache, ToU 6 h) e riempie **solo i campi della release**: righe artista/titolo (una per traccia; artista vuoto se uguale alla riga 1), label, cat. no (non mostrato, salvato), anno, paese, formato, macro genere (il primo genre Discogs), generi (= styles Discogs). Prezzo, condizioni, note, foto e sample restano; i sample di righe sparite diventano "additional". Valori fuori dai vocabolari del form (paese, formato, altri macro generi) vengono elencati nel messaggio, non inventati. Foto Discogs: non importate (diritti). La ricerca per testo (serve il token) arriverà nella stessa funzione.
 2. Condizione, prezzo, note, foto, sample.
 3. Salva = **una chiamata** a `admin_save_listing(payload)` (una transazione: release, righe, listing, sample). `draft` → **Pubblica** = `available` + `published_at`; poi ricostruzione del sito.
 4. Copertina: il grado è ammesso per busta `original` e `generic`, mai per `none` (0003).
@@ -58,13 +59,13 @@ Chiavi casuali e immutabili (2026-11-10): l'upload avviene prima che il listing 
 - Al salvataggio (`admin_save_listing`) il collegamento: id scelto → id Discogs → nome o alias (maiuscole indifferenti, vince il più vecchio) → entità nuova. Una grafia diversa dall'ufficiale diventa alias in automatico.
 - Fetch Discogs passa nome ufficiale, ANV (come stampato) e id Discogs dell'artista/label; con più artisti su una traccia arriva una chip per artista, ognuna col suo id Discogs. Il credito come stampato diventa alias solo se la riga ha un solo artista.
 - Pre-release (0008): `releases.pre_release` (boolean, della pressatura, non dell'etichetta): checkbox "Pre-release" sotto Label; il negozio scrive "Pre" dopo il nome della label.
-- Tag (0007): stesso collegamento per nome (senza alias né id Discogs); il salvataggio riscrive `releases.style` con i nomi dei tag in ordine.
+- Generi e tag (0007, 0011, 0014): stesso collegamento per nome (senza alias né id Discogs); il salvataggio riscrive `releases.genres` con i nomi dei generi in ordine.
 - Dati esistenti: un'entità per nome distinto (i 21 dischi di prova hanno nomi combinati tipo "A & B" in maiuscolo: da sistemare a mano se servono).
 
 ### Attributes (0012, Gio 2026-11-10, decisione di design 0034)
-- Pagina admin per artisti, label, subgenres e tag: lista con conteggio dei record, modifica (nome, alias, ID Discogs, slug), creazione a mano.
+- Pagina admin per artisti, label, generi e tag: lista con conteggio dei record, modifica (nome, alias, ID Discogs, slug), creazione a mano.
 - **Replace with** (`admin_replace_entity`): sposta i record su una o più entità e cancella la vecchia. Una = merge (nome e alias diventano alias), più di una = split. Il merge dalla lista (`admin_merge_entities`) tiene quella scelta.
-- Si elimina solo un'entità senza record (`admin_delete_entities`). I crediti stampati non cambiano mai. Cambiare nomi o collegamenti di subgenres e tag rimette in coda la ricostruzione del sito.
+- Si elimina solo un'entità senza record (`admin_delete_entities`). I crediti stampati non cambiano mai. Cambiare nomi o collegamenti di generi e tag rimette in coda la ricostruzione del sito.
 
 ### Stati di vendita (0004)
 ```

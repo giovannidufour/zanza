@@ -2,9 +2,9 @@
 begin;
 
 -- 10cc-the-things-we-do-for-love-hot-to-trot
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:10cc-the-things-we-do-for-love-hot-to-trot')::uuid, null, null, 'MERCURY', null, null, null, '7"', array['Pop', 'Rock']::text[], array['Pop', 'Rock']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:10cc-the-things-we-do-for-love-hot-to-trot:1')::uuid, md5('release:10cc-the-things-we-do-for-love-hot-to-trot')::uuid, 1, '10CC', 'THE THINGS WE DO FOR LOVE / HOT TO TROT')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -19,9 +19,9 @@ values (md5('sample:10cc-the-things-we-do-for-love-hot-to-trot:B')::uuid, md5('r
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- baji-man-sawderrer
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:baji-man-sawderrer')::uuid, null, null, 'DYNAMITE RECORDS', null, null, null, '7"', array['Reggae']::text[], array['90''s Dancehall']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:baji-man-sawderrer:1')::uuid, md5('release:baji-man-sawderrer')::uuid, 1, 'BAJI MAN', 'SAWDERRER')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -36,9 +36,9 @@ values (md5('sample:baji-man-sawderrer:B')::uuid, md5('release:baji-man-sawderre
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- bramwell-gunny-gunny
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:bramwell-gunny-gunny')::uuid, null, null, 'JAMMYS', null, null, null, '7"', array['Reggae']::text[], array['90''s Dancehall']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:bramwell-gunny-gunny:1')::uuid, md5('release:bramwell-gunny-gunny')::uuid, 1, 'BRAMWELL', 'GUNNY GUNNY')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -53,9 +53,9 @@ values (md5('sample:bramwell-gunny-gunny:B')::uuid, md5('release:bramwell-gunny-
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- danekee-steady-ranks-heart-beat
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:danekee-steady-ranks-heart-beat')::uuid, null, null, 'JUNIOR SCORPIO', null, null, null, '7"', array['Reggae']::text[], array['90''s Dancehall']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:danekee-steady-ranks-heart-beat:1')::uuid, md5('release:danekee-steady-ranks-heart-beat')::uuid, 1, 'DANEKEE & STEADY RANKS', 'HEART BEAT')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -70,9 +70,9 @@ values (md5('sample:danekee-steady-ranks-heart-beat:B')::uuid, md5('release:dane
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- della-grant-colour-red-dance-dance
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:della-grant-colour-red-dance-dance')::uuid, null, null, 'TWINKLE', null, null, null, '7"', array['Reggae']::text[], array['Soca', '90''s Dancehall']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:della-grant-colour-red-dance-dance:1')::uuid, md5('release:della-grant-colour-red-dance-dance')::uuid, 1, 'DELLA GRANT & COLOUR RED', 'DANCE DANCE')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -87,9 +87,9 @@ values (md5('sample:della-grant-colour-red-dance-dance:B')::uuid, md5('release:d
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- derrick-parker-true-love-in-you-i-find
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:derrick-parker-true-love-in-you-i-find')::uuid, null, null, 'KESTA', null, null, null, '7"', array['Reggae']::text[], array['80''s Dancehall', 'Lovers']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:derrick-parker-true-love-in-you-i-find:1')::uuid, md5('release:derrick-parker-true-love-in-you-i-find')::uuid, 1, 'DERRICK PARKER', 'TRUE LOVE IN YOU I FIND')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -104,9 +104,9 @@ values (md5('sample:derrick-parker-true-love-in-you-i-find:B')::uuid, md5('relea
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- emanuel-walsh-ut-ras-revolution-blood-of-my-children
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:emanuel-walsh-ut-ras-revolution-blood-of-my-children')::uuid, null, null, 'JAH SEH SO RECORDS', null, null, null, '7"', array['Reggae']::text[], array['Roots']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:emanuel-walsh-ut-ras-revolution-blood-of-my-children:1')::uuid, md5('release:emanuel-walsh-ut-ras-revolution-blood-of-my-children')::uuid, 1, 'EMANUEL WALSH & UT RAS', 'REVOLUTION / BLOOD OF MY CHILDREN')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -121,9 +121,9 @@ values (md5('sample:emanuel-walsh-ut-ras-revolution-blood-of-my-children:B')::uu
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- george-nooks-hero
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:george-nooks-hero')::uuid, null, null, 'STONE LOVE', null, null, null, '7"', array['Reggae']::text[], array['Dancehall', 'Lovers']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:george-nooks-hero:1')::uuid, md5('release:george-nooks-hero')::uuid, 1, 'GEORGE NOOKS', 'HERO')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -138,9 +138,9 @@ values (md5('sample:george-nooks-hero:B')::uuid, md5('release:george-nooks-hero'
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- gregory-isaacs-why-did-you-leave
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:gregory-isaacs-why-did-you-leave')::uuid, null, null, 'GG''S', null, null, null, '7"', array['Reggae']::text[], array['90''s Dancehall', 'Lovers']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:gregory-isaacs-why-did-you-leave:1')::uuid, md5('release:gregory-isaacs-why-did-you-leave')::uuid, 1, 'GREGORY ISAACS', 'WHY DID YOU LEAVE')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -155,9 +155,9 @@ values (md5('sample:gregory-isaacs-why-did-you-leave:B')::uuid, md5('release:gre
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- honorable-apache-good-woman
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:honorable-apache-good-woman')::uuid, null, null, 'CHINEGRO', null, null, null, '7"', array['Reggae']::text[], array['90''s Dancehall']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:honorable-apache-good-woman:1')::uuid, md5('release:honorable-apache-good-woman')::uuid, 1, 'HONORABLE APACHE', 'GOOD WOMAN')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -172,9 +172,9 @@ values (md5('sample:honorable-apache-good-woman:B')::uuid, md5('release:honorabl
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- leopard-me-hot
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:leopard-me-hot')::uuid, null, null, 'GOD BLESS CREW', null, null, null, '7"', array['Reggae']::text[], array['90''s Dancehall']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:leopard-me-hot:1')::uuid, md5('release:leopard-me-hot')::uuid, 1, 'LEOPARD', 'ME HOT')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -189,9 +189,9 @@ values (md5('sample:leopard-me-hot:B')::uuid, md5('release:leopard-me-hot')::uui
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- little-meeky-swear
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:little-meeky-swear')::uuid, null, null, 'Kesta', null, null, 'JA', '7"', array['Reggae']::text[], array['Dancehall']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:little-meeky-swear:1')::uuid, md5('release:little-meeky-swear')::uuid, 1, 'Little Meeky', 'Swear')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -206,9 +206,9 @@ values (md5('sample:little-meeky-swear:B')::uuid, md5('release:little-meeky-swea
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- malibu-my-love
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:malibu-my-love')::uuid, null, null, 'KESTA', null, null, null, '7"', array['Reggae']::text[], array['80''s Dancehall']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:malibu-my-love:1')::uuid, md5('release:malibu-my-love')::uuid, 1, 'MALIBU', 'MY LOVE')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -223,9 +223,9 @@ values (md5('sample:malibu-my-love:B')::uuid, md5('release:malibu-my-love')::uui
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- mega-banton-love
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:mega-banton-love')::uuid, null, null, 'DUKE', null, null, null, '7"', array['Reggae']::text[], array['90''s Dancehall']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:mega-banton-love:1')::uuid, md5('release:mega-banton-love')::uuid, 1, 'MEGA BANTON', 'LOVE')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -240,9 +240,9 @@ values (md5('sample:mega-banton-love:B')::uuid, md5('release:mega-banton-love'):
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- michael-rose-leave-the-spechie
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:michael-rose-leave-the-spechie')::uuid, null, null, 'PENTHOUSE', null, null, null, '7"', array['Reggae']::text[], array['90''s Dancehall']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:michael-rose-leave-the-spechie:1')::uuid, md5('release:michael-rose-leave-the-spechie')::uuid, 1, 'MICHAEL ROSE', 'LEAVE THE SPECHIE')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -257,9 +257,9 @@ values (md5('sample:michael-rose-leave-the-spechie:B')::uuid, md5('release:micha
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- nozzle-man-peso-mr-give-orders
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:nozzle-man-peso-mr-give-orders')::uuid, null, null, 'PLATT PROD', null, null, null, '7"', array['Reggae']::text[], array['Roots', '90''s Dancehall']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:nozzle-man-peso-mr-give-orders:1')::uuid, md5('release:nozzle-man-peso-mr-give-orders')::uuid, 1, 'NOZZLE MAN & PESO', 'MR GIVE ORDERS')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -274,9 +274,9 @@ values (md5('sample:nozzle-man-peso-mr-give-orders:B')::uuid, md5('release:nozzl
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- sister-higgsy-free-up-higgsy
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:sister-higgsy-free-up-higgsy')::uuid, null, null, 'RED MAN INT', null, null, null, '7"', array['Reggae']::text[], array['90''s Dancehall']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:sister-higgsy-free-up-higgsy:1')::uuid, md5('release:sister-higgsy-free-up-higgsy')::uuid, 1, 'SISTER HIGGSY', 'FREE UP HIGGSY')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -291,9 +291,9 @@ values (md5('sample:sister-higgsy-free-up-higgsy:B')::uuid, md5('release:sister-
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- sluggy-ranks-no-money-na-run
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:sluggy-ranks-no-money-na-run')::uuid, null, null, 'ROCKERS FOREVER', null, null, null, '7"', array['Reggae']::text[], array['90''s Dancehall']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:sluggy-ranks-no-money-na-run:1')::uuid, md5('release:sluggy-ranks-no-money-na-run')::uuid, 1, 'SLUGGY RANKS', 'NO MONEY NA RUN')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -308,9 +308,9 @@ values (md5('sample:sluggy-ranks-no-money-na-run:B')::uuid, md5('release:sluggy-
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- super-black-call-me
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:super-black-call-me')::uuid, null, null, 'MC WORTH', null, null, null, '7"', array['Reggae']::text[], array['80''s Dancehall', 'Roots', 'Dub']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:super-black-call-me:1')::uuid, md5('release:super-black-call-me')::uuid, 1, 'SUPER BLACK', 'CALL ME')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -325,9 +325,9 @@ values (md5('sample:super-black-call-me:B')::uuid, md5('release:super-black-call
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- the-sensations-born-to-love-you
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:the-sensations-born-to-love-you')::uuid, null, null, 'TECHNIQUES', null, null, null, '7"', array['Reggae']::text[], array['Early Reggae', 'Lovers', 'Rockers']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:the-sensations-born-to-love-you:1')::uuid, md5('release:the-sensations-born-to-love-you')::uuid, 1, 'THE SENSATIONS', 'BORN TO LOVE YOU')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;
@@ -342,9 +342,9 @@ values (md5('sample:the-sensations-born-to-love-you:B')::uuid, md5('release:the-
 on conflict (id) do update set title = excluded.title, audio_key = excluded.audio_key, duration_s = excluded.duration_s, source = excluded.source, sort = excluded.sort;
 
 -- tony-curtis-nitty-kutchie-i-don-t-know
-insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, genre, style, tracklist)
+insert into public.releases (id, discogs_release_id, discogs_master_id, label, cat_no, year, country, format, macro_genre, genres, tracklist)
 values (md5('release:tony-curtis-nitty-kutchie-i-don-t-know')::uuid, null, null, 'DIAMOND RUSH', null, null, null, '7"', array['Reggae']::text[], array['Roots', '90''s Dancehall']::text[], '[]'::jsonb)
-on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, genre = excluded.genre, style = excluded.style, tracklist = excluded.tracklist;
+on conflict (id) do update set label = excluded.label, cat_no = excluded.cat_no, year = excluded.year, country = excluded.country, format = excluded.format, macro_genre = excluded.macro_genre, genres = excluded.genres, tracklist = excluded.tracklist;
 insert into public.release_lines (id, release_id, position, artist, title)
 values (md5('line:tony-curtis-nitty-kutchie-i-don-t-know:1')::uuid, md5('release:tony-curtis-nitty-kutchie-i-don-t-know')::uuid, 1, 'TONY CURTIS & NITTY KUTCHIE', 'I DON''T KNOW')
 on conflict (id) do update set artist = excluded.artist, title = excluded.title;

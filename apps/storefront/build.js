@@ -126,14 +126,14 @@ write('js/toast.js', toastJs);
 for (const f of fs.readdirSync(path.join(APP, 'public'))) write('assets/' + f, fs.readFileSync(path.join(APP, 'public', f)));
 
 const order = new Map(products.map((p, i) => [p, i]));
-// "More for sale" (PDP): up to 3 other available products of the same section, most shared styles first, then
+// "More for sale" (PDP): up to 3 other available products of the same section, most shared genres first, then
 // listing order. Placeholder logic until the backend provides recommendations.
 const RELATED_COUNT = 3;
 function relatedTo(product) {
-  const styles = new Set(product.release.style);
+  const genres = new Set(product.release.genres || []);
   return products
     .filter(p => p !== product && p.listing.section === product.listing.section && p.listing.status === 'available')
-    .map(p => ({ p, score: p.release.style.filter(s => styles.has(s)).length }))
+    .map(p => ({ p, score: (p.release.genres || []).filter(g => genres.has(g)).length }))
     .sort((a, b) => b.score - a.score || order.get(a.p) - order.get(b.p))
     .slice(0, RELATED_COUNT).map(x => x.p);
 }

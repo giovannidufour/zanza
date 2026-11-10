@@ -302,9 +302,10 @@
 
   /* -- PLP filters (pages/plp.js, Figma page `filters`) --------------------
      OR inside a block, AND between blocks. Counts = records you would see by ticking that option, given the other
-     blocks; an option at 0 is hidden unless ticked. State lives in the URL (?subgenre=Roots&format=7"), so a
+     blocks; an option at 0 is hidden unless ticked. State lives in the URL (?genre=Roots&format=7"), so a
      filtered list can be shared and Back restores it. Active filter row (0041, in place of the breadcrumbs) = the filter
-     reached from a link: artist / label (no checkbox) or the subgenre / tag a card's tag linked to, one removable chip.
+     reached from a link: artist / label (no checkbox) or the genre / tag a card's tag linked to, one removable chip.
+     Links from before decision 0048 (?subgenre=Roots) are rewritten to ?genre= in place.
      The column's checkboxes are the applied state. On mobile (Figma `filters layer`, 2026-11-10) the layer has its
      own checkboxes: a draft, copied from the column when the layer opens and back to it on Apply; closing discards
      it. Levels: main (applied recap + one row per facet) and facet (the options of one facet). */
@@ -323,9 +324,14 @@
       return v;
     });
     var params = new URLSearchParams(location.search);
+    if (params.has('subgenre')) {   // subgenre was renamed genre (0048): old shared links keep working
+      params.getAll('subgenre').forEach(function (v) { params.append('genre', v); });
+      params.delete('subgenre');
+      history.replaceState(history.state, '', location.pathname + '?' + params.toString() + location.hash);
+    }
     boxes.forEach(function (b) { b.checked = params.getAll(b.name).indexOf(b.value) !== -1; });
     var hiddenSel = {}; hidden.forEach(function (f) { hiddenSel[f.key] = params.getAll(f.key); });
-    // the link filter (0041): a page opened on exactly one subgenre / tag value (a card's tag link: a new click replaces
+    // the link filter (0041): a page opened on exactly one genre / tag value (a card's tag link: a new click replaces
     // it) shows that value as a chip until it is unticked. Decided once per history entry and kept in history.state,
     // so reload and Back keep it, while ticking the same option by hand never makes a chip.
     var linked = null;
@@ -375,8 +381,8 @@
       hidden.forEach(function (f) { s[f.key].forEach(function (x) { out.push({ key: f.key, value: x, text: f.label + ': ' + ((f.names || {})[x] || x) }); }); });
       return out;
     }
-    var LINK_LABEL = { subgenre: 'Subgenre', tag: 'Tag' };
-    // the row's chips: the hidden-facet chips, else the linked subgenre / tag while still ticked
+    var LINK_LABEL = { genre: 'Genre', tag: 'Tag' };
+    // the row's chips: the hidden-facet chips, else the linked genre / tag while still ticked
     function rowChipsOf(s) {
       var out = chipsOf(s);
       if (linked && s[linked.key] && s[linked.key].indexOf(linked.value) !== -1) {

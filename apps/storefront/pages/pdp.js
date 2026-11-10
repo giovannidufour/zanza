@@ -12,7 +12,7 @@ function breadcrumbItems(product, url) {
   const { listing, release } = product;
   return [
     { label: SECTION_LABEL[listing.section], href: url(`/${listing.section}/`) },
-    { label: release.style[0] || release.genre[0], href: null },
+    { label: (release.genres || [])[0] || (release.macro_genre || [])[0], href: null },
     { label: release.format, href: null }
   ];
 }

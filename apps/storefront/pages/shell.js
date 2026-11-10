@@ -123,16 +123,16 @@ function sampleAttrs(product, s, url) {
 }
 
 // A product as a ProductCard (PLP list, PDP "More for sale"). No device: responsive card.
-// one tag group: subgenres first, then the shop's own tags (decision 0031)
+// one tag group: genres first, then the shop's own tags (decisions 0031, 0048)
 function tagsOf(release) {
-  return [...new Set([...(release.style || []), ...(release.tags || [])])];
+  return [...new Set([...(release.genres || []), ...(release.tags || [])])];
 }
-// the same tags as links to the sale PLP filtered by them (Gio 2026-11-10): subgenre → ?subgenre=, own tag → ?tag=
-// (the PLP filter keys, pages/plp.js FACETS). A name that is both stays a subgenre, as in tagsOf.
+// the same tags as links to the sale PLP filtered by them (Gio 2026-11-10): genre → ?genre=, own tag → ?tag=
+// (the PLP filter keys, pages/plp.js FACETS). A name that is both stays a genre, as in tagsOf.
 function tagLinksOf(release, url) {
   const seen = new Set();
   const out = [];
-  [['subgenre', release.style || []], ['tag', release.tags || []]].forEach(([key, names]) => names.forEach((name) => {
+  [['genre', release.genres || []], ['tag', release.tags || []]].forEach(([key, names]) => names.forEach((name) => {
     if (seen.has(name)) return;
     seen.add(name);
     out.push({ label: name, href: plpHref(url, key, name) });
