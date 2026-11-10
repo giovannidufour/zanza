@@ -6,7 +6,7 @@ const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 
-const { SECTION_LABEL, tagsOf, formatPrice, productName, releaseInfo, grading, SiteHeader, sampleAttrs, ProductCardFor } = require('./shell.js');
+const { SECTION_LABEL, tagsOf, formatPrice, productName, releaseInfo, grading, coverGrading, SiteHeader, sampleAttrs, ProductCardFor } = require('./shell.js');
 
 function breadcrumbItems(product, url) {
   const { listing, release } = product;
@@ -38,6 +38,7 @@ function Pdp({ product, related = [], site, url }) {
         tags: tagsOf(release).length ? h(Z.TagGroup, null, tagsOf(release).map((s) => h(Z.Tag, { key: s, size: 'large' }, s))) : null,
         description: copy.notes,
         grading: grading(copy),
+        cover: coverGrading(copy),
         // each PlayerButton carries what the site player needs (scripts/site.js): the product's samples are its queue
         // label = the track title when there is one; without it the button is icon-only and keeps an accessible name
         samples: samples.length ? samples.map((s, i) => h(Z.PlayerButton, Object.assign({

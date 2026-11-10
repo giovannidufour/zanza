@@ -1,10 +1,10 @@
 # ProductCard
 
-A release in a list: cover, name and release info, tags, sample players, add button, price, description and grading. Figma: page PDP → `product card` (device=desktop | mobile).
+A release in a list: cover, name and release info, tags, sample players, add button, price, description, grading and cover grade. Figma: page PDP → `product card` (device=desktop | mobile).
 
 One markup for both variants; CSS grid places the blocks ([0016](../../../../design/decisions/0016-one-markup-blocks-placed-by-grid.md)):
 
-- **Desktop:** 9-column grid, gap `gutter-small`. Image cols 1–2 (square) · info cols 3–5 (title block, tags, samples; gap 16) · purchase cols 6–9 (button fill, price; gap 8) with description + grading below it.
+- **Desktop:** 9-column grid, gap `gutter-small`. Image cols 1–2 (square) · info cols 3–5 (title block, tags, samples; gap 16) · purchase cols 6–9 (button fill, price; gap 8) with description + grading + cover below it.
 - **Mobile:** 12-column grid, gap `gutter-small`. Image 4 cols · info (title block, description, tags, samples) fills · purchase hugs, right-aligned (button hug, price). 16 below the content.
 
 ## API
@@ -23,7 +23,8 @@ One markup for both variants; CSS grid places the blocks ([0016](../../../../des
 | `releaseInfo` | `ReactNode` |  | Figma `release info`, e.g. "Label Format (Country)". |
 | `price` | `ReactNode` |  | Figma `price`, already formatted. |
 | `description` | `ReactNode` |  | Figma `description`. Desktop: purchase column, below the price; mobile: info column, below the title. |
-| `grading` | `ReactNode` |  | Figma `grading`, already formatted. |
+| `grading` | `ReactNode` |  | Figma `grading`: the record's grade, already formatted ("Record: VG+ / VG"). |
+| `cover` | `ReactNode` |  | Figma `cover` (boolean + text): the cover/sleeve grade below the record's, already formatted ("Cover: NM"). Omit when not graded. |
 | `tags` | `string[]` |  | Tag labels. Rendered as a TagGroup: size large on desktop, small on mobile. |
 | `samples` | `ReactNode` |  | &lt;PlayerButton>s, in a row (gap 8). |
 | `onAdd` | `() => void` |  | Click on the add button. |
@@ -53,7 +54,7 @@ Type:
 | | desktop | mobile |
 | --- | --- | --- |
 | name, release info, price | `body-large` | `body-medium` |
-| description, grading | `body-medium` | `body-small` |
+| description, grading, cover | `body-medium` | `body-small` |
 | tags | Tag `large` (`body-medium`) | Tag `small` (`body-extra-small`) |
 | button | Button `medium`, fill | Button `small`, hug |
 

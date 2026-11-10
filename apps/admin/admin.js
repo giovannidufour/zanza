@@ -123,7 +123,7 @@
       lines: [newLine()],
       label: [], labelCredit: '', labelSpelled: false, preRelease: false, country: '', year: '', format: '', section: 'sale', price: '',
       genre: '', subgenres: [], tags: [],   // subgenres = Discogs styles; tags = the shop's own (Rare, Killer version...)
-      condition: '', conditionB: '', conditionNotes: '', sleeveType: 'original', sleeveCondition: '',
+      condition: '', conditionB: '', conditionNotes: '', sleeveType: 'generic', sleeveCondition: '',
       notes: '',
       images: [],    // { id, key, name, url, uploading }
       samples: []    // { id, key, name, url, line (1-based) | null, uploading }
@@ -543,8 +543,8 @@
         h('div', { className: 'admin-row' },
           h(Z.Input, Object.assign({ className: 'span-8', id: 'condition-notes', label: 'Conditions comment', optional: true }, bind('conditionNotes')))),
         h('div', { className: 'admin-row' },
-          h(Z.Input, Object.assign({ className: 'span-4', id: 'sleeve-type', label: 'Cover/sleeve', variant: 'select' }, bind('sleeveType')), opts(SLEEVES)),
-          f.sleeveType !== 'none' ? h(Z.Input, Object.assign({ className: 'span-4', id: 'sleeve-condition', label: 'Cover/sleeve conditions', optional: true, variant: 'select', placeholder: '' }, bind('sleeveCondition')), opts(GRADES)) : null)),
+          h(Z.Input, Object.assign({ className: 'span-4', id: 'sleeve-type', label: 'Cover', variant: 'select' }, bind('sleeveType')), opts(SLEEVES)),
+          f.sleeveType !== 'none' ? h(Z.Input, Object.assign({ className: 'span-4', id: 'sleeve-condition', label: 'Cover conditions', optional: true, variant: 'select', placeholder: '' }, bind('sleeveCondition')), opts(GRADES)) : null)),
       h(Z.Divider),
 
       h('section', { className: 'admin-section' },
@@ -593,7 +593,8 @@
             releaseInfo: previewReleaseInfo(f) || null,
             tags: tags.length ? h(Z.TagGroup, null, tags.map(function (n, i) { return h(Z.Tag, { key: i, size: 'large' }, n); })) : null,
             description: f.notes.trim() || null,
-            grading: f.condition ? 'Grading: ' + [f.condition, f.conditionB].filter(Boolean).join(' / ') : null,
+            grading: f.condition ? 'Record: ' + [f.condition, f.conditionB].filter(Boolean).join(' / ') : null,
+            cover: f.sleeveType !== 'none' && f.sleeveCondition ? 'Cover: ' + f.sleeveCondition : null,
             samples: f.samples.length ? f.samples.map(function (s, i) {
               var t = sampleTitleOf(s);
               return h(Z.PlayerButton, { key: s.id, playing: playing === s.id, onClick: function () { togglePlay(s); },
