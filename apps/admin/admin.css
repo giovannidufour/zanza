@@ -29,6 +29,7 @@ h1, h2, p { margin: 0; }
 .admin-row--tight { row-gap: 8px; }                                           /* Figma `line`, Label row: gap-y 8 */
 .span-2 { grid-column: span 2; } .span-3 { grid-column: span 3; } .span-4 { grid-column: span 4; }
 .span-6 { grid-column: span 6; } .span-8 { grid-column: span 8; } .col-8 { grid-column: 8; }
+.span-4.row-start { grid-column: 1 / span 4; }                                       /* a new grid row (Figma: checkbox rows under Label) */
 
 .admin-status { min-height: 16px; }
 .admin-status--error { color: var(--text-alert); }

@@ -11,7 +11,8 @@ const SECTION_LABEL = { sale: 'For sale', trade: 'For trade' };
 const formatPrice = (p) => `${p.amount % 100 === 0 ? p.amount / 100 : (p.amount / 100).toFixed(2)}€`;
 // `name` comes from the database (custom title or the release lines, see data/products.js); JSON test content has none
 const productName = (r) => r.name || `${r.artist} - ${r.title}`;
-const releaseInfo = (r) => [r.label, r.format, r.country ? `(${r.country})` : null].filter(Boolean).join(' ');
+// a pre-release ("blank") of the label: "Pre" right after the label name (Gio, 2026-11-10)
+const releaseInfo = (r) => [r.label, r.label && r.pre_release ? 'Pre' : null, r.format, r.country ? `(${r.country})` : null].filter(Boolean).join(' ');
 const grading = (c) => `Grading: ${c.condition_media}`;
 const productHref = (product, url) => url(`/products/${product.listing.slug}/`);
 
