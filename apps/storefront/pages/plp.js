@@ -71,7 +71,7 @@ function PlpFilters({ facets, hidden, sorts }) {
 // Mobile filters (Figma `filters layer`, 2026-11-10): the same facets as the column, in a full-screen native dialog.
 // Its checkboxes are a draft: site.js copies the column's state in when it opens and back on Apply.
 function PlpLayer({ facets }) {
-  return h('dialog', { className: 'plp-layer', 'aria-label': 'Filter', 'data-plp-layer': '' },
+  return h('dialog', { className: 'plp-layer', 'aria-label': 'Filter', tabIndex: -1, 'data-plp-layer': '' },
     h(Z.FiltersLayer, { level: 'main', title: 'Filter', applied: null, appliedLabel: 'Applied', applyCount: null },
       // level=main: one row per facet (value = its ticked options, written by site.js)
       h('div', { className: 'plp-layer__facets', 'data-layer-facets': '' },
