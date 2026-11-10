@@ -78,8 +78,15 @@ function toProduct(row, mediaUrl) {
       name: nameOf(lines, row.custom_title),
       artist: lines[0].artist,
       title: lines.map((l) => l.title).join(' / '),
-      lines: lines.map((l) => ({ side: String.fromCharCode(64 + l.position), artist: l.artist, title: l.title })),
+      // artists: the entities behind the printed credit (migration 0006), so a filter by artist also finds the
+      // records where the credit is spelled differently (an alias)
+      lines: lines.map((l) => ({
+        side: String.fromCharCode(64 + l.position), artist: l.artist, title: l.title,
+        artists: (l.line_artists || []).slice().sort((a, b) => a.position - b.position)
+          .filter((a) => a.artist).map((a) => ({ slug: a.artist.slug, name: a.artist.name, join: a.join_text }))
+      })),
       label: r.label,
+      label_ref: r.label_entity ? { slug: r.label_entity.slug, name: r.label_entity.name } : null,   // the label entity
       pre_release: !!r.pre_release,
       cat_no: r.cat_no,
       year: r.year,
@@ -119,7 +126,9 @@ function byListingOrder(a, b) {
 }
 
 async function fromSupabase(env, site, fetchImpl = fetch) {
-  const select = '*,release:releases(*,lines:release_lines(*),samples(*),tag_rows:release_tags(position,tag:tags(name)))';
+  const select = '*,release:releases(*,label_entity:labels(slug,name),' +
+    'lines:release_lines(*,line_artists:release_line_artists(position,join_text,artist:artists(slug,name))),' +
+    'samples(*),tag_rows:release_tags(position,tag:tags(name)))';
   const res = await fetchImpl(`${env.SUPABASE_URL.replace(/\/$/, '')}/rest/v1/listings?select=${encodeURIComponent(select)}`, {
     headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, Accept: 'application/json' }
   });

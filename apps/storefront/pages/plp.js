@@ -6,7 +6,7 @@
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
-const { SECTION_LABEL, SiteHeader, ProductCardFor } = require('./shell.js');
+const { SECTION_LABEL, SiteHeader, ProductCardFor, labelRef, artistRefs } = require('./shell.js');
 
 const FORMAT_ORDER = ['7"', '10"', '12"', 'LP', 'Tape'];
 const decadeOf = (year) => (year ? `${Math.floor(year / 10) * 10}s` : null);
@@ -19,6 +19,21 @@ const FACETS = [
   { key: 'decade', label: 'Decade', values: (p) => [decadeOf(p.release.year)].filter(Boolean), order: 'name' },
   { key: 'tag', label: 'Tags', values: (p) => p.release.tags || [], order: 'count' }
 ];
+// filters with no list in the column (Gio 2026-11-10: not all labels always visible). Reached by a link
+// (?label=…); while active they show as a removable chip above the list.
+// Values are entity slugs (label / artist), so a misspelt credit still matches; `refs` give the names.
+const HIDDEN_FACETS = [
+  { key: 'artist', label: 'Artist', refs: (p) => artistRefs(p.release) },
+  { key: 'label', label: 'Label', refs: (p) => [labelRef(p.release)].filter(Boolean) }
+].map((f) => Object.assign(f, { values: (p) => f.refs(p).map((r) => r.slug) }));
+// slug → name of each hidden facet on the page (chip and breadcrumb text)
+function hiddenFacetsOf(products) {
+  return HIDDEN_FACETS.map((f) => {
+    const names = {};
+    for (const p of products) for (const r of f.refs(p)) if (!names[r.slug]) names[r.slug] = r.name;
+    return { key: f.key, label: f.label, names };
+  });
+}
 
 // the options of each facet with their counts on the whole page; a facet with no options is not rendered
 function facetsOf(products) {
@@ -37,10 +52,14 @@ function facetsOf(products) {
 // shown: 7”, as in Figma (curly double prime); the value stays as stored
 const optionLabel = (key, v) => (key === 'format' ? v.replace(/"$/, '”') : v);
 
-function PlpFilters({ facets }) {
+function PlpFilters({ facets, hidden }) {
   // Figma: `filters` > `filter block` per facet > `filter` (content=label, count)
-  return h('aside', { className: 'plp-filters', 'aria-label': 'Filters', 'data-plp-filters': '' },
+  return h('aside', { className: 'plp-filters', 'aria-label': 'Filters', 'data-plp-filters': '',
+    'data-hidden-facets': JSON.stringify(hidden) },
     h(Z.Filters, null,
+      // active hidden filters (label) on top of the column (Gio 2026-11-10): one EntityChip each, built by site.js
+      h('div', { className: 'plp-active', hidden: true, 'data-plp-active': '' }),
+      h('template', { 'data-plp-chip': '' }, h(Z.EntityChip, { label: '' })),
       facets.map((f) => h(Z.FilterBlock, { key: f.key, label: f.label },
         f.options.map((o) => h(Z.Filter, {
           key: o.value, name: f.key, value: o.value, label: optionLabel(f.key, o.value), count: o.count,
@@ -59,12 +78,12 @@ function Plp({ section, products, site, url }) {
 
     // Figma: `pdp content` (sic) — 12-col grid, gap gutter-small, padding-y small; filters cols 1–3, list cols 4–12
     h('div', { className: 'plp-content' },
-      facets.length ? h(PlpFilters, { facets }) : null,
+      facets.length ? h(PlpFilters, { facets, hidden: hiddenFacetsOf(products) }) : null,
       h('main', { className: 'plp-list' },
         h('h1', { className: 'plp-list__title' }, SECTION_LABEL[section]),
         // no device: responsive card (desktop variant on PLP - desktop, mobile variant on PLP - mobile)
         products.map((product) => h('div', Object.assign({ key: product.listing.slug, className: 'plp-item' },
-          ...FACETS.map((f) => ({ [`data-${f.key}`]: JSON.stringify([...new Set(f.values(product))]) }))),
+          ...FACETS.concat(HIDDEN_FACETS).map((f) => ({ [`data-${f.key}`]: JSON.stringify([...new Set(f.values(product))]) }))),
           h(ProductCardFor, { product, url }))),
         h('p', { className: 'plp-list__empty body-medium', hidden: true, 'data-plp-empty': '' }, 'No records match these filters.')))
   );

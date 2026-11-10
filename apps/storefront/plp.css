@@ -40,3 +40,8 @@ html[data-header-revealing] .plp-filters { transition: top 200ms ease-out, max-h
 }
 .plp-filters .zz-filter[hidden],
 .plp-filters .zz-filter-block[hidden] { display: none; }
+
+/* active filters with no list (label, ?label=): EntityChips on top of the filter column (Gio 2026-11-10),
+   spaced like a filter block (Filters gap 24). Not in Figma (design/open.md); gap 4 as the tag group. */
+.plp-active { display: flex; flex-wrap: wrap; gap: 4px; }
+.plp-active[hidden] { display: none; }
