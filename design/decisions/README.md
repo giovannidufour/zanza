@@ -57,3 +57,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0031](0031-subgenres-and-tags.md) | Subgenres (Discogs styles) and tags (the shop's own) are separate | accepted |
 | [0032](0032-create-page-on-surface-base.md) | The create / edit page is on `surface/base` | accepted |
 | [0033](0033-pdp-gallery-scrolls-on-its-own.md) | PDP desktop gallery: images stacked, the column scrolls on its own | accepted |
+| [0034](0034-media-graded-per-side.md) | The record is graded per side: `VG+ / VG`, side B optional | accepted |

@@ -122,7 +122,7 @@
       lines: [newLine()],
       label: [], labelCredit: '', labelSpelled: false, preRelease: false, country: '', year: '', format: '', section: 'sale', price: '',
       genre: '', subgenres: [], tags: [],   // subgenres = Discogs styles; tags = the shop's own (Rare, Killer version...)
-      condition: '', conditionNotes: '', sleeveType: 'original', sleeveCondition: '',
+      condition: '', conditionB: '', conditionNotes: '', sleeveType: 'original', sleeveCondition: '',
       notes: '',
       images: [],    // { id, key, name, url, uploading }
       samples: []    // { id, key, name, url, line (1-based) | null, uploading }
@@ -156,7 +156,7 @@
     f.subgenres = subRows.length ? subRows.map(function (t) { return chip(t.subgenre); }) : (r.style || []).map(function (n) { return { id: null, name: n }; });
     f.tags = (r.tag_rows || []).slice().sort(byPos).map(function (t) { return chip(t.tag); });
     f.genre = (r.genre || [])[0] || '';
-    f.condition = row.condition_media || ''; f.conditionNotes = row.condition_notes || '';
+    f.condition = row.condition_media || ''; f.conditionB = row.condition_media_b || ''; f.conditionNotes = row.condition_notes || '';
     f.sleeveType = row.sleeve_type || 'original'; f.sleeveCondition = row.condition_sleeve || '';
     f.notes = row.notes || '';
     f.images = (row.photo_keys || []).map(function (k) { return { id: nextId(), key: k, name: fileNameOf(k), url: mediaUrl(k) }; });
@@ -220,7 +220,7 @@
     if (!f.lines[0].artists.length) e['artist-0'] = 'Pick or create the artist.';
     f.lines.forEach(function (l, i) { if (!l.title.trim()) e['title-' + i] = 'Enter the title.'; });
     if (!f.format) e.format = 'Choose a format.';
-    if (!f.condition) e.condition = 'Choose the condition of the record.';
+    if (!f.condition) e.condition = 'Choose the condition of side A.';
     var cents = textToCents(f.price);
     if (f.section === 'sale' && cents === null) e.price = 'Enter a price.';
     else if (Number.isNaN(cents)) e.price = 'Use a number, e.g. 12 or 12.50.';
@@ -248,7 +248,7 @@
       }),
       listing: {
         section: f.section, status: status, price_cents: textToCents(f.price),
-        condition_media: f.condition, condition_notes: f.conditionNotes,
+        condition_media: f.condition, condition_media_b: f.conditionB, condition_notes: f.conditionNotes,
         sleeve_type: f.sleeveType, condition_sleeve: f.sleeveType === 'none' ? '' : f.sleeveCondition,
         notes: f.notes, custom_title: f.customTitle,
         photo_keys: f.images.map(function (x) { return x.key; })
@@ -535,12 +535,15 @@
       h(Z.Divider),
 
       h('section', { className: 'admin-section' },
+        // Figma 2095:20560: media graded per side (side B optional, migration 0012), comment on its own row
         h('div', { className: 'admin-row' },
-          h(Z.Input, Object.assign({ className: 'span-2', id: 'condition', label: 'Conditions', variant: 'select', placeholder: '' }, bind('condition')), opts(GRADES)),
-          h(Z.Input, Object.assign({ className: 'span-6', id: 'condition-notes', label: 'Conditions comment', optional: true }, bind('conditionNotes')))),
+          h(Z.Input, Object.assign({ className: 'span-4', id: 'condition', label: 'Side A conditions', variant: 'select', placeholder: '' }, bind('condition')), opts(GRADES)),
+          h(Z.Input, Object.assign({ className: 'span-4', id: 'condition-b', label: 'Side B conditions', optional: true, variant: 'select', placeholder: '' }, bind('conditionB')), opts(GRADES))),
         h('div', { className: 'admin-row' },
-          h(Z.Input, Object.assign({ className: 'span-2', id: 'sleeve-type', label: 'Cover/sleeve', variant: 'select' }, bind('sleeveType')), opts(SLEEVES)),
-          f.sleeveType !== 'none' ? h(Z.Input, Object.assign({ className: 'span-3', id: 'sleeve-condition', label: 'Cover/sleeve conditions', optional: true, variant: 'select', placeholder: '' }, bind('sleeveCondition')), opts(GRADES)) : null)),
+          h(Z.Input, Object.assign({ className: 'span-8', id: 'condition-notes', label: 'Conditions comment', optional: true }, bind('conditionNotes')))),
+        h('div', { className: 'admin-row' },
+          h(Z.Input, Object.assign({ className: 'span-4', id: 'sleeve-type', label: 'Cover/sleeve', variant: 'select' }, bind('sleeveType')), opts(SLEEVES)),
+          f.sleeveType !== 'none' ? h(Z.Input, Object.assign({ className: 'span-4', id: 'sleeve-condition', label: 'Cover/sleeve conditions', optional: true, variant: 'select', placeholder: '' }, bind('sleeveCondition')), opts(GRADES)) : null)),
       h(Z.Divider),
 
       h('section', { className: 'admin-section' },
@@ -589,7 +592,7 @@
             releaseInfo: previewReleaseInfo(f) || null,
             tags: tags.length ? h(Z.TagGroup, null, tags.map(function (n, i) { return h(Z.Tag, { key: i, size: 'large' }, n); })) : null,
             description: f.notes.trim() || null,
-            grading: f.condition ? 'Grading: ' + f.condition : null,
+            grading: f.condition ? 'Grading: ' + [f.condition, f.conditionB].filter(Boolean).join(' / ') : null,
             samples: f.samples.length ? f.samples.map(function (s, i) {
               var t = sampleTitleOf(s);
               return h(Z.PlayerButton, { key: s.id, playing: playing === s.id, onClick: function () { togglePlay(s); },

@@ -93,6 +93,7 @@ function toProduct(row, mediaUrl) {
     },
     copy: {
       condition_media: row.condition_media,
+      condition_media_b: row.condition_media_b,   // side B, null = not graded (migration 0012)
       sleeve_type: row.sleeve_type,
       condition_sleeve: row.condition_sleeve,
       condition_notes: row.condition_notes,
