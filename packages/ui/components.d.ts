@@ -241,7 +241,7 @@ export interface RelatedProductsProps extends HTMLAttributes<HTMLElement> {
 }
 export declare function RelatedProducts(props: RelatedProductsProps): JSX.Element;
 
-/** Product images: 2 per product. Desktop: big + half-width below; mobile: horizontal swipe. Mirrors the PDP placement (no Figma gallery component yet). */
+/** Product images: 2 per product. Desktop: stacked full width, gap gutter-small, vertical scroll inside `--zz-gallery-max-height` (set by the page); mobile: horizontal swipe. Mirrors the PDP frames (no Figma gallery component yet). */
 export interface GalleryImage {
   /** Image URL. */
   src: string;

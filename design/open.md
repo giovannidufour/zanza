@@ -12,6 +12,7 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - **Type size tokens.** Coming later; until then the classes carry the sizes ([0003](decisions/0003-type-styles-are-classes.md)).
 - **PlayerButton disabled.** No strikethrough, unlike Button: intentional?
 - **Gallery.** Figma component not designed yet; image placeholder fill `#f2f4f7` has no token. *Parked.*
+- **PDP gallery scroll ([0033](decisions/0033-pdp-gallery-scrolls-on-its-own.md)).** Code choices not drawn in Figma: no scrollbar (nothing hints that image 2 continues when the window is shorter than the column); sticky at `top: 0`, so the header coming back on scroll up covers the top of the images; the column only sticks while its two grid rows are on screen (short "More for sale" list = little sticky range). In Figma row 1 is FIXED 330.67, valid only at 1024: a taller info block would overflow it there (code grows the row). To confirm or design.
 
 - **Player track number.** Figma shows "1" next to the title and "1 of 3" in the controls; code maps the first to the track position on the record (A, B) — to confirm.
 - **ProductCard link.** No link to the product page in Figma. Code: the cover is the link (`href`, no visual change, so the PLP is navigable). Proposal: the title becomes the link too (link style to design).

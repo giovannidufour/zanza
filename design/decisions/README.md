@@ -56,3 +56,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0030](0030-admin-shop-preview.md) | The admin shows a live shop preview, built from the shop's components | accepted |
 | [0031](0031-subgenres-and-tags.md) | Subgenres (Discogs styles) and tags (the shop's own) are separate | accepted |
 | [0032](0032-create-page-on-surface-base.md) | The create / edit page is on `surface/base` | accepted |
+| [0033](0033-pdp-gallery-scrolls-on-its-own.md) | PDP desktop gallery: images stacked, the column scrolls on its own | accepted |
