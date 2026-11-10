@@ -15,7 +15,7 @@ The single action control: two hierarchies, four sizes, four interaction states,
 | `trailingIcon` | `ReactNode` |  | Icon slot after the label. Figma: `trailing icon`. |
 | `suffix` | `ReactNode` |  | Text after the label, same text style, gap 4: a count ("(3)", "21"), never concatenated into the label (0029). Figma: `suffix` + `suffix text`. |
 | `children` | `ReactNode` |  | Label text. Rendered uppercase by the label text style. Omit for an icon-only button — then `aria-label` is required. |
-| `state` | `"default" \| "hover" \| "pressed" \| "disabled"` |  | Documentation only: pins a visual state regardless of pointer. Do not use in product code. |
+| `state` | `"default" \| "hover" \| "pressed" \| "disabled" \| "active"` |  |  |
 | `href` | `string` |  | When set, renders an &lt;a> styled as the button (navigation). |
 
 `*` required.

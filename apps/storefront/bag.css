@@ -1,0 +1,34 @@
+/* apps/storefront/bag.css — page layout of the bag (Figma: page Bag → frame `bag content`). Layout only:
+   BagItem / BagSummary bring their own styles from packages/ui. Decision 0044. */
+
+.bag-content {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));   /* Figma: 12 FLEX columns */
+  column-gap: var(--gutter-small);
+  row-gap: var(--gutter-small);
+  padding: var(--small) 0;                             /* Figma: paddingTop/Bottom → small */
+  align-items: start;
+}
+.bag-content__title   { grid-column: 1 / -1; margin: 0; }   /* Figma: title, row 1, cols 1–12 */
+.bag-list, .bag-empty { grid-column: 1 / span 8; }          /* Figma: bag list, row 2, cols 1–8 */
+.bag-content__summary { grid-column: 9 / span 4; }          /* Figma: bag summary, row 2, cols 9–12 */
+
+/* Figma `bag list`: divider + bag item per line, gap medium-small */
+.bag-list { display: flex; flex-direction: column; gap: var(--medium-small); margin: 0; padding: 0; list-style: none; }
+.bag-list__line { display: flex; flex-direction: column; gap: var(--medium-small); }
+.bag-list__line[hidden] { display: none; }
+
+/* Figma `empty bag`: divider, message, Browse; gap medium-small */
+.bag-empty { display: flex; flex-direction: column; align-items: flex-start; gap: var(--medium-small); }
+.bag-empty p { margin: 0; }
+.bag-empty[hidden], .bag-list[hidden], .bag-content__summary[hidden] { display: none; }
+.bag-empty__browse[data-device="mobile"] { display: none; }
+
+@media (--mobile) {
+  /* Figma: Bag - mobile, one column: title, list, summary; gap small */
+  .bag-content { grid-template-columns: minmax(0, 1fr); }
+  .bag-content__title, .bag-list, .bag-empty, .bag-content__summary { grid-column: 1; }
+  .bag-empty { align-items: stretch; }
+  .bag-empty__browse[data-device="desktop"] { display: none; }
+  .bag-empty__browse[data-device="mobile"] { display: inline-flex; }
+}
