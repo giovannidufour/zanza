@@ -509,7 +509,10 @@
           key: child.key || i,
           className: 'zz-file-list__item',
           draggable: move ? true : undefined,
-          onDragStart: move ? function (e) { dragFrom.current = i; e.dataTransfer.effectAllowed = 'move'; } : undefined,
+          onDragStart: move ? function (e) {
+            // selecting text in a field of the row (e.g. a sample title) must not drag the row
+            if (e.target.closest && e.target.closest('input, textarea, select')) { e.preventDefault(); return; }
+            dragFrom.current = i; e.dataTransfer.effectAllowed = 'move'; } : undefined,
           onDragOver: move ? function (e) { if (dragFrom.current !== null) e.preventDefault(); } : undefined,
           onDrop: move ? function (e) { e.preventDefault(); var from = dragFrom.current; dragFrom.current = null; if (from !== null && from !== i) move(from, i); } : undefined,
           onDragEnd: move ? function () { dragFrom.current = null; } : undefined
@@ -530,12 +533,14 @@
     return h('div', Object.assign({
       className: cx('zz-file-item', props.className),
       'data-media': props.image ? 'image' : (playable ? 'audio' : undefined)
-    }, omit(props, ['name', 'position', 'image', 'featured', 'featuredLabel', 'playing', 'onTogglePlay', 'onRemove', 'removeLabel', 'reorderLabel', 'className'])),
+    }, omit(props, ['name', 'position', 'image', 'featured', 'featuredLabel', 'playing', 'onTogglePlay', 'onRemove', 'removeLabel', 'reorderLabel', 'className', 'children'])),
       ctx.move ? h('button', {
         type: 'button', className: 'zz-file-item__handle',
         'aria-label': props.reorderLabel || ('Move ' + name + ', position ' + (ctx.index + 1) + ' of ' + ctx.count + ' (arrow up / down)'),
         onKeyDown: onHandleKey
       }, h('span', { className: 'zz-file-item__handle-icon', 'aria-hidden': 'true' }, h(DragHandleIcon))) : null,
+      // children (e.g. the sample title Input, Figma 2095:20507) sit under the file row, gap 8
+      h(props.children ? 'div' : React.Fragment, props.children ? { className: 'zz-file-item__body' } : null,
       h('div', { className: 'zz-file-item__content' },
         props.image ? h('span', { className: 'zz-file-item__thumb' }, props.image.src ? h('img', { src: props.image.src, alt: props.image.alt || '' }) : null) : null,
         playable ? h(IconButton, { 'data-playing': props.playing ? 'true' : 'false', 'aria-pressed': !!props.playing, 'aria-label': (props.playing ? 'Pause ' : 'Play ') + name,
@@ -543,6 +548,7 @@
         h('span', { className: 'zz-file-item__position body-medium' }, position),
         h('span', { className: 'zz-file-item__name body-medium' }, name),
         props.featured ? h('span', { className: 'zz-file-item__featured body-medium' }, props.featuredLabel || '(featured)') : null),
+      props.children || null),
       props.onRemove ? h(IconButton, { className: 'zz-file-item__remove', icon: h(CloseIcon), 'aria-label': props.removeLabel || ('Remove ' + name), onClick: props.onRemove }) : null);
   }
 

@@ -159,7 +159,7 @@
     f.notes = row.notes || '';
     f.images = (row.photo_keys || []).map(function (k) { return { id: nextId(), key: k, name: fileNameOf(k), url: mediaUrl(k) }; });
     f.samples = (r.samples || []).slice().sort(function (a, b) { return a.sort - b.sort; }).map(function (s) {
-      return { id: nextId(), key: s.audio_key, name: s.title || fileNameOf(s.audio_key), url: mediaUrl(s.audio_key), line: s.line_id ? lineIdToPos[s.line_id] || null : null };
+      return { id: nextId(), key: s.audio_key, name: fileNameOf(s.audio_key), title: s.title, url: mediaUrl(s.audio_key), line: s.line_id ? lineIdToPos[s.line_id] || null : null };
     });
     return f;
   }
@@ -250,7 +250,8 @@
         notes: f.notes, custom_title: f.customTitle,
         photo_keys: f.images.map(function (x) { return x.key; })
       },
-      samples: f.samples.map(function (s) { return { line: s.line, audio_key: s.key, title: '' }; })
+      // only a title typed by Gio is stored; without it the shop shows the line title (data/products.js)
+      samples: f.samples.map(function (s) { return { line: s.line, audio_key: s.key, title: s.title || '' }; })
     };
   }
 
@@ -396,14 +397,26 @@
       setMessage({ error: false, text: STATUS_DONE[res.data.status] + ' The shop updates in about 2 minutes.' });
     }
 
-    function fileItem(listName, x, extra) {
+    function fileItem(listName, x, extra, children) {
       return h(Z.FileItem, Object.assign({
         key: x.id, name: x.uploading ? x.name + ' · uploading…' : x.name,
         onRemove: removeFrom(listName, x.id)
-      }, extra));
+      }, extra), children);
     }
     function sampleItem(s) {
       return fileItem('samples', s, { playing: playing === s.id, onTogglePlay: function () { togglePlay(s); } });
+    }
+    // samples overview (Figma 2095:20507): the title shown next to the play button in the shop.
+    // Prefilled with the line title until Gio types one; empty for additional samples.
+    function sampleTitleOf(s) {
+      if (s.title != null) return s.title;
+      var l = s.line ? f.lines[s.line - 1] : null;
+      return l ? l.title || '' : '';
+    }
+    function overviewSampleItem(s) {
+      return fileItem('samples', s, { playing: playing === s.id, onTogglePlay: function () { togglePlay(s); } },
+        h(Z.Input, { id: 'sample-title-' + s.id, 'aria-label': 'Title of ' + s.name, value: sampleTitleOf(s),
+          onChange: function (e) { patchItem('samples', s.id, { title: e.target.value }); } }));
     }
     // samples of a line keep the overview order; reorder happens in the overview
     function lineSamples(i) { return f.samples.filter(function (s) { return s.line === i + 1; }); }
@@ -496,7 +509,7 @@
 
       h('section', { className: 'admin-section' },
         h('h2', { className: 'label-medium' }, 'Samples overview'),
-        f.samples.length ? h(Z.FileList, { onMove: moveIn('samples') }, f.samples.map(sampleItem)) : null,
+        f.samples.length ? h(Z.FileList, { onMove: moveIn('samples') }, f.samples.map(overviewSampleItem)) : null,
         h(Z.DropZone, { label: 'Browse sample', accept: 'audio/mpeg', multiple: true, onFiles: addFiles('sample', null) })));
 
     var shopUrl = f.slug && f.status !== 'draft' && CFG.storefrontUrl ? CFG.storefrontUrl.replace(/\/$/, '') + '/products/' + f.slug + '/' : null;
