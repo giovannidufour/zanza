@@ -10,8 +10,8 @@
   align-items: start;
 }
 /* Figma `gallery` (2138:1176): cols 1–4, rows 1–2, images stacked, gap gutter-small. It moves with the page (not
-   sticky) and scrolls on its own; its max height runs from its top to the bottom of the window (minus the open site
-   player), so at rest the whole box is on screen and, as the page scrolls, it grows until both images show whole: the
+   sticky) and scrolls on its own; its max height runs from its top to the bottom of the window minus `page-margin-desktop`
+   (and the open site player), so at rest the whole box is on screen and, as the page scrolls, it grows until both images show whole: the
    container never crops image 2 above visible page content (decision 0036).
    --pdp-gallery-top = the gallery's top in the window, tracked by scripts/site.js on scroll and resize.
    Row 1 is at least as tall as image 1 (Figma: row 1 FIXED 330.67 at 1024); gallery gap = row gap, so row 2
@@ -23,9 +23,9 @@
 .pdp-content__gallery {
   grid-column: 1 / span 4;
   grid-row: 1 / span 2;
-  --zz-gallery-max-height: calc(100dvh - var(--pdp-gallery-top, 0px));
+  --zz-gallery-max-height: calc(100dvh - var(--pdp-gallery-top, 0px) - var(--page-margin-desktop));   /* Gio: page margin below */
 }
-body[data-player-open] .pdp-content__gallery { --zz-gallery-max-height: calc(100dvh - var(--pdp-gallery-top, 0px) - var(--site-player-height, 0px)); }
+body[data-player-open] .pdp-content__gallery { --zz-gallery-max-height: calc(100dvh - var(--pdp-gallery-top, 0px) - var(--site-player-height, 0px) - var(--page-margin-desktop)); }
 .pdp-content__related { grid-column: 5 / span 8; grid-row: 2; }   /* Figma: you may also like, row 2, cols 5–12 */
 .pdp-content__info    { grid-column: 5 / span 4; grid-row: 1; }
 .pdp-content__actions { grid-column: 9 / span 4; grid-row: 1; }
