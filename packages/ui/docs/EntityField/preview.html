@@ -1,0 +1,35 @@
+<!-- @dsCard group="Admin" height=420 subtitle="chips · menu" -->
+<!doctype html>
+<html data-theme="backend">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: var(--surface-base); color: var(--text-strong); font-family: var(--font-sans); }
+  .grid { display: grid; grid-template-columns: repeat(2, 318px); gap: 24px 40px; padding: 24px; align-items: start; }
+  .chips { display: flex; gap: 24px; padding: 24px 24px 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function () {
+  var React = window.React, ReactDOM = window.ReactDOM, Z = window.Zanza;
+  var h = React.createElement, useState = React.useState;
+  var ARTISTS = [{ id: 'a1', name: 'Lee Perry', aliases: ['Lee "Scratch" Perry'] }, { id: 'a2', name: 'The Upsetters', aliases: ['The Upsetter'] }, { id: 'a3', name: 'King Tubby', aliases: [] }];
+  var TAGS = [{ id: 't1', name: 'Roots Reggae' }, { id: 't2', name: 'Dub' }, { id: 't3', name: 'Dancehall' }];
+  function Live(p) {
+    var s = useState(p.initial), v = s[0], set = s[1];
+    return h(Z.EntityField, Object.assign({}, p, { value: v, onChange: set }));
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(h(React.Fragment, null,
+    h('div', { className: 'chips' }, ['default', 'hover', 'focus'].map(function (st) { return h(Z.EntityChip, { key: st, state: st, label: 'Lee Perry' }); })),
+    h('div', { className: 'grid' },
+      h(Live, { id: 'p-artist', label: 'Artist 1', placeholder: 'Add artist', options: ARTISTS, initial: [{ id: 'a1', name: 'Lee Perry' }], supportText: 'Type "the up" or "scratch".' }),
+      h(Live, { id: 'p-label', label: 'Label', multiple: false, placeholder: 'Search or create', options: [{ id: 'l1', name: 'Black Ark' }], initial: [{ id: 'l1', name: 'Black Ark' }], supportText: 'One label: remove it to change it.' }),
+      h(Live, { id: 'p-tags', label: 'Tags', optional: true, placeholder: 'Add tag', options: TAGS, initial: [{ id: 't1', name: 'Roots Reggae' }, { id: 't2', name: 'Dub' }] }),
+      h(Live, { id: 'p-error', label: 'Artist 1', placeholder: 'Search or create', options: ARTISTS, initial: [], error: 'Pick or create the artist.' }))));
+})();
+</script>
+</body>
+</html>

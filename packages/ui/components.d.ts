@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, ReactNode, Ref } from "react";
+import type { ButtonHTMLAttributes, CSSProperties, HTMLAttributes, InputHTMLAttributes, ReactNode, Ref } from "react";
 
 /** Mirrors the Figma component `button` — variants hierarchy × size, states via pseudo-classes. */
 export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
@@ -354,3 +354,62 @@ export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement
   state?: "default" | "active";
 }
 export declare function Checkbox(props: CheckboxProps): JSX.Element;
+
+/** One entity in an EntityField: an existing one (`id`) or a new one to create on save (`id` null). */
+export interface EntityValue {
+  id: string | null;
+  name: string;
+  [key: string]: unknown;
+}
+/** A suggestion source: official name + other spellings (shown as "alias → name"). */
+export interface EntityOption {
+  id: string;
+  name: string;
+  aliases?: string[];
+}
+/** Mirrors the Figma `input` with `chips` on (decision 0020): chips of the chosen entities + a text box with a
+ *  suggestion menu (`entity option`). WAI-ARIA combobox; keyboard: arrows, Enter, Escape, Backspace removes the last chip. */
+export interface EntityFieldProps {
+  /** Id of the text box (the label points to it). */
+  id?: string;
+  /** Figma: label text. */
+  label?: ReactNode;
+  /** Figma: optional. Shows "Optional" next to the label. */
+  optional?: boolean;
+  optionalLabel?: ReactNode;
+  /** Figma: support text. */
+  supportText?: ReactNode;
+  /** Figma: state=error; replaces the support text. */
+  error?: ReactNode;
+  /** Placeholder of the text box. */
+  placeholder?: string;
+  /** The chosen entities (controlled). */
+  value: EntityValue[];
+  /** Suggestions. Matches: names that start with the text, then that contain it, then aliases; first 8. */
+  options?: EntityOption[];
+  /** Called with the new list; `info.alias` is set when an alias was picked (the chip is the official name). */
+  onChange?: (value: EntityValue[], info: { added?: EntityValue; removed?: EntityValue; alias?: string | null }) => void;
+  /** false = one chip; the text box is hidden while it is set (Label). */
+  multiple?: boolean;
+  /** false hides "Create “…”". */
+  allowCreate?: boolean;
+  /** Verb of the create row. */
+  createLabel?: string;
+  disabled?: boolean;
+  className?: string;
+  style?: CSSProperties;
+}
+export declare function EntityField(props: EntityFieldProps): JSX.Element;
+
+/** Figma `entity chip` (page tags; state default | hover | focus): `tag item` medium + a 24×24 remove button. */
+export interface EntityChipProps extends HTMLAttributes<HTMLSpanElement> {
+  label?: ReactNode;
+  /** Remove button handler; its accessible name is `removeLabel` or "Remove <label>". */
+  onRemove?: () => void;
+  removeLabel?: string;
+  /** Documentation only: pins the Figma state. Do not use in product code. */
+  state?: "default" | "hover" | "focus";
+}
+export declare function EntityChip(props: EntityChipProps): JSX.Element;
+export declare function XThinIcon(): JSX.Element;
+export declare function PlusSmallThinIcon(): JSX.Element;
