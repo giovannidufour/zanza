@@ -26,7 +26,7 @@ create index release_subgenres_subgenre on public.release_subgenres (subgenre_id
 -- existing data: the tags so far are Discogs styles → subgenres (same id, name, slug, order), except the
 -- names Gio marked as his own tags, which stay tags. Positions are renumbered in both lists.
 create temp table keep_as_tag (name text primary key);
-insert into keep_as_tag values ('rare');   -- lower-case names (Gio, 2026-11-10)
+insert into keep_as_tag values ('rare'), ('cover'), ('tuff'), ('digi');   -- lower-case names (Gio, 2026-11-10)
 
 insert into public.subgenres (id, name, slug, created_at)
   select id, name, slug, created_at from public.tags where lower(name) not in (select name from keep_as_tag);
