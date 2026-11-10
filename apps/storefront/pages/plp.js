@@ -1,46 +1,73 @@
 /* apps/storefront/pages/plp.js — Product listing page of a section (Figma: PLP - desktop).
-   A pure function: products in, React tree out. Filters are HARDCODED placeholders copied from Figma
-   (no state, no filtering) until the filters component is designed. Hidden on mobile (Figma PLP - mobile has none). */
+   A pure function: products in, React tree out. Filters (Figma: page `filters`, 2026-11-10) are built from the
+   products of the page; scripts/site.js applies them in the browser (OR inside a block, AND between blocks,
+   counts, URL, breadcrumbs). Hidden on mobile (Figma PLP - mobile has none; mobile filters not designed). */
 'use strict';
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 const { SECTION_LABEL, SiteHeader, ProductCardFor } = require('./shell.js');
 
-// Figma: `filters` > `filter block` ×3 > `filter` (content=label) — hardcoded values from the Figma frame
-const FILTERS = [
-  { label: 'Genre', options: ['Dancehall', 'Roots', 'Steppers', 'Rocksteady'] },
-  { label: 'Format', options: ['7”', '10”', '12”', 'LP', 'Tape'] },
-  { label: 'Decade', options: ['1960s', '1970s', '1980s', '1990s', '2000s'] }
-];
-// Figma: icon/icon-square (24 grid, shown at 16)
-const SquareIcon = () => h('svg', { viewBox: '0 0 24 24', width: 16, height: 16, 'aria-hidden': 'true', focusable: 'false' },
-  h('path', { fill: 'currentColor', d: 'M19.5 3.25C20.1904 3.25 20.75 3.80964 20.75 4.5V19.5C20.75 20.1904 20.1904 20.75 19.5 20.75H4.5C3.80964 20.75 3.25 20.1904 3.25 19.5V4.5C3.25 3.80964 3.80964 3.25 4.5 3.25H19.5ZM4.5 4.25C4.36193 4.25 4.25 4.36193 4.25 4.5V19.5C4.25 19.6381 4.36193 19.75 4.5 19.75H19.5C19.6381 19.75 19.75 19.6381 19.75 19.5V4.5C19.75 4.36193 19.6381 4.25 19.5 4.25H4.5Z' }));
+const FORMAT_ORDER = ['7"', '10"', '12"', 'LP', 'Tape'];
+const decadeOf = (year) => (year ? `${Math.floor(year / 10) * 10}s` : null);
 
-function Filters() {
-  return h('aside', { className: 'plp-filters', 'aria-label': 'Filters' },
-    FILTERS.map((block) => h('div', { key: block.label, className: 'plp-filters__block' },
-      h('h2', { className: 'plp-filters__label label-extra-small' }, block.label),
-      h('ul', { className: 'plp-filters__list' },
-        block.options.map((o) => h('li', { key: o, className: 'plp-filters__item' },
-          h('span', { className: 'plp-filters__icon' }, h(SquareIcon)),
-          h('span', { className: 'body-small' }, o)))))));
+// facet → values of one product. Subgenre = Discogs styles (release.style); Tags = Gio's own tags (release.tags,
+// none until the subgenres/tags migration). `key` is the URL parameter.
+const FACETS = [
+  { key: 'subgenre', label: 'Subgenre', values: (p) => p.release.style || [], order: 'count' },
+  { key: 'format', label: 'Format', values: (p) => (p.release.format ? [p.release.format] : []), order: 'format' },
+  { key: 'decade', label: 'Decade', values: (p) => [decadeOf(p.release.year)].filter(Boolean), order: 'name' },
+  { key: 'tag', label: 'Tags', values: (p) => p.release.tags || [], order: 'count' }
+];
+
+// the options of each facet with their counts on the whole page; a facet with no options is not rendered
+function facetsOf(products) {
+  return FACETS.map((f) => {
+    const counts = new Map();
+    for (const p of products) for (const v of new Set(f.values(p))) counts.set(v, (counts.get(v) || 0) + 1);
+    const options = [...counts.entries()].map(([value, count]) => ({ value, count }));
+    const rank = (v) => { const i = FORMAT_ORDER.indexOf(v); return i === -1 ? FORMAT_ORDER.length : i; };
+    options.sort((a, b) => f.order === 'count' ? b.count - a.count || a.value.localeCompare(b.value)
+      : f.order === 'format' ? rank(a.value) - rank(b.value) || a.value.localeCompare(b.value)
+      : a.value.localeCompare(b.value));
+    return Object.assign({}, f, { options });
+  }).filter((f) => f.options.length);
+}
+
+// shown: 7”, as in Figma (curly double prime); the value stays as stored
+const optionLabel = (key, v) => (key === 'format' ? v.replace(/"$/, '”') : v);
+
+function PlpFilters({ facets }) {
+  // Figma: `filters` > `filter block` per facet > `filter` (content=label, count)
+  return h('aside', { className: 'plp-filters', 'aria-label': 'Filters', 'data-plp-filters': '' },
+    h(Z.Filters, null,
+      facets.map((f) => h(Z.FilterBlock, { key: f.key, label: f.label },
+        f.options.map((o) => h(Z.Filter, {
+          key: o.value, name: f.key, value: o.value, label: optionLabel(f.key, o.value), count: o.count,
+          'data-facet-label': optionLabel(f.key, o.value)
+        }))))),
+    // announces the result of a change ("12 records"); the empty state is not designed (design/open.md)
+    h('p', { className: 'zz-visually-hidden', role: 'status', 'aria-live': 'polite', 'data-plp-status': '' }));
 }
 
 function Plp({ section, products, site, url }) {
+  const facets = facetsOf(products);
   return h('div', { className: 'zz-page' },
     h(SiteHeader, { site, url, section }),
-    // Figma shows "For sale / Dancehall / 7”" (the applied filters); with hardcoded filters only the section is true
-    h(Z.Breadcrumbs, { items: [{ label: SECTION_LABEL[section], href: null }] }),
+    // Figma: "For sale / Dancehall / 7”" = the section + the applied filters (site.js rewrites it on change)
+    h(Z.Breadcrumbs, { items: [{ label: SECTION_LABEL[section], href: null }], 'data-plp-breadcrumbs': '', 'data-section-label': SECTION_LABEL[section] }),
 
     // Figma: `pdp content` (sic) — 12-col grid, gap gutter-small, padding-y small; filters cols 1–3, list cols 4–12
     h('div', { className: 'plp-content' },
-      h(Filters),
+      facets.length ? h(PlpFilters, { facets }) : null,
       h('main', { className: 'plp-list' },
         h('h1', { className: 'plp-list__title' }, SECTION_LABEL[section]),
         // no device: responsive card (desktop variant on PLP - desktop, mobile variant on PLP - mobile)
-        products.map((product) => h(ProductCardFor, { key: product.listing.slug, product, url }))))
+        products.map((product) => h('div', Object.assign({ key: product.listing.slug, className: 'plp-item' },
+          ...FACETS.map((f) => ({ [`data-${f.key}`]: JSON.stringify([...new Set(f.values(product))]) }))),
+          h(ProductCardFor, { product, url }))),
+        h('p', { className: 'plp-list__empty body-medium', hidden: true, 'data-plp-empty': '' }, 'No records match these filters.')))
   );
 }
 
-module.exports = { Plp, title: (section) => SECTION_LABEL[section] };
+module.exports = { Plp, title: (section) => SECTION_LABEL[section], facetsOf };

@@ -38,7 +38,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | Component | Figma | Status |
 | --- | --- | --- |
 | Button | page `buttons` → section `button` | ported: hierarchy × size × state |
-| Tabs / Tab | page `tabs` → `tab group`, `tab` | ported: controlled selection, 4 states |
+| Tabs / Tab | page `tabs` → `tab group`, `tab` | ported: controlled selection, 4 states, `suffix` (counts, 0029) |
 | Header | page `header` → `header` | ported: device desktop/mobile or responsive, composition of Button + Tabs |
 | Breadcrumbs | page `breadcrumbs` → `breadcrumbs` | ported |
 | Tag / TagGroup | page `tags` → `tag item`, `tag group` | ported: 3 sizes; `orientation` not ported |
@@ -56,7 +56,9 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | ActionPanel | page `listing form` → `action panel` | ported |
 | ListingLine | page `listing form` → `listing line` | ported: removable, sample empty / uploaded, artist on label |
 | Checkbox | page `controls` → `checkbox` | ported: state default / active (= checked) / indeterminate, `label` boolean (hideLabel), native input |
-| Dialog | page `dialog` → `dialog` | ported: native `<dialog>` + showModal, surface-base, backdrop surface-scrim |
+| Dialog | page `dialog` → `dialog` | ported: native `<dialog>` + showModal, surface-base, backdrop surface-scrim, `choices` (radio group) |
+| Radio · RadioGroup | page `controls` → `radio` | ported: state default / active, `label` boolean (hideLabel), native radio in a fieldset |
+| Filter · FilterBlock · Filters | page `filters` → `filter`, `filter block`, `filters` | ported: content label / tag × state, count; shop PLP (0028) |
 | EntityField · EntityChip | `input` › `chips` + `_input chips`, `entity chip` (tags), `entity option` (input › building blocks) | ported: chips, menu (entity / alias / create), keyboard; Label = one chip |
 
 ## Open items

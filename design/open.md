@@ -17,9 +17,9 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - **ProductCard link.** No link to the product page in Figma. Code: the cover is the link (`href`, no visual change, so the PLP is navigable). Proposal: the title becomes the link too (link style to design).
 - **ProductCard "Add" (mobile).** Button small = 32px: passes WCAG 2.5.8 (24) but under the 44px touch recommendation (2.5.5).
 - **"More for sale" content.** PDP `RelatedProducts` shows up to 3 other available products of the same section, most shared styles first (`apps/storefront/build.js` → `relatedTo`). Placeholder logic until the backend recommends.
-- **PLP filters.** Hardcoded placeholder copied from Figma (`apps/storefront/pages/plp.js`), no state, no filtering, not focusable: replace with the filters component when designed (checkbox semantics, `filter/content=tag` variant).
-- **PLP breadcrumbs.** Figma shows "For sale / Dancehall / 7”" (the applied filters); code shows only "For sale" until filters work.
-- **PLP mobile filters.** Figma PLP - mobile has no filters: hidden below the breakpoint. Where they live on mobile (drawer from the hamburger? a "Filters" button?) is to design.
+- **PLP filters (0028).** Working since 2026-11-10. Not designed: "Clear filters", the empty result (code: "No records match these filters.", copy by Claude), the loading of many options (a long Subgenre list has no "show more"). The Tags block stays hidden until the database has Gio's own tags (subgenres/tags migration). Figma `filter` still has the unused `content=tag` variant.
+- **PLP mobile filters.** Figma PLP - mobile has no filters: hidden below the breakpoint. Where they live on mobile (drawer from the hamburger? a "Filters" button?) is to design (Gio: later).
+- **Filter count contrast.** `text/moderate` on the acid green page is below 3.6:1 (fails 1.4.3). Gio (2026-11-10): ok for now, he will change the value of `text/moderate`. The count is also read by screen readers as part of the option name.
 - **PLP sample labels.** Card samples are "1", "2" (Figma); the PDP shows the sample title. Accessible name in code: "<product>, sample 1: <title>".
 - **Player "Add to bag".** Rendered, no action yet (no cart).
 - **Sample audio.** `audio_url` must be a direct file (mp3/aac/ogg). Sample B uses a reggaefever.ch URL (hotlinking and rights to verify); sample A is still a generated test tone (`public/test-sample-a.mp3`). Depends on Q3.
@@ -40,6 +40,8 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - **Checkbox.** Ported (`controls` → `checkbox`, state default | active). Not designed: focus (code: browser ring on the box), disabled, error. Used by the admin "Different spelling" (Figma BACKEND → Create, 2026-11-10).
 - **Pre-release on the shop.** Admin checkbox from Figma (2104:21454). The shop text is Gio's spec in chat (2026-11-10): "Pre" right after the label name in the product info line ("Black Ark Pre 7\" (JA)"), same style; not drawn in the PDP/PLP frames.
 - **Listings (admin) not drawn.** Mobile layout; empty state of a tab (code: "No listings here." in the table); loading/busy state of the bulk buttons (code: `aria-busy`, label unchanged, no disabled look because disabled strikes the label through); sort and search. Bulk Publish skips the form validation (a draft without photos can go live): add a check if it bites.
+- **Radio.** Ported (`controls` → `radio`, Gio 2026-11-10). Not designed: focus (browser ring), disabled, error. Used by `Dialog` `choices` (admin merge, not built yet).
+- **Admin Listings tabs.** Figma moved the counts to the tab `suffix` (0029); `apps/admin` still writes "All 48" in the label: switch to `suffix` with the Attributes page.
 - **Dialog.** No destructive colour: the confirm button is primary, the label carries the meaning. Mobile: full width minus 16px each side (code), not drawn.
 - **Button `layout` (hug | fill).** Not ported: the admin side buttons fill their column via the page layout.
 

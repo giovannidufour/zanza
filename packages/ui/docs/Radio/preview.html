@@ -1,0 +1,33 @@
+<!-- @dsCard group="Admin" height=200 subtitle="state · group" -->
+<!doctype html>
+<html data-theme="backend">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: var(--surface-accent); color: var(--text-strong); font-family: var(--font-sans); }
+  .matrix { display: grid; grid-template-columns: 100px max-content; gap: 16px 24px; align-items: start; padding: 24px; }
+  .row-hd { font: 400 12px/14px var(--font-sans); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function () {
+  var React = window.React, ReactDOM = window.ReactDOM, Z = window.Zanza;
+  var h = React.createElement, useState = React.useState;
+  function Live() {
+    var s = useState('a');
+    return h(Z.RadioGroup, { legend: 'Keep which artist?', hideLegend: true, value: s[0], onValueChange: s[1] },
+      h(Z.Radio, { value: 'a', label: 'Gregory Isaacs · 2 records · Discogs 50582' }),
+      h(Z.Radio, { value: 'b', label: 'GREGORY ISAACS · 1 record' }));
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    h('div', { className: 'matrix' },
+      h('div', { className: 'row-hd' }, 'default'), h(Z.Radio, { state: 'default', value: 'x', label: 'Label' }),
+      h('div', { className: 'row-hd' }, 'active'), h(Z.Radio, { state: 'active', value: 'y', label: 'Label' }),
+      h('div', { className: 'row-hd' }, 'group (live)'), h(Live)));
+})();
+</script>
+</body>
+</html>

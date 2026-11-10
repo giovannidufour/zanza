@@ -68,6 +68,8 @@ export interface TabProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
   leadingIcon?: ReactNode;
   /** Icon slot after the label (20px). Figma: `trailing icon`. */
   trailingIcon?: ReactNode;
+  /** Text after the label, same style, gap 4: a count ("Artists" + 64). Figma: `suffix` + `suffix text`. */
+  suffix?: ReactNode;
   /** Documentation only: pins a visual state regardless of pointer/selection. */
   state?: "default" | "hover" | "pressed" | "active";
 }
@@ -412,6 +414,8 @@ export interface DialogProps extends Omit<HTMLAttributes<HTMLDialogElement>, "ti
   onCancel: () => void;
   /** The confirmed action is running: the confirm button ignores clicks and is aria-busy. */
   busy?: boolean;
+  /** A required pick under the body, e.g. which artist to keep when merging: pass a <RadioGroup>. Figma: `choices`. */
+  choices?: ReactNode;
 }
 export declare function Dialog(props: DialogProps): JSX.Element;
 
@@ -473,3 +477,63 @@ export interface EntityChipProps extends HTMLAttributes<HTMLSpanElement> {
 export declare function EntityChip(props: EntityChipProps): JSX.Element;
 export declare function XThinIcon(): JSX.Element;
 export declare function PlusSmallThinIcon(): JSX.Element;
+
+/** Mirrors the Figma component `radio` (page controls): a native radio, 24px control (18px icon), gap 8, label body/medium. */
+export interface RadioProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
+  /** Text next to the control. Figma: the text layer. */
+  label?: ReactNode;
+  /** The value this radio stands for inside its RadioGroup. */
+  value: string;
+  /** Hide the label visually; it stays the accessible name. Figma: `label` = false. */
+  hideLabel?: boolean;
+  /** Documentation only: pins the Figma state outside a RadioGroup. Do not use in product code. */
+  state?: "default" | "active";
+}
+export declare function Radio(props: RadioProps): JSX.Element;
+
+/** A group of Radios: <fieldset> + <legend>, gap 8. Exactly one value is picked; arrow keys move between radios. */
+export interface RadioGroupProps extends Omit<HTMLAttributes<HTMLFieldSetElement>, "onChange"> {
+  /** Shared input name. Default: a generated id. */
+  name?: string;
+  /** The picked value (controlled). */
+  value?: string;
+  onValueChange?: (value: string) => void;
+  /** The question the group answers; required for screen readers. */
+  legend?: ReactNode;
+  /** Keep the legend for assistive tech only (e.g. inside a Dialog whose body already asks the question). */
+  hideLegend?: boolean;
+  /** <Radio> elements. */
+  children: ReactNode;
+}
+export declare function RadioGroup(props: RadioGroupProps): JSX.Element;
+
+/** Mirrors the Figma component `filter` (page filters): a native checkbox, 16px box, gap 8, label body/small, count body/small text-moderate. */
+export interface FilterProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
+  /** Option name. Figma: `Label`. */
+  label?: ReactNode;
+  /** Records matching this option. Figma: `count` + `count text`. Omit to hide. */
+  count?: ReactNode;
+  /** label = plain text (shop PLP), tag = a medium Tag. Figma: `content`. @default "label" */
+  content?: "label" | "tag";
+  /** Documentation only: pins the Figma state when `checked` is not given. Do not use in product code. */
+  state?: "default" | "active";
+}
+export declare function Filter(props: FilterProps): JSX.Element;
+
+/** Mirrors the Figma component `filter block`: <fieldset> with the heading as <legend> (label/extra small), gap 16, options gap 8. */
+export interface FilterBlockProps extends HTMLAttributes<HTMLFieldSetElement> {
+  /** The facet ("Subgenre", "Format"). Figma: `Label`. */
+  label: ReactNode;
+  /** Keep the heading for assistive tech only. Figma: `label` = false. */
+  hideLabel?: boolean;
+  /** <Filter> elements. Figma: slot. */
+  children: ReactNode;
+}
+export declare function FilterBlock(props: FilterBlockProps): JSX.Element;
+
+/** Mirrors the Figma component `filters`: the PLP filter column, one FilterBlock per facet, gap 24, padding 0 8. */
+export interface FiltersProps extends HTMLAttributes<HTMLDivElement> {
+  /** <FilterBlock> elements. */
+  children: ReactNode;
+}
+export declare function Filters(props: FiltersProps): JSX.Element;

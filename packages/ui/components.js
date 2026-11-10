@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"}]} */
 /* packages/ui/components.js — the ONE implementation of the Zanza components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
@@ -82,7 +82,7 @@
         if (ctx.onValueChange) ctx.onValueChange(props.value);
         if (props.onClick) props.onClick(e);
       }
-    }, omit(props, ['value', 'children', 'leadingIcon', 'trailingIcon', 'state', 'className', 'onClick']));
+    }, omit(props, ['value', 'children', 'leadingIcon', 'trailingIcon', 'suffix', 'state', 'className', 'onClick']));
     if (tag === 'a') {
       if (selected) attrs['aria-current'] = 'page';
       attrs['data-selected'] = selected ? 'true' : 'false';
@@ -95,7 +95,9 @@
     if (props.state && props.state !== 'default') attrs['data-state'] = props.state;
     return h(tag, attrs,
       props.leadingIcon ? h('span', { className: 'zz-tab__icon', 'aria-hidden': 'true' }, props.leadingIcon) : null,
-      h('span', { className: 'zz-tab__label label-medium' }, props.children),
+      // Figma `_tab-sizes` label container: label + `suffix` (e.g. a count, "Artists 64"), gap 4, same text style
+      h('span', { className: 'zz-tab__label label-medium' }, h('span', null, props.children),
+        props.suffix !== undefined && props.suffix !== null && props.suffix !== false ? h('span', { className: 'zz-tab__suffix' }, props.suffix) : null),
       props.trailingIcon ? h('span', { className: 'zz-tab__icon', 'aria-hidden': 'true' }, props.trailingIcon) : null);
   }
 
@@ -760,14 +762,79 @@
     function onCancel(e) { e.preventDefault(); if (props.onCancel) props.onCancel(); }   // Esc
     return h('dialog', Object.assign({ ref: ref, className: cx('zz-dialog', props.className), 'aria-labelledby': titleId,
       'aria-describedby': bodyId, onCancel: onCancel }, omit(props, ['open', 'title', 'children', 'className', 'onCancel',
-      'onConfirm', 'cancelLabel', 'confirmLabel', 'busy'])),
+      'onConfirm', 'cancelLabel', 'confirmLabel', 'busy', 'choices'])),
       h('div', { className: 'zz-dialog__content' },
         h('h2', { id: titleId, className: 'zz-dialog__title label-large' }, props.title),
-        h('div', { id: bodyId, className: 'zz-dialog__body body-medium' }, props.children)),
+        h('div', { id: bodyId, className: 'zz-dialog__body body-medium' }, props.children),
+        props.choices ? h('div', { className: 'zz-dialog__choices' }, props.choices) : null),
       h('div', { className: 'zz-dialog__actions' },
         h(Button, { hierarchy: 'secondary', type: 'button', 'data-dialog-cancel': '', onClick: props.onCancel }, props.cancelLabel || 'Cancel'),
         h(Button, { hierarchy: 'primary', type: 'button', onClick: props.busy ? undefined : props.onConfirm, 'aria-busy': props.busy ? 'true' : undefined },
           props.confirmLabel)));
+  }
+
+  /* ── Radio / RadioGroup ─────────────────────────────────────────────────
+     Figma: page `controls` → `radio` (Gio, 2026-11-10; state default | active, boolean `label`). Same anatomy as the
+     checkbox: a 24px control (icon/icon-radio-empty ↔ icon/icon-radio-dot, 18px, centred), gap 8, label body/medium
+     text/strong. Native radio (0018): the input is visually hidden over the control; arrow keys move between the
+     radios of a group (browser behaviour). RadioGroup = <fieldset> + <legend>, gap 8 (Figma: dialog `choices`). */
+  function RadioEmptyIcon() {   // Figma: icon/icon-radio-empty (18)
+    return h('svg', { viewBox: '0 0 18 18', fill: 'none' }, h('path', { d: 'M9 0C13.9706 0 18 4.02944 18 9C18 13.9706 13.9706 18 9 18C4.02944 18 0 13.9706 0 9C0 4.02944 4.02944 0 9 0ZM9 1C4.58172 1 1 4.58172 1 9C1 13.4183 4.58172 17 9 17C13.4183 17 17 13.4183 17 9C17 4.58172 13.4183 1 9 1Z', fill: 'currentColor' }));
+  }
+  function RadioDotIcon() {     // Figma: icon/icon-radio-dot (18)
+    return h('svg', { viewBox: '0 0 18 18', fill: 'none' }, h('path', { d: 'M9 0C13.9706 0 18 4.02944 18 9C18 13.9706 13.9706 18 9 18C4.02944 18 0 13.9706 0 9C0 4.02944 4.02944 0 9 0ZM9 1C4.58172 1 1 4.58172 1 9C1 13.4183 4.58172 17 9 17C13.4183 17 17 13.4183 17 9C17 4.58172 13.4183 1 9 1ZM9 3C12.3137 3 15 5.68629 15 9C15 12.3137 12.3137 15 9 15C5.68629 15 3 12.3137 3 9C3 5.68629 5.68629 3 9 3Z', fill: 'currentColor' }));
+  }
+  var RadioGroupContext = React.createContext(null);
+  function Radio(props) {
+    var g = React.useContext(RadioGroupContext);
+    var attrs = Object.assign({ type: 'radio', className: 'zz-radio__control' },
+      omit(props, ['label', 'state', 'className', 'style', 'children', 'hideLabel']));
+    if (g) {
+      attrs.name = g.name;
+      if (g.value !== undefined) attrs.checked = g.value === props.value;
+      attrs.onChange = function (e) { if (g.onValueChange) g.onValueChange(props.value); if (props.onChange) props.onChange(e); };
+    } else if (props.checked === undefined && props.state) { attrs.checked = props.state === 'active'; attrs.readOnly = true; }
+    return h('label', { className: cx('zz-radio', props.hideLabel && 'zz-radio--hide-label', props.className), style: props.style },
+      h('input', attrs),
+      h('span', { className: 'zz-radio__box', 'aria-hidden': 'true' }, h(RadioEmptyIcon), h(RadioDotIcon)),
+      h('span', { className: 'zz-radio__label body-medium' }, props.label || props.children));
+  }
+  function RadioGroup(props) {
+    var autoName = useId();
+    return h(RadioGroupContext.Provider, { value: { name: props.name || autoName, value: props.value, onValueChange: props.onValueChange } },
+      h('fieldset', Object.assign({ className: cx('zz-radio-group', props.className) },
+        omit(props, ['name', 'value', 'onValueChange', 'legend', 'hideLegend', 'children', 'className'])),
+        props.legend ? h('legend', { className: cx('zz-radio-group__legend body-medium', props.hideLegend && 'zz-visually-hidden') }, props.legend) : null,
+        props.children));
+  }
+
+  /* ── Filter / FilterBlock / Filters ────────────────────────────────────
+     Figma: page `filters` (Gio's sketch, cleaned 2026-11-10). `filter`: content label | tag × state default | active,
+     box 16 (icon/icon-square ↔ icon/icon-square-tick), gap 8, label body/small text/strong, `count` body/small
+     text/moderate. `filter block`: heading label/extra small, gap 16, options gap 8. `filters`: blocks gap 24,
+     padding 0 8. Shop PLP: all options content=label (Gio). A filter is a native checkbox (0018); a block is a
+     <fieldset> with the heading as <legend>. Logic lives in the page: OR inside a block, AND between blocks. */
+  function Filter(props) {
+    var content = props.content || 'label';
+    var attrs = Object.assign({ type: 'checkbox', className: 'zz-filter__control' },
+      omit(props, ['label', 'count', 'content', 'state', 'className', 'style', 'children']));
+    if (props.checked === undefined && props.state) { attrs.checked = props.state === 'active'; attrs.readOnly = true; }
+    var label = props.label !== undefined ? props.label : props.children;
+    var hasCount = props.count !== undefined && props.count !== null && props.count !== false;
+    return h('label', { className: cx('zz-filter', props.className), 'data-content': content, style: props.style },
+      h('input', attrs),
+      h('span', { className: 'zz-filter__box', 'aria-hidden': 'true' }, h(SquareIcon), h(SquareTickIcon)),
+      content === 'tag' ? h(Tag, { size: 'medium', className: 'zz-filter__tag' }, label) : h('span', { className: 'zz-filter__label body-small' }, label),
+      hasCount ? h('span', { className: 'zz-filter__count body-small' }, props.count) : null);
+  }
+  function FilterBlock(props) {
+    return h('fieldset', Object.assign({ className: cx('zz-filter-block', props.className) },
+      omit(props, ['label', 'hideLabel', 'children', 'className'])),
+      h('legend', { className: cx('zz-filter-block__label label-extra-small', props.hideLabel && 'zz-visually-hidden') }, props.label),
+      h('div', { className: 'zz-filter-block__options' }, props.children));
+  }
+  function Filters(props) {
+    return h('div', Object.assign({ className: cx('zz-filters', props.className) }, omit(props, ['children', 'className'])), props.children);
   }
 
   /* ── EntityField + EntityChip ──────────────────────────────────────────
@@ -902,5 +969,7 @@
            PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
            Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, DragHandleIcon: DragHandleIcon,
            Checkbox: Checkbox, Divider: Divider, ActionPanel: ActionPanel, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog,
-           EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon };
+           EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon,
+           Radio: Radio, RadioGroup: RadioGroup, RadioEmptyIcon: RadioEmptyIcon, RadioDotIcon: RadioDotIcon,
+           Filter: Filter, FilterBlock: FilterBlock, Filters: Filters };
 });

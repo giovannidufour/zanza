@@ -10,6 +10,9 @@
    3. Soft navigation
       - internal links load the next page with fetch and swap only .zz-page, so the player and its audio keep playing
       - anything unexpected (error, other origin, page without .zz-page) falls back to a normal page load
+   4. PLP filters
+      - ticking an option filters the list (OR inside a block, AND between blocks), updates the counts, the URL and
+        the breadcrumbs, and announces the number of records
 
    Looks live in base.css and packages/ui/components.css; this file only sets attributes and text. */
 (function () {
@@ -243,6 +246,71 @@
     });
   }
 
+  /* -- PLP filters (pages/plp.js, Figma page `filters`) --------------------
+     OR inside a block, AND between blocks. Counts = records you would see by ticking that option, given the other
+     blocks; an option at 0 is hidden unless ticked. State lives in the URL (?subgenre=Roots&format=7"), so a
+     filtered list can be shared and Back restores it. Breadcrumbs = section + ticked options. */
+  function initFilters() {
+    var root = document.querySelector('[data-plp-filters]');
+    if (!root) return;
+    var items = Array.prototype.slice.call(document.querySelectorAll('.plp-item'));
+    var boxes = Array.prototype.slice.call(root.querySelectorAll('input[type="checkbox"]'));
+    var keys = []; boxes.forEach(function (b) { if (keys.indexOf(b.name) === -1) keys.push(b.name); });
+    var values = items.map(function (el) {
+      var v = {}; keys.forEach(function (k) { try { v[k] = JSON.parse(el.getAttribute('data-' + k) || '[]'); } catch (e) { v[k] = []; } });
+      return v;
+    });
+    var params = new URLSearchParams(location.search);
+    boxes.forEach(function (b) { b.checked = params.getAll(b.name).indexOf(b.value) !== -1; });
+
+    function selected() {
+      var s = {}; keys.forEach(function (k) { s[k] = []; });
+      boxes.forEach(function (b) { if (b.checked) s[b.name].push(b.value); });
+      return s;
+    }
+    function matches(v, s, skip) {
+      return keys.every(function (k) {
+        if (k === skip || !s[k].length) return true;
+        return s[k].some(function (x) { return v[k].indexOf(x) !== -1; });
+      });
+    }
+    function apply(announce) {
+      var s = selected(), shown = 0;
+      items.forEach(function (el, i) { var ok = matches(values[i], s); el.hidden = !ok; if (ok) shown++; });
+      boxes.forEach(function (b) {
+        var n = 0; values.forEach(function (v) { if (v[b.name].indexOf(b.value) !== -1 && matches(v, s, b.name)) n++; });
+        var count = b.closest('.zz-filter').querySelector('.zz-filter__count');
+        if (count) count.textContent = n;
+        b.closest('.zz-filter').hidden = n === 0 && !b.checked;
+      });
+      var empty = document.querySelector('[data-plp-empty]'); if (empty) empty.hidden = shown > 0;
+      var status = root.querySelector('[data-plp-status]');
+      if (status && announce) status.textContent = shown + (shown === 1 ? ' record' : ' records');
+      // URL
+      var q = new URLSearchParams();
+      keys.forEach(function (k) { s[k].forEach(function (x) { q.append(k, x); }); });
+      var qs = q.toString();
+      history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
+      // breadcrumbs: section / ticked options (Figma "For sale / Dancehall / 7in")
+      var nav = document.querySelector('[data-plp-breadcrumbs]');
+      var list = nav && nav.querySelector('ol');
+      if (list) {
+        var labels = [nav.getAttribute('data-section-label')];
+        boxes.forEach(function (b) { if (b.checked) labels.push(b.getAttribute('data-facet-label') || b.value); });
+        list.textContent = '';
+        labels.forEach(function (text, i) {
+          if (i > 0) { var sep = document.createElement('li'); sep.className = 'zz-breadcrumbs__sep'; sep.setAttribute('aria-hidden', 'true'); sep.textContent = '/'; list.appendChild(sep); }
+          var li = document.createElement('li'); li.className = 'zz-breadcrumbs__item';
+          var span = document.createElement('span'); span.textContent = text;
+          if (i === labels.length - 1) span.setAttribute('aria-current', 'page');
+          li.appendChild(span); list.appendChild(li);
+        });
+      }
+    }
+    root.addEventListener('change', function () { apply(true); });
+    apply(false);
+  }
+
   var navToken = 0;
   function navigate(href, push) {
     var token = ++navToken;
@@ -263,6 +331,7 @@
       var target = url.hash && document.getElementById(decodeURIComponent(url.hash.slice(1)));
       if (target) target.scrollIntoView(); else window.scrollTo(0, 0);
       initHeader();
+      initFilters();
       if (player && audio) render();
       // screen readers and keyboard: start from the new page's main heading, like a full load would
       var focusEl = document.querySelector('main h1') || document.querySelector('main');
@@ -285,4 +354,5 @@
   }
 
   initHeader();
+  initFilters();
 })();
