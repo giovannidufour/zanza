@@ -43,7 +43,7 @@ Form field of the admin: label row, bordered field, support text. Figma: page `i
 
 | Part | Token |
 | --- | --- |
-| field background | `surface-base` (white in the backend theme) · locked: `surface-subtle` |
+| field background | `surface-accent` (white in the backend theme) · locked: `surface-subtle` |
 | field border | `border-divider-strong` · error: `border-alert` (provisional) · locked: none |
 | label, value, prefix, suffix, support | `text-strong` |
 | placeholder, "Optional", locked value | `text-moderate` |

@@ -8,7 +8,7 @@ Deliberately minimal. Nothing is added here that is not defined in Figma.
 
 ## Principles
 
-- **One decision, one place.** `accent` is the only brand decision. Change it and `surface-base` and `text-accent` follow.
+- **One decision, one place.** `accent` is the only brand decision. Change it and `surface-accent` and `text-accent` follow.
 - **Three tiers.** `_primitives` (raw values) → `_config` (brand decisions) → semantic (`text-*`, `icon-*`, `surface-*`, `action-*`). Components bind only to semantic tokens.
 - **Code is English, flat, predictable.** Figma path `action/primary/background/hover` becomes `--action-primary-background-hover`. No renaming between tools.
 - **No invention.** No motion, radius, shadow or spacing scale exists yet, so none is defined here. Gaps are listed as open items, not filled.
@@ -17,9 +17,9 @@ Deliberately minimal. Nothing is added here that is not defined in Figma.
 
 A palette of black, white, acid green (accent) and light blue (support-1) — plus a black alpha ramp (`black-a0` … `black-a80`) for states and overlays.
 
-- The page is `surface-base` (→ `accent` → `acid-green`). Text on it is `text-strong` (black, ~16:1).
-- Two themes = the two Figma modes of `color`: `frontend` (the shop, `:root`) and `backend` (the admin, `data-theme="backend"`: `surface-base` is white). See decision 0017.
-- `text-accent` is acid green and is only legal on dark grounds: never on `surface-base`.
+- The page is `surface-accent` (→ `accent` → `acid-green`). Text on it is `text-strong` (black, ~16:1). `surface-base` is opaque white in every theme: use it under floating layers (dialog), never `surface-accent`.
+- Two themes = the two Figma modes of `color`: `frontend` (the shop, `:root`) and `backend` (the admin, `data-theme="backend"`: `surface-accent` is black-a4, translucent). See decision 0017.
+- `text-accent` is acid green and is only legal on dark grounds: never on `surface-accent`.
 - Buttons use `action-{primary|secondary}-{background|border}-{default|hover|pressed|disabled}`.
 
 ## Typography

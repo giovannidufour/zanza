@@ -37,6 +37,7 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - **Fetch Discogs (admin).** Built as in Figma 2104:20728 (secondary button under `Discogs match`). Not designed: the loading state (code: label unchanged, `aria-busy`, "Reading Discogs…" in the status line; the disabled look would strike the label through) and the result/error feedback (code: the side status line). Open: `Discogs match` still uses `variant=search` (magnifier) while it is a paste field until text search exists → plain input, or keep it for the coming search.
 - **Checkbox.** Ported (`controls` → `checkbox`, state default | active). Not designed: focus (code: browser ring on the box), disabled, error. Used by the admin "Different spelling" (Figma BACKEND → Create, 2026-11-10).
 - **Pre-release on the shop.** Admin checkbox from Figma (2104:21454). The shop text is Gio's spec in chat (2026-11-10): "Pre" right after the label name in the product info line ("Black Ark Pre 7\" (JA)"), same style; not drawn in the PDP/PLP frames.
+- **Entity field menu on a translucent ground.** Gio (2026-11-10): menu (listbox) and `entity option` stay on `surface/accent`, which is black-a4 in the backend mode, so the form shows through the open menu in the admin. Revisit if it hurts legibility: `surface/base` would fix it ([0023](decisions/0023-surface-accent-and-opaque-base.md)).
 - **Button `layout` (hug | fill).** Not ported: the admin side buttons fill their column via the page layout.
 
 ## Accessibility risks

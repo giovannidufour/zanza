@@ -4,7 +4,7 @@
    Screens without a Figma frame (sign-in, listings list) reuse the same parts and are flagged in design/open.md. */
 
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--surface-base); color: var(--text-strong); font-family: var(--font-sans); }
+html, body { margin: 0; background: var(--surface-accent); color: var(--text-strong); font-family: var(--font-sans); }
 h1, h2, p { margin: 0; }
 
 .admin { padding: 24px; display: flex; flex-direction: column; gap: 24px; max-width: 1024px; }
