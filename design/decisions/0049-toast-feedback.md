@@ -1,4 +1,4 @@
-# 0047 — Toasts carry Undo and off-screen news; everything else stays inline
+# 0049 — Toasts carry Undo and off-screen news; everything else stays inline
 
 `2026-11-10` · **proposed** (to review with Gio; no code until accepted) · Figma: page `toast` (2177:438) → `toast` (2177:439), examples, placement desktop / mobile
 
@@ -8,7 +8,7 @@
 
 | # | Where | Event | Today | Proposed |
 |---|---|---|---|---|
-| 1 | Card, PDP, player | Add to bag | label "Added to bag" + header count + SR announce | **N** (0046 is the feedback; keep the announce) |
+| 1 | Card, PDP, player | Add to bag | label "Added to bag" + tick + header count + SR announce | **N** (0046, 0047 are the feedback; keep the announce) |
 | 2 | /bag/ | Remove a line | line disappears | **T** "Removed from bag." + Undo |
 | 3 | /bag/ | A line is sold / reserved | `bag item` unavailable | **I** (state, stays until removed: 0044) |
 | 4 | any page (future live check) | A copy in your bag was just sold | — | **T** "<record> was just sold." + View bag |
