@@ -11,8 +11,8 @@ const { SECTION_LABEL, SiteHeader, ProductCardFor } = require('./shell.js');
 const FORMAT_ORDER = ['7"', '10"', '12"', 'LP', 'Tape'];
 const decadeOf = (year) => (year ? `${Math.floor(year / 10) * 10}s` : null);
 
-// facet → values of one product. Subgenre = Discogs styles (release.style); Tags = Gio's own tags (release.tags,
-// none until the subgenres/tags migration). `key` is the URL parameter.
+// facet → values of one product. Subgenre = Discogs styles (release.style); Tags = the shop's own tags
+// (release.tags, migration 0011). `key` is the URL parameter.
 const FACETS = [
   { key: 'subgenre', label: 'Subgenre', values: (p) => p.release.style || [], order: 'count' },
   { key: 'format', label: 'Format', values: (p) => (p.release.format ? [p.release.format] : []), order: 'format' },

@@ -6,7 +6,7 @@ const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 
-const { SECTION_LABEL, formatPrice, productName, releaseInfo, grading, SiteHeader, sampleAttrs, ProductCardFor } = require('./shell.js');
+const { SECTION_LABEL, tagsOf, formatPrice, productName, releaseInfo, grading, SiteHeader, sampleAttrs, ProductCardFor } = require('./shell.js');
 
 function breadcrumbItems(product, url) {
   const { listing, release } = product;
@@ -35,7 +35,7 @@ function Pdp({ product, related = [], site, url }) {
         title: productName(release),
         price: listing.section === 'sale' ? formatPrice(listing.price) : null,
         releaseInfo: releaseInfo(release),
-        tags: release.style.length ? h(Z.TagGroup, null, release.style.map((s) => h(Z.Tag, { key: s, size: 'large' }, s))) : null,
+        tags: tagsOf(release).length ? h(Z.TagGroup, null, tagsOf(release).map((s) => h(Z.Tag, { key: s, size: 'large' }, s))) : null,
         description: copy.notes,
         grading: grading(copy),
         // each PlayerButton carries what the site player needs (scripts/site.js): the product's samples are its queue
