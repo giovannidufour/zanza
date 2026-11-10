@@ -10,7 +10,7 @@ Ordered list of uploaded files in the admin (images, the sample of a line, sampl
 
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `onMove` | `(from: number, to: number) => void` |  | Called when a row is dragged onto another, or moved with ↑ ↓ on its handle. Omit for a fixed order (no handles). |
+| `onMove` | `(from: number, to: number) => void` |  | Called on drop after dragging a row (the other rows shift live to preview the new order), or when a row is moved with ↑ ↓ on its handle. Omit for a fixed order (no handles). |
 | `children` | `ReactNode` |  | &lt;FileItem>s, each with a stable key. |
 
 ### FileItem
@@ -35,7 +35,7 @@ Ordered list of uploaded files in the admin (images, the sample of a line, sampl
 ## Behaviour
 
 - FileList numbers the rows `01`, `02`… so a reorder never leaves stale positions.
-- Reorder (only with `onMove`): drag a row onto another, or focus the handle and press ↑ ↓.
+- Reorder (only with `onMove`): drag a row: while dragging, the other rows slide to the order it would have on drop, and the numbers follow the preview; dropping outside the list (or Escape) restores the old order. Or focus the handle and press ↑ ↓: the focus stays on the handle and the new position is announced (polite live region). Slides are disabled with `prefers-reduced-motion`.
 - The featured image is always position 1: the admin sets `featured` on the first image (Gio, 2026-11-10).
 - Play and remove are `IconButton`s, named "Play / Pause / Remove <file name>".
 - `children` make the item full width: the remove button moves next to the file name (`file row`, gap 16) and the children go under it (gap 16): the samples overview puts the sample title `Input` there (Figma 2095:20507, [0021](../../../../design/decisions/0021-sample-title-defaults-to-line-title.md)). Dragging from a field inside the row selects text instead of moving the row.

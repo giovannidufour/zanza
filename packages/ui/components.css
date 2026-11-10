@@ -785,8 +785,14 @@ a.zz-product-card__image { display: block; color: inherit; }
 /* ── FileList / FileItem (Figma: page-local `uploaded list`) ──
    List gap 8. Row: gap 16 between handle · content · remove; content gap 8, top-aligned (image rows),
    centred with a play button (audio rows). Thumbnail 40 × 40, surface-support-1 when empty. */
-.zz-file-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.zz-file-list { position: relative; display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }   /* relative: rows' offsetTop is measured from the list */
 .zz-file-list__item { display: block; }
+/* live reorder: rows slide to their new place (FLIP, set in JS).
+   TODO motion: no duration/easing in Figma yet — 150ms ease-out is the same placeholder as Button/Tab.
+   No Figma style for the dragged row (design/open.md): it looks like the others, the browser drag image follows the pointer. */
+.zz-file-list__item { transition: transform 150ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .zz-file-list__item { transition: none; } }
+.zz-file-list__status { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 
 .zz-file-item { display: inline-flex; align-items: flex-start; gap: 16px; color: var(--text-strong); }
 .zz-file-item[data-body] { display: flex; }

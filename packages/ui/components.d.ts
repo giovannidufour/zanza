@@ -311,7 +311,7 @@ export declare function DropZone(props: DropZoneProps): JSX.Element;
 
 /** Ordered list of uploaded files (Figma: page-local `uploaded list`). Numbers its FileItems 01, 02… and handles reordering. */
 export interface FileListProps extends HTMLAttributes<HTMLOListElement> {
-  /** Called when a row is dragged onto another, or moved with ↑ ↓ on its handle. Omit for a fixed order (no handles). */
+  /** Called on drop after dragging a row (the other rows shift live to preview the new order), or when a row is moved with ↑ ↓ on its handle. Omit for a fixed order (no handles). */
   onMove?: (from: number, to: number) => void;
   /** <FileItem>s, each with a stable key. */
   children?: ReactNode;
