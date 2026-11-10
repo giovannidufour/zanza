@@ -1,7 +1,8 @@
 /* apps/storefront/pages/plp.js — Product listing page of a section (Figma: PLP - desktop).
    A pure function: products in, React tree out. Filters (Figma: page `filters`, 2026-11-10) are built from the
    products of the page; scripts/site.js applies them in the browser (OR inside a block, AND between blocks,
-   counts, URL, breadcrumbs). Hidden on mobile (Figma PLP - mobile has none; mobile filters not designed). */
+   counts, URL, breadcrumbs). Mobile (Figma 2026-11-10): the column is hidden; `PLP header` ("Filter (n)" + sort)
+   opens `filters layer`, a full-screen native dialog with nested levels whose ticks are a draft until Apply. */
 'use strict';
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
@@ -52,11 +53,12 @@ function facetsOf(products) {
 // shown: 7”, as in Figma (curly double prime); the value stays as stored
 const optionLabel = (key, v) => (key === 'format' ? v.replace(/"$/, '”') : v);
 
-function PlpFilters({ facets, hidden }) {
-  // Figma: `filters` > `filter block` per facet > `filter` (content=label, count)
+function PlpFilters({ facets, hidden, sorts }) {
+  // Figma: `filters` > sort (Gio 2026-11-10: button hug, prefix "Sort:") + `filter block` per facet > `filter` (content=label, count)
   return h('aside', { className: 'plp-filters', 'aria-label': 'Filters', 'data-plp-filters': '',
     'data-hidden-facets': JSON.stringify(hidden) },
     h(Z.Filters, null,
+      h(Z.SelectButton, { prefix: 'Sort:', className: 'plp-filters__sort', 'aria-label': 'Sort', 'data-plp-sort': '', defaultValue: 'newest', options: sorts }),
       // active hidden filters (label) on top of the column (Gio 2026-11-10): one EntityChip each, built by site.js
       h('div', { className: 'plp-active', hidden: true, 'data-plp-active': '' }),
       h('template', { 'data-plp-chip': '' }, h(Z.EntityChip, { label: '' })),
@@ -69,6 +71,33 @@ function PlpFilters({ facets, hidden }) {
     h('p', { className: 'zz-visually-hidden', role: 'status', 'aria-live': 'polite', 'data-plp-status': '' }));
 }
 
+// Mobile filters (Figma `filters layer`, 2026-11-10): the same facets as the column, in a full-screen native dialog.
+// Its checkboxes are a draft: site.js copies the column's state in when it opens and back on Apply.
+function PlpLayer({ facets }) {
+  return h('dialog', { className: 'plp-layer', 'aria-label': 'Filters', 'data-plp-layer': '' },
+    h(Z.FiltersLayer, { level: 'main', title: 'Filters', applied: null, appliedLabel: 'Applied', applyCount: null },
+      // level=main: one row per facet (value = its ticked options, written by site.js)
+      h('div', { className: 'plp-layer__facets', 'data-layer-facets': '' },
+        facets.map((f) => h(Z.FilterFacet, { key: f.key, label: f.label, 'data-facet': f.key, 'data-facet-label': f.label }))),
+      // level=facet: the options of one facet; the bar title names it, so the legend is for screen readers only
+      facets.map((f) => h(Z.FilterBlock, { key: f.key, label: f.label, hideLabel: true, hidden: true, 'data-facet-block': f.key },
+        f.options.map((o) => h(Z.Filter, {
+          key: o.value, name: f.key, value: o.value, label: optionLabel(f.key, o.value), count: o.count,
+          'data-facet-label': optionLabel(f.key, o.value)
+        }))))),
+    h('template', { 'data-layer-chip': '' }, h(Z.EntityChip, { label: '', size: 'large' })));
+}
+
+// sort (Figma `PLP header` → sort, `filters` → sort; native selects). Newest = the listing order of the page (newest
+// published first). Option names are Claude's (Gio: list to decide, design/open.md); short so "Sort: …" reads well.
+const SORTS = [
+  { value: 'newest', label: 'Newest' },
+  { value: 'price-asc', label: 'Lowest price', section: 'sale' },
+  { value: 'price-desc', label: 'Highest price', section: 'sale' }
+];
+
+const sortsFor = (section) => SORTS.filter((o) => !o.section || o.section === section);
+
 // allProducts: every product with a page (also sold / reserved / trade), so a chip reached from any PDP shows the name
 function Plp({ section, products, allProducts = products, site, url }) {
   const facets = facetsOf(products);
@@ -76,17 +105,24 @@ function Plp({ section, products, allProducts = products, site, url }) {
     h(SiteHeader, { site, url, section }),
     // Figma: "For sale / Dancehall / 7”" = the section + the applied filters (site.js rewrites it on change)
     h(Z.Breadcrumbs, { items: [{ label: SECTION_LABEL[section], href: null }], 'data-plp-breadcrumbs': '', 'data-section-label': SECTION_LABEL[section] }),
+    // Figma `PLP header` (device=mobile, Gio 2026-11-10): mobile only (plp.css). "Filter" + applied count (site.js)
+    h(Z.PlpHeader, { className: 'plp-header',
+      filters: facets.length ? h(Z.Button, { hierarchy: 'secondary', size: 'small', 'aria-haspopup': 'dialog', 'data-plp-open': '' }, 'Filter') : h('span'),
+      sort: h(Z.SelectButton, { 'aria-label': 'Sort', 'data-plp-sort': '', defaultValue: 'newest',
+        options: sortsFor(section) }) }),
 
     // Figma: `pdp content` (sic) — 12-col grid, gap gutter-small, padding-y small; filters cols 1–3, list cols 4–12
     h('div', { className: 'plp-content' },
-      facets.length ? h(PlpFilters, { facets, hidden: hiddenFacetsOf(allProducts) }) : null,
+      facets.length ? h(PlpFilters, { facets, hidden: hiddenFacetsOf(allProducts), sorts: sortsFor(section) }) : null,
       h('main', { className: 'plp-list' },
         h('h1', { className: 'plp-list__title' }, SECTION_LABEL[section]),
         // no device: responsive card (desktop variant on PLP - desktop, mobile variant on PLP - mobile)
-        products.map((product) => h('div', Object.assign({ key: product.listing.slug, className: 'plp-item' },
+        products.map((product, i) => h('div', Object.assign({ key: product.listing.slug, className: 'plp-item',
+          'data-order': i, 'data-price': product.listing.price ? product.listing.price.amount : undefined },
           ...FACETS.concat(HIDDEN_FACETS).map((f) => ({ [`data-${f.key}`]: JSON.stringify([...new Set(f.values(product))]) }))),
           h(ProductCardFor, { product, url }))),
-        h('p', { className: 'plp-list__empty body-medium', hidden: true, 'data-plp-empty': '' }, 'No records match these filters.')))
+        h('p', { className: 'plp-list__empty body-medium', hidden: true, 'data-plp-empty': '' }, 'No records match these filters.')),
+      facets.length ? h(PlpLayer, { facets }) : null)
   );
 }
 

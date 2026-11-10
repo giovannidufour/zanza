@@ -1,0 +1,42 @@
+<!-- @dsCard group="Shop" height=880 subtitle="level main · facet · PLP header" -->
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: var(--surface-accent); color: var(--text-strong); font-family: var(--font-sans); }
+  .wrap { display: flex; flex-wrap: wrap; gap: 32px; padding: 24px; align-items: flex-start; }
+  .frame { width: 390px; height: 760px; border: 1px solid var(--border-divider-strong); }
+  .col { width: 390px; display: flex; flex-direction: column; gap: 24px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function () {
+  var React = window.React, ReactDOM = window.ReactDOM, Z = window.Zanza;
+  var h = React.createElement;
+  var chips = ['Dancehall', '7”', 'Label: Kesta'].map(function (t) { return h(Z.EntityChip, { key: t, label: t, size: 'large', onRemove: function () {} }); });
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    h('div', { className: 'wrap' },
+      h('div', { className: 'col' },
+        h(Z.PlpHeader, { filters: h(Z.Button, { hierarchy: 'secondary', size: 'small', suffix: '(3)' }, 'Filter'),
+          sort: h(Z.SelectButton, { 'aria-label': 'Sort', defaultValue: 'newest', options: [{ value: 'newest', label: 'Newest' }, { value: 'price-asc', label: 'Lowest price' }] }) }),
+        h(Z.FilterFacet, { label: 'Subgenre', value: 'Dancehall, Roots' })),
+      h('div', { className: 'frame' },
+        h(Z.FiltersLayer, { level: 'main', title: 'Filters', applied: chips, applyCount: 21 },
+          h(Z.FilterFacet, { label: 'Subgenre', value: 'Dancehall' }),
+          h(Z.FilterFacet, { label: 'Format', value: '7”' }),
+          h(Z.FilterFacet, { label: 'Decade' }),
+          h(Z.FilterFacet, { label: 'Tags' }))),
+      h('div', { className: 'frame' },
+        h(Z.FiltersLayer, { level: 'facet', title: 'Subgenre', applyCount: 21 },
+          h(Z.FilterBlock, { label: 'Subgenre', hideLabel: true },
+            h(Z.Filter, { name: 's', value: 'Dancehall', label: 'Dancehall', count: 14, defaultChecked: true }),
+            h(Z.Filter, { name: 's', value: 'Roots', label: 'Roots', count: 7 }),
+            h(Z.Filter, { name: 's', value: 'Steppers', label: 'Steppers', count: 3 }))))));
+})();
+</script>
+</body>
+</html>

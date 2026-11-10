@@ -31,8 +31,8 @@ html[data-header-revealing] .plp-filters { transition: top 200ms ease-out, max-h
 .plp-item[hidden] { display: none; }
 .plp-list__empty { margin: 0; padding: 0 8px; }
 
-/* Figma PLP - mobile: no filters (where they go on mobile is not designed yet, open.md); the list is full width,
-   gap 8, padding-y small (same as desktop) */
+/* Figma PLP - mobile: the filter column is hidden; `PLP header` (Filter + sort) opens the filters layer (Gio 2026-11-10).
+   The list is full width, gap 8, padding-y small (same as desktop) */
 @media (--mobile) {
   .plp-content { grid-template-columns: minmax(0, 1fr); }
   .plp-filters { display: none; }
@@ -45,3 +45,16 @@ html[data-header-revealing] .plp-filters { transition: top 200ms ease-out, max-h
    spaced like a filter block (Filters gap 24). Not in Figma (design/open.md); gap 4 as the tag group. */
 .plp-active { display: flex; flex-wrap: wrap; gap: 4px; }
 .plp-active[hidden] { display: none; }
+
+/* mobile filters (Figma `PLP header` + `filters layer`, 2026-11-10): the header shows only on mobile; the layer is a
+   native modal dialog filling the screen (focus trapped, Esc closes, the page behind is inert). */
+.plp-header { display: none; }
+@media (--mobile) { .plp-header { display: flex; } }
+.plp-layer {
+  position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none;
+  margin: 0; padding: 0; border: 0; background: var(--surface-accent); color: var(--text-strong);
+}
+.plp-layer:not([open]) { display: none; }
+.plp-layer::backdrop { background: var(--surface-accent); }
+.plp-layer__facets { display: flex; flex-direction: column; }
+.plp-filters__sort { align-self: flex-start; }   /* Figma: hug, at the top of the column */

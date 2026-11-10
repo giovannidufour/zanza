@@ -12,6 +12,8 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
   leadingIcon?: ReactNode;
   /** Icon slot after the label. Figma: `trailing icon`. */
   trailingIcon?: ReactNode;
+  /** Text after the label, same text style, gap 4: a count ("(3)", "21"), never concatenated into the label (0029). Figma: `suffix` + `suffix text`. */
+  suffix?: ReactNode;
   /** Label text. Rendered uppercase by the label text style. Omit for an icon-only button — then `aria-label` is required. */
   children?: ReactNode;
   /** Documentation only: pins a visual state regardless of pointer. Do not use in product code. */
@@ -473,9 +475,11 @@ export interface EntityFieldProps {
 }
 export declare function EntityField(props: EntityFieldProps): JSX.Element;
 
-/** Figma `entity chip` (page tags; state default | hover | focus): `tag item` medium + a 24×24 remove button. */
+/** Figma `entity chip` (page tags; state default | hover | focus × size medium | large): `tag item` + a remove button. */
 export interface EntityChipProps extends HTMLAttributes<HTMLSpanElement> {
   label?: ReactNode;
+  /** medium = 24px, body/small, 24×24 remove; large = 44px, body/medium, 44×44 remove with a 24px icon (mobile filters). Figma: `size`. @default "medium" */
+  size?: "medium" | "large";
   /** Remove button handler; its accessible name is `removeLabel` or "Remove <label>". */
   onRemove?: () => void;
   removeLabel?: string;
@@ -515,7 +519,7 @@ export interface RadioGroupProps extends Omit<HTMLAttributes<HTMLFieldSetElement
 }
 export declare function RadioGroup(props: RadioGroupProps): JSX.Element;
 
-/** Mirrors the Figma component `filter` (page filters): a native checkbox, 16px box, gap 8, label body/small, count body/small text-moderate. */
+/** Mirrors the Figma component `filter` (page filters): a native checkbox. Responsive (Figma `device`): desktop 16px box, gap 8, label + count body/small; mobile 24px box, label + count body/medium, padding-y 8, full width (40px row). */
 export interface FilterProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
   /** Option name. Figma: `Label`. */
   label?: ReactNode;
@@ -545,3 +549,68 @@ export interface FiltersProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
 }
 export declare function Filters(props: FiltersProps): JSX.Element;
+
+/** Mirrors the Figma component `filter facet`: a row of the mobile filters layer (level=main) that opens one facet's level. */
+export interface FilterFacetProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  /** The facet ("Subgenre"). label/medium, uppercase. Figma: `label`. */
+  label: ReactNode;
+  /** The ticked options ("Dancehall, Roots"), body/small text-moderate, one line. Omit when none. Figma: `value` + `value visible`. */
+  value?: ReactNode;
+}
+export declare function FilterFacet(props: FilterFacetProps): JSX.Element;
+
+/** Mirrors the Figma component `filters layer` (level main | facet): the mobile filters, full height, actions sticky at the bottom. */
+export interface FiltersLayerProps extends HTMLAttributes<HTMLDivElement> {
+  /** main = applied recap + FilterFacet rows; facet = the options of one facet, with Back. Figma: `level`. @default "main" */
+  level?: "main" | "facet";
+  /** Bar title: "Filters" on main, the facet name on facet. Figma: `facet` (level=facet). */
+  title: ReactNode;
+  /** Applied filters as EntityChip size=large (level=main). Figma: `applied`. */
+  applied?: ReactNode;
+  /** Recap heading. @default "Applied" */
+  appliedLabel?: ReactNode;
+  /** Records the current choice would show, Apply's suffix (0029). */
+  applyCount?: ReactNode;
+  /** @default "Apply" */
+  applyLabel?: ReactNode;
+  /** @default "Reset" */
+  resetLabel?: ReactNode;
+  onApply?: () => void;
+  onReset?: () => void;
+  onBack?: () => void;
+  onClose?: () => void;
+  /** Accessible names of the icon buttons. @default "Back to filters" / "Close filters" */
+  backLabel?: string;
+  closeLabel?: string;
+  /** Level content: FilterFacet rows (main) or a FilterBlock (facet). */
+  children?: ReactNode;
+}
+export declare function FiltersLayer(props: FiltersLayerProps): JSX.Element;
+
+/** Mirrors the Figma component `PLP header` (device=mobile): filters trigger and sort, space-between, padding-y 8, bottom rule. */
+export interface PlpHeaderProps extends HTMLAttributes<HTMLDivElement> {
+  /** The filters trigger: Button secondary small "Filter" with the applied count as `suffix`. */
+  filters?: ReactNode;
+  /** The sort: a SelectButton. */
+  sort?: ReactNode;
+}
+export declare function PlpHeader(props: PlpHeaderProps): JSX.Element;
+
+/** A native <select> drawn as a Button with a trailing chevron-down (Figma: button + trailing icon). The platform picker opens. */
+export interface SelectButtonProps extends HTMLAttributes<HTMLSelectElement> {
+  /** The choices; the visible text is the selected option's label. */
+  options: { value: string; label: string }[];
+  value?: string;
+  defaultValue?: string;
+  /** @default "secondary" */
+  hierarchy?: "primary" | "secondary";
+  /** @default "small" */
+  size?: "large" | "medium" | "small" | "extra-small";
+  /** hug = content width; fill = full width (Figma button `layout`). @default "hug" */
+  layout?: "hug" | "fill";
+  /** Text before the value, same style, gap 4 ("Sort:", desktop). Figma: `prefix` + `prefix text`. */
+  prefix?: ReactNode;
+}
+export declare function SelectButton(props: SelectButtonProps): JSX.Element;
+export declare function ChevronRightIcon(): JSX.Element;
+export declare function ChevronLeftIcon(): JSX.Element;
