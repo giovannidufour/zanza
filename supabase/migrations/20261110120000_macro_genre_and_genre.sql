@@ -1,4 +1,4 @@
--- 0014 genre → macro genre, subgenre → genre (Gio, 2026-11-10). Decision 0044.
+-- 0014 genre → macro genre, subgenre → genre (Gio, 2026-11-10). Decision 0046.
 -- The Discogs genre (almost always Reggae, never shown) becomes the "macro genre"; the Discogs style (Roots,
 -- Dancehall…), until now "subgenre", becomes the shop's "genre". Only names change: same rows, ids, slugs,
 -- positions, grants and policies.

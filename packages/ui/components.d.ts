@@ -16,8 +16,10 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
   suffix?: ReactNode;
   /** Label text. Rendered uppercase by the label text style. Omit for an icon-only button — then `aria-label` is required. */
   children?: ReactNode;
-  /** Documentation only: pins a visual state regardless of pointer. Do not use in product code. */
-  state?: "default" | "hover" | "pressed" | "disabled";
+  /** hover / pressed / disabled: documentation only, pins a visual state regardless of pointer.
+   *  "active" is real (Figma state=active): the button stands for the current page (header Bag on /bag/). It renders
+   *  aria-current="page" and stays focusable — pass `href`, never `disabled` (decision 0045). */
+  state?: "default" | "hover" | "pressed" | "disabled" | "active";
   /** When set, renders an <a> styled as the button (navigation). */
   href?: string;
 }
@@ -252,6 +254,64 @@ export interface ProductCardProps extends HTMLAttributes<HTMLElement> {
   addLabelShort?: string;
 }
 export declare function ProductCard(props: ProductCardProps): JSX.Element;
+
+/** One line of the bag = one copy (Figma: page Bag → `bag item`, device × status). Copies are unique: no quantity, Remove only (decision 0044). */
+export interface BagItemProps extends HTMLAttributes<HTMLElement> {
+  /** Omitted → responsive (breakpoint `--mobile` from tokens.json): desktop type = ProductCard desktop, mobile = ProductCard mobile. */
+  device?: "desktop" | "mobile";
+  /** Figma `status`. unavailable = sold, or held by someone else's checkout: shows `notice`, hides the price; samples stay. @default "available" */
+  status?: "available" | "unavailable";
+  /** Figma `notice` (text, status=unavailable only), label/small: "Just sold", "Reserved". Default "Just sold". */
+  notice?: ReactNode;
+  /** Figma `cover`: the cover image, 96 × 96. */
+  image?: ProductCardImage;
+  /** Product page URL: the title and the cover link to it. */
+  href?: string;
+  /** Figma `product name`. Rendered as a heading; it also names the line and its Remove button. */
+  title: ReactNode;
+  /** Heading level of the title, to fit the page outline. @default 2 */
+  headingLevel?: 2 | 3 | 4;
+  /** Figma `release info`. */
+  releaseInfo?: ReactNode;
+  /** Figma `price`, already formatted. Not rendered when status=unavailable. */
+  price?: ReactNode;
+  /** Figma `grading`, already formatted ("Record: VG+ / VG"). */
+  grading?: ReactNode;
+  /** Figma `cover` grade line ("Cover: NM"). Omit when not graded. */
+  cover?: ReactNode;
+  /** The conditions comment on its own line, as in ProductCard. */
+  conditions?: ReactNode;
+  /** <PlayerButton>s, in a row (gap 8), as in ProductCard. */
+  samples?: ReactNode;
+  /** Click on Remove. */
+  onRemove?: () => void;
+  /** Remove button label. @default "Remove" */
+  removeLabel?: string;
+}
+export declare function BagItem(props: BagItemProps): JSX.Element;
+
+/** The bag's totals and the way to checkout (Figma: page Bag → `bag summary`). Shipping and tax are computed by Stripe Checkout: the bag shows the subtotal only (decision 0044). */
+export interface BagSummaryProps extends HTMLAttributes<HTMLElement> {
+  /** Figma `subtotal label`, e.g. "Subtotal (3 records)". @default "Subtotal" */
+  subtotalLabel?: ReactNode;
+  /** Figma `subtotal`, already formatted ("33€"). */
+  subtotal?: ReactNode;
+  /** @default "Shipping" */
+  shippingLabel?: ReactNode;
+  /** Default "Calculated at checkout". */
+  shipping?: ReactNode;
+  /** Checkout button label (primary, large, fill). @default "Checkout" */
+  checkoutLabel?: string;
+  /** Click on Checkout. */
+  onCheckout?: () => void;
+  /** Disables Checkout (e.g. nothing available to buy). */
+  checkoutDisabled?: boolean;
+  /** Extra attributes for the Checkout button (data-*, aria-*). */
+  checkoutProps?: Record<string, unknown>;
+  /** Figma `note`, body/small, below the button. */
+  note?: ReactNode;
+}
+export declare function BagSummary(props: BagSummaryProps): JSX.Element;
 
 /** Titled list of product cards below the product (Figma: PDP `you may also like`). Same layout on desktop and mobile: the cards carry the device. */
 export interface RelatedProductsProps extends HTMLAttributes<HTMLElement> {

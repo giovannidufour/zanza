@@ -19,6 +19,13 @@
       - mobile: "Filter (n)" opens the filters layer (native modal dialog, levels main / facet); its ticks are a draft
         until Apply, close discards, Reset clears the draft (decision 0038)
 
+   6. Bag (decision 0044)
+      - the bag = the listing ids in localStorage ('zanza-bag'), in the order they were added; a copy is unique, so an
+        id is in the bag once (no quantity). Adding does NOT hold the copy: the hold starts at checkout
+      - "Add to bag" (card, PDP, player) adds; the header Bag shows the count in brackets on every page
+      - /bag/ (pages/bag.js) shows the lines of the bag, the subtotal of the available ones, or the empty state;
+        Remove takes a line out. Checkout is not wired yet (create-checkout + Stripe, _context/backend.md)
+
    Looks live in base.css and packages/ui/components.css; this file only sets attributes and text. */
 (function () {
   'use strict';
@@ -102,7 +109,8 @@
       track: btn.getAttribute('data-sample-track') || '',
       product: btn.getAttribute('data-product-name') || '',
       image: btn.getAttribute('data-product-image') || '',
-      href: btn.getAttribute('data-product-href') || ''
+      href: btn.getAttribute('data-product-href') || '',
+      listing: btn.getAttribute('data-listing-id') || ''
     };
   }
   // the queue of a sample button = the playable sample buttons of the same group (ProductInfo samples)
@@ -144,6 +152,8 @@
       }
       var view = q('.site-player__view');
       if (view && cur.href) view.setAttribute('href', cur.href);
+      var add = q('.site-player__add');
+      if (add) add.disabled = !cur.listing;
       q('.zz-player__previous').disabled = index <= 0;
       q('.zz-player__next').disabled = index >= queue.length - 1;
     }
@@ -294,7 +304,7 @@
      blocks; an option at 0 is hidden unless ticked. State lives in the URL (?genre=Roots&format=7"), so a
      filtered list can be shared and Back restores it. Active filter row (0041, in place of the breadcrumbs) = the filter
      reached from a link: artist / label (no checkbox) or the genre / tag a card's tag linked to, one removable chip.
-     Links from before decision 0044 (?subgenre=Roots) are rewritten to ?genre= in place.
+     Links from before decision 0046 (?subgenre=Roots) are rewritten to ?genre= in place.
      The column's checkboxes are the applied state. On mobile (Figma `filters layer`, 2026-11-10) the layer has its
      own checkboxes: a draft, copied from the column when the layer opens and back to it on Apply; closing discards
      it. Levels: main (applied recap + one row per facet) and facet (the options of one facet). */
@@ -313,7 +323,7 @@
       return v;
     });
     var params = new URLSearchParams(location.search);
-    if (params.has('subgenre')) {   // subgenre was renamed genre (0044): old shared links keep working
+    if (params.has('subgenre')) {   // subgenre was renamed genre (0046): old shared links keep working
       params.getAll('subgenre').forEach(function (v) { params.append('genre', v); });
       params.delete('subgenre');
       history.replaceState(history.state, '', location.pathname + '?' + params.toString() + location.hash);
@@ -588,6 +598,125 @@
     apply(false);
   }
 
+  /* ---------------------------------------------------------------- 6. bag */
+
+  var BAG_KEY = 'zanza-bag';
+  // storage can be missing or refuse (private window, blocked site data): the bag is then empty, never an error
+  function readBag() {
+    try {
+      var v = JSON.parse(window.localStorage.getItem(BAG_KEY) || '[]');
+      return Array.isArray(v) ? v.filter(function (x) { return typeof x === 'string' && x; }) : [];
+    } catch (e) { return []; }
+  }
+  function writeBag(ids) {
+    try { window.localStorage.setItem(BAG_KEY, JSON.stringify(ids)); } catch (e) { /* not saved: stays for this page */ }
+    renderBag();
+  }
+  // same rule as formatPrice in pages/shell.js: whole euros without decimals (12, 12.50) + the euro sign
+  function formatPrice(cents) { return (cents % 100 === 0 ? cents / 100 : (cents / 100).toFixed(2)) + '\u20ac'; }
+
+  // a polite live region, once per document (outside .zz-page, so the soft navigation keeps it)
+  var bagStatus = null;
+  function announce(text) {
+    if (!bagStatus) {
+      bagStatus = document.createElement('p');
+      bagStatus.className = 'zz-visually-hidden';
+      bagStatus.setAttribute('role', 'status');
+      document.body.appendChild(bagStatus);
+    }
+    bagStatus.textContent = '';
+    window.setTimeout(function () { bagStatus.textContent = text; }, 50);
+  }
+
+  function addToBag(id) {
+    if (!id) return;
+    var ids = readBag();
+    if (ids.indexOf(id) === -1) { ids.push(id); writeBag(ids); }
+    // TODO design: no "added" / "In bag" state on the buttons yet (design/open.md); for now: count + announcement
+    announce('Added to bag. ' + ids.length + (ids.length === 1 ? ' record' : ' records') + ' in the bag.');
+  }
+  function removeFromBag(id) {
+    writeBag(readBag().filter(function (x) { return x !== id; }));
+  }
+
+  // the header Bag button: "(n)" in its suffix, on every page
+  function renderBagCount(n) {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-bag-count] .zz-button__suffix'), function (el) {
+      el.textContent = '(' + n + ')';
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-bag-count]'), function (el) {
+      el.setAttribute('aria-label', 'Bag, ' + n + (n === 1 ? ' record' : ' records'));
+    });
+  }
+
+  // /bag/: show the lines of the bag in order, the subtotal of the available ones, or the empty state
+  function renderBagPage(ids) {
+    var root = document.querySelector('[data-bag-page]');
+    if (!root) return ids;
+    var list = root.querySelector('[data-bag-list]');
+    var lines = {};
+    Array.prototype.forEach.call(list.querySelectorAll('[data-bag-line]'), function (li) {
+      lines[li.getAttribute('data-bag-line')] = li;
+      li.hidden = true;
+    });
+    // ids with no line are listings that left the shop (unpublished, archived, deleted): drop them from the bag
+    var known = ids.filter(function (id) { return !!lines[id]; });
+    var count = 0, cents = 0;
+    known.forEach(function (id) {
+      var li = lines[id];
+      li.hidden = false;
+      list.appendChild(li);   // in the order they were added
+      if (li.getAttribute('data-available') === 'true') { count++; cents += parseInt(li.getAttribute('data-price'), 10) || 0; }
+    });
+    var empty = known.length === 0;
+    list.hidden = empty;
+    root.querySelector('[data-bag-summary]').hidden = empty;
+    root.querySelector('[data-bag-empty]').hidden = !empty;
+    root.querySelector('[data-bag-subtotal-label]').textContent = 'Subtotal (' + count + (count === 1 ? ' record)' : ' records)');
+    root.querySelector('[data-bag-subtotal]').textContent = formatPrice(cents);
+    var checkout = root.querySelector('[data-bag-checkout]');
+    if (checkout) checkout.disabled = count === 0;
+    return known;
+  }
+
+  function renderBag() {
+    var ids = readBag();
+    var known = renderBagPage(ids);
+    if (known.length !== ids.length) {
+      try { window.localStorage.setItem(BAG_KEY, JSON.stringify(known)); } catch (e) { /* ignore */ }
+      ids = known;
+    }
+    renderBagCount(ids.length);
+  }
+
+  function initBag() { renderBag(); }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var card = t.closest('.zz-product-card__add');
+    if (card) { var holder = card.closest('[data-listing-id]'); if (holder) addToBag(holder.getAttribute('data-listing-id')); return; }
+    var cta = t.closest('[data-add-to-bag]');
+    if (cta) { addToBag(cta.getAttribute('data-add-to-bag')); return; }
+    if (t.closest('.site-player__add')) { var cur = typeof current === 'function' ? current() : null; if (cur) addToBag(cur.listing); return; }
+    var remove = t.closest('.zz-bag-item__remove');
+    if (remove) {
+      var li = remove.closest('[data-bag-line]');
+      if (!li) return;
+      // focus goes to the next line's Remove, else the previous one's, else the page title (nothing left)
+      var lines = Array.prototype.filter.call(document.querySelectorAll('[data-bag-line]'), function (x) { return !x.hidden; });
+      var i = lines.indexOf(li);
+      var next = lines[i + 1] || lines[i - 1];
+      var name = li.querySelector('.zz-bag-item__name');
+      removeFromBag(li.getAttribute('data-bag-line'));
+      announce((name ? name.textContent + ' removed.' : 'Removed.'));
+      var focusEl = next ? next.querySelector('.zz-bag-item__remove') : document.querySelector('[data-bag-page] h1');
+      if (focusEl) { if (!next) focusEl.setAttribute('tabindex', '-1'); focusEl.focus(); }
+    }
+  });
+  // another tab changed the bag
+  window.addEventListener('storage', function (e) { if (e.key === BAG_KEY) renderBag(); });
+
   var navToken = 0;
   function navigate(href, push) {
     var token = ++navToken;
@@ -610,6 +739,7 @@
       initHeader();
       initGallery();
       initFilters();
+      initBag();
       if (player && audio) render();
       // screen readers and keyboard: start from the new page's main heading, like a full load would
       var focusEl = document.querySelector('main h1') || document.querySelector('main');
@@ -634,4 +764,5 @@
   initHeader();
   initGallery();
   initFilters();
+  initBag();
 })();

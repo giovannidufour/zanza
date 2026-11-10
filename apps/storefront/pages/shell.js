@@ -87,8 +87,11 @@ function gradingProps(c) {
 }
 const productHref = (product, url) => url(`/products/${product.listing.slug}/`);
 
-// Figma: `header` (device=desktop | mobile), the same on every page
-function SiteHeader({ site, url, section }) {
+// Figma: `header` (device=desktop | mobile), the same on every page.
+// `section` = the active tab (none on /bag/). `current = 'bag'` → the Bag button is the current page (state active,
+// decision 0045). The Bag count is the button's suffix in brackets (Gio 2026-11-10): "(0)" in the static HTML,
+// scripts/site.js writes the real count from the bag in the browser ([data-bag-count]).
+function SiteHeader({ site, url, section, current }) {
   return h(Z.Header, {
     className: 'site-header',   // sticky on scroll up: base.css + scripts/site.js
     logo: h('img', { src: url('/assets/logo.png'), alt: '', width: 64, height: 64 }),
@@ -99,7 +102,8 @@ function SiteHeader({ site, url, section }) {
       h(Z.Tab, { value: 'trade', href: url('/trade/') }, 'For trade')),
     actions: h(React.Fragment, null,
       h(Z.Button, { hierarchy: 'secondary', className: 'zz-header__account' }, 'Account'),
-      h(Z.Button, { hierarchy: 'secondary' }, 'Bag'))
+      h(Z.Button, { hierarchy: 'secondary', href: url('/bag/'), state: current === 'bag' ? 'active' : undefined,
+        suffix: '(0)', 'data-bag-count': '' }, 'Bag'))
   });
 }
 
@@ -113,12 +117,13 @@ function sampleAttrs(product, s, url) {
     'data-sample-track': s.track_position,
     'data-product-name': productName(release),
     'data-product-image': release.cover ? url(release.cover) : undefined,
-    'data-product-href': productHref(product, url)
+    'data-product-href': productHref(product, url),
+    'data-listing-id': product.listing.id   // the player's "Add to bag" adds the playing product
   };
 }
 
 // A product as a ProductCard (PLP list, PDP "More for sale"). No device: responsive card.
-// one tag group: genres first, then the shop's own tags (decisions 0031, 0044)
+// one tag group: genres first, then the shop's own tags (decisions 0031, 0046)
 function tagsOf(release) {
   return [...new Set([...(release.genres || []), ...(release.tags || [])])];
 }
@@ -138,6 +143,7 @@ function tagLinksOf(release, url) {
 function ProductCardFor({ product, url, headingLevel }) {
   const { listing, release, copy, samples } = product;
   return h(Z.ProductCard, {
+    'data-listing-id': listing.id,   // its Add button puts this copy in the bag (scripts/site.js)
     href: productHref(product, url),
     image: release.cover ? { src: url(release.cover), alt: '' } : null,
     title: productNameLinked(product, url, productHref(product, url)),
