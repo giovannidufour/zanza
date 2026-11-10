@@ -41,7 +41,7 @@ A short, non-blocking confirmation of an action just done: Add to bag (+ View ba
 | part | token |
 | --- | --- |
 | background | `surface-base` (opaque in every mode, [0023](../../../../design/decisions/0023-surface-accent-and-opaque-base.md)) |
-| border | `border-divider-strong`, 1px dashed [1,1], dotted ([0051](../../../../design/decisions/0051-toast-dashed-border.md)) |
+| border | `border-divider-strong`, 1px dashed [16,16] ([0053](../../../../design/decisions/0053-toast-border-dash-16.md)) |
 | text | `text-strong` (body/medium) |
 | padding, gap | `medium-small` |
 | distance from the bottom / the open player | `gutter-small`; mobile without the player: 2 × `medium-small` + safe area ([0052](../../../../design/decisions/0052-toast-clear-of-rounded-corners.md)) |
