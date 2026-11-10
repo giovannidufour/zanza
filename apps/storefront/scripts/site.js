@@ -35,13 +35,22 @@
     var offset = 0;               // how far the header is pushed up, 0 ... header height
     var upwards = 0;              // upward scroll accumulated since the last downward move
 
+    var root = document.documentElement;
+
+    // --site-header-visible: how much of the header is on screen, so sticky page parts (PLP filters) sit below it.
+    // data-header-revealing on <html> lets them follow the animated reveal with the same transition.
+    function setRevealing(on) {
+      if (on) { header.setAttribute('data-revealing', ''); root.setAttribute('data-header-revealing', ''); }
+      else { header.removeAttribute('data-revealing'); root.removeAttribute('data-header-revealing'); }
+    }
     function apply() {
       header.style.transform = offset ? 'translateY(' + (-offset) + 'px)' : '';
       if (offset >= header.offsetHeight) header.setAttribute('data-hidden', ''); else header.removeAttribute('data-hidden');
+      root.style.setProperty('--site-header-visible', Math.max(0, header.offsetHeight - offset) + 'px');
     }
     function reveal() {
       if (!offset) return;
-      header.setAttribute('data-revealing', '');
+      setRevealing(true);
       offset = 0;
       apply();
     }
@@ -52,7 +61,7 @@
       if (delta > 0) {
         upwards = 0;
         if (header.contains(document.activeElement)) return;   // never push it away while keyboard focus is inside
-        header.removeAttribute('data-revealing');               // follow the page: no transition
+        setRevealing(false);                                    // follow the page: no transition
         offset = Math.min(header.offsetHeight, offset + delta);
         apply();
       } else if (delta < 0) {
@@ -60,12 +69,14 @@
         if (upwards >= REVEAL_AFTER || y === 0) reveal();
       }
     }
-    function onTransitionEnd() { header.removeAttribute('data-revealing'); }
+    function onTransitionEnd(e) { if (e.target === header) setRevealing(false); }
 
+    apply();
     window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', apply);
     header.addEventListener('focusin', reveal);   // keyboard: tabbing into a hidden header brings it back
     header.addEventListener('transitionend', onTransitionEnd);
-    headerCleanup = function () { window.removeEventListener('scroll', onScroll); };
+    headerCleanup = function () { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', apply); };
   }
 
   /* ---------------------------------------------------------------- 2. player */
