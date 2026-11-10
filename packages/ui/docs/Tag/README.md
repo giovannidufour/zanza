@@ -10,6 +10,7 @@ A static label chip (`Tag`, Figma `tag item`) and a wrapping list of them (`TagG
 
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
+| `href` | `string` |  | Renders the tag as a link (&lt;a>). Same look; hover/focus states are not designed yet. |
 | `size` | `"extra-small" \| "small" \| "medium" \| "large"` | `small` | Figma: `size`. extra-small = 18px, small = 22px, medium = 24px, large = 28px. |
 | `children` * | `ReactNode` |  | Label text. Figma: `Label`. |
 

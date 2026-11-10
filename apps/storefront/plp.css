@@ -11,12 +11,17 @@
 }
 .plp-filters { grid-column: 1 / span 3; }
 /* Gio 2026-11-10: the filter column stays in view and scrolls on its own (same pattern as the PDP gallery, 0033):
-   sticky at the top, at most the window minus the open site player. Its checkboxes are focusable, so no tabindex. */
+   sticky below the visible part of the site header (--site-header-visible, set by scripts/site.js), at most the window
+   minus the header and the open site player. Its checkboxes are focusable, so no tabindex. */
 .plp-filters {
-  position: sticky; top: 0;
-  max-height: 100dvh; overflow-y: auto; overscroll-behavior: contain;
+  position: sticky; top: var(--site-header-visible, 0px);
+  max-height: calc(100dvh - var(--site-header-visible, 0px));
+  overflow-y: auto; overscroll-behavior: contain;
 }
-body[data-player-open] .plp-filters { max-height: calc(100dvh - var(--site-player-height, 0px)); }
+body[data-player-open] .plp-filters { max-height: calc(100dvh - var(--site-header-visible, 0px) - var(--site-player-height, 0px)); }
+/* follows the header's animated reveal (same placeholder timing as .site-header[data-revealing] in base.css) */
+html[data-header-revealing] .plp-filters { transition: top 200ms ease-out, max-height 200ms ease-out; }
+@media (prefers-reduced-motion: reduce) { html[data-header-revealing] .plp-filters { transition: none; } }
 .plp-list    { grid-column: 4 / span 9; display: flex; flex-direction: column; gap: 8px; min-width: 0; }   /* Figma: Frame 46, gap 8 */
 
 /* the page needs an h1 for screen readers; Figma has no visible title */

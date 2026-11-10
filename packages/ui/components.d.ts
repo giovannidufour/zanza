@@ -89,7 +89,9 @@ export interface BreadcrumbsProps extends HTMLAttributes<HTMLElement> {
 export declare function Breadcrumbs(props: BreadcrumbsProps): JSX.Element;
 
 /** Mirrors the Figma component `tag item`: a static label chip on surface-support-1. */
-export interface TagProps extends HTMLAttributes<HTMLSpanElement> {
+export interface TagProps extends HTMLAttributes<HTMLElement> {
+  /** Renders the tag as a link (<a>). Same look; hover/focus states are not designed yet. */
+  href?: string;
   /** Figma: `size`. extra-small = 18px, small = 22px, medium = 24px, large = 28px. @default "small" */
   size?: "extra-small" | "small" | "medium" | "large";
   /** Label text. Figma: `Label`. */
@@ -221,8 +223,8 @@ export interface ProductCardProps extends HTMLAttributes<HTMLElement> {
   grading?: ReactNode;
   /** Figma `cover` (boolean + text): the cover/sleeve grade below the record's, already formatted ("Cover: NM"). Omit when not graded. */
   cover?: ReactNode;
-  /** Tag labels. Rendered as a TagGroup: size large on desktop, small on mobile. */
-  tags?: string[];
+  /** Tag labels, or `{ label, href }` for a tag that links somewhere. Rendered as a TagGroup: size large on desktop, small on mobile. */
+  tags?: Array<string | { label: string; href?: string }>;
   /** <PlayerButton>s, in a row (gap 8). */
   samples?: ReactNode;
   /** Click on the add button. */

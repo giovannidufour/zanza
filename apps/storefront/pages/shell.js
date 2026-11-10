@@ -54,6 +54,18 @@ function sampleAttrs(product, s, url) {
 function tagsOf(release) {
   return [...new Set([...(release.style || []), ...(release.tags || [])])];
 }
+// the same tags as links to the sale PLP filtered by them (Gio 2026-11-10): subgenre → ?subgenre=, own tag → ?tag=
+// (the PLP filter keys, pages/plp.js FACETS). A name that is both stays a subgenre, as in tagsOf.
+function tagLinksOf(release, url) {
+  const seen = new Set();
+  const out = [];
+  [['subgenre', release.style || []], ['tag', release.tags || []]].forEach(([key, names]) => names.forEach((name) => {
+    if (seen.has(name)) return;
+    seen.add(name);
+    out.push({ label: name, href: `${url('/sale/')}?${key}=${encodeURIComponent(name)}` });
+  }));
+  return out;
+}
 // Figma labels the card samples 1, 2…; the accessible name keeps the product and the sample title.
 function ProductCardFor({ product, url, headingLevel }) {
   const { listing, release, copy, samples } = product;
@@ -64,7 +76,7 @@ function ProductCardFor({ product, url, headingLevel }) {
     headingLevel,
     releaseInfo: releaseInfo(release),
     price: listing.section === 'sale' ? formatPrice(listing.price) : null,
-    tags: tagsOf(release),
+    tags: tagLinksOf(release, url),
     description: copy.notes,
     grading: grading(copy),
     cover: coverGrading(copy),
@@ -75,4 +87,4 @@ function ProductCardFor({ product, url, headingLevel }) {
   });
 }
 
-module.exports = { SECTION_LABEL, tagsOf, formatPrice, productName, releaseInfo, grading, coverGrading, productHref, SiteHeader, sampleAttrs, ProductCardFor };
+module.exports = { SECTION_LABEL, tagsOf, tagLinksOf, formatPrice, productName, releaseInfo, grading, coverGrading, productHref, SiteHeader, sampleAttrs, ProductCardFor };

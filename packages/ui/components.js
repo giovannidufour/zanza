@@ -160,7 +160,8 @@
   var TAG_TYPE = { 'extra-small': 'body-extra-small', small: 'body-extra-small', medium: 'body-small', large: 'body-medium' };   // Figma text style per size
   function Tag(props) {
     var size = props.size || 'small';
-    return h('span', Object.assign({
+    // href: the tag is a link (shop: the PLP filtered by it). Interaction states not designed yet (Gio 2026-11-10: ignore for now).
+    return h(props.href ? 'a' : 'span', Object.assign({
       className: cx('zz-tag', props.className),
       'data-size': size
     }, omit(props, ['size', 'children', 'className', '_typeClass'])),
@@ -356,7 +357,10 @@
           h('h' + (props.headingLevel || 2), { id: titleId, className: cx('zz-product-card__name', t.head) }, props.title),
           props.releaseInfo ? h('p', { className: cx('zz-product-card__release', t.head) }, props.releaseInfo) : null),
         tags.length ? h(TagGroup, { className: 'zz-product-card__tags' },
-          tags.map(function (tag, i) { return h(Tag, { key: i, size: t.tag, _typeClass: t.tagType }, tag); })) : null,
+          tags.map(function (tag, i) {
+            var o = typeof tag === 'string' ? { label: tag } : tag;
+            return h(Tag, { key: i, size: t.tag, _typeClass: t.tagType, href: o.href }, o.label);
+          })) : null,
         props.samples ? h('div', { className: 'zz-product-card__samples' }, props.samples) : null),
       h('div', { className: 'zz-product-card__purchase' },
         device === 'responsive' ? [addButton('desktop'), addButton('mobile')] : addButton(device),

@@ -10,3 +10,7 @@
 **Update 2026-11-10 (Gio).** A filter block shows only when the current view has something to pick in it: when all its options drop to 0 (and none is ticked) the whole block hides, legend included. Facets with no values on the page are not rendered at all.
 
 **Update 2026-11-10 (Gio).** On desktop the filter column is sticky at the top of the window and scrolls on its own when it is taller than the window (minus the open site player), the same pattern as the PDP gallery (0033). Not drawn in Figma.
+
+**Update 2026-11-10 (Gio).** When the site header comes back on scroll up, the filter column moves down with it (same 200 ms reveal), so the header never covers it. The script publishes the visible header height as `--site-header-visible`; any other sticky page part should sit below it the same way.
+
+**Update 2026-11-10 (Gio).** Tags are always links: on the product card (PLP, "More for sale") and on the PDP, a tag opens the sale PLP with that filter applied (`/sale/?subgenre=…` for a subgenre, `/sale/?tag=…` for one of the shop's own tags). `Tag` takes `href` and renders an `<a>` with the same look. Interaction states are ignored for now (Gio), see open.md.

@@ -355,6 +355,7 @@ a.zz-tab {
   color: var(--text-strong);
   white-space: nowrap;
 }
+a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interaction states yet (open.md) */
 /* type: the label carries body-extra-small (extra-small, small) | body-small (medium) | body-medium (large) */
 .zz-tag[data-size="extra-small"] { padding: 2px 4px; }
 .zz-tag[data-size="small"]       { padding: 4px 8px; }
