@@ -535,7 +535,7 @@
       h(Z.Divider),
 
       h('section', { className: 'admin-section' },
-        // Figma 2095:20560: media graded per side (side B optional, migration 0012), comment on its own row
+        // Figma 2095:20560: media graded per side (side B optional, migration 0013), comment on its own row
         h('div', { className: 'admin-row' },
           h(Z.Input, Object.assign({ className: 'span-4', id: 'condition', label: 'Side A conditions', variant: 'select', placeholder: '' }, bind('condition')), opts(GRADES)),
           h(Z.Input, Object.assign({ className: 'span-4', id: 'condition-b', label: 'Side B conditions', optional: true, variant: 'select', placeholder: '' }, bind('conditionB')), opts(GRADES))),

@@ -1,4 +1,4 @@
--- 0012 media graded per side (Gio, 2026-11-10): side A is required, side B is optional.
+-- 0013 media graded per side (Gio, 2026-11-10): side A is required, side B is optional.
 -- · listings.condition_media stays side A (existing rows keep their meaning); condition_media_b is side B, null = not graded.
 -- · Shop shows "Grading: VG+ / VG", or only side A when B is null. Cover/sleeve grading is unchanged.
 -- · admin_save_listing: 0011 + listing.condition_media_b ('' or missing = null). An admin without the field leaves B null.

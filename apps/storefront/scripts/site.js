@@ -248,7 +248,7 @@
     });
   }
 
-  /* -- PDP gallery (pages/pdp.js, pdp.css, decision 0034) ----------------- */
+  /* -- PDP gallery (pages/pdp.js, pdp.css, decision 0036) ----------------- */
   var galleryCleanup = null;
   function initGallery() {
     if (galleryCleanup) galleryCleanup();

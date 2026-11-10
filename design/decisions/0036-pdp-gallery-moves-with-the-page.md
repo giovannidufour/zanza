@@ -1,4 +1,4 @@
-# 0034 — PDP desktop gallery moves with the page and fits the window at rest
+# 0036 — PDP desktop gallery moves with the page and fits the window at rest
 
 `2026-11-10` · proposed (Gio is testing it) · Figma: PDP - desktop `gallery` (2138:1176) · partly supersedes [0033](0033-pdp-gallery-scrolls-on-its-own.md)
 
