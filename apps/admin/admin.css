@@ -1,5 +1,5 @@
 /* apps/admin/admin.css — page layout of the admin only. Components keep their own styles (packages/ui).
-   Layout mirrors Figma BACKEND → Create ("Desktop - 1", 1024): padding 24, main column 645 + gap 16 + side column 315,
+   Layout mirrors Figma BACKEND → Create ("Create listing - desktop", 1024): padding 24, 12-column grid gap 16, main 8 + side 4 columns, full width,
    sections gap 32 separated by Divider, field rows = 8-column grid, gap 16 (decision 0012).
    Track lines, the action panel and dividers are DS components (ListingLine, ActionPanel, Divider): only page layout here.
    Listings: Figma BACKEND → Listings (2026-11-10). Sign-in has no Figma frame (design/open.md). */
@@ -16,7 +16,12 @@ h1, h2, p { margin: 0; }
 .admin-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .admin-bar__nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 
-.admin-page { display: grid; grid-template-columns: minmax(0, 645fr) minmax(0, 315fr); gap: 16px; align-items: start; }
+/* Figma BACKEND → Create (2026-11-10): the frame is a 12-column grid, gap 16; main = 8 columns, side = 4 (fill).
+   Create / edit is full width (Gio, 2026-11-10); the other admin pages keep max-width 1024. */
+.admin:has(.admin-page) { max-width: none; }
+.admin-page { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.admin-main { grid-column: span 8; }
+.admin-side { grid-column: span 4; }
 .admin-main { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
 .admin-side { display: flex; flex-direction: column; gap: 24px; position: sticky; top: 24px; }
 /* with the shop preview the side column can be taller than the window: it scrolls on its own, so the preview and the
@@ -58,6 +63,7 @@ h1, h2, p { margin: 0; }
 @media (--mobile) {
   .admin { padding: 16px; }
   .admin-page { grid-template-columns: minmax(0, 1fr); }
+  .admin-main, .admin-side { grid-column: auto; }
   .admin-side { position: static; order: -1; }
   .admin-row { grid-template-columns: minmax(0, 1fr); }
   .admin-row > * { grid-column: auto; }
