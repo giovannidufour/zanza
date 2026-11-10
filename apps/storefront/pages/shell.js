@@ -15,12 +15,56 @@ const productName = (r) => r.name || `${r.artist} - ${r.title}`;
 const releaseInfo = (r) => [r.label, r.label && r.pre_release ? 'Pre' : null, r.format, r.country ? `(${r.country})` : null].filter(Boolean).join(' ');
 // the sale PLP filtered by one value (`key` = a PLP filter key, pages/plp.js)
 const plpHref = (url, key, value) => `${url('/sale/')}?${key}=${encodeURIComponent(value)}`;
-// releaseInfo with the label as a link to the sale PLP filtered by it (Gio 2026-11-10; ?label= is a filter with no list)
+// ── label and artists as links to the sale PLP filtered by the entity (Gio 2026-11-10) ──
+// The filter value is the entity slug, not the printed credit: a record credited "Kesta Rec." still belongs to
+// the label Kesta (aliases, migration 0006). JSON test content has no entities: the slug comes from the text.
+const slugText = (s) => String(s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const labelRef = (r) => r.label_ref || (r.label ? { slug: slugText(r.label), name: r.label } : null);
+const linesOf = (r) => (r.lines && r.lines.length ? r.lines : [{ artist: r.artist, title: r.title }]);
+const lineArtists = (l) => (l.artists && l.artists.length ? l.artists
+  : (l.artist ? [{ slug: slugText(l.artist), name: l.artist }] : []));
+// every artist entity of the release, once (the PLP `artist` filter values)
+function artistRefs(r) {
+  const seen = new Map();
+  linesOf(r).forEach((l) => lineArtists(l).forEach((a) => { if (!seen.has(a.slug)) seen.set(a.slug, a); }));
+  return [...seen.values()];
+}
+const entityLink = (url, key, ref, text, k) => h('a', { key: k, className: 'site-inline-link', href: plpHref(url, key, ref.slug) }, text);
+// the printed credit of a line ("Little Meeky & Kesta") with each artist as a link: the credit is cut at the
+// join texts of its artists, in order. If it does not cut cleanly, the whole credit links to the first artist.
+function creditNodes(text, artists, url, k) {
+  if (!text || !artists.length) return text || '';
+  if (artists.length === 1) return [entityLink(url, 'artist', artists[0], text, k)];
+  const out = [];
+  let rest = text;
+  for (let i = 0; i < artists.length - 1; i++) {
+    const join = (artists[i].join || '').trim();
+    const at = join ? rest.toLowerCase().indexOf(' ' + join.toLowerCase() + ' ') : -1;
+    if (at <= 0) return [entityLink(url, 'artist', artists[0], text, k)];
+    out.push(entityLink(url, 'artist', artists[i], rest.slice(0, at), `${k}-${i}`), ` ${rest.substr(at + 1, join.length)} `);
+    rest = rest.slice(at + join.length + 2);
+  }
+  out.push(entityLink(url, 'artist', artists[artists.length - 1], rest, `${k}-last`));
+  return out;
+}
+// the product name with the artists as links; a custom title stays plain text (no credits to link)
+function productNameLinked(product, url) {
+  const { listing, release } = product;
+  if (listing.custom_title) return productName(release);
+  const lines = linesOf(release);
+  const first = lines[0];
+  const credit = (l, i) => creditNodes(l.artist || first.artist, l.artist ? lineArtists(l) : lineArtists(first), url, `a${i}`);
+  const own = lines.slice(1).some((l) => l.artist && l.artist !== first.artist);
+  if (!own) return [].concat(credit(first, 0), ' - ' + lines.map((l) => l.title).join(' / '));
+  return lines.flatMap((l, i) => [].concat(i ? [' / '] : [], credit(l, i), ' - ' + l.title));
+}
+// releaseInfo with the label as a link (the printed label, filtered by its entity)
 const releaseInfoLinked = (r, url) => {
-  if (!r.label) return releaseInfo(r);
+  const ref = labelRef(r);
+  if (!ref) return releaseInfo(r);
   const rest = releaseInfo(Object.assign({}, r, { label: null }));
-  return [h('a', { key: 'label', className: 'site-inline-link', href: plpHref(url, 'label', r.label) }, r.label),
-    (r.pre_release ? ' Pre' : '') + (rest ? ' ' + rest : '')];
+  return [entityLink(url, 'label', ref, r.label, 'label'), (r.pre_release ? ' Pre' : '') + (rest ? ' ' + rest : '')];
 };
 // the record graded per side: "Record: VG+ / VG", only side A when side B is not graded (Gio, 2026-11-10)
 const grading = (c) => `Record: ${[c.condition_media, c.condition_media_b].filter(Boolean).join(' / ')}`;
@@ -81,7 +125,7 @@ function ProductCardFor({ product, url, headingLevel }) {
   return h(Z.ProductCard, {
     href: productHref(product, url),
     image: release.cover ? { src: url(release.cover), alt: '' } : null,
-    title: productName(release),
+    title: productNameLinked(product, url),
     headingLevel,
     releaseInfo: releaseInfoLinked(release, url),
     price: listing.section === 'sale' ? formatPrice(listing.price) : null,
@@ -96,4 +140,4 @@ function ProductCardFor({ product, url, headingLevel }) {
   });
 }
 
-module.exports = { SECTION_LABEL, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, productHref, SiteHeader, sampleAttrs, ProductCardFor };
+module.exports = { SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, productHref, SiteHeader, sampleAttrs, ProductCardFor };

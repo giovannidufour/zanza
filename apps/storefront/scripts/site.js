@@ -321,7 +321,7 @@
       hidden.forEach(function (f) {
         hiddenSel[f.key].forEach(function (value) {
           var chip = chipTemplate.content.firstElementChild.cloneNode(true);
-          var text = f.label + ': ' + value;
+          var text = f.label + ': ' + ((f.names || {})[value] || value);
           chip.querySelector('.zz-entity-chip__label').textContent = text;
           var btn = chip.querySelector('.zz-entity-chip__remove');
           btn.setAttribute('aria-label', 'Remove filter ' + text);
@@ -370,7 +370,7 @@
       var list = nav && nav.querySelector('ol');
       if (list) {
         var labels = [nav.getAttribute('data-section-label')];
-        hidden.forEach(function (f) { hiddenSel[f.key].forEach(function (x) { labels.push(x); }); });
+        hidden.forEach(function (f) { hiddenSel[f.key].forEach(function (x) { labels.push((f.names || {})[x] || x); }); });
         boxes.forEach(function (b) { if (b.checked) labels.push(b.getAttribute('data-facet-label') || b.value); });
         list.textContent = '';
         labels.forEach(function (text, i) {
