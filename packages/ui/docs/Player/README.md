@@ -38,7 +38,7 @@ Presentational: it renders one sample and the native audio element. The site own
 
 ## Tokens
 
-- Background `surface-base` · top rule 1px `border-divider-strong` · text `text-strong`, type `body-medium`
+- Background `surface-accent` · top rule 1px `border-divider-strong` · text `text-strong`, type `body-medium`
 - Transport and close: IconButton ([0007](../../../../design/decisions/0007-floating-actions-foreground-background.md)) · actions: Button secondary small
 
 ## Dimensions (Figma)

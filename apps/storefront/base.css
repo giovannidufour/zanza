@@ -3,13 +3,13 @@
 
 /* reset: the browser default body margin (8px) is not in Figma */
 html, body { margin: 0; padding: 0; }
-html { background: var(--surface-base); }
+html { background: var(--surface-accent); }
 
-/* page shell: surface-base + horizontal page-margin (Figma: PDP - desktop 1024 / mobile 375, auto layout fill) */
+/* page shell: surface-accent + horizontal page-margin (Figma: PDP - desktop 1024 / mobile 375, auto layout fill) */
 .zz-page {
   min-height: 100vh;
   margin: 0;
-  background: var(--surface-base);
+  background: var(--surface-accent);
   color: var(--text-strong);
   font-family: var(--font-sans);
   padding: 0 var(--page-margin-desktop);
@@ -19,7 +19,7 @@ html { background: var(--surface-base); }
 @media (--mobile) { .zz-page { padding: 0 var(--page-margin-mobile); } }
 
 /* site header: scrolls away on scroll down, reappears sticky on scroll up (offset set by scripts/site.js).
-   Background comes from the Header component (Figma: surface/base). */
+   Background comes from the Header component (Figma: surface/accent). */
 .site-header {
   position: sticky;
   top: 0;

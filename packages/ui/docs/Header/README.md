@@ -24,7 +24,7 @@ Without `device` it is responsive: one markup, CSS switches menu button / tabs /
 
 ## Tokens
 
-- Background `surface-base` (Figma fill on both variants)
+- Background `surface-accent` (Figma fill on both variants)
 - Store-name border (1px dashed `[8,8]`) and bottom rule: `border-divider-strong`
 - Everything else comes from `Button` and `Tabs`
 

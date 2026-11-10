@@ -254,7 +254,7 @@ a.zz-tab {
   box-sizing: border-box;
   font-family: var(--font-sans);
   color: var(--text-strong);
-  background: var(--surface-base);   /* Figma: header fill → surface/base (both devices) */
+  background: var(--surface-accent);   /* Figma: header fill → surface/accent (both devices) */
 }
 /* width: always fill (Figma: layout sizing FILL). The mobile variant is drawn at 375 in Figma; the parent sets the width. */
 
@@ -448,7 +448,7 @@ a.zz-tab {
   display: grid;
   gap: var(--gutter-small);                       /* Figma desktop: itemSpacing gutter/small */
   padding: 8px var(--page-margin-desktop);        /* Figma: 8 / page-margin */
-  background: var(--surface-base);                /* Figma fill #73ff61, unbound → surface-base (same value) */
+  background: var(--surface-accent);                /* Figma fill #73ff61, unbound → surface-accent (same value) */
   border-top: 1px solid var(--border-divider-strong);   /* Figma top stroke #000, unbound */
   color: var(--text-strong);
   /* desktop: one row, top-aligned (Figma: horizontal, align MIN). Figma groups actions+now+controls and the native
@@ -687,12 +687,12 @@ a.zz-product-card__image { display: block; color: inherit; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    Admin forms (Figma page BACKEND → Create). Render inside [data-theme="backend"]:
-   surface-base is white there (Figma mode `backend`).
+   surface-accent is black-a4 there (Figma mode `backend`, 2026-11-10): translucent.
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* ── Input (Figma: input + _input-master) ──
    Column, gap 4: top content (label · Optional) / field / support text.
-   Field: 1px border-divider-strong, surface-base, padding 8 (compact 4), gap 8 (compact 4), strokes included in
+   Field: 1px border-divider-strong, surface-accent, padding 8 (compact 4), gap 8 (compact 4), strokes included in
    layout (0014) → 38px (compact 30px). Text: label + Optional + support body-small, value + affixes body-medium. */
 .zz-input {
   display: flex;
@@ -714,7 +714,7 @@ a.zz-product-card__image { display: block; color: inherit; }
   box-sizing: border-box;
   border: 1px solid var(--border-divider-strong);
   border-radius: 0;
-  background: var(--surface-base);
+  background: var(--surface-accent);
   cursor: text;
 }
 .zz-input[data-size="compact"] .zz-input__field { gap: 4px; padding: 4px; }
@@ -883,14 +883,14 @@ a.zz-product-card__image { display: block; color: inherit; }
   top: calc(100% + 4px); left: -1px; right: -1px;
   margin: 0; padding: 0; list-style: none;
   max-height: 288px; overflow-y: auto;
-  background: var(--surface-base);
+  background: var(--surface-accent);
   border: 1px solid var(--border-divider-strong);
 }
 .zz-entity-field__menu[hidden] { display: none; }
 .zz-entity-option {
   display: flex; align-items: center; gap: 8px;
   padding: 8px;
-  background: var(--surface-base);
+  background: var(--surface-accent);
   color: var(--text-strong);
   cursor: pointer;
 }
