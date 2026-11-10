@@ -17,6 +17,7 @@
   var h = React.createElement;
   ReactDOM.createRoot(document.getElementById('root')).render(
     h('div', { className: 'wrap' },
+      h(Z.Toast, { message: 'Added to bag.', actionLabel: 'View bag' }),
       h(Z.Toast, { message: 'Removed from bag.', actionLabel: 'Undo' }),
       h(Z.Toast, { message: '3 listings archived.', actionLabel: 'Undo' }),
       h(Z.Toast, { message: 'Undone.' })));

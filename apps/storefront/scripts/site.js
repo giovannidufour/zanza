@@ -22,7 +22,7 @@
    6. Bag (decision 0044)
       - the bag = the listing ids in localStorage ('zanza-bag'), in the order they were added; a copy is unique, so an
         id is in the bag once (no quantity). Adding does NOT hold the copy: the hold starts at checkout
-      - "Add to bag" (card, PDP, player) adds; then the button reads "Added to bag" ("Added" on the mobile card) and
+      - "Add to bag" (card, PDP, player) adds and shows the toast "Added to bag." + View bag (decision 0050); then the button reads "Added to bag" ("Added" on the mobile card) and
         opens the bag; the header Bag shows the count in brackets on every page
       - /bag/ (pages/bag.js) shows the lines of the bag, the subtotal of the available ones, or the empty state;
         Remove takes a line out and shows a toast with Undo (packages/ui/toast.js, decision 0049). Checkout is not wired yet (create-checkout + Stripe, _context/backend.md)
@@ -633,7 +633,14 @@
     if (!id) return;
     var ids = readBag();
     if (ids.indexOf(id) === -1) { ids.push(id); writeBag(ids); }
-    announce('Added to bag. ' + ids.length + (ids.length === 1 ? ' record' : ' records') + ' in the bag.');
+    // a toast too (Gio, decision 0050), even if the button and the header count already change: View bag = the header
+    // Bag link (soft navigation keeps the player), so the toast closes after 6 s like a text-only one
+    if (window.ZanzaToast) {
+      window.ZanzaToast.show({ message: 'Added to bag.', actionLabel: 'View bag', actionElsewhere: true, onAction: function () {
+        var link = document.querySelector('a[data-bag-count]');
+        if (link) link.click();
+      } });
+    } else announce('Added to bag. ' + ids.length + (ids.length === 1 ? ' record' : ' records') + ' in the bag.');
   }
   function removeFromBag(id) {
     writeBag(readBag().filter(function (x) { return x !== id; }));
