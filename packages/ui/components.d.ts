@@ -12,6 +12,8 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
   leadingIcon?: ReactNode;
   /** Icon slot after the label. Figma: `trailing icon`. */
   trailingIcon?: ReactNode;
+  /** Text before the label, same text style, gap 4, e.g. "(Reserved)" before "Notify me" (0065). Figma: `prefix`. Say it in `aria-label` too if it carries meaning. */
+  prefix?: ReactNode;
   /** Text after the label, same text style, gap 4: a count ("(3)", "21"), never concatenated into the label (0029). Figma: `suffix` + `suffix text`. */
   suffix?: ReactNode;
   /** Label text. Rendered uppercase by the label text style. Omit for an icon-only button — then `aria-label` is required. */
@@ -265,9 +267,9 @@ export declare function ProductCard(props: ProductCardProps): JSX.Element;
 export interface BagItemProps extends HTMLAttributes<HTMLElement> {
   /** Omitted → responsive (breakpoint `--mobile` from tokens.json): desktop type = ProductCard desktop, mobile = ProductCard mobile. */
   device?: "desktop" | "mobile";
-  /** Figma `status`. sold: name struck through, "SOLD OUT" beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): `notice`, no price. Samples stay. `unavailable` is the pre-0064 name of reserved. @default "available" */
+  /** Figma `status`. sold: name struck through, "SOLD OUT" beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). Samples stay. `unavailable` is the pre-0064 name of reserved. @default "available" */
   status?: "available" | "sold" | "reserved" | "unavailable";
-  /** Notice on top of a reserved line, label/small. @default "Reserved" */
+  /** The word beside the struck price of a sold / reserved line. @default "SOLD OUT" / "RESERVED" */
   notice?: ReactNode;
   /** Figma `cover`: the cover image, 96 × 96. */
   image?: ProductCardImage;
@@ -618,6 +620,8 @@ export declare function PlusSmallThinIcon(): JSX.Element;
 export declare function TickLargeThinIcon(): JSX.Element;
 /** Figma: icon/icon-clock-counter-clockwise. Leading icon of the "Reserved" Add button (copy held by a checkout). */
 export declare function ClockCounterClockwiseIcon(): JSX.Element;
+/** Figma: icon/icon-envelope. Trailing icon of the "(Reserved) Notify me" Add button (decision 0065). */
+export declare function EnvelopeIcon(): JSX.Element;
 
 /** Mirrors the Figma component `radio` (page controls): a native radio, 24px control (18px icon), gap 8, label body/medium. */
 export interface RadioProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {

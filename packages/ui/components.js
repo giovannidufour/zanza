@@ -30,7 +30,7 @@
       className: cx('zz-button', props.className),
       'data-hierarchy': hierarchy,
       'data-size': size
-    }, omit(props, ['hierarchy', 'size', 'disabled', 'leadingIcon', 'trailingIcon', 'children', 'state', 'className', 'type', 'suffix']));
+    }, omit(props, ['hierarchy', 'size', 'disabled', 'leadingIcon', 'trailingIcon', 'children', 'state', 'className', 'type', 'suffix', 'prefix']));
     if (props.state && props.state !== 'default') attrs['data-state'] = props.state;
     // state="active" (Figma _button-states state=active, 2026-11-10): the button stands for the page you are on
     // (header Bag on /bag/). A real state, not doc-only: it stays a focusable link with aria-current="page", never
@@ -42,7 +42,11 @@
     return h(isLink ? 'a' : 'button', attrs,
       props.leadingIcon ? h('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, props.leadingIcon) : null,
       // Figma `suffix` (label container gap 4, same text style): a count next to the label (0029)
-      hasLabel ? h('span', { className: cx('zz-button__label', typeClass) }, props.children,
+      // Figma `prefix` (label container, gap 4, same text style): a word before the label, e.g. "(Reserved)" (0065)
+      hasLabel ? h('span', { className: cx('zz-button__label', typeClass) },
+        props.prefix !== undefined && props.prefix !== null && props.prefix !== false
+          ? h('span', { className: 'zz-button__prefix' }, props.prefix) : null,
+        props.children,
         props.suffix !== undefined && props.suffix !== null && props.suffix !== false
           ? h('span', { className: 'zz-button__suffix' }, props.suffix) : null) : null,
       props.trailingIcon ? h('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, props.trailingIcon) : null);
@@ -411,8 +415,8 @@
      One line of the bag = one copy (copies are unique: no quantity, Remove only). Row: cover 96 · info (title block,
      grade lines, samples; gap 8) · purchase (price, Remove secondary small; right-aligned, gap 8); gaps 16.
      sold: product name struck through, "SOLD OUT" beside the struck price, in the price style (decision 0064: struck =
-     unavailable for good, as the disabled Button); no notice. reserved (held by someone else's checkout or by hand): `notice` "Reserved", no
-     price. `unavailable` (before 0064) = reserved. Samples stay (Gio 2026-11-10). Desktop type = ProductCard desktop,
+     unavailable for good, as the disabled Button); no notice. reserved (held by someone else's checkout or by hand):
+     the same line with "RESERVED" (Gio 2026-11-12, decision 0065). `notice` overrides the word. `unavailable` (before 0064) = reserved. Samples stay (Gio 2026-11-10). Desktop type = ProductCard desktop,
      mobile = ProductCard mobile. Decision 0044. */
   function BagItem(props) {
     var device = props.device || 'responsive';
@@ -431,7 +435,6 @@
       h(props.href ? 'a' : 'div', props.href ? { className: 'zz-bag-item__image', href: props.href, tabIndex: -1, 'aria-hidden': 'true' } : { className: 'zz-bag-item__image' },
         img && img.src ? h('img', { src: img.src, alt: img.alt || '', loading: 'lazy' }) : null),
       h('div', { className: 'zz-bag-item__info' },
-        status === 'reserved' ? h('p', { className: 'zz-bag-item__notice label-small' }, props.notice || 'Reserved') : null,
         h('div', { className: 'zz-bag-item__title-block' },
           h('h' + (props.headingLevel || 2), { id: titleId, className: cx('zz-bag-item__name', t.head) },
             props.href ? h('a', { className: 'zz-bag-item__link', href: props.href }, props.title) : props.title),
@@ -444,9 +447,10 @@
           : null,
         props.samples ? h('div', { className: 'zz-bag-item__samples' }, props.samples) : null),
       h('div', { className: 'zz-bag-item__purchase' },
-        status === 'sold'
+        unavailable
           ? h('p', { className: cx('zz-bag-item__price', t.head) },
-              h('span', null, 'SOLD OUT'), h('span', { className: 'zz-visually-hidden' }, ', not in your order, '),
+              h('span', null, props.notice || (status === 'sold' ? 'SOLD OUT' : 'RESERVED')),
+              h('span', { className: 'zz-visually-hidden' }, ', not in your order, '),
               props.price != null ? h('s', null, props.price) : null)
           : status === 'available' && props.price != null ? h('p', { className: cx('zz-bag-item__price', t.head) }, props.price) : null,
         h(Button, { hierarchy: 'secondary', size: 'small', className: 'zz-bag-item__remove', onClick: props.onRemove, 'aria-describedby': titleId },
@@ -1110,6 +1114,9 @@
   function ClockCounterClockwiseIcon() {   // Figma: icon/icon-clock-counter-clockwise, leading icon of "Reserved" (proposal, design/open.md)
     return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M10.7109 2.18164C13.1114 1.89386 15.5345 2.49568 17.5215 3.87305C19.5085 5.25048 20.9223 7.30829 21.4951 9.65723C22.0679 12.0062 21.7598 14.4845 20.6299 16.6221C19.4999 18.7593 17.6257 20.4083 15.3623 21.2578C13.0987 22.1073 10.6019 22.0978 8.34473 21.2314C6.76776 20.6261 5.38412 19.6316 4.31348 18.3555L4.67383 21.2109C4.70808 21.4846 4.51387 21.7349 4.24023 21.7695C3.96627 21.8039 3.71609 21.6089 3.68164 21.335L3.05957 16.3877L2.96582 15.6416L3.68945 15.8438L8.54785 17.1973C8.81352 17.2714 8.96924 17.5477 8.89551 17.8135C8.82127 18.0792 8.54511 18.2341 8.2793 18.1602L4.6416 17.1455C5.65013 18.5661 7.05982 19.667 8.70312 20.2979C10.7319 21.0765 12.9761 21.0857 15.0107 20.3223C17.0453 19.5586 18.7304 18.0756 19.7461 16.1543C20.7617 14.233 21.0382 12.0059 20.5234 9.89453C20.0086 7.78309 18.7382 5.9325 16.9521 4.69434C15.1661 3.45629 12.9878 2.91615 10.8301 3.1748C8.67233 3.43358 6.68396 4.47435 5.24121 6.09961C3.79854 7.72497 3.00105 9.82279 3 11.9961C2.99975 12.2719 2.77579 12.4959 2.5 12.4961C2.22386 12.496 1.99987 12.2713 2 11.9951C2.00123 9.57738 2.88821 7.24372 4.49316 5.43555C6.09823 3.62742 8.3104 2.46953 10.7109 2.18164ZM11.8887 6.375C12.1648 6.37501 12.3887 6.59887 12.3887 6.875V11.4961H17.0098C17.2858 11.4962 17.5098 11.72 17.5098 11.9961C17.5096 12.272 17.2857 12.496 17.0098 12.4961H11.3887V6.875C11.3887 6.59886 11.6125 6.375 11.8887 6.375Z', fill: 'currentColor' }));
   }
+  function EnvelopeIcon() {   // Figma: icon/icon-envelope, trailing icon of "(Reserved) Notify me" (decision 0065)
+    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M24 24H0V0H24V24ZM12.3818 14.1982L12 14.6494L11.6182 14.1982L1 1.64941V23H23V1.64941L12.3818 14.1982ZM12 13.0996L22.2393 1H1.76074L12 13.0996Z', fill: 'currentColor' }));
+  }
   function PlusSmallThinIcon() {      // Figma: icon/icon-plus-small-thin
     return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M12 6.5C12.2761 6.5 12.5 6.72386 12.5 7V11.5H17C17.2761 11.5 17.5 11.7239 17.5 12C17.5 12.2761 17.2761 12.5 17 12.5H12.5V17C12.5 17.2761 12.2761 17.5 12 17.5C11.7239 17.5 11.5 17.2761 11.5 17V12.5H7C6.72386 12.5 6.5 12.2761 6.5 12C6.5 11.7239 6.72386 11.5 7 11.5H11.5V7C11.5 6.72386 11.7239 6.5 12 6.5Z', fill: 'currentColor' }));
   }
@@ -1232,7 +1239,7 @@
            PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, BagItem: BagItem, BagSummary: BagSummary, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
            Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, DragHandleIcon: DragHandleIcon,
            Checkbox: Checkbox, Divider: Divider, ActionPanel: ActionPanel, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog, Toast: Toast, ToastRegion: ToastRegion,
-           EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon, TickLargeThinIcon: TickLargeThinIcon, ClockCounterClockwiseIcon: ClockCounterClockwiseIcon,
+           EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon, TickLargeThinIcon: TickLargeThinIcon, ClockCounterClockwiseIcon: ClockCounterClockwiseIcon, EnvelopeIcon: EnvelopeIcon,
            Radio: Radio, RadioGroup: RadioGroup, RadioEmptyIcon: RadioEmptyIcon, RadioDotIcon: RadioDotIcon,
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon };

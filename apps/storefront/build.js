@@ -77,8 +77,8 @@ const notifyDialogHtml = renderToStaticMarkup(React.createElement(Z.Dialog, {
 
 // the tick of "In bag" (decision 0058): scripts/site.js clones it into the Button's leading icon slot
 const tickTemplate = `<template id="zz-icon-tick">${renderToStaticMarkup(React.createElement('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, React.createElement(Z.TickLargeThinIcon)))}</template>`;
-// the clock of "Reserved" (copy held by a checkout, design/open.md): same slot, cloned by scripts/site.js
-const clockTemplate = `<template id="zz-icon-clock">${renderToStaticMarkup(React.createElement('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, React.createElement(Z.ClockCounterClockwiseIcon)))}</template>`;
+// the envelope of "(Reserved) Notify me" (copy held by a checkout, decision 0065): trailing slot, cloned by scripts/site.js
+const envelopeTemplate = `<template id="zz-icon-envelope">${renderToStaticMarkup(React.createElement('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, React.createElement(Z.EnvelopeIcon)))}</template>`;
 // live status (_context/backend.md → Stato dal vivo): with Supabase as the source, the page carries the project URL and
 // the publishable key (public by design, read-only through RLS) so scripts/site.js can read listing_availability
 let liveMeta = '';
@@ -110,7 +110,7 @@ ${playerHtml}
 ${toastRegionHtml}
 ${notifyDialogHtml}
 ${tickTemplate}
-${clockTemplate}
+${envelopeTemplate}
 </body>
 </html>
 `;

@@ -88,3 +88,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0062](0062-search-field-clear-and-submit.md) | Search field: the magnifier submits, a × clears while there is text; on mobile the field is in the menu | accepted |
 | [0063](0063-input-focus-ring-on-the-field.md) | Input focus: the ring goes around the whole field, not the native control inside it | accepted |
 | [0064](0064-sold-line-in-the-bag.md) | A sold copy in the bag: name struck through, "SOLD OUT" beside the struck price, a note above Checkout | accepted |
+| [0065](0065-reserved-button-notify-me.md) | Reserved: Add button "(Reserved) Notify me" with an envelope; the bag line looks like a sold one | accepted |

@@ -13,6 +13,7 @@ The single action control: two hierarchies, four sizes, four interaction states,
 | `disabled` | `boolean` |  | Native disabled; also drives the disabled visual state. |
 | `leadingIcon` | `ReactNode` |  | Icon slot before the label. Pass an &lt;svg>; it is sized and colored by the button. Figma: `leading icon`. |
 | `trailingIcon` | `ReactNode` |  | Icon slot after the label. Figma: `trailing icon`. |
+| `prefix` | `ReactNode` |  | Text before the label, same text style, gap 4, e.g. "(Reserved)" before "Notify me" (0065). Figma: `prefix`. Say it in `aria-label` too if it carries meaning. |
 | `suffix` | `ReactNode` |  | Text after the label, same text style, gap 4: a count ("(3)", "21"), never concatenated into the label (0029). Figma: `suffix` + `suffix text`. |
 | `children` | `ReactNode` |  | Label text. Rendered uppercase by the label text style. Omit for an icon-only button — then `aria-label` is required. |
 | `state` | `"default" \| "hover" \| "pressed" \| "disabled" \| "active"` |  |  |
