@@ -115,3 +115,4 @@ html:has(.admin-shipping) { background: var(--surface-base); }
 .admin-shipping__check > :first-child { width: 240px; }
 .admin-shipping__check > :last-child { width: 400px; max-width: 100%; }
 .admin-shipping p.admin-shipping__result { margin-top: 16px; white-space: pre-line; }
+#shipping-zones td { vertical-align: top; }   /* Figma zones rows: top left (Gio 2026-11-12), the countries cell grows with its names */
