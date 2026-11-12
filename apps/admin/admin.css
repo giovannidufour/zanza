@@ -27,8 +27,10 @@ h1, h2, p { margin: 0; }
 .admin-main { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
 .admin-side { display: flex; flex-direction: column; gap: 24px; position: sticky; top: 24px; }
 /* with the shop preview the side column can be taller than the window: it scrolls on its own, so the preview and the
-   actions stay reachable while the form scrolls. The 4px padding (cancelled by the margin) keeps focus rings unclipped. */
-.admin-side { max-height: calc(100vh - 48px); overflow-y: auto; overscroll-behavior: contain; margin: -4px; padding: 4px; }
+   actions stay reachable while the form scrolls. The 4px padding (cancelled by the margin) keeps focus rings unclipped.
+   No overscroll containment: until the column is stuck (the top bar is still in view) its end sits below the window,
+   so at the end of its own scroll the wheel must carry on to the page, or the last part can't be reached (Gio, 2026-11-12). */
+.admin-side { max-height: calc(100vh - 48px); overflow-y: auto; margin: -4px; padding: 4px; }
 
 .admin-section { display: flex; flex-direction: column; gap: 16px; }
 .admin-stack { display: flex; flex-direction: column; gap: 24px; }           /* Figma: Frame 1 / list, gap 24 */
@@ -66,7 +68,7 @@ h1, h2, p { margin: 0; }
   .admin { padding: 16px; }
   .admin-page { grid-template-columns: minmax(0, 1fr); }
   .admin-main, .admin-side { grid-column: auto; }
-  .admin-side { position: static; order: -1; }
+  .admin-side { position: static; order: -1; max-height: none; overflow: visible; }   /* one column: the page scrolls, no inner scroll */
   .admin-row { grid-template-columns: minmax(0, 1fr); }
   .admin-row > * { grid-column: auto; }
 }
