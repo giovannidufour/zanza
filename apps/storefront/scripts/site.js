@@ -761,7 +761,7 @@
   // on, icon-tick-large-thin), label "In bag", accessible name "In bag, view bag". Pressing it opens the bag: taking a
   // copy out happens only in the bag. Never disabled: struck through means unavailable (sold). The defaults are kept
   // in data-*-default so they come back when the copy leaves the bag.
-  // Reserved (proposal A, design/open.md): a copy held by a checkout (or by hand) reads "Reserved", hierarchy secondary,
+  // Reserved (decision 0059): a copy held by a checkout (or by hand) reads "Reserved", hierarchy secondary,
   // leading icon = clock (icon-clock-counter-clockwise), accessible name "Reserved, find out more" (the dialog says which hold). It wins
   // over "In bag". Never disabled (struck through = sold, decision 0058): pressing it explains the hold in a toast.
   function syncAddButton(btn, id, ids) {
