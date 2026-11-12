@@ -40,6 +40,12 @@ export interface HeaderProps extends HTMLAttributes<HTMLElement> {
   tabs?: ReactNode;
   /** Trailing actions, usually secondary <Button>s (Figma: `trailing actions`, gap 8). */
   actions?: ReactNode;
+  /** Figma boolean `search` (desktop): the search field, usually a <form role="search"> with an <Input variant="search">. Rendered 200px wide before `actions`. */
+  search?: ReactNode;
+  /** Figma boolean `search` (mobile): the magnifier Button links here (the search page). */
+  searchHref?: string;
+  /** Mobile only: accessible name of the magnifier Button. Default "Search". */
+  searchLabel?: string;
   /** Mobile only: click handler of the hamburger button. */
   onMenuClick?: () => void;
   /** Mobile only: accessible name of the hamburger button. Default "Menu". */

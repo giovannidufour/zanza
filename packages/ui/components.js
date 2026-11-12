@@ -121,6 +121,7 @@
     var device = props.device || 'responsive';
     var showMenu = device !== 'desktop';
     var showTabs = device !== 'mobile' && !!props.tabs;
+    var hasSearch = !!(props.search || props.searchHref);
     var nameTag = props.homeHref ? 'a' : 'div';
     var nameAttrs = { className: 'zz-header__name label-medium' };
     if (props.homeHref) nameAttrs.href = props.homeHref;
@@ -128,14 +129,20 @@
     return h('header', Object.assign({
       className: cx('zz-header', props.className),
       'data-device': device
-    }, omit(props, ['device', 'logo', 'storeName', 'homeHref', 'tabs', 'actions', 'onMenuClick', 'menuLabel', 'menuProps', 'className', 'children'])),
+    }, omit(props, ['device', 'logo', 'storeName', 'homeHref', 'tabs', 'actions', 'search', 'searchHref', 'searchLabel', 'onMenuClick', 'menuLabel', 'menuProps', 'className', 'children'])),
       h('div', { className: 'zz-header__row' },
         h('div', { className: 'zz-header__leading' },
           showMenu ? h(Button, Object.assign({ className: 'zz-header__menu', hierarchy: 'secondary', leadingIcon: h(HamburgerIcon), 'aria-label': props.menuLabel || 'Menu', onClick: props.onMenuClick }, props.menuProps)) : null,
           props.logo ? h('div', { className: 'zz-header__logo' }, props.logo) : null,
           props.storeName ? h(nameTag, nameAttrs, props.storeName) : null),
         showTabs ? h('div', { className: 'zz-header__tabs' }, props.tabs) : null,
-        props.actions ? h('div', { className: 'zz-header__trailing' }, props.actions) : null),
+        (props.actions || hasSearch) ? h('div', { className: 'zz-header__trailing' },
+          // Figma boolean `search` (2026-11-12): desktop = the search field (input type=search, 200 wide) before the
+          // actions; mobile = a secondary icon Button (magnifier, like the hamburger) that leads to the search page
+          hasSearch && device !== 'mobile' && props.search ? h('div', { className: 'zz-header__search' }, props.search) : null,
+          hasSearch && device !== 'desktop' && props.searchHref ? h(Button, { className: 'zz-header__search-link', hierarchy: 'secondary',
+            href: props.searchHref, leadingIcon: h(SearchIcon), 'aria-label': props.searchLabel || 'Search' }) : null,
+          props.actions) : null),
       h('div', { className: 'zz-header__rule', role: 'presentation' }));
   }
 

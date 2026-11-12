@@ -84,3 +84,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0058](0058-in-bag-opens-the-bag.md) | A copy in the bag: its Add buttons become "In bag" (secondary + tick) and open the bag | accepted |
 | [0059](0059-reserved-opens-notify-me.md) | A reserved copy reads "Reserved" (secondary + clock), stays active, opens the Reserved dialog with Notify me | accepted |
 | [0060](0060-mobile-menu.md) | Mobile menu: a full-screen layer from the hamburger, Account is its entry point | accepted |
+| [0061](0061-search-results-page.md) | Search: a results page that is a PLP; sold copies stay visible behind "Show sold out" | accepted |

@@ -7,7 +7,7 @@
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
-const { SECTION_LABEL, SiteHeader, ProductCardFor, labelRef, artistRefs } = require('./shell.js');
+const { SECTION_LABEL, SiteHeader, ProductCardFor, SearchForm, labelRef, artistRefs } = require('./shell.js');
 
 const FORMAT_ORDER = ['7"', '10"', '12"', 'LP', 'Tape'];
 const decadeOf = (year) => (year ? `${Math.floor(year / 10) * 10}s` : null);
@@ -53,12 +53,33 @@ function facetsOf(products) {
 // shown: 7”, as in Figma (curly double prime); the value stays as stored
 const optionLabel = (key, v) => (key === 'format' ? v.replace(/"$/, '”') : v);
 
+// Search (Figma page `Search`, 2026-11-12): what a query is matched against, normalised the same way as the query in
+// scripts/site.js (searchWords): no accents, lower case, punctuation = space. Artist (entities too: an alias credit
+// still finds the artist), title and track titles, label, catalogue number, genres, the shop's tags.
+const searchWords = (s) => String(s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  .replace(/[^a-z0-9]+/g, ' ').trim();
+function searchTextOf(p) {
+  const r = p.release;
+  const tracks = (r.tracklist || []).map((t) => (typeof t === 'string' ? t : (t && t.title) || ''));
+  const lines = (r.lines || []).flatMap((l) => [l.artist, l.title]);
+  const parts = [r.name, r.artist, r.title, ...lines, ...artistRefs(r).map((a) => a.name), r.label,
+    (labelRef(r) || {}).name, r.cat_no, ...(r.genres || []), ...(r.tags || []), ...tracks];
+  return [...new Set(parts.map(searchWords).filter(Boolean))].join(' ');
+}
+// sold copies stay on the list (Gio 2026-11-12) behind "Show sold out", ticked by default
+const SOLD_STATUSES = ['sold', 'traded'];
+const isSold = (p) => SOLD_STATUSES.indexOf(p.listing.status) !== -1;
+// Figma `filters` / `filters layer` (main level): the first row, a `filter` (content=label, state=active, no count).
+// Not a facet: unticked = sold copies hidden (?sold=hide); it never counts as an applied filter (scripts/site.js).
+const ShowSold = () => h(Z.Filter, { name: 'sold', value: 'show', label: 'Show sold out', defaultChecked: true, 'data-show-sold': '' });
+
 function PlpFilters({ facets, hidden, sorts }) {
   // Figma: `filters` > sort (Gio 2026-11-10: button hug, prefix "Sort:") + `filter block` per facet > `filter` (content=label, count)
   return h('aside', { className: 'plp-filters', 'aria-label': 'Filters', 'data-plp-filters': '',
     'data-hidden-facets': JSON.stringify(hidden) },
     h(Z.Filters, null,
       h(Z.SelectButton, { prefix: 'Sort:', className: 'plp-filters__sort', 'aria-label': 'Sort', 'data-plp-sort': '', defaultValue: 'newest', options: sorts }),
+      h(ShowSold),
       facets.map((f) => h(Z.FilterBlock, { key: f.key, label: f.label },
         f.options.map((o) => h(Z.Filter, {
           key: o.value, name: f.key, value: o.value, label: optionLabel(f.key, o.value), count: o.count,
@@ -74,6 +95,7 @@ function PlpLayer({ facets }) {
   return h('dialog', { className: 'plp-layer', 'aria-label': 'Filter', tabIndex: -1, 'data-plp-layer': '' },
     h(Z.FiltersLayer, { level: 'main', title: 'Filter', applied: null, appliedLabel: 'Applied', applyCount: null },
       // level=main: one row per facet (value = its ticked options, written by site.js)
+      h('div', { className: 'plp-layer__sold', 'data-layer-sold': '' }, h(ShowSold)),
       h('div', { className: 'plp-layer__facets', 'data-layer-facets': '' },
         facets.map((f) => h(Z.FilterFacet, { key: f.key, label: f.label, 'data-facet': f.key, 'data-facet-label': f.label }))),
       // level=facet: the options of one facet; the bar title names it, so the legend is for screen readers only
@@ -95,11 +117,19 @@ const SORTS = [
 
 const sortsFor = (section) => SORTS.filter((o) => !o.section || o.section === section);
 
-// allProducts: every product with a page (also sold / reserved / trade), so a chip reached from any PDP shows the name
-function Plp({ section, products, allProducts = products, site, url }) {
+// allProducts: every product with a page (also sold / reserved / trade), so a chip reached from any PDP shows the name.
+// search (Figma page `Search`, 2026-11-12): the results page /search/?q=… — the same page with no section tab, the
+// heading `search heading` ("N results for “q”", written by site.js), on mobile the `search field` under the header,
+// and `search message` as the empty state (no results: hint + "Browse all records"; no query: the hint only).
+function Plp({ section, products, allProducts = products, site, url, search = false }) {
   const facets = facetsOf(products);
-  return h('div', { className: 'zz-page' },
-    h(SiteHeader, { site, url, section }),
+  const hint = 'Search by artist, title, label or catalogue number.';
+  return h('div', { className: 'zz-page', 'data-search-page': search ? '' : undefined },
+    h(SiteHeader, { site, url, section: search ? undefined : section }),
+    search ? h('div', { className: 'search-top' },
+      h(SearchForm, { url, id: 'site-search-page', className: 'search-field' }),
+      h('h1', { className: 'search-heading body-large', 'data-search-title': '' }, 'Search'),
+      h('div', { className: 'search-message', 'data-search-hint': '' }, h('p', { className: 'body-medium' }, hint))) : null,
     // Figma `active filter` (0041): in place of the breadcrumbs, the filter reached from a link (artist, label, genre,
     // tag) as a removable EntityChip, medium on desktop, large on mobile (plp.css shows one). Hidden until site.js fills it.
     h(Z.ActiveFilter, { hidden: true, 'data-plp-active': '' }),
@@ -113,18 +143,23 @@ function Plp({ section, products, allProducts = products, site, url }) {
         options: sortsFor(section) }) }),
 
     // Figma: `pdp content` (sic) — 12-col grid, gap gutter-small, padding-y small; filters cols 1–3, list cols 4–12
-    h('div', { className: 'plp-content' },
+    h('div', { className: 'plp-content', 'data-search-results': search ? '' : undefined },
       facets.length ? h(PlpFilters, { facets, hidden: hiddenFacetsOf(allProducts), sorts: sortsFor(section) }) : null,
       h('main', { className: 'plp-list' },
-        h('h1', { className: 'plp-list__title' }, SECTION_LABEL[section]),
+        search ? null : h('h1', { className: 'plp-list__title' }, SECTION_LABEL[section]),
         // no device: responsive card (desktop variant on PLP - desktop, mobile variant on PLP - mobile)
         products.map((product, i) => h('div', Object.assign({ key: product.listing.slug, className: 'plp-item',
-          'data-order': i, 'data-price': product.listing.price ? product.listing.price.amount : undefined },
+          'data-order': i, 'data-price': product.listing.price ? product.listing.price.amount : undefined,
+          'data-search': search ? searchTextOf(product) : undefined },
           ...FACETS.concat(HIDDEN_FACETS).map((f) => ({ [`data-${f.key}`]: JSON.stringify([...new Set(f.values(product))]) }))),
           h(ProductCardFor, { product, url }))),
-        h('p', { className: 'plp-list__empty body-medium', hidden: true, 'data-plp-empty': '' }, 'No records match these filters.')),
+        search
+          ? h('div', { className: 'search-message plp-list__empty', hidden: true, 'data-plp-empty': '' },
+            h('p', { className: 'body-medium' }, 'Check the spelling, or try an artist, a label or a catalogue number.'),
+            h(Z.Button, { hierarchy: 'secondary', href: url('/sale/') }, 'Browse all records'))
+          : h('p', { className: 'plp-list__empty body-medium', hidden: true, 'data-plp-empty': '' }, 'No records match these filters.')),
       facets.length ? h(PlpLayer, { facets }) : null)
   );
 }
 
-module.exports = { Plp, title: (section) => SECTION_LABEL[section], facetsOf };
+module.exports = { Plp, title: (section) => SECTION_LABEL[section], facetsOf, searchTextOf, searchWords, isSold };

@@ -1,6 +1,6 @@
 /* apps/storefront/build.js — static build.
    products (Supabase, or content/products/*.json: see data/products.js) → dist/products/<slug>/index.html,
-   dist/sale/index.html (PLP), dist/bag/index.html (bag) (+ css, assets). `--source=json` forces the local JSON.
+   dist/sale/index.html (PLP), dist/search/index.html (search results), dist/bag/index.html (bag) (+ css, assets). `--source=json` forces the local JSON.
    Upload the whole `dist/` folder to the web root. Run: npm run build
    Cloudflare Pages: `npm run build:pages` (= --target=pages --source=supabase: root basePath, never the local JSON). */
 'use strict';
@@ -174,8 +174,14 @@ for (const product of products) {
 
 // PLP: the listing of the "For sale" section (Figma: PLP - desktop); "For trade" has no products yet.
 // A reserved copy stays in the list with its "Reserved" button: it is paused, not gone (Gio 2026-11-12)
-const forSale = products.filter(p => p.listing.section === 'sale' && (p.listing.status === 'available' || p.listing.status === 'reserved'));
+// Sold copies stay too, behind the "Show sold out" filter, ticked by default (Gio 2026-11-12, Figma page `Search`)
+const forSale = products.filter(p => p.listing.section === 'sale' && ['available', 'reserved', 'sold'].includes(p.listing.status));
 write('sale/index.html', page({ title: Plp.title('sale'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, allProducts: products, site, url })) }));
+
+// Search results (Figma page `Search`, 2026-11-12): /search/?q=… is a PLP of the same copies, matched in the browser
+// (scripts/site.js) against each card's data-search text. Static and client-side: fine at hundreds of copies
+// (_context/stack.md: a search service only past ~2k).
+write('search/index.html', page({ title: 'Search', body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, allProducts: products, site, url, search: true })) }));
 
 // Bag (decision 0044): one hidden line per listing of the sale section, whatever its status (a copy sold after it was
 // added still shows, as unavailable); scripts/site.js shows the visitor's own lines from localStorage

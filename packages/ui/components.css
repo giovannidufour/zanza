@@ -347,8 +347,13 @@ a.zz-tab {
 
 /* responsive header (device omitted): one of menu / tabs is shown.
    Breakpoint: `--mobile` from tokens.json → breakpoint (expanded at build time by media.js). */
+/* search (Figma boolean `search`, 2026-11-12): the field on desktop (200 wide), the magnifier Button on mobile */
+.zz-header__search { width: 200px; }
+.zz-header[data-device="responsive"] .zz-header__search-link { display: none; }
 .zz-header[data-device="responsive"] .zz-header__menu { display: none; }
 @media (--mobile) {
+  .zz-header[data-device="responsive"] .zz-header__search { display: none; }
+  .zz-header[data-device="responsive"] .zz-header__search-link { display: inline-flex; }
   .zz-header[data-device="responsive"] .zz-header__menu { display: inline-flex; }
   .zz-header[data-device="responsive"] .zz-header__tabs { display: none; }
   .zz-header[data-device="responsive"] .zz-header__account { display: none; }   /* Figma mobile: only Bag */
