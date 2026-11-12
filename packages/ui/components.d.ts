@@ -265,9 +265,9 @@ export declare function ProductCard(props: ProductCardProps): JSX.Element;
 export interface BagItemProps extends HTMLAttributes<HTMLElement> {
   /** Omitted → responsive (breakpoint `--mobile` from tokens.json): desktop type = ProductCard desktop, mobile = ProductCard mobile. */
   device?: "desktop" | "mobile";
-  /** Figma `status`. unavailable = sold, or held by someone else's checkout: shows `notice`, hides the price; samples stay. @default "available" */
-  status?: "available" | "unavailable";
-  /** Figma `notice` (text, status=unavailable only), label/small: "Just sold", "Reserved". Default "Just sold". */
+  /** Figma `status`. sold: `notice` + price struck through (decision 0064). reserved (held by someone else's checkout or by hand): `notice`, no price. Samples stay. `unavailable` is the pre-0064 name of reserved. @default "available" */
+  status?: "available" | "sold" | "reserved" | "unavailable";
+  /** Figma `notice` (text, sold / reserved only), label/small. Default "Sold out · not in your order" (sold), "Reserved" (reserved). */
   notice?: ReactNode;
   /** Figma `cover`: the cover image, 96 × 96. */
   image?: ProductCardImage;
@@ -279,7 +279,7 @@ export interface BagItemProps extends HTMLAttributes<HTMLElement> {
   headingLevel?: 2 | 3 | 4;
   /** Figma `release info`. */
   releaseInfo?: ReactNode;
-  /** Figma `price`, already formatted. Not rendered when status=unavailable. */
+  /** Figma `price`, already formatted. Struck through when status=sold, not rendered when status=reserved. */
   price?: ReactNode;
   /** Figma `grading`, already formatted ("Record: VG+ / VG"). */
   grading?: ReactNode;
@@ -322,6 +322,10 @@ export interface BagSummaryProps extends HTMLAttributes<HTMLElement> {
   checkoutProps?: Record<string, unknown>;
   /** Figma `note`, body/small, below the button. */
   note?: ReactNode;
+  /** Figma `sold out` + `sold out note`, body/small, above Checkout: says that sold lines are not in the order ("1 record sold out, not included.", decision 0064). Omit when the bag has no sold lines. */
+  soldOutNote?: ReactNode;
+  /** Extra attributes for the sold out note (data-*, hidden), so a script can fill it; rendered even without `soldOutNote`. */
+  soldOutNoteProps?: Record<string, unknown>;
 }
 export declare function BagSummary(props: BagSummaryProps): JSX.Element;
 

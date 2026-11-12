@@ -1,6 +1,6 @@
 # BagItem
 
-One line of the bag: one copy (copies are unique, so there is no quantity: Remove only). Figma: page `Bag` → `bag item` (device desktop | mobile × status available | unavailable, text `notice`). Decision [0044](../../../../design/decisions/0044-bag-is-a-page.md).
+One line of the bag: one copy (copies are unique, so there is no quantity: Remove only). Figma: page `Bag` → `bag item` (device desktop | mobile × status available | sold | reserved, text `notice`). Decision [0044](../../../../design/decisions/0044-bag-is-a-page.md).
 
 ## API
 
@@ -9,14 +9,14 @@ One line of the bag: one copy (copies are unique, so there is no quantity: Remov
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `device` | `"desktop" \| "mobile"` |  | Omitted → responsive (breakpoint `--mobile` from tokens.json): desktop type = ProductCard desktop, mobile = ProductCard mobile. |
-| `status` | `"available" \| "unavailable"` | `available` | Figma `status`. unavailable = sold, or held by someone else's checkout: shows `notice`, hides the price; samples stay. |
-| `notice` | `ReactNode` |  | Figma `notice` (text, status=unavailable only), label/small: "Just sold", "Reserved". Default "Just sold". |
+| `status` | `"available" \| "sold" \| "reserved" \| "unavailable"` | `available` | Figma `status`. sold: `notice` + price struck through (decision 0064). reserved (held by someone else's checkout or by hand): `notice`, no price. Samples stay. `unavailable` is the pre-0064 name of reserved. |
+| `notice` | `ReactNode` |  | Figma `notice` (text, sold / reserved only), label/small. Default "Sold out · not in your order" (sold), "Reserved" (reserved). |
 | `image` | `ProductCardImage` |  | Figma `cover`: the cover image, 96 × 96. |
 | `href` | `string` |  | Product page URL: the title and the cover link to it. |
 | `title` * | `ReactNode` |  | Figma `product name`. Rendered as a heading; it also names the line and its Remove button. |
 | `headingLevel` | `2 \| 3 \| 4` | `2` | Heading level of the title, to fit the page outline. |
 | `releaseInfo` | `ReactNode` |  | Figma `release info`. |
-| `price` | `ReactNode` |  | Figma `price`, already formatted. Not rendered when status=unavailable. |
+| `price` | `ReactNode` |  | Figma `price`, already formatted. Struck through when status=sold, not rendered when status=reserved. |
 | `grading` | `ReactNode` |  | Figma `grading`, already formatted ("Record: VG+ / VG"). |
 | `cover` | `ReactNode` |  | Figma `cover` grade line ("Cover: NM"). Omit when not graded. |
 | `conditions` | `ReactNode` |  | The conditions comment on its own line, as in ProductCard. |
@@ -29,7 +29,7 @@ One line of the bag: one copy (copies are unique, so there is no quantity: Remov
 
 ## Anatomy (Figma)
 
-Row, gap `medium-small` (16): cover 96 × 96 · info (gap `small`: notice when unavailable, title block, grade lines with gap 4, samples) · purchase (right-aligned, gap `small`: price, Remove = Button secondary small).
+Row, gap `medium-small` (16): cover 96 × 96 · info (gap `small`: notice when sold or reserved, title block, grade lines with gap 4, samples) · purchase (right-aligned, gap `small`: price (struck through when sold, none when reserved), Remove = Button secondary small).
 Type: desktop as ProductCard desktop (body/large, body/medium), mobile as ProductCard mobile (body/medium, body/small). Notice: label/small.
 
 ## Tokens

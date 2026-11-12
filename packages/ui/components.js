@@ -407,28 +407,31 @@
   }
 
   /* ── BagItem ────────────────────────────────────────────────────────────
-     Figma: page `Bag` → `bag item` (device=desktop | mobile × status=available | unavailable, text `notice`), 2026-11-10.
+     Figma: page `Bag` → `bag item` (device=desktop | mobile × status=available | sold | reserved, text `notice`).
      One line of the bag = one copy (copies are unique: no quantity, Remove only). Row: cover 96 · info (title block,
      grade lines, samples; gap 8) · purchase (price, Remove secondary small; right-aligned, gap 8); gaps 16.
-     unavailable (sold or held by someone else's checkout): `notice` on top (label/small), no price; samples stay
-     (Gio 2026-11-10). Desktop type = ProductCard desktop, mobile = ProductCard mobile. Decision 0044. */
+     sold: `notice` on top (label/small, "Sold out · not in your order"), price struck through (decision 0064: struck = unavailable for
+     good, as the disabled Button). reserved (held by someone else's checkout or by hand): `notice` "Reserved", no
+     price. `unavailable` (before 0064) = reserved. Samples stay (Gio 2026-11-10). Desktop type = ProductCard desktop,
+     mobile = ProductCard mobile. Decision 0044. */
   function BagItem(props) {
     var device = props.device || 'responsive';
     var t = CARD_TYPE[device];
     var titleId = useId();
     var img = props.image;
-    var unavailable = props.status === 'unavailable';
+    var status = props.status === 'sold' ? 'sold' : (props.status === 'reserved' || props.status === 'unavailable') ? 'reserved' : 'available';
+    var unavailable = status !== 'available';
     return h('article', Object.assign({
       className: cx('zz-bag-item', props.className),
       'data-device': device,
-      'data-status': unavailable ? 'unavailable' : 'available',
+      'data-status': status,
       'aria-labelledby': titleId
     }, omit(props, ['device', 'status', 'notice', 'image', 'href', 'title', 'releaseInfo', 'price', 'grading', 'cover', 'conditions',
                     'samples', 'onRemove', 'removeLabel', 'headingLevel', 'className', 'children'])),
       h(props.href ? 'a' : 'div', props.href ? { className: 'zz-bag-item__image', href: props.href, tabIndex: -1, 'aria-hidden': 'true' } : { className: 'zz-bag-item__image' },
         img && img.src ? h('img', { src: img.src, alt: img.alt || '', loading: 'lazy' }) : null),
       h('div', { className: 'zz-bag-item__info' },
-        unavailable ? h('p', { className: 'zz-bag-item__notice label-small' }, props.notice || 'Just sold') : null,
+        unavailable ? h('p', { className: 'zz-bag-item__notice label-small' }, props.notice || (status === 'sold' ? 'Sold out \u00b7 not in your order' : 'Reserved')) : null,
         h('div', { className: 'zz-bag-item__title-block' },
           h('h' + (props.headingLevel || 2), { id: titleId, className: cx('zz-bag-item__name', t.head) },
             props.href ? h('a', { className: 'zz-bag-item__link', href: props.href }, props.title) : props.title),
@@ -441,14 +444,16 @@
           : null,
         props.samples ? h('div', { className: 'zz-bag-item__samples' }, props.samples) : null),
       h('div', { className: 'zz-bag-item__purchase' },
-        !unavailable && props.price != null ? h('p', { className: cx('zz-bag-item__price', t.head) }, props.price) : null,
+        status !== 'reserved' && props.price != null ? h('p', { className: cx('zz-bag-item__price', t.head) },
+          status === 'sold' ? h('s', null, props.price) : props.price) : null,
         h(Button, { hierarchy: 'secondary', size: 'small', className: 'zz-bag-item__remove', onClick: props.onRemove, 'aria-describedby': titleId },
           props.removeLabel || 'Remove')));
   }
 
   /* ── BagSummary ─────────────────────────────────────────────────────────
      Figma: page `Bag` → `bag summary` (2026-11-10; shipping estimate 2026-11-12, decision 0057). Column, gap 8: divider · `ship to` slot (a select) · subtotal row · shipping row ·
-     total row (label left, value right, body/medium) · Checkout (primary, large, fill) · note (body/small).
+     total row (label left, value right, body/medium) · `sold out note` (body/small, when the bag has sold lines:
+     "1 record sold out, not included.", decision 0064) · Checkout (primary, large, fill) · note (body/small).
      Figma `destination=not served` = no total, shipping "Not available", Checkout disabled: the consumer passes that
      (total omitted, checkoutDisabled). Without `total` there is no total row (before shipping was set up). */
   function BagSummary(props) {
@@ -456,7 +461,7 @@
     return h('section', Object.assign({
       className: cx('zz-bag-summary', props.className),
       'aria-label': props['aria-label'] || 'Summary'
-    }, omit(props, ['subtotalLabel', 'subtotal', 'shippingLabel', 'shipping', 'totalLabel', 'total', 'shipTo', 'checkoutLabel', 'onCheckout', 'checkoutDisabled', 'checkoutProps', 'note', 'className', 'children', 'aria-label'])),
+    }, omit(props, ['subtotalLabel', 'subtotal', 'shippingLabel', 'shipping', 'totalLabel', 'total', 'shipTo', 'checkoutLabel', 'onCheckout', 'checkoutDisabled', 'checkoutProps', 'note', 'soldOutNote', 'soldOutNoteProps', 'className', 'children', 'aria-label'])),
       h(Divider),
       props.shipTo ? h('div', { className: 'zz-bag-summary__ship-to' }, props.shipTo) : null,
       h('dl', { className: 'zz-bag-summary__rows' },
@@ -469,6 +474,9 @@
         hasTotal ? h('div', { className: 'zz-bag-summary__row' },
           h('dt', { className: 'body-medium' }, props.totalLabel || 'Total'),
           h('dd', { className: 'body-medium' }, props.total)) : null),
+      props.soldOutNote || props.soldOutNoteProps
+        ? h('p', Object.assign({ className: 'zz-bag-summary__sold-out body-small' }, props.soldOutNoteProps || {}), props.soldOutNote)
+        : null,
       h(Button, Object.assign({ hierarchy: 'primary', size: 'large', className: 'zz-bag-summary__checkout', onClick: props.onCheckout, disabled: !!props.checkoutDisabled },
         props.checkoutProps || {}), props.checkoutLabel || 'Checkout'),
       props.note ? h('p', { className: 'zz-bag-summary__note body-small' }, props.note) : null);

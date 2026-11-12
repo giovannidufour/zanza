@@ -3,7 +3,8 @@
    BagItem for every listing of the sale section, hidden, and site.js shows the ones in the bag, in the order they were
    added, computes the subtotal and swaps to the empty state. A copy is unique: one line per copy, no quantity.
    Adding to the bag does not hold the copy: the 30 min hold starts at checkout (_context/backend.md). A listing that
-   is no longer available (sold, or held by another checkout) shows as unavailable with its notice.
+   is no longer available shows its notice: sold = "Sold out" + price struck through (decision 0064), reserved (held by
+   another checkout) = "Reserved", no price. Only available lines count in the subtotal.
    Shipping (decision 0057, Figma `bag summary` destination=served | not served): when shipping is set up (admin page
    Shipping), the summary has a "Ship to" country select and a total; the page carries the shipping config as JSON and
    site.js estimates with packages/shipping/shipping.js. create-checkout recalculates on the server. */
@@ -13,8 +14,8 @@ const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 const { formatPrice, productName, productNameLinked, releaseInfo, gradingProps, productHref, SiteHeader, sampleAttrs } = require('./shell.js');
 
-// the notice of an unavailable line (Figma `notice`); `reserved` = held by a checkout or by hand
-const NOTICE = { sold: 'Just sold', reserved: 'Reserved', traded: 'Just sold' };
+// the BagItem status of a listing status (Figma `bag item` status); `reserved` = held by a checkout or by hand
+const BAG_STATUS = { available: 'available', sold: 'sold', traded: 'sold' };
 
 function BagLine({ product, url }) {
   const { listing, release, copy, samples } = product;
@@ -25,8 +26,7 @@ function BagLine({ product, url }) {
       'data-format': release.format || '', 'data-weight': listing.weight_g || '' },
     h(Z.Divider),
     h(Z.BagItem, {
-      status: available ? 'available' : 'unavailable',
-      notice: NOTICE[listing.status] || 'Not available',
+      status: BAG_STATUS[listing.status] || 'reserved',
       href: productHref(product, url),
       image: release.cover ? { src: url(release.cover), alt: '' } : null,
       title: productName(release),
@@ -64,6 +64,8 @@ function Bag({ products, site, url, shipping, countries }) {
         subtotal: h('span', { 'data-bag-subtotal': '' }, formatPrice({ amount: 0 })),
         // TODO checkout: create-checkout (hold + Stripe Checkout session) is not built yet (_context/backend.md)
         checkoutProps: { 'data-bag-checkout': '' },
+        // sold lines are not in the order (decision 0064): site.js fills and shows it
+        soldOutNoteProps: { 'data-bag-sold-out': '', hidden: true },
         ...(withShipping ? {
           shipTo: h(Z.Input, { variant: 'select', label: 'Ship to', id: 'bag-ship-to', 'data-bag-ship-to': '', defaultValue: DEFAULT_COUNTRY },
             countries.map((c) => h('option', { key: c.code, value: c.code }, c.name))),

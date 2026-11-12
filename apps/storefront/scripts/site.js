@@ -33,7 +33,7 @@
       - reserved (someone is in Stripe Checkout, max 30 min, or held by hand): the Add buttons read "Reserved" (secondary
         + clock) and stay active: pressing one opens the "Reserved" dialog, which explains the hold and offers "Notify me"
         (email, migration 0016). The bag line shows the notice "Reserved".
-        sold: the Add buttons read "Sold out", disabled (decision 0061); the bag line shows "Just sold"
+        sold: the Add buttons read "Sold out", disabled (decision 0061); the bag line shows "Sold out" + price struck (0064)
 
    Looks live in base.css and packages/ui/components.css; this file only sets attributes and text. */
 (function () {
@@ -793,13 +793,20 @@
     });
     // ids with no line are listings that left the shop (unpublished, archived, deleted): drop them from the bag
     var known = ids.filter(function (id) { return !!lines[id]; });
-    var count = 0, cents = 0;
+    var count = 0, cents = 0, sold = 0;
     known.forEach(function (id) {
       var li = lines[id];
       li.hidden = false;
       list.appendChild(li);   // in the order they were added
       if (li.getAttribute('data-available') === 'true') { count++; cents += parseInt(li.getAttribute('data-price'), 10) || 0; }
+      else if (li.querySelector('.zz-bag-item[data-status="sold"]')) sold++;
     });
+    // sold lines are not in the order: say it above Checkout (decision 0064)
+    var soldNote = root.querySelector('[data-bag-sold-out]');
+    if (soldNote) {
+      soldNote.hidden = sold === 0;
+      soldNote.textContent = sold === 1 ? '1 record sold out, not included.' : sold + ' records sold out, not included.';
+    }
     var empty = known.length === 0;
     list.hidden = empty;
     root.querySelector('[data-bag-summary]').hidden = empty;
@@ -1064,32 +1071,40 @@
   document.addEventListener('cancel', function (e) {
     if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-notify-dialog')) { e.preventDefault(); closeNotify(); }
   }, true);
-  // a bag line follows the live status: available (price) or unavailable (notice, no price), as pages/bag.js renders it
-  var NOTICE = { sold: 'Just sold', traded: 'Just sold', reserved: 'Reserved' };
+  // a bag line follows the live status, as pages/bag.js renders it: available (price), sold ("Sold out" + price struck
+  // through, decision 0064), reserved ("Reserved", no price)
+  var BAG_STATUS = { available: 'available', sold: 'sold', traded: 'sold' };
+  var NOTICE = { sold: 'Sold out \u00b7 not in your order', reserved: 'Reserved' };
   function syncBagLine(li) {
     var id = li.getAttribute('data-bag-line');
     var status = statusFor(id);
-    var available = status === 'available';
+    var line = BAG_STATUS[status] || 'reserved';
+    var available = line === 'available';
     li.setAttribute('data-listing-status', status);
     li.setAttribute('data-available', available ? 'true' : 'false');
     var item = li.querySelector('.zz-bag-item');
     if (!item) return;
-    item.setAttribute('data-status', available ? 'available' : 'unavailable');
+    item.setAttribute('data-status', line);
     var info = item.querySelector('.zz-bag-item__info');
     var notice = item.querySelector('.zz-bag-item__notice');
     if (available && notice) notice.parentNode.removeChild(notice);
     if (!available && info) {
       if (!notice) { notice = document.createElement('p'); notice.className = 'zz-bag-item__notice label-small'; info.insertBefore(notice, info.firstChild); }
-      notice.textContent = NOTICE[status] || 'Not available';
+      notice.textContent = NOTICE[line];
     }
     var purchase = item.querySelector('.zz-bag-item__purchase');
     var price = item.querySelector('.zz-bag-item__price');
-    if (!available && price) price.parentNode.removeChild(price);
-    if (available && !price && purchase) {
-      price = document.createElement('p');
-      price.className = 'zz-bag-item__price body-large body-medium--mobile';   // = BagItem responsive (CARD_TYPE.head)
-      price.textContent = formatPrice(parseInt(li.getAttribute('data-price'), 10) || 0);
-      purchase.insertBefore(price, purchase.firstChild);
+    if (line === 'reserved' && price) price.parentNode.removeChild(price);
+    if (line !== 'reserved' && purchase) {
+      if (!price) {
+        price = document.createElement('p');
+        price.className = 'zz-bag-item__price body-large body-medium--mobile';   // = BagItem responsive (CARD_TYPE.head)
+        purchase.insertBefore(price, purchase.firstChild);
+      }
+      var text = formatPrice(parseInt(li.getAttribute('data-price'), 10) || 0);
+      price.textContent = '';
+      if (line === 'sold') { var s = document.createElement('s'); s.textContent = text; price.appendChild(s); }
+      else price.textContent = text;
     }
   }
   function applyStatus() {

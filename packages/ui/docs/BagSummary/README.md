@@ -20,6 +20,8 @@ The bag's subtotal and the way to checkout. Figma: page `Bag` → `bag summary`.
 | `checkoutDisabled` | `boolean` |  | Disables Checkout (e.g. nothing available to buy). |
 | `checkoutProps` | `Record<string, unknown>` |  | Extra attributes for the Checkout button (data-*, aria-*). |
 | `note` | `ReactNode` |  | Figma `note`, body/small, below the button. |
+| `soldOutNote` | `ReactNode` |  | Figma `sold out` + `sold out note`, body/small, above Checkout: says that sold lines are not in the order ("1 record sold out, not included.", decision 0064). Omit when the bag has no sold lines. |
+| `soldOutNoteProps` | `Record<string, unknown>` |  | Extra attributes for the sold out note (data-*, hidden), so a script can fill it; rendered even without `soldOutNote`. |
 
 `*` required.
 <!-- /api -->
