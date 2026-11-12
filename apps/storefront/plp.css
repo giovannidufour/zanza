@@ -58,3 +58,17 @@ html[data-header-revealing] .plp-filters { transition: top 200ms ease-out, max-h
 .plp-layer::backdrop { background: var(--surface-accent); }
 .plp-layer__facets { display: flex; flex-direction: column; }
 .plp-filters__sort { align-self: flex-start; }   /* Figma: hug, at the top of the column */
+
+/* Search results (Figma page `Search`, 2026-11-12): the same page as the PLP, plus on top `search field` (mobile only:
+   on desktop the field is in the header), `search heading` (body/large, padding medium-small × small, as in Figma) and
+   `search message` (hint, or no results + "Browse all records"; same padding, gap small). */
+.search-field { display: none; padding-top: var(--small); }
+@media (--mobile) { .search-field { display: block; } }
+.search-heading { margin: 0; padding: var(--medium-small) var(--small); color: var(--text-strong); }
+.search-message { display: flex; flex-direction: column; align-items: flex-start; gap: var(--small); padding: var(--medium-small) var(--small); }
+.search-message p { margin: 0; color: var(--text-strong); }
+.search-heading[hidden], .search-message[hidden], .plp-content[hidden], .plp-header[hidden] { display: none; }
+.plp-list__empty.search-message { padding-top: 0; }
+/* "Show sold out" in the mobile filters layer: above the facet rows (Figma `filters layer` level=main) */
+.plp-layer__sold { padding: var(--small) 0; }
+.plp-layer__sold[hidden] { display: none; }

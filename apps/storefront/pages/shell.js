@@ -100,6 +100,9 @@ function SiteHeader({ site, url, section, current }) {
       storeName: site.storeName,
       homeHref: url('/'),
       menuProps: { 'aria-haspopup': 'dialog', 'aria-controls': 'site-menu', 'aria-expanded': 'false', 'data-menu-open': '' },
+      // Figma `header` boolean `search` (2026-11-12): the field on desktop, the magnifier on mobile → /search/
+      search: h(SearchForm, { url, id: 'site-search-header' }),
+      searchHref: url('/search/'),
       tabs: h(Z.Tabs, { as: 'nav', value: section, 'aria-label': 'Section' },
         h(Z.Tab, { value: 'sale', href: url('/sale/') }, 'For sale'),
         h(Z.Tab, { value: 'trade', href: url('/trade/') }, 'For trade')),
@@ -110,6 +113,17 @@ function SiteHeader({ site, url, section, current }) {
     }),
     h(SiteMenu, { url, current: current || section }));
 }
+
+// the search field (Figma `input` type=search): a GET form to /search/?q=…, so it works without JS; scripts/site.js
+// sends it through the soft navigation (the player keeps playing) and fills the field with the current query.
+// The visible text is the placeholder; the accessible name is "Search records" (WCAG: a label, not only a placeholder).
+function SearchForm({ url, id, className }) {
+  return h('form', { className: cx('site-search', className), role: 'search', 'aria-label': 'Search', action: url('/search/'),
+    method: 'get', 'data-site-search': '' },
+    h(Z.Input, { variant: 'search', id, name: 'q', placeholder: 'Search', 'aria-label': 'Search records',
+      autoComplete: 'off', enterKeyHint: 'search', 'data-search-input': '' }));
+}
+const cx = (...c) => c.filter(Boolean).join(' ');
 
 // Figma page `menu` (proposal 2026-11-12): the mobile menu, a full-screen native modal dialog (focus trapped, Esc
 // closes, the page behind is inert). Account is the entry point to /account/ on mobile; the Bag stays in the header.
@@ -179,4 +193,4 @@ function ProductCardFor({ product, url, headingLevel }) {
   });
 }
 
-module.exports = { SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, sampleAttrs, ProductCardFor };
+module.exports = { SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, sampleAttrs, ProductCardFor };

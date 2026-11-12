@@ -33,7 +33,7 @@
       - reserved (someone is in Stripe Checkout, max 30 min, or held by hand): the Add buttons read "Reserved" (secondary
         + clock) and stay active: pressing one opens the "Reserved" dialog, which explains the hold and offers "Notify me"
         (email, migration 0016). The bag line shows the notice "Reserved".
-        Sold after the build: the bag line shows "Just sold"; the Add buttons are not designed for it yet (design/open.md)
+        sold: the Add buttons read "Sold out", disabled (decision 0061); the bag line shows "Just sold"
 
    Looks live in base.css and packages/ui/components.css; this file only sets attributes and text. */
 (function () {
@@ -338,21 +338,80 @@
      The column's checkboxes are the applied state. On mobile (Figma `filters layer`, 2026-11-10) the layer has its
      own checkboxes: a draft, copied from the column when the layer opens and back to it on Apply; closing discards
      it. Levels: main (applied recap + one row per facet) and facet (the options of one facet). */
+  // Search (Figma page `Search`, 2026-11-12): the query and each card's data-search text (pages/plp.js searchTextOf)
+  // are normalised the same way: no accents, lower case, punctuation = space. Every word of the query must start a
+  // word of the record ("greg isa" finds Gregory Isaacs); a catalogue number also matches without its spaces or
+  // dashes ("tw001" finds "TW-001").
+  function searchWords(s) {
+    return String(s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  function searchMatcher(q) {
+    var words = searchWords(q);
+    if (!words) return null;
+    var tokens = words.split(' ');
+    var compact = words.replace(/ /g, '');
+    return function (text) {
+      var hay = ' ' + text;
+      if (tokens.every(function (t) { return hay.indexOf(' ' + t) !== -1; })) return true;
+      return compact.length > 2 && text.replace(/ /g, '').indexOf(compact) !== -1;
+    };
+  }
+  // the search fields (header on desktop, under the header on /search/ on mobile): GET forms to /search/?q=…, sent
+  // through the soft navigation so the player keeps playing; an empty query stays where it is
+  function initSearch() {
+    var q = new URLSearchParams(location.search).get('q') || '';
+    var onSearch = !!document.querySelector('[data-search-page]');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-search-input]'), function (input) {
+      input.value = onSearch ? q : '';
+    });
+  }
+  document.addEventListener('submit', function (e) {
+    var form = e.target.closest && e.target.closest('form[data-site-search]');
+    if (!form) return;
+    e.preventDefault();
+    var input = form.querySelector('[data-search-input]');
+    var q = input ? input.value.trim() : '';
+    if (!q) { if (input) input.focus(); return; }
+    var href = new URL(form.getAttribute('action'), location.href);
+    href.search = '?q=' + encodeURIComponent(q);
+    if (input) input.blur();   // mobile: closes the keyboard so the results are in view
+    if (typeof navigate === 'function' && window.fetch && window.DOMParser) navigate(href.href, true);
+    else location.href = href.href;
+  });
+
   function initFilters() {
     var root = document.querySelector('[data-plp-filters]');
     if (!root) return;
     var items = Array.prototype.slice.call(document.querySelectorAll('.plp-item'));
     var list = items.length ? items[0].parentNode : null;
-    var boxes = Array.prototype.slice.call(root.querySelectorAll('input[type="checkbox"]'));
+    // "Show sold out" (Gio 2026-11-12): not a facet. Ticked by default; unticked = ?sold=hide. It never counts as an
+    // applied filter and Reset ticks it again.
+    var soldBox = root.querySelector('input[data-show-sold]');
+    var boxes = Array.prototype.slice.call(root.querySelectorAll('input[type="checkbox"]')).filter(function (b) { return b !== soldBox; });
     var keys = []; boxes.forEach(function (b) { if (keys.indexOf(b.name) === -1) keys.push(b.name); });
     // hidden facets (label): no checkbox; the value comes from the URL and shows as a removable chip
     var hidden = []; try { hidden = JSON.parse(root.getAttribute('data-hidden-facets') || '[]'); } catch (e) { hidden = []; }
     hidden.forEach(function (f) { if (keys.indexOf(f.key) === -1) keys.push(f.key); });
+    var params = new URLSearchParams(location.search);
+    // search page: the query (?q=); no query = only the hint (Figma `Search - mobile / empty`)
+    var searchPage = document.querySelector('[data-search-page]');
+    var query = searchPage ? (params.get('q') || '').trim() : '';
+    var matcher = searchMatcher(query);
+    var baseTitle = document.title;   // as built: "Search · <store name>"
     var values = items.map(function (el) {
       var v = {}; keys.forEach(function (k) { try { v[k] = JSON.parse(el.getAttribute('data-' + k) || '[]'); } catch (e) { v[k] = []; } });
+      v.__q = !searchPage || (!!matcher && matcher(el.getAttribute('data-search') || ''));
       return v;
     });
-    var params = new URLSearchParams(location.search);
+    // sold: read from the card at each apply (site.js updates data-listing-status live)
+    function soldNow() {
+      items.forEach(function (el, i) {
+        var card = el.querySelector('[data-listing-status]');
+        var st = card ? card.getAttribute('data-listing-status') : 'available';
+        values[i].__sold = st === 'sold' || st === 'traded';
+      });
+    }
+    if (soldBox) soldBox.checked = params.get('sold') !== 'hide';
     if (params.has('subgenre')) {   // subgenre was renamed genre (0048): old shared links keep working
       params.getAll('subgenre').forEach(function (v) { params.append('genre', v); });
       params.delete('subgenre');
@@ -375,14 +434,17 @@
     var sortSelects = Array.prototype.slice.call(document.querySelectorAll('[data-plp-sort]'));
     var sort = params.get('sort') || 'newest';
 
-    function selectionOf(checkboxes, hiddenState) {
+    function selectionOf(checkboxes, hiddenState, sold) {
       var s = {}; keys.forEach(function (k) { s[k] = []; });
+      s.__showSold = sold ? sold.checked : true;
       checkboxes.forEach(function (b) { if (b.checked) s[b.name].push(b.value); });
       hidden.forEach(function (f) { s[f.key] = hiddenState[f.key].slice(); });
       return s;
     }
-    function selected() { return selectionOf(boxes, hiddenSel); }
+    function selected() { return selectionOf(boxes, hiddenSel, soldBox); }
     function matches(v, s, skip) {
+      if (!v.__q) return false;
+      if (v.__sold && !s.__showSold) return false;
       return keys.every(function (k) {
         if (k === skip || !s[k].length) return true;
         return s[k].some(function (x) { return v[k].indexOf(x) !== -1; });
@@ -461,17 +523,21 @@
       sorted.forEach(function (el) { list.insertBefore(el, empty); });
     }
     function apply(announce) {
+      soldNow();
       var s = selected(), shown = 0;
       items.forEach(function (el, i) { var ok = matches(values[i], s); el.hidden = !ok; if (ok) shown++; });
       refreshOptions(boxes, s, root);
       var empty = document.querySelector('[data-plp-empty]'); if (empty) empty.hidden = shown > 0;
+      if (searchPage) renderSearch(shown);
       var status = root.querySelector('[data-plp-status]');
       if (status && announce) status.textContent = shown + (shown === 1 ? ' record' : ' records');
       // mobile trigger: "Filter" + the number of applied filters as suffix (Figma `PLP header`, 0029)
       if (trigger) setSuffix(trigger, appliedCount(s) ? '(' + appliedCount(s) + ')' : null);
       // URL
       var q = new URLSearchParams();
+      if (query) q.set('q', query);
       keys.forEach(function (k) { s[k].forEach(function (x) { q.append(k, x); }); });
+      if (!s.__showSold) q.set('sold', 'hide');
       if (sort !== 'newest') q.set('sort', sort);
       var qs = q.toString();
       history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
@@ -484,6 +550,21 @@
         chips.forEach(function (c) { holder.appendChild(activeChips(c)); });
         row.hidden = !chips.length;
       }
+    }
+    // Figma `search heading` + `search message`: "N results for “q”" / "No results for “q”"; no query = the hint only
+    function renderSearch(shown) {
+      var title = searchPage.querySelector('[data-search-title]');
+      var hint = searchPage.querySelector('[data-search-hint]');
+      var results = searchPage.querySelector('[data-search-results]');
+      var quoted = '\u201c' + query + '\u201d';
+      if (title) {
+        title.hidden = !query;
+        title.textContent = !query ? 'Search' : shown ? shown + (shown === 1 ? ' result for ' : ' results for ') + quoted : 'No results for ' + quoted;
+      }
+      if (hint) hint.hidden = !!query;
+      if (results) results.hidden = !query;
+      document.title = (query ? query + ' \u00b7 ' : '') + baseTitle;
+      var plpHeader = document.querySelector('.plp-header'); if (plpHeader) plpHeader.hidden = !query;
     }
     // Button suffix (packages/ui Button `suffix`): created or removed in place
     function setSuffix(button, text) {
@@ -514,7 +595,8 @@
       sel.addEventListener('change', function (e) { e.stopPropagation(); sort = sel.value; syncSort(); applySort(); apply(false); });
     });
     if (layer && trigger && layer.showModal) {
-      var draftBoxes = Array.prototype.slice.call(layer.querySelectorAll('input[type="checkbox"]'));
+      var draftSold = layer.querySelector('input[data-show-sold]');
+      var draftBoxes = Array.prototype.slice.call(layer.querySelectorAll('input[type="checkbox"]')).filter(function (b) { return b !== draftSold; });
       var draftHidden = {};
       var rows = Array.prototype.slice.call(layer.querySelectorAll('[data-facet]'));
       var blocks = Array.prototype.slice.call(layer.querySelectorAll('[data-facet-block]'));
@@ -526,7 +608,7 @@
       var applyBtn = layer.querySelector('[data-layer-apply]');
       var layerChip = layer.querySelector('template[data-layer-chip]');
       var currentFacet = null;
-      var draft = function () { return selectionOf(draftBoxes, draftHidden); };
+      var draft = function () { return selectionOf(draftBoxes, draftHidden, draftSold); };
       var labelOf = function (b) { return b.getAttribute('data-facet-label') || b.value; };
 
       var renderDraft = function () {
@@ -572,6 +654,7 @@
         title.textContent = key ? row.getAttribute('data-facet-label') : 'Filter';   // Gio 2026-11-10: "Filter", as the trigger
         back.hidden = !key;
         layer.querySelector('[data-layer-facets]').hidden = !!key;
+        var soldRow = layer.querySelector('[data-layer-sold]'); if (soldRow) soldRow.hidden = !!key;
         blocks.forEach(function (bl) { bl.hidden = bl.getAttribute('data-facet-block') !== key; });
         renderDraft();
         layer.querySelector('.zz-filters-layer__body').scrollTop = 0;
@@ -581,6 +664,7 @@
           d.checked = boxes.some(function (b) { return b.name === d.name && b.value === d.value && b.checked; });
         });
         hidden.forEach(function (f) { draftHidden[f.key] = hiddenSel[f.key].slice(); });
+        if (draftSold) draftSold.checked = soldBox ? soldBox.checked : true;
         showLevel(null);
         layer.showModal();
         // no control is focused on open (decision 0043): the dialog itself takes focus, so screen readers hear
@@ -610,6 +694,7 @@
       layer.querySelector('[data-layer-reset]').addEventListener('click', function () {
         draftBoxes.forEach(function (d) { d.checked = false; });
         hidden.forEach(function (f) { draftHidden[f.key] = []; });
+        if (draftSold) draftSold.checked = true;
         renderDraft();
       });
       applyBtn.addEventListener('click', function () {
@@ -617,6 +702,7 @@
           b.checked = draftBoxes.some(function (d) { return d.name === b.name && d.value === b.value && d.checked; });
         });
         hidden.forEach(function (f) { hiddenSel[f.key] = draftHidden[f.key].slice(); });
+        if (soldBox && draftSold) soldBox.checked = draftSold.checked;
         apply(true);
         close();
         window.scrollTo(0, 0);
@@ -792,10 +878,14 @@
     if (!text || text.nodeType !== 3) return;
     if (!btn.hasAttribute('data-label-default')) btn.setAttribute('data-label-default', text.nodeValue);
     if (!btn.hasAttribute('data-hierarchy-default')) btn.setAttribute('data-hierarchy-default', btn.getAttribute('data-hierarchy') || 'primary');
-    var reserved = !!id && statusFor(id) === 'reserved';
-    var inBag = !reserved && !!id && (ids || readBag()).indexOf(id) !== -1;
-    text.nodeValue = reserved ? 'Reserved' : inBag ? 'In bag' : btn.getAttribute('data-label-default');
-    btn.setAttribute('data-hierarchy', reserved || inBag ? 'secondary' : btn.getAttribute('data-hierarchy-default'));
+    var st = id ? statusFor(id) : 'available';
+    // sold (Gio 2026-11-12, Figma page `Search`): "Sold out", disabled — struck through = unavailable (decision 0058)
+    var sold = st === 'sold' || st === 'traded';
+    var reserved = !sold && st === 'reserved';
+    var inBag = !sold && !reserved && !!id && (ids || readBag()).indexOf(id) !== -1;
+    if ('disabled' in btn) btn.disabled = sold;
+    text.nodeValue = sold ? 'Sold out' : reserved ? 'Reserved' : inBag ? 'In bag' : btn.getAttribute('data-label-default');
+    btn.setAttribute('data-hierarchy', sold || reserved || inBag ? 'secondary' : btn.getAttribute('data-hierarchy-default'));
     btn.setAttribute('data-in-bag', inBag ? 'true' : 'false');
     btn.setAttribute('data-reserved', reserved ? 'true' : 'false');
     if (reserved) btn.setAttribute('aria-label', 'Reserved, find out more');
@@ -829,7 +919,9 @@
   // does the opening, so the soft navigation keeps the player; no toast (decision 0050)
   function addOrOpen(id) {
     if (!id) return;
-    if (statusFor(id) === 'reserved') { openNotify(id); return; }
+    var st = statusFor(id);
+    if (st === 'sold' || st === 'traded') return;
+    if (st === 'reserved') { openNotify(id); return; }
     if (readBag().indexOf(id) === -1) { addToBag(id); return; }
     var link = document.querySelector('a[data-bag-count]');
     if (link) link.click();
@@ -1080,12 +1172,13 @@
       initHeader();
       initMenu();
       initGallery();
+      initSearch();
       initFilters();
       initStatus();
       initBag();
       if (player && audio) render();
       // screen readers and keyboard: start from the new page's main heading, like a full load would
-      var focusEl = document.querySelector('main h1') || document.querySelector('main');
+      var focusEl = document.querySelector('main h1') || document.querySelector('.zz-page h1:not([hidden])') || document.querySelector('main');
       if (focusEl) { focusEl.setAttribute('tabindex', '-1'); focusEl.focus({ preventScroll: true }); }
     }).catch(function () {
       if (token === navToken) location.href = href;   // anything unexpected: a normal page load
@@ -1107,6 +1200,7 @@
   initHeader();
   initMenu();
   initGallery();
+  initSearch();
   initFilters();
   initStatus();
   initBag();
