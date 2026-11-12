@@ -153,13 +153,11 @@ export interface PlayerProps extends HTMLAttributes<HTMLElement> {
   device?: "desktop" | "mobile";
   /** Cover of the product, 48 × 48. Figma: `product image`. */
   image?: { src: string; alt?: string };
-  /** Track position on the record, e.g. "A". Figma: `sample number`. */
-  trackPosition?: ReactNode;
   /** The sample title, e.g. "Vocal". Figma: first `product name` text. */
   sampleTitle: ReactNode;
   /** "Artist - Title". Figma: second `product name` text. */
   productName: ReactNode;
-  /** 1-based position of the sample in the queue ("1 of 3"). Previous is disabled at 1. @default 1 */
+  /** 1-based position of the sample in the queue. Shown as the sample number (Figma: `sample number`) and in "1 of 3". Previous is disabled at 1. @default 1 */
   index?: number;
   /** Queue length. Next is disabled at the last sample. @default 1 */
   total?: number;
@@ -298,8 +296,14 @@ export interface BagSummaryProps extends HTMLAttributes<HTMLElement> {
   subtotal?: ReactNode;
   /** @default "Shipping" */
   shippingLabel?: ReactNode;
-  /** Default "Calculated at checkout". */
+  /** Default "Calculated at checkout". The estimate ("5€") or "Not available" (Figma destination=not served). */
   shipping?: ReactNode;
+  /** Figma `ship to`: the country select (Input variant select, label "Ship to") above the rows. */
+  shipTo?: ReactNode;
+  /** @default "Total" */
+  totalLabel?: ReactNode;
+  /** Figma `total`, subtotal + shipping ("38€"). Omitted → no total row (destination=not served, or shipping not set up). */
+  total?: ReactNode;
   /** Checkout button label (primary, large, fill). @default "Checkout" */
   checkoutLabel?: string;
   /** Click on Checkout. */

@@ -288,13 +288,14 @@
       'data-device': device,
       'data-playing': props.playing ? 'true' : 'false',
       'aria-label': props['aria-label'] || 'Player'
-    }, omit(props, ['device', 'image', 'trackPosition', 'sampleTitle', 'productName', 'index', 'total', 'playing', 'src',
+    }, omit(props, ['device', 'image', 'sampleTitle', 'productName', 'index', 'total', 'playing', 'src',
                     'actions', 'onPrevious', 'onNext', 'onTogglePlay', 'onClose', 'audioRef', 'className', 'aria-label'])),
-      // Figma: `now playing` — image 48 + title row (track position · sample title / product name)
+      // Figma: `now playing` — image 48 + title row (sample number · sample title / product name)
       h('div', { className: 'zz-player__now' },
         h('div', { className: 'zz-player__image' }, img.src ? h('img', { src: img.src, alt: img.alt || '', width: 48, height: 48 }) : null),
         h('p', { className: 'zz-player__title body-medium', 'aria-live': 'polite' },
-          h('span', { className: 'zz-player__track' }, props.trackPosition),
+          // sample number = position of the sample in the queue, as on the sample buttons (decision 0056)
+          h('span', { className: 'zz-player__number' }, props.index || 1),
           h('span', { className: 'zz-player__names' },
             h('span', { className: 'zz-player__sample' }, props.sampleTitle),
             h('span', { className: 'zz-player__product' }, props.productName)))),
@@ -439,22 +440,28 @@
   }
 
   /* ── BagSummary ─────────────────────────────────────────────────────────
-     Figma: page `Bag` → `bag summary` (2026-11-10). Column, gap 8: divider · subtotal row · shipping row (label left,
-     value right, body/medium) · Checkout (primary, large, fill) · note (body/small). Shipping and tax are computed by
-     Stripe Checkout, so the bag only knows the subtotal (decision 0044). */
+     Figma: page `Bag` → `bag summary` (2026-11-10; shipping estimate 2026-11-12, decision 0057). Column, gap 8: divider · `ship to` slot (a select) · subtotal row · shipping row ·
+     total row (label left, value right, body/medium) · Checkout (primary, large, fill) · note (body/small).
+     Figma `destination=not served` = no total, shipping "Not available", Checkout disabled: the consumer passes that
+     (total omitted, checkoutDisabled). Without `total` there is no total row (before shipping was set up). */
   function BagSummary(props) {
+    var hasTotal = props.total !== undefined && props.total !== null;
     return h('section', Object.assign({
       className: cx('zz-bag-summary', props.className),
       'aria-label': props['aria-label'] || 'Summary'
-    }, omit(props, ['subtotalLabel', 'subtotal', 'shippingLabel', 'shipping', 'checkoutLabel', 'onCheckout', 'checkoutDisabled', 'checkoutProps', 'note', 'className', 'children', 'aria-label'])),
+    }, omit(props, ['subtotalLabel', 'subtotal', 'shippingLabel', 'shipping', 'totalLabel', 'total', 'shipTo', 'checkoutLabel', 'onCheckout', 'checkoutDisabled', 'checkoutProps', 'note', 'className', 'children', 'aria-label'])),
       h(Divider),
+      props.shipTo ? h('div', { className: 'zz-bag-summary__ship-to' }, props.shipTo) : null,
       h('dl', { className: 'zz-bag-summary__rows' },
         h('div', { className: 'zz-bag-summary__row' },
           h('dt', { className: 'body-medium' }, props.subtotalLabel || 'Subtotal'),
           h('dd', { className: 'body-medium' }, props.subtotal)),
         h('div', { className: 'zz-bag-summary__row' },
           h('dt', { className: 'body-medium' }, props.shippingLabel || 'Shipping'),
-          h('dd', { className: 'body-medium' }, props.shipping || 'Calculated at checkout'))),
+          h('dd', { className: 'body-medium' }, props.shipping || 'Calculated at checkout')),
+        hasTotal ? h('div', { className: 'zz-bag-summary__row' },
+          h('dt', { className: 'body-medium' }, props.totalLabel || 'Total'),
+          h('dd', { className: 'body-medium' }, props.total)) : null),
       h(Button, Object.assign({ hierarchy: 'primary', size: 'large', className: 'zz-bag-summary__checkout', onClick: props.onCheckout, disabled: !!props.checkoutDisabled },
         props.checkoutProps || {}), props.checkoutLabel || 'Checkout'),
       props.note ? h('p', { className: 'zz-bag-summary__note body-small' }, props.note) : null);
@@ -1036,7 +1043,7 @@
   function XThinIcon() {      // Figma: icon/icon-x-thin
     return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M5.07538 5.07538C5.27064 4.88014 5.58723 4.88012 5.78248 5.07538L12.5 11.7929L19.2175 5.07538C19.4128 4.88012 19.7294 4.88012 19.9246 5.07538C20.1199 5.27064 20.1199 5.58723 19.9246 5.78249L13.2071 12.5L19.9246 19.2175C20.1199 19.4128 20.1199 19.7294 19.9246 19.9246C19.7294 20.1199 19.4128 20.1199 19.2175 19.9246L12.5 13.2071L5.78248 19.9246C5.58723 20.1199 5.27064 20.1199 5.07538 19.9246C4.88012 19.7294 4.88012 19.4128 5.07538 19.2175L11.7929 12.5L5.07538 5.78249C4.88012 5.58722 4.88012 5.27064 5.07538 5.07538Z', fill: 'currentColor' }));
   }
-  function TickLargeThinIcon() {      // Figma: icon/icon-tick-large-thin (was the trailing icon of "Added to bag", 0047; unused since 0054)
+  function TickLargeThinIcon() {      // Figma: icon/icon-tick-large-thin leading icon of "In bag" (decision 0058)
     return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M20.6533 4.63961C20.8522 4.44831 21.1689 4.45445 21.3604 4.65328C21.5516 4.85218 21.5454 5.16886 21.3467 5.36031L7.84668 18.3603L7.5 18.6943L7.15332 18.3603L2.65332 14.0263C2.45468 13.8349 2.44849 13.5192 2.63965 13.3203C2.8312 13.1214 3.1478 13.1151 3.34668 13.3066L7.49902 17.3056L20.6533 4.63961Z', fill: 'currentColor' }));
   }
   function PlusSmallThinIcon() {      // Figma: icon/icon-plus-small-thin

@@ -517,7 +517,7 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
 .zz-player__image { flex: none; width: 48px; height: 48px; overflow: hidden; }
 .zz-player__image > img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .zz-player__title { display: flex; gap: 8px; min-width: 0; margin: 0; }
-.zz-player__track { flex: none; }
+.zz-player__number { flex: none; }
 .zz-player__names { display: flex; flex-direction: column; min-width: 0; }
 .zz-player__sample, .zz-player__product { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -688,6 +688,8 @@ a.zz-product-card__image { display: block; color: inherit; }
    Column gap 8: divider · rows (label | value, space-between) · Checkout (primary large, fill) · note.
    ═══════════════════════════════════════════════════════════════════════ */
 .zz-bag-summary { display: flex; flex-direction: column; gap: var(--small); color: var(--text-strong); font-family: var(--font-sans); }
+.zz-bag-summary__ship-to > * { width: 100%; }
+.zz-bag-summary__row[hidden] { display: none; }
 .zz-bag-summary__rows { display: flex; flex-direction: column; gap: var(--small); margin: 0; }
 .zz-bag-summary__row { display: flex; justify-content: space-between; gap: var(--small); }
 .zz-bag-summary__row dt, .zz-bag-summary__row dd { margin: 0; }

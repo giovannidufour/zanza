@@ -22,9 +22,10 @@
    6. Bag (decision 0044)
       - the bag = the listing ids in localStorage ('zanza-bag'), in the order they were added; a copy is unique, so an
         id is in the bag once (no quantity). Adding does NOT hold the copy: the hold starts at checkout
-      - "Add to bag" (card, PDP, player) adds and shows the toast "Added to bag." + View bag (decision 0050); then the button reads "Remove" and takes the copy out
-        again, with a toast + Undo (decision 0054); the header Bag shows the count in brackets on every page
+      - "Add to bag" (card, PDP, player) adds and shows the toast "Added to bag." + View bag (decision 0050); then the button reads "In bag" (secondary + tick)
+        and opens the bag (decision 0058); taking a copy out happens only on /bag/; the header Bag shows the count in brackets on every page
       - /bag/ (pages/bag.js) shows the lines of the bag, the subtotal of the available ones, or the empty state;
+        with shipping set up: "Ship to" country (remembered), shipping estimate and total (decision 0057);
         Remove takes a line out and shows a toast with Undo (packages/ui/toast.js, decision 0049). Checkout is not wired yet (create-checkout + Stripe, _context/backend.md)
 
    Looks live in base.css and packages/ui/components.css; this file only sets attributes and text. */
@@ -107,7 +108,6 @@
     return {
       src: btn.getAttribute('data-sample-src'),
       title: btn.getAttribute('data-sample-title') || '',
-      track: btn.getAttribute('data-sample-track') || '',
       product: btn.getAttribute('data-product-name') || '',
       image: btn.getAttribute('data-product-image') || '',
       href: btn.getAttribute('data-product-href') || '',
@@ -138,7 +138,7 @@
     var toggleBtn = q('.zz-player__toggle');
     if (toggleBtn) toggleBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
     if (cur) {
-      setText('.zz-player__track', cur.track);
+      setText('.zz-player__number', String(index + 1));   // the sample's place in the queue (decision 0056)
       setText('.zz-player__sample', cur.title);
       setText('.zz-player__product', cur.product);
       setText('.zz-player__position', (index + 1) + ' of ' + queue.length);
@@ -681,10 +681,59 @@
     root.querySelector('[data-bag-empty]').hidden = !empty;
     root.querySelector('[data-bag-subtotal-label]').textContent = 'Subtotal (' + count + (count === 1 ? ' record)' : ' records)');
     root.querySelector('[data-bag-subtotal]').textContent = formatPrice(cents);
+    var served = renderShipping(root, known.filter(function (id) { return lines[id].getAttribute('data-available') === 'true'; })
+      .map(function (id) { return lines[id]; }), cents);
     var checkout = root.querySelector('[data-bag-checkout]');
-    if (checkout) checkout.disabled = count === 0;
+    if (checkout) checkout.disabled = count === 0 || !served;
     return known;
   }
+
+  // shipping estimate (decision 0057, Figma `bag summary` destination=served | not served): the page carries the
+  // config (admin page Shipping), packages/shipping/shipping.js does the maths, the country is remembered.
+  // Returns false when the bag cannot go to checkout for this country (not served, too heavy). No config on the
+  // page = shipping not set up: "Calculated at checkout", as before.
+  var SHIP_KEY = 'zanza-ship-to';
+  function readShipTo() { try { return window.localStorage.getItem(SHIP_KEY); } catch (e) { return null; } }
+  function renderShipping(root, availableLines, subtotal) {
+    var select = root.querySelector('[data-bag-ship-to]');
+    var configEl = root.querySelector('[data-shipping-config]');
+    if (!select || !configEl || !window.ZanzaShipping) return true;
+    var config;
+    try { config = JSON.parse(configEl.textContent); } catch (e) { return true; }
+    var stored = readShipTo();
+    if (stored && select.value !== stored && select.querySelector('option[value="' + stored + '"]')) select.value = stored;
+    var country = select.value, name = select.options[select.selectedIndex] ? select.options[select.selectedIndex].text : country;
+    var items = availableLines.map(function (li) {
+      return { format: li.getAttribute('data-format'), weight_g: parseInt(li.getAttribute('data-weight'), 10) || null };
+    });
+    var est = window.ZanzaShipping.estimate(config, items, country);
+    var shipping = root.querySelector('[data-bag-shipping]'), total = root.querySelector('[data-bag-total]');
+    var note = root.querySelector('[data-bag-note]');
+    var totalRow = total && total.closest('.zz-bag-summary__row');
+    var served = est.status === 'ok' || est.status === 'empty';
+    if (est.status === 'ok') {
+      shipping.textContent = formatPrice(est.price_cents);
+      total.textContent = formatPrice(subtotal + est.price_cents);
+    } else if (est.status === 'empty') {
+      shipping.textContent = '\u2014';
+      total.textContent = formatPrice(subtotal);
+    } else shipping.textContent = 'Not available';
+    if (totalRow) totalRow.hidden = !served;
+    if (note) note.textContent = served
+      ? 'Shipping is an estimate for your country. You enter the address and pay on Stripe. Your records are held for 30 minutes once you start checkout.'
+      : est.status === 'not-served' ? 'We don\u2019t ship to ' + name + ' yet.'
+      : 'This bag is too big for one parcel. Remove a few records to check out.';
+    return served;
+  }
+  // a new country: remember it, recompute, and say the result (the rows change silently otherwise)
+  document.addEventListener('change', function (e) {
+    var select = e.target.closest && e.target.closest('[data-bag-ship-to]');
+    if (!select) return;
+    try { window.localStorage.setItem(SHIP_KEY, select.value); } catch (err) { /* ignore */ }
+    renderBag();
+    var root = document.querySelector('[data-bag-page]'), sh = root && root.querySelector('[data-bag-shipping]');
+    if (sh) announce('Shipping to ' + select.options[select.selectedIndex].text + ': ' + sh.textContent + '.');
+  });
 
   function renderBag() {
     var ids = readBag();
@@ -699,18 +748,29 @@
 
   function initBag() { renderBag(); }
 
-  // a copy already in the bag: its Add buttons read "Remove" and take it out of the bag (Gio 2026-11-10, decision 0054,
-  // replaces "Added to bag" + tick of 0046 / 0047). Same Button, label only. The default label is kept in
-  // data-label-default so it comes back when the copy leaves the bag.
+  // a copy already in the bag: its Add buttons become "In bag" (Gio 2026-11-12, decision 0058, replaces "Remove" of
+  // 0054). Same Button: hierarchy secondary (the PDP CTA drops from primary), leading icon = tick (Figma `leading icon`
+  // on, icon-tick-large-thin), label "In bag", accessible name "In bag, view bag". Pressing it opens the bag: taking a
+  // copy out happens only in the bag. Never disabled: struck through means unavailable (sold). The defaults are kept
+  // in data-*-default so they come back when the copy leaves the bag.
   function syncAddButton(btn, id, ids) {
     var label = btn.querySelector('.zz-button__label');
     var text = label && label.firstChild;
     if (!text || text.nodeType !== 3) return;
     if (!btn.hasAttribute('data-label-default')) btn.setAttribute('data-label-default', text.nodeValue);
-    var def = btn.getAttribute('data-label-default');
+    if (!btn.hasAttribute('data-hierarchy-default')) btn.setAttribute('data-hierarchy-default', btn.getAttribute('data-hierarchy') || 'primary');
     var inBag = !!id && (ids || readBag()).indexOf(id) !== -1;
-    text.nodeValue = inBag ? 'Remove' : def;
+    text.nodeValue = inBag ? 'In bag' : btn.getAttribute('data-label-default');
+    btn.setAttribute('data-hierarchy', inBag ? 'secondary' : btn.getAttribute('data-hierarchy-default'));
     btn.setAttribute('data-in-bag', inBag ? 'true' : 'false');
+    if (inBag) btn.setAttribute('aria-label', 'In bag, view bag'); else btn.removeAttribute('aria-label');
+    var tick = btn.querySelector('[data-in-bag-tick]');
+    var tpl = document.getElementById('zz-icon-tick');
+    if (inBag && !tick && tpl && tpl.content.firstElementChild) {
+      tick = tpl.content.firstElementChild.cloneNode(true);
+      tick.setAttribute('data-in-bag-tick', '');
+      btn.insertBefore(tick, label);
+    } else if (!inBag && tick) tick.parentNode.removeChild(tick);
   }
   function syncAddButtons(ids) {
     Array.prototype.forEach.call(document.querySelectorAll('[data-listing-id] .zz-product-card__add'), function (b) {
@@ -723,11 +783,13 @@
     var cur = typeof current === 'function' ? current() : null;
     if (add && cur) syncAddButton(add, cur.listing, ids);
   }
-  // the Add buttons toggle: Add to bag, or Remove when the copy is already in the bag (decision 0054)
-  function addOrRemove(id, btn) {
+  // the Add buttons: Add to bag, or open the bag when the copy is already in it (decision 0058). The header Bag link
+  // does the opening, so the soft navigation keeps the player; no toast (decision 0050)
+  function addOrOpen(id) {
     if (!id) return;
-    if (readBag().indexOf(id) === -1) addToBag(id);
-    else removeWithUndo(id, btn);
+    if (readBag().indexOf(id) === -1) { addToBag(id); return; }
+    var link = document.querySelector('a[data-bag-count]');
+    if (link) link.click();
   }
   // take a copy out of the bag with a toast + Undo (decision 0049); Undo puts it back where it was
   function removeWithUndo(id, returnFocus, onUndo) {
@@ -747,11 +809,11 @@
     var t = e.target;
     if (!t || !t.closest) return;
     var card = t.closest('.zz-product-card__add');
-    if (card) { var holder = card.closest('[data-listing-id]'); if (holder) addOrRemove(holder.getAttribute('data-listing-id'), card); return; }
+    if (card) { var holder = card.closest('[data-listing-id]'); if (holder) addOrOpen(holder.getAttribute('data-listing-id')); return; }
     var cta = t.closest('[data-add-to-bag]');
-    if (cta) { addOrRemove(cta.getAttribute('data-add-to-bag'), cta); return; }
+    if (cta) { addOrOpen(cta.getAttribute('data-add-to-bag')); return; }
     var padd = t.closest('.site-player__add');
-    if (padd) { var cur = typeof current === 'function' ? current() : null; if (cur) addOrRemove(cur.listing, padd); return; }
+    if (padd) { var cur = typeof current === 'function' ? current() : null; if (cur) addOrOpen(cur.listing); return; }
     var remove = t.closest('.zz-bag-item__remove');
     if (remove) {
       var li = remove.closest('[data-bag-line]');

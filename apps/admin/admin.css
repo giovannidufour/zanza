@@ -93,3 +93,26 @@ h1, h2, p { margin: 0; }
 html:has(.admin-page--attribute) { background: var(--surface-accent); }
 .admin-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }   /* Figma `record list`, gap 8 */
 .admin-links a { color: inherit; }
+
+/* Figma BACKEND → Shipping (2201:4782, decision 0057): frame on surface/base (Gio 2026-11-12, like Create, 0032);
+   fields keep surface-accent over it. Sections of heading · help · table · Add, gap 16; column widths from the frame. */
+html:has(.admin-shipping) { background: var(--surface-base); }
+.admin-shipping { display: flex; flex-direction: column; gap: 24px; }
+.admin-shipping h1, .admin-shipping h2, .admin-shipping p { margin: 0; }
+.admin-shipping .admin-toolbar { align-items: center; }
+.admin-shipping__intro { flex: 1 1 auto; }
+.admin-shipping__section { display: flex; flex-direction: column; gap: 16px; }
+.admin-shipping__problems { margin: 0; padding-left: 20px; }
+.admin-shipping__table { table-layout: fixed; }
+.admin-shipping__table .zz-input { width: 100%; min-width: 0; }
+.admin-shipping__w-name { width: 240px; }
+.admin-shipping__w-select { width: 180px; }
+.admin-shipping__w-weight { width: 200px; }
+.admin-shipping__w-short { width: 120px; }
+.admin-shipping__w-count { width: 72px; }
+.admin-shipping__actions { width: 88px; white-space: nowrap; text-align: right; }
+.admin-shipping__check { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.admin-shipping__check > :first-child { width: 240px; }
+.admin-shipping__check > :last-child { width: 400px; max-width: 100%; }
+.admin-shipping p.admin-shipping__result { margin-top: 16px; white-space: pre-line; }
+#shipping-zones td { vertical-align: top; }   /* Figma zones rows: top left (Gio 2026-11-12), the countries cell grows with its names */

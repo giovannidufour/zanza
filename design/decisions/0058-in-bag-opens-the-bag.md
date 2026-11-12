@@ -1,0 +1,8 @@
+# 0058 — A copy in the bag: its Add buttons become "In bag" (secondary + tick) and open the bag
+
+`2026-11-12` · accepted (Gio) · supersedes [0054](0054-in-bag-add-becomes-remove.md) · Figma: page `buttons` → section `add to bag · in bag` (2206:2972); no new Button variant
+
+**Context.** With 0054 the Add buttons of a copy in the bag read "Remove": on PLP and PDP one stray tap took the record out of the bag. Going back to a disabled "Added to bag" was not an option: the struck-through disabled label already means "unavailable" (sold), and a disabled button leaves the tab order and leads nowhere.
+**Decision.** When a listing is in the bag, every Add button for it (product card desktop and mobile, PDP, player) reads "In bag", with the Button's `leading icon` on (`icon/icon-tick-large-thin`) and hierarchy `secondary` (the PDP CTA drops from primary; card and player are already secondary, so there label + tick carry the change). It stays an active button: pressing it opens the bag (the header Bag link, so the soft navigation keeps the player), with no toast (0050). Accessible name "In bag, view bag". A copy leaves the bag only from /bag/ (Remove + Undo, 0049). Adding still shows "Added to bag." + View bag (0050).
+**Rule.** An "already done" state on a Button keeps it active and points to where the result lives: label + leading tick, a lower hierarchy if it was primary. Never `disabled` (struck through = unavailable) and never a destructive toggle on the same spot as the action.
+**Where.** `apps/storefront/scripts/site.js` (6. Bag: `syncAddButton`, `addOrOpen`); `apps/storefront/build.js` (`#zz-icon-tick` template); `packages/ui/components.js` (`TickLargeThinIcon`).

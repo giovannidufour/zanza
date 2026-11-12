@@ -94,6 +94,11 @@ available ──► sold / traded diretto (venduto fuori dal sito: fiera, Discog
 4. Webhook `checkout.session.completed` → `orders` + `order_items`, listing `sold`, email Resend.
 5. Webhook `checkout.session.expired` → listing di nuovo `available`.
 
+### Spedizione (0057, 2026-11-12)
+- Config in `shipping_settings` (una riga, JSON: formati con peso, mailer con max dischi per formato + peso, zone con paesi ISO, tariffe zona × mailer × peso massimo → servizio + prezzo). Si modifica dalla pagina admin **Shipping** (`admin_save_shipping`, che segna anche la ricostruzione del negozio).
+- Calcolo unico in `packages/shipping/shipping.js`: il Bag mostra la stima per il paese scelto; create-checkout la ricalcola sul server e la passa a Stripe come una sola tariffa, con l'indirizzo limitato a quel paese.
+- Solo paese, niente CAP. Finché non ci sono tariffe il Bag dice "Calculated at checkout".
+
 ### Stato dal vivo sul sito statico
 Le pagine sono statiche, ma "sold/reserved" non può aspettare una ricostruzione: `site.js` legge gli stati da Supabase (una query per pagina, sola lettura) e aggiorna CTA e badge.
 
