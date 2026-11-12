@@ -1305,6 +1305,3 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-trade-step__number { flex: none; width: 24px; }
 .zz-trade-step__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .zz-trade-step__title, .zz-trade-step__body { margin: 0; }
-.zz-gig-row { display: flex; gap: var(--medium-small); padding: var(--small) 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
-.zz-gig-row__date { flex: none; width: 96px; }
-.zz-gig-row__place { flex: 1 1 0; min-width: 0; }

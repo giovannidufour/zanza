@@ -5,7 +5,7 @@
   "basePath": "/zanza",
   "mediaBaseUrl": "https://pub-a98e506f6d2e48c49301fca9123a3b20.r2.dev",
   "owner": {
-    "note": "Who runs the shop (Figma page Trade / About). PLACEHOLDERS until Gio fills them: name, bio, links, Discogs numbers, gigs. No legal name or address here (that is the Impressum).",
+    "note": "Who runs the shop (Figma page Trade / About). PLACEHOLDERS until Gio fills them: name, bio, links, Discogs numbers. No legal name or address here (that is the Impressum).",
     "name": "Gio",
     "djName": "DJ name",
     "bio": "Placeholder: who you are in three lines. DJ and collector, what you play, where. These records come from my own crates.",
@@ -27,17 +27,7 @@
       "username": "username",
       "href": "https://www.discogs.com/",
       "stats": "Member since 2015 · 100% positive · 412 ratings"
-    },
-    "gigs": [
-      {
-        "date": "Sat 6 Dec",
-        "place": "Venue name, Berlin"
-      },
-      {
-        "date": "Fri 19 Dec",
-        "place": "Venue name, Berlin"
-      }
-    ]
+    }
   },
   "trade": {
     "note": "Trade offers (Figma page Trade). offerEndpoint = URL of the Supabase function trade-offer; empty = the form shows that offers are not switched on yet.",

@@ -820,10 +820,3 @@ export interface TradeStepProps extends HTMLAttributes<HTMLLIElement> {
   children?: ReactNode;
 }
 export declare function TradeStep(props: TradeStepProps): JSX.Element;
-
-/** Figma `gig row` (page Trade): one upcoming gig. An <li>: put it in a <ul>. */
-export interface GigRowProps extends HTMLAttributes<HTMLLIElement> {
-  date: ReactNode;
-  place: ReactNode;
-}
-export declare function GigRow(props: GigRowProps): JSX.Element;

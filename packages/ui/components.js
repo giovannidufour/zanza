@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"GigRow"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"}]} */
 /* packages/ui/components.js — the ONE implementation of the Zanza components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
@@ -832,8 +832,7 @@
      TradeNote: `trade note` — title label/small, body body/medium, signature body/small text/moderate; gap 8 (small).
      DiscogsCard: `discogs card` — 1px border-divider/strong, padding 8 (small), gap 4: label body/small text/moderate,
        handle body/large, stats body/medium, link body/medium underlined (boolean `link`).
-     TradeStep: `trade step` — number label/large (24 wide) + title label/medium + body body/medium; gap 16 (medium-small), text gap 4.
-     GigRow: `gig row` — date label/small (96 wide) + place body/medium; gap 16; padding 8 0; bottom border divider. */
+     TradeStep: `trade step` — number label/large (24 wide) + title label/medium + body body/medium; gap 16 (medium-small), text gap 4. */
   function TradeNote(props) {
     return h('div', Object.assign({}, omit(props, ['title', 'signature', 'className', 'children', 'headingLevel']), { className: cx('zz-trade-note', props.className) }),
       h('h' + (props.headingLevel || 2), { className: 'zz-trade-note__title label-small' }, props.title || 'Why it’s not for sale'),
@@ -854,11 +853,6 @@
       h('div', { className: 'zz-trade-step__text' },
         h('h3', { className: 'zz-trade-step__title label-medium' }, props.title),
         h('p', { className: 'zz-trade-step__body body-medium' }, props.children)));
-  }
-  function GigRow(props) {
-    return h('li', Object.assign({}, omit(props, ['date', 'place', 'className']), { className: cx('zz-gig-row', props.className) }),
-      h('span', { className: 'zz-gig-row__date label-small' }, props.date),
-      h('span', { className: 'zz-gig-row__place body-medium' }, props.place));
   }
 
   /* ── ActionPanel ────────────────────────────────────────────────────────
@@ -1286,5 +1280,5 @@
            Radio: Radio, RadioGroup: RadioGroup, RadioEmptyIcon: RadioEmptyIcon, RadioDotIcon: RadioDotIcon,
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
-           TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep, GigRow: GigRow };
+           TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep };
 });
