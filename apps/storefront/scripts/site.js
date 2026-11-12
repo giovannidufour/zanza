@@ -910,8 +910,8 @@
     var reserved = !sold && st === 'reserved';
     var inBag = !sold && !reserved && !!id && (ids || readBag()).indexOf(id) !== -1;
     if ('disabled' in btn) btn.disabled = sold;
-    text.nodeValue = sold ? 'Sold out' : reserved ? 'Notify me' : inBag ? 'In bag' : btn.getAttribute('data-label-default');
-    setPrefix(label, text, reserved ? '(Reserved)' : null);
+    text.nodeValue = sold ? 'Sold out' : reserved ? '' : inBag ? 'In bag' : btn.getAttribute('data-label-default');
+    setReservedLabel(label, text, reserved);
     btn.setAttribute('data-hierarchy', sold || reserved || inBag ? 'secondary' : btn.getAttribute('data-hierarchy-default'));
     btn.setAttribute('data-in-bag', inBag ? 'true' : 'false');
     btn.setAttribute('data-reserved', reserved ? 'true' : 'false');
@@ -921,12 +921,19 @@
     setLeadingIcon(btn, label, inBag ? 'zz-icon-tick' : null);
     setTrailingIcon(btn, reserved ? 'zz-icon-envelope' : null);
   }
-  // the Button's prefix (Figma `prefix`, decision 0065): a span before the label text, same text style
-  function setPrefix(label, text, value) {
-    var cur = label.querySelector('.zz-button__prefix');
-    if (!value) { if (cur) label.removeChild(cur); return; }
-    if (!cur) { cur = document.createElement('span'); cur.className = 'zz-button__prefix'; label.insertBefore(cur, text); }
-    cur.textContent = value;
+  // "(Reserved) Notify me" (decision 0065): Button prefix "(Reserved)" + label "Notify me". On mobile only "Reserved"
+  // shows (Gio 2026-11-12): the brackets and "Notify me" are spans that base.css hides at the mobile breakpoint, so the
+  // label follows the viewport without JS. The label's own text node is left empty meanwhile.
+  function setReservedLabel(label, text, on) {
+    var cur = label.querySelector('[data-reserved-label]');
+    if (!on) { Array.prototype.forEach.call(label.querySelectorAll('[data-reserved-label]'), function (n) { label.removeChild(n); }); return; }
+    if (cur) return;
+    var prefix = document.createElement('span');
+    prefix.className = 'zz-button__prefix'; prefix.setAttribute('data-reserved-label', '');
+    prefix.innerHTML = '<span class="site-reserved__bracket">(</span>Reserved<span class="site-reserved__bracket">)</span>';
+    var action = document.createElement('span');
+    action.className = 'site-reserved__action'; action.setAttribute('data-reserved-label', ''); action.textContent = 'Notify me';
+    label.insertBefore(prefix, text); label.insertBefore(action, text);
   }
   // the Button's trailing icon slot (only ever set by these states; the Add buttons have none by default)
   function setTrailingIcon(btn, templateId) {
