@@ -27,7 +27,7 @@ Il listing `trade` passa a `reserved` quando una proposal è `accepted`, a `trad
 - **Copy** — release_id, condition_media (lato A) + condition_media_b (lato B, facoltativo: "VG+ / VG"), condition_sleeve (Goldmine: M/NM/VG+/VG/G+/G/F/P), notes, photos[], price (solo sale), section (`sale`|`trade`), status (`available`|`reserved`|`sold`|`traded`)
 - **Sample** — release_id, track_position, audio_url, duration, source
 - **Proposal** — copy_id (il disco del negozio), user_id, offered_items[] {discogs_release_id | manual{artist,title}, condition_media, condition_sleeve, photos[]}, cash_adjustment, message, status, thread[] (messaggi/controproposte)
-- **Wishlist**, **Cart** (con **hold**: una copy nel carrello è riservata N minuti), **Order**, **User**
+- **Wishlist**, **Cart** (il bag non riserva niente: l'hold parte solo al checkout, 30 min, e per gli altri la copia è **Reserved**, non sold; Gio 2026-11-12), **Back in stock** ("Notify me" su una copia Reserved: una email se torna disponibile), **Order**, **User**
 
 Punto chiave: l'inventario è **per copia**, non per SKU+quantità. Due persone non possono comprare lo stesso disco → serve una riserva al checkout (hold) e un chiaro stato "sold" in PLP/PDP.
 

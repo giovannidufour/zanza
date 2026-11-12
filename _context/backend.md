@@ -88,11 +88,19 @@ available ──► sold / traded diretto (venduto fuori dal sito: fiera, Discog
 - **Pulizia R2**: `media_trash` raccoglie anche le foto tolte nel form e i sample rimossi o sostituiti. La Edge Function `purge-media` (chiamata dall'admin all'apertura di Listings) cancella da R2 solo le chiavi in cestino da più di 7 giorni e non più usate da nessun listing o sample. Gli upload abbandonati prima del salvataggio non sono nel DB: restano su R2.
 
 ### Checkout con hold
+Regola (Gio 2026-11-12): **il bag non blocca mai niente**. Un disco è bloccato solo mentre qualcuno è dentro Stripe Checkout (max 30 min) e per gli altri si vede **Reserved**, non sold: resta in PLP, il bottone apre la spiegazione e "Notify me".
 1. Il sito chiama `create-checkout` con gli id dei listing.
 2. Update atomico: `status = 'reserved', reserved_until = now() + 30 min` **solo se** `available` (o se l'hold è scaduto). Se una copia non passa → "appena venduto", niente sessione.
 3. Crea la sessione Stripe Checkout (`expires_at` = 30 min, il minimo di Stripe; righe con il prezzo letto dal DB, mai quello inviato dal client; tariffe di spedizione per zona).
 4. Webhook `checkout.session.completed` → `orders` + `order_items`, listing `sold`, email Resend.
 5. Webhook `checkout.session.expired` → listing di nuovo `available`.
+6. Ritorno sulla `cancel_url` di Stripe (l'utente torna indietro senza pagare) → `create-checkout` (o una funzione gemella) chiama `checkout.sessions.expire` sulla sessione: il disco torna libero subito, non dopo 30 min.
+
+### Notify me (0016, 2026-11-12, migrazione da applicare)
+- Su un disco Reserved il visitatore lascia l'email (`request_back_in_stock`, anon; solo mentre è reserved, max 100 per copia). Tabella `back_in_stock`, leggibile solo dall'admin.
+- Ogni minuto `pg_cron` chiama l'Edge Function `notify-back-in-stock` **solo** se qualche richiesta è dovuta (la copia conta come available, anche per hold scaduto). La funzione manda **una** email (Resend) e cancella l'indirizzo.
+- Venduto, scambiato, bozza o archiviato → le richieste di quella copia vengono cancellate (trigger).
+- Segreti: Vault `notify_back_in_stock_url`, `notify_back_in_stock_secret`; funzione: `NOTIFY_SECRET`, `RESEND_API_KEY`, `MAIL_FROM`, `SHOP_URL`, `STORE_NAME`. Deploy con `--no-verify-jwt`.
 
 ### Spedizione (0057, 2026-11-12)
 - Config in `shipping_settings` (una riga, JSON: formati con peso, mailer con max dischi per formato + peso, zone con paesi ISO, tariffe zona × mailer × peso massimo → servizio + prezzo). Si modifica dalla pagina admin **Shipping** (`admin_save_shipping`, che segna anche la ricostruzione del negozio).
@@ -101,6 +109,8 @@ available ──► sold / traded diretto (venduto fuori dal sito: fiera, Discog
 
 ### Stato dal vivo sul sito statico
 Le pagine sono statiche, ma "sold/reserved" non può aspettare una ricostruzione: `site.js` legge gli stati da Supabase (una query per pagina, sola lettura) e aggiorna CTA e badge.
+- **Fatto 2026-11-12:** la build (fonte Supabase) mette nella pagina URL e publishable key (`<meta name="zz-supabase-url|key">`); `site.js` legge `listing_availability` per gli id della pagina, del bag e del player, al caricamento, a ogni navigazione e quando la scheda torna visibile (al massimo ogni 30 s). Reserved → bottoni "Reserved", nota sotto la CTA della PDP, riga del bag "Reserved". Un id che non torna = non più pubblico → indisponibile.
+- La PLP in build mostra `available` **e** `reserved`.
 
 ### Pubblicazione (0005, scelta di Gio 2026-11-10)
 - Negozio su **Cloudflare Pages** collegato al repo GitHub: build `npm run build:pages` (`--target=pages`: sito alla radice, dati solo da Supabase), output `apps/storefront/dist`, variabili `SUPABASE_URL` + `SUPABASE_PUBLISHABLE_KEY`.
@@ -117,4 +127,4 @@ Le pagine sono statiche, ma "sold/reserved" non può aspettare una ricostruzione
 4. Gio: design in Figma del flusso "crea listing" nell'admin.
 5. Checkout: dopo il chiarimento fiscale (Q5b).
 
-_Last updated: 2026-11-10 (Fetch Discogs: Edge Function `discogs-lookup`)_
+_Last updated: 2026-11-12 (Reserved dal vivo + Notify me)_

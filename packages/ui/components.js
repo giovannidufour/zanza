@@ -864,10 +864,11 @@
     function onCancel(e) { e.preventDefault(); if (props.onCancel) props.onCancel(); }   // Esc
     return h('dialog', Object.assign({ ref: ref, className: cx('zz-dialog', props.className), 'aria-labelledby': titleId,
       'aria-describedby': bodyId, onCancel: onCancel }, omit(props, ['open', 'title', 'children', 'className', 'onCancel',
-      'onConfirm', 'cancelLabel', 'confirmLabel', 'busy', 'choices'])),
+      'onConfirm', 'cancelLabel', 'confirmLabel', 'busy', 'choices', 'field'])),
       h('div', { className: 'zz-dialog__content' },
         h('h2', { id: titleId, className: 'zz-dialog__title label-large' }, props.title),
         h('div', { id: bodyId, className: 'zz-dialog__body body-medium' }, props.children),
+        props.field ? h('div', { className: 'zz-dialog__field' }, props.field) : null,
         props.choices ? h('div', { className: 'zz-dialog__choices' }, props.choices) : null),
       h('div', { className: 'zz-dialog__actions' },
         h(Button, { hierarchy: 'secondary', type: 'button', 'data-dialog-cancel': '', onClick: props.onCancel }, props.cancelLabel || 'Cancel'),
@@ -1077,6 +1078,9 @@
   function TickLargeThinIcon() {      // Figma: icon/icon-tick-large-thin leading icon of "In bag" (decision 0058)
     return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M20.6533 4.63961C20.8522 4.44831 21.1689 4.45445 21.3604 4.65328C21.5516 4.85218 21.5454 5.16886 21.3467 5.36031L7.84668 18.3603L7.5 18.6943L7.15332 18.3603L2.65332 14.0263C2.45468 13.8349 2.44849 13.5192 2.63965 13.3203C2.8312 13.1214 3.1478 13.1151 3.34668 13.3066L7.49902 17.3056L20.6533 4.63961Z', fill: 'currentColor' }));
   }
+  function ClockCounterClockwiseIcon() {   // Figma: icon/icon-clock-counter-clockwise, leading icon of "Reserved" (proposal, design/open.md)
+    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M10.7109 2.18164C13.1114 1.89386 15.5345 2.49568 17.5215 3.87305C19.5085 5.25048 20.9223 7.30829 21.4951 9.65723C22.0679 12.0062 21.7598 14.4845 20.6299 16.6221C19.4999 18.7593 17.6257 20.4083 15.3623 21.2578C13.0987 22.1073 10.6019 22.0978 8.34473 21.2314C6.76776 20.6261 5.38412 19.6316 4.31348 18.3555L4.67383 21.2109C4.70808 21.4846 4.51387 21.7349 4.24023 21.7695C3.96627 21.8039 3.71609 21.6089 3.68164 21.335L3.05957 16.3877L2.96582 15.6416L3.68945 15.8438L8.54785 17.1973C8.81352 17.2714 8.96924 17.5477 8.89551 17.8135C8.82127 18.0792 8.54511 18.2341 8.2793 18.1602L4.6416 17.1455C5.65013 18.5661 7.05982 19.667 8.70312 20.2979C10.7319 21.0765 12.9761 21.0857 15.0107 20.3223C17.0453 19.5586 18.7304 18.0756 19.7461 16.1543C20.7617 14.233 21.0382 12.0059 20.5234 9.89453C20.0086 7.78309 18.7382 5.9325 16.9521 4.69434C15.1661 3.45629 12.9878 2.91615 10.8301 3.1748C8.67233 3.43358 6.68396 4.47435 5.24121 6.09961C3.79854 7.72497 3.00105 9.82279 3 11.9961C2.99975 12.2719 2.77579 12.4959 2.5 12.4961C2.22386 12.496 1.99987 12.2713 2 11.9951C2.00123 9.57738 2.88821 7.24372 4.49316 5.43555C6.09823 3.62742 8.3104 2.46953 10.7109 2.18164ZM11.8887 6.375C12.1648 6.37501 12.3887 6.59887 12.3887 6.875V11.4961H17.0098C17.2858 11.4962 17.5098 11.72 17.5098 11.9961C17.5096 12.272 17.2857 12.496 17.0098 12.4961H11.3887V6.875C11.3887 6.59886 11.6125 6.375 11.8887 6.375Z', fill: 'currentColor' }));
+  }
   function PlusSmallThinIcon() {      // Figma: icon/icon-plus-small-thin
     return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M12 6.5C12.2761 6.5 12.5 6.72386 12.5 7V11.5H17C17.2761 11.5 17.5 11.7239 17.5 12C17.5 12.2761 17.2761 12.5 17 12.5H12.5V17C12.5 17.2761 12.2761 17.5 12 17.5C11.7239 17.5 11.5 17.2761 11.5 17V12.5H7C6.72386 12.5 6.5 12.2761 6.5 12C6.5 11.7239 6.72386 11.5 7 11.5H11.5V7C11.5 6.72386 11.7239 6.5 12 6.5Z', fill: 'currentColor' }));
   }
@@ -1199,7 +1203,7 @@
            PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, BagItem: BagItem, BagSummary: BagSummary, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
            Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, DragHandleIcon: DragHandleIcon,
            Checkbox: Checkbox, Divider: Divider, ActionPanel: ActionPanel, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog, Toast: Toast, ToastRegion: ToastRegion,
-           EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon, TickLargeThinIcon: TickLargeThinIcon,
+           EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon, TickLargeThinIcon: TickLargeThinIcon, ClockCounterClockwiseIcon: ClockCounterClockwiseIcon,
            Radio: Radio, RadioGroup: RadioGroup, RadioEmptyIcon: RadioEmptyIcon, RadioDotIcon: RadioDotIcon,
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon };

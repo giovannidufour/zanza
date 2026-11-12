@@ -82,4 +82,5 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0056](0056-player-sample-number-is-queue-position.md) | The player's sample number is the sample's position in the queue | accepted |
 | [0057](0057-shipping-estimate.md) | Shipping: rate tables, max records per package, an estimate in the bag by country | accepted |
 | [0058](0058-in-bag-opens-the-bag.md) | A copy in the bag: its Add buttons become "In bag" (secondary + tick) and open the bag | accepted |
-| [0059](0059-mobile-menu.md) | Mobile menu: a full-screen layer from the hamburger, Account is its entry point | accepted |
+| [0059](0059-reserved-opens-notify-me.md) | A reserved copy reads "Reserved" (secondary + clock), stays active, opens the Reserved dialog with Notify me | accepted |
+| [0060](0060-mobile-menu.md) | Mobile menu: a full-screen layer from the hamburger, Account is its entry point | accepted |

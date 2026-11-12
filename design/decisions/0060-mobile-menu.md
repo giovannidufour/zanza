@@ -1,4 +1,4 @@
-# 0059 — Mobile menu: a full-screen layer from the hamburger, Account is its entry point
+# 0060 — Mobile menu: a full-screen layer from the hamburger, Account is its entry point
 
 `2026-11-12` · accepted (Gio) · Figma: page `menu` (2200:1676) → `menu item`, `menu layer`
 

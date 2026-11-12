@@ -32,6 +32,8 @@ body[data-player-open] .pdp-content__gallery { --zz-gallery-max-height: calc(100
 
 /* Figma: button layout=fill, size large (desktop and mobile) */
 .pdp-content__cta { width: 100%; }
+/* Reserved note under the CTA (proposal, Figma PDP page → `reserved + notify me (proposal)`, gap 8 = small) */
+.pdp-content__note { margin: var(--small) 0 0; color: var(--text-strong); }
 
 /* mobile: 4 columns, three full rows (image / info / actions), row gap `small`.
    Breakpoint: `--mobile` from packages/ui/tokens.json → breakpoint (expanded at build time) */

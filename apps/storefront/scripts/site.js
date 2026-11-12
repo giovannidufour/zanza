@@ -27,6 +27,13 @@
       - /bag/ (pages/bag.js) shows the lines of the bag, the subtotal of the available ones, or the empty state;
         with shipping set up: "Ship to" country (remembered), shipping estimate and total (decision 0057);
         Remove takes a line out and shows a toast with Undo (packages/ui/toast.js, decision 0049). Checkout is not wired yet (create-checkout + Stripe, _context/backend.md)
+   7. Live status (_context/backend.md -> Stato dal vivo)
+      - the pages are static: each listing carries its status at build time (data-listing-status); with Supabase meta
+        tags on the page, one read of listing_availability per page (and when the tab comes back) brings it up to date
+      - reserved (someone is in Stripe Checkout, max 30 min, or held by hand): the Add buttons read "Reserved" (secondary
+        + clock) and stay active: pressing one opens the "Reserved" dialog, which explains the hold and offers "Notify me"
+        (email, migration 0016). The bag line shows the notice "Reserved".
+        Sold after the build: the bag line shows "Just sold"; the Add buttons are not designed for it yet (design/open.md)
 
    Looks live in base.css and packages/ui/components.css; this file only sets attributes and text. */
 (function () {
@@ -759,6 +766,7 @@
 
   function renderBag() {
     var ids = readBag();
+    applyStatus();
     var known = renderBagPage(ids);
     if (known.length !== ids.length) {
       try { window.localStorage.setItem(BAG_KEY, JSON.stringify(known)); } catch (e) { /* ignore */ }
@@ -775,24 +783,36 @@
   // on, icon-tick-large-thin), label "In bag", accessible name "In bag, view bag". Pressing it opens the bag: taking a
   // copy out happens only in the bag. Never disabled: struck through means unavailable (sold). The defaults are kept
   // in data-*-default so they come back when the copy leaves the bag.
+  // Reserved (decision 0059): a copy held by a checkout (or by hand) reads "Reserved", hierarchy secondary,
+  // leading icon = clock (icon-clock-counter-clockwise), accessible name "Reserved, find out more" (the dialog says which hold). It wins
+  // over "In bag". Never disabled (struck through = sold, decision 0058): pressing it explains the hold in a toast.
   function syncAddButton(btn, id, ids) {
     var label = btn.querySelector('.zz-button__label');
     var text = label && label.firstChild;
     if (!text || text.nodeType !== 3) return;
     if (!btn.hasAttribute('data-label-default')) btn.setAttribute('data-label-default', text.nodeValue);
     if (!btn.hasAttribute('data-hierarchy-default')) btn.setAttribute('data-hierarchy-default', btn.getAttribute('data-hierarchy') || 'primary');
-    var inBag = !!id && (ids || readBag()).indexOf(id) !== -1;
-    text.nodeValue = inBag ? 'In bag' : btn.getAttribute('data-label-default');
-    btn.setAttribute('data-hierarchy', inBag ? 'secondary' : btn.getAttribute('data-hierarchy-default'));
+    var reserved = !!id && statusFor(id) === 'reserved';
+    var inBag = !reserved && !!id && (ids || readBag()).indexOf(id) !== -1;
+    text.nodeValue = reserved ? 'Reserved' : inBag ? 'In bag' : btn.getAttribute('data-label-default');
+    btn.setAttribute('data-hierarchy', reserved || inBag ? 'secondary' : btn.getAttribute('data-hierarchy-default'));
     btn.setAttribute('data-in-bag', inBag ? 'true' : 'false');
-    if (inBag) btn.setAttribute('aria-label', 'In bag, view bag'); else btn.removeAttribute('aria-label');
-    var tick = btn.querySelector('[data-in-bag-tick]');
-    var tpl = document.getElementById('zz-icon-tick');
-    if (inBag && !tick && tpl && tpl.content.firstElementChild) {
-      tick = tpl.content.firstElementChild.cloneNode(true);
-      tick.setAttribute('data-in-bag-tick', '');
-      btn.insertBefore(tick, label);
-    } else if (!inBag && tick) tick.parentNode.removeChild(tick);
+    btn.setAttribute('data-reserved', reserved ? 'true' : 'false');
+    if (reserved) btn.setAttribute('aria-label', 'Reserved, find out more');
+    else if (inBag) btn.setAttribute('aria-label', 'In bag, view bag');
+    else btn.removeAttribute('aria-label');
+    setLeadingIcon(btn, label, reserved ? 'zz-icon-clock' : inBag ? 'zz-icon-tick' : null);
+  }
+  // the Button's leading icon slot: one icon at a time, cloned from a <template> on the page (build.js)
+  function setLeadingIcon(btn, label, templateId) {
+    var cur = btn.querySelector('[data-leading-icon]');
+    if (cur && cur.getAttribute('data-leading-icon') === templateId) return;
+    if (cur) cur.parentNode.removeChild(cur);
+    var tpl = templateId && document.getElementById(templateId);
+    if (!tpl || !tpl.content.firstElementChild) return;
+    var icon = tpl.content.firstElementChild.cloneNode(true);
+    icon.setAttribute('data-leading-icon', templateId);
+    btn.insertBefore(icon, label);
   }
   function syncAddButtons(ids) {
     Array.prototype.forEach.call(document.querySelectorAll('[data-listing-id] .zz-product-card__add'), function (b) {
@@ -809,6 +829,7 @@
   // does the opening, so the soft navigation keeps the player; no toast (decision 0050)
   function addOrOpen(id) {
     if (!id) return;
+    if (statusFor(id) === 'reserved') { openNotify(id); return; }
     if (readBag().indexOf(id) === -1) { addToBag(id); return; }
     var link = document.querySelector('a[data-bag-count]');
     if (link) link.click();
@@ -826,6 +847,187 @@
       else if (returnFocus && document.contains(returnFocus)) returnFocus.focus();
     } });
   }
+
+  /* ---------------------------------------------------------------- 7. live status */
+
+  var seeded = {};      // listing id -> status written in this page at build time
+  var live = {};        // listing id -> status read from Supabase (fresher: wins over the page)
+  var holdKind = {};    // listing id -> 'checkout' | 'manual' (reserved copies only)
+  var lastLiveRead = 0;
+  var LIVE_MIN_GAP = 30000;   // ms between two reads (page load, soft navigation, tab back in view)
+  function statusFor(id) { return live[id] || seeded[id] || 'available'; }
+  function listingIdOf(el) {
+    return el.getAttribute('data-listing-id') || el.getAttribute('data-add-to-bag') || el.getAttribute('data-bag-line');
+  }
+  function seedStatus() {
+    seeded = {};
+    Array.prototype.forEach.call(document.querySelectorAll('[data-listing-status]'), function (el) {
+      var id = listingIdOf(el);
+      if (id) seeded[id] = el.getAttribute('data-listing-status');
+    });
+  }
+  // Reserved -> the "Reserved" dialog (proposal, design/open.md): explains the hold and offers "Notify me" (one email
+  // when the copy is available again, migration 0016). Without Supabase on the page: the explanation in a toast.
+  // two kinds of hold (listing_availability.checkout_hold, migration 0016): a checkout (ends within 30 min) or a manual
+  // one (Gio holds it for someone, no end). Without the column (before 0016) a hold reads as a checkout.
+  var RESERVED_TEXT = {
+    checkout: 'Someone is checking out this record. If they don\u2019t buy it, it\u2019s back within 30 minutes.',
+    manual: 'This record is on hold for someone. If it falls through, it\u2019s back in the shop.'
+  };
+  function reservedText(id) { return RESERVED_TEXT[holdKind[id] === 'manual' ? 'manual' : 'checkout']; }
+  var notifyFor = null, notifyReturn = null, notifyBusy = false;
+  function supabaseConfig() {
+    var base = document.querySelector('meta[name="zz-supabase-url"]');
+    var key = document.querySelector('meta[name="zz-supabase-key"]');
+    return base && key ? { url: base.content, key: key.content } : null;
+  }
+  function notifyParts() {
+    var d = document.querySelector('[data-notify-dialog]');
+    if (!d) return null;
+    var input = d.querySelector('[data-notify-email]');
+    var field = input && input.closest('.zz-input');
+    return { dialog: d, input: input, field: field, support: field && field.querySelector('[id$="-support"]'),
+      confirm: d.querySelector('.zz-dialog__actions .zz-button:not([data-dialog-cancel])') };
+  }
+  var NOTIFY_SUPPORT = 'One email, only for this record. Then we delete your address.';
+  function setNotifyError(p, text) {
+    if (p.field) { if (text) p.field.setAttribute('data-invalid', 'true'); else p.field.removeAttribute('data-invalid'); }
+    if (text) p.input.setAttribute('aria-invalid', 'true'); else p.input.removeAttribute('aria-invalid');
+    if (p.support) p.support.textContent = text || NOTIFY_SUPPORT;
+  }
+  function openNotify(id) {
+    var p = notifyParts();
+    if (!p || !p.dialog.showModal || !supabaseConfig()) {
+      if (window.ZanzaToast) window.ZanzaToast.show({ message: reservedText(id) }); else announce(reservedText(id));
+      return;
+    }
+    notifyFor = id;
+    var body = p.dialog.querySelector('.zz-dialog__body');
+    if (body) body.textContent = reservedText(id) + ' Leave your email and we\u2019ll tell you.';
+    notifyReturn = document.activeElement;
+    setNotifyError(p, null);
+    p.dialog.showModal();
+    p.input.focus();
+  }
+  function closeNotify() {
+    var p = notifyParts();
+    if (p && p.dialog.open) p.dialog.close();
+    notifyFor = null; notifyBusy = false;
+    if (p && p.confirm) p.confirm.removeAttribute('aria-busy');
+    if (notifyReturn && document.contains(notifyReturn)) notifyReturn.focus();
+  }
+  function sendNotify() {
+    var p = notifyParts(), cfg = supabaseConfig();
+    if (!p || !cfg || !notifyFor || notifyBusy) return;
+    var email = p.input.value.trim();
+    if (!email || (p.input.checkValidity && !p.input.checkValidity())) {
+      setNotifyError(p, 'Enter an email address, like name@example.com.');
+      p.input.focus();
+      return;
+    }
+    notifyBusy = true;
+    p.confirm.setAttribute('aria-busy', 'true');
+    var id = notifyFor;
+    fetch(cfg.url + '/rest/v1/rpc/request_back_in_stock', {
+      method: 'POST',
+      headers: { apikey: cfg.key, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ p_listing_id: id, p_email: email })
+    }).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }).then(function (answer) {
+      closeNotify();
+      var msg = answer === 'available' ? 'It\u2019s available again: you can add it to the bag.'
+        : answer === 'unavailable' ? 'Sorry, this record is no longer available.'
+        : 'We\u2019ll email you if it\u2019s back.';
+      if (answer !== 'ok') { live[id] = answer === 'available' ? 'available' : 'sold'; renderBag(); }
+      if (window.ZanzaToast) window.ZanzaToast.show({ message: msg }); else announce(msg);
+    }).catch(function () {
+      notifyBusy = false;
+      p.confirm.removeAttribute('aria-busy');
+      setNotifyError(p, 'That didn\u2019t work. Check the address and try again.');
+      p.input.focus();
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var d = e.target && e.target.closest && e.target.closest('[data-notify-dialog]');
+    if (!d) return;
+    if (e.target.closest('[data-dialog-cancel]')) closeNotify();
+    else if (e.target.closest('.zz-dialog__actions .zz-button')) sendNotify();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target && e.target.hasAttribute && e.target.hasAttribute('data-notify-email')) { e.preventDefault(); sendNotify(); }
+  });
+  // Esc: the native dialog closes itself; keep our state in step
+  document.addEventListener('cancel', function (e) {
+    if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-notify-dialog')) { e.preventDefault(); closeNotify(); }
+  }, true);
+  // a bag line follows the live status: available (price) or unavailable (notice, no price), as pages/bag.js renders it
+  var NOTICE = { sold: 'Just sold', traded: 'Just sold', reserved: 'Reserved' };
+  function syncBagLine(li) {
+    var id = li.getAttribute('data-bag-line');
+    var status = statusFor(id);
+    var available = status === 'available';
+    li.setAttribute('data-listing-status', status);
+    li.setAttribute('data-available', available ? 'true' : 'false');
+    var item = li.querySelector('.zz-bag-item');
+    if (!item) return;
+    item.setAttribute('data-status', available ? 'available' : 'unavailable');
+    var info = item.querySelector('.zz-bag-item__info');
+    var notice = item.querySelector('.zz-bag-item__notice');
+    if (available && notice) notice.parentNode.removeChild(notice);
+    if (!available && info) {
+      if (!notice) { notice = document.createElement('p'); notice.className = 'zz-bag-item__notice label-small'; info.insertBefore(notice, info.firstChild); }
+      notice.textContent = NOTICE[status] || 'Not available';
+    }
+    var purchase = item.querySelector('.zz-bag-item__purchase');
+    var price = item.querySelector('.zz-bag-item__price');
+    if (!available && price) price.parentNode.removeChild(price);
+    if (available && !price && purchase) {
+      price = document.createElement('p');
+      price.className = 'zz-bag-item__price body-large body-medium--mobile';   // = BagItem responsive (CARD_TYPE.head)
+      price.textContent = formatPrice(parseInt(li.getAttribute('data-price'), 10) || 0);
+      purchase.insertBefore(price, purchase.firstChild);
+    }
+  }
+  function applyStatus() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-bag-line]'), syncBagLine);
+    Array.prototype.forEach.call(document.querySelectorAll('[data-reserved-note]'), function (p) {
+      var id = p.getAttribute('data-reserved-note');
+      p.hidden = statusFor(id) !== 'reserved';
+      if (!p.hidden) p.textContent = reservedText(id);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-listing-status]'), function (el) {
+      var id = listingIdOf(el);
+      if (id && !el.hasAttribute('data-bag-line')) el.setAttribute('data-listing-status', statusFor(id));
+    });
+  }
+  function readLive(force) {
+    var base = document.querySelector('meta[name="zz-supabase-url"]');
+    var key = document.querySelector('meta[name="zz-supabase-key"]');
+    if (!base || !key || !window.fetch) return;
+    if (!force && Date.now() - lastLiveRead < LIVE_MIN_GAP) return;
+    var ids = Object.keys(seeded).concat(readBag());
+    var cur = typeof current === 'function' ? current() : null;
+    if (cur && cur.listing) ids.push(cur.listing);
+    ids = ids.filter(function (id, i) { return /^[A-Za-z0-9_-]{1,64}$/.test(id) && ids.indexOf(id) === i; });
+    if (!ids.length) return;
+    lastLiveRead = Date.now();
+    fetch(base.content + '/rest/v1/listing_availability?select=*&id=in.(' + ids.join(',') + ')', {
+      headers: { apikey: key.content, Accept: 'application/json' }
+    }).then(function (res) { return res.ok ? res.json() : []; }).then(function (rows) {
+      var seen = {};
+      rows.forEach(function (r) {
+        live[r.id] = r.status; seen[r.id] = true;
+        if (r.status === 'reserved') holdKind[r.id] = r.checkout_hold === false ? 'manual' : 'checkout';
+      });
+      // not returned = no longer public (unpublished, archived, deleted): unavailable, like a copy that left the shop
+      ids.forEach(function (id) { if (!seen[id]) live[id] = 'gone'; });
+      renderBag();
+    }).catch(function () { /* offline or blocked: keep the build-time status */ });
+  }
+  function initStatus() { seedStatus(); readLive(true); }
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') readLive(false); });
 
   document.addEventListener('click', function (e) {
     var t = e.target;
@@ -879,6 +1081,7 @@
       initMenu();
       initGallery();
       initFilters();
+      initStatus();
       initBag();
       if (player && audio) render();
       // screen readers and keyboard: start from the new page's main heading, like a full load would
@@ -905,5 +1108,6 @@
   initMenu();
   initGallery();
   initFilters();
+  initStatus();
   initBag();
 })();

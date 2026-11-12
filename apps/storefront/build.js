@@ -66,8 +66,22 @@ const playerHtml = renderToStaticMarkup(React.createElement(Z.Player, {
 // the toast region (decision 0049): one per page, outside .zz-page like the player, so a toast survives soft navigation
 const toastRegionHtml = renderToStaticMarkup(React.createElement(Z.ToastRegion, { className: 'site-toasts' }));
 
+// "Notify me" on a reserved copy (proposal, design/open.md; migration 0016): one dialog per page, outside .zz-page like
+// the toasts; scripts/site.js opens it from any Reserved button with that copy's id and sends the email to Supabase
+const notifyDialogHtml = renderToStaticMarkup(React.createElement(Z.Dialog, {
+  open: false, className: 'site-notify', 'data-notify-dialog': '', title: 'Reserved', confirmLabel: 'Notify me',
+  onConfirm: () => {}, onCancel: () => {},
+  field: React.createElement(Z.Input, { label: 'Email', type: 'email', name: 'email', autoComplete: 'email', required: true,
+    placeholder: 'name@example.com', supportText: 'One email, only for this record. Then we delete your address.', 'data-notify-email': '' })
+}, 'Someone is checking out this record. If they don\u2019t buy it, it\u2019s back within 30 minutes. Leave your email and we\u2019ll tell you.'));
+
 // the tick of "In bag" (decision 0058): scripts/site.js clones it into the Button's leading icon slot
 const tickTemplate = `<template id="zz-icon-tick">${renderToStaticMarkup(React.createElement('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, React.createElement(Z.TickLargeThinIcon)))}</template>`;
+// the clock of "Reserved" (copy held by a checkout, design/open.md): same slot, cloned by scripts/site.js
+const clockTemplate = `<template id="zz-icon-clock">${renderToStaticMarkup(React.createElement('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, React.createElement(Z.ClockCounterClockwiseIcon)))}</template>`;
+// live status (_context/backend.md → Stato dal vivo): with Supabase as the source, the page carries the project URL and
+// the publishable key (public by design, read-only through RLS) so scripts/site.js can read listing_availability
+let liveMeta = '';
 
 
 function page({ title: t, body }) {
@@ -89,12 +103,14 @@ function page({ title: t, body }) {
 <script src="${toastJsHref}" defer></script>
 <script src="${shippingJsHref}" defer></script>
 <script src="${siteJsHref}" defer></script>
-</head>
+${liveMeta}</head>
 <body>
 ${body}
 ${playerHtml}
 ${toastRegionHtml}
+${notifyDialogHtml}
 ${tickTemplate}
+${clockTemplate}
 </body>
 </html>
 `;
@@ -115,6 +131,10 @@ const sourceArg = (process.argv.find(a => a.startsWith('--source=')) || '').spli
 async function main() {
 const { products, source } = await loadProducts(site, { source: sourceArg });
 console.log(`products: ${products.length} from ${source}`);
+if (source === 'supabase') {
+  const env = readEnv();
+  liveMeta = `<meta name="zz-supabase-url" content="${escape(env.SUPABASE_URL.replace(/\/$/, ''))}">\n<meta name="zz-supabase-key" content="${escape(env.SUPABASE_PUBLISHABLE_KEY)}">\n`;
+}
 // shipping config from the same source as the products (null = not set up: the bag says "Calculated at checkout")
 const shipping = source === 'supabase' ? await shippingData.fromSupabase(readEnv()) : shippingData.fromJson();
 console.log(`shipping: ${shipping && (shipping.rates || []).length ? shipping.rates.length + ' rate(s)' : 'not set up'}`);
@@ -152,8 +172,9 @@ for (const product of products) {
   write(`products/${product.listing.slug}/index.html`, page({ title: title(product), body }));
 }
 
-// PLP: the listing of the "For sale" section (Figma: PLP - desktop); "For trade" has no products yet
-const forSale = products.filter(p => p.listing.section === 'sale' && p.listing.status === 'available');
+// PLP: the listing of the "For sale" section (Figma: PLP - desktop); "For trade" has no products yet.
+// A reserved copy stays in the list with its "Reserved" button: it is paused, not gone (Gio 2026-11-12)
+const forSale = products.filter(p => p.listing.section === 'sale' && (p.listing.status === 'available' || p.listing.status === 'reserved'));
 write('sale/index.html', page({ title: Plp.title('sale'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, allProducts: products, site, url })) }));
 
 // Bag (decision 0044): one hidden line per listing of the sale section, whatever its status (a copy sold after it was

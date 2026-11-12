@@ -1,6 +1,6 @@
 # MenuLayer · MenuGroup · MenuItem
 
-The mobile menu, opened by the header hamburger ([0059](../../../../design/decisions/0059-mobile-menu.md)). Figma: page `menu` → `menu layer`, `menu item` (state default | current). The page puts `MenuLayer` in a native modal `<dialog>` (`apps/storefront/pages/shell.js` → `SiteMenu`).
+The mobile menu, opened by the header hamburger ([0060](../../../../design/decisions/0060-mobile-menu.md)). Figma: page `menu` → `menu layer`, `menu item` (state default | current). The page puts `MenuLayer` in a native modal `<dialog>` (`apps/storefront/pages/shell.js` → `SiteMenu`).
 
 ## API
 

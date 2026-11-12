@@ -962,6 +962,7 @@ a.zz-product-card__image { display: block; color: inherit; }
   display: flex; flex-direction: column; gap: 24px;
   background: var(--surface-base);                 /* opaque in every mode: never surface-accent (0023) */
   color: var(--text-strong);
+  font-family: var(--font-sans);                   /* a modal sits in the top layer: never inherit the page font (a field inside reads it) */
   border: 1px solid var(--border-divider-strong);
 }
 .zz-dialog:not([open]) { display: none; }
