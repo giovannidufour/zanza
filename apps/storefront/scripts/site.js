@@ -107,7 +107,6 @@
     return {
       src: btn.getAttribute('data-sample-src'),
       title: btn.getAttribute('data-sample-title') || '',
-      track: btn.getAttribute('data-sample-track') || '',
       product: btn.getAttribute('data-product-name') || '',
       image: btn.getAttribute('data-product-image') || '',
       href: btn.getAttribute('data-product-href') || '',
@@ -138,7 +137,7 @@
     var toggleBtn = q('.zz-player__toggle');
     if (toggleBtn) toggleBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
     if (cur) {
-      setText('.zz-player__track', cur.track);
+      setText('.zz-player__number', String(index + 1));   // the sample's place in the queue (decision 0056)
       setText('.zz-player__sample', cur.title);
       setText('.zz-player__product', cur.product);
       setText('.zz-player__position', (index + 1) + ' of ' + queue.length);

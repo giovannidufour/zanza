@@ -114,7 +114,6 @@ function sampleAttrs(product, s, url) {
     disabled: !s.audio_url,
     'data-sample-src': s.audio_url ? url(s.audio_url) : undefined,
     'data-sample-title': s.title,
-    'data-sample-track': s.track_position,
     'data-product-name': productName(release),
     'data-product-image': release.cover ? url(release.cover) : undefined,
     'data-product-href': productHref(product, url),

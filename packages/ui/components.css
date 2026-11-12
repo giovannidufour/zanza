@@ -514,7 +514,7 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
 .zz-player__image { flex: none; width: 48px; height: 48px; overflow: hidden; }
 .zz-player__image > img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .zz-player__title { display: flex; gap: 8px; min-width: 0; margin: 0; }
-.zz-player__track { flex: none; }
+.zz-player__number { flex: none; }
 .zz-player__names { display: flex; flex-direction: column; min-width: 0; }
 .zz-player__sample, .zz-player__product { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
