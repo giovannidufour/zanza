@@ -1037,7 +1037,7 @@
   function XThinIcon() {      // Figma: icon/icon-x-thin
     return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M5.07538 5.07538C5.27064 4.88014 5.58723 4.88012 5.78248 5.07538L12.5 11.7929L19.2175 5.07538C19.4128 4.88012 19.7294 4.88012 19.9246 5.07538C20.1199 5.27064 20.1199 5.58723 19.9246 5.78249L13.2071 12.5L19.9246 19.2175C20.1199 19.4128 20.1199 19.7294 19.9246 19.9246C19.7294 20.1199 19.4128 20.1199 19.2175 19.9246L12.5 13.2071L5.78248 19.9246C5.58723 20.1199 5.27064 20.1199 5.07538 19.9246C4.88012 19.7294 4.88012 19.4128 5.07538 19.2175L11.7929 12.5L5.07538 5.78249C4.88012 5.58722 4.88012 5.27064 5.07538 5.07538Z', fill: 'currentColor' }));
   }
-  function TickLargeThinIcon() {      // Figma: icon/icon-tick-large-thin (was the trailing icon of "Added to bag", 0047; unused since 0054)
+  function TickLargeThinIcon() {      // Figma: icon/icon-tick-large-thin leading icon of "In bag" (decision 0058)
     return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M20.6533 4.63961C20.8522 4.44831 21.1689 4.45445 21.3604 4.65328C21.5516 4.85218 21.5454 5.16886 21.3467 5.36031L7.84668 18.3603L7.5 18.6943L7.15332 18.3603L2.65332 14.0263C2.45468 13.8349 2.44849 13.5192 2.63965 13.3203C2.8312 13.1214 3.1478 13.1151 3.34668 13.3066L7.49902 17.3056L20.6533 4.63961Z', fill: 'currentColor' }));
   }
   function PlusSmallThinIcon() {      // Figma: icon/icon-plus-small-thin
