@@ -9,14 +9,14 @@ One line of the bag: one copy (copies are unique, so there is no quantity: Remov
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `device` | `"desktop" \| "mobile"` |  | Omitted → responsive (breakpoint `--mobile` from tokens.json): desktop type = ProductCard desktop, mobile = ProductCard mobile. |
-| `status` | `"available" \| "sold" \| "reserved" \| "unavailable"` | `available` | Figma `status`. sold: `notice` + price struck through (decision 0064). reserved (held by someone else's checkout or by hand): `notice`, no price. Samples stay. `unavailable` is the pre-0064 name of reserved. |
-| `notice` | `ReactNode` |  | Figma `notice` (text, sold / reserved only), label/small. Default "Sold out · not in your order" (sold), "Reserved" (reserved). |
+| `status` | `"available" \| "sold" \| "reserved" \| "unavailable"` | `available` | Figma `status`. sold: name struck through, "SOLD OUT" beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): `notice`, no price. Samples stay. `unavailable` is the pre-0064 name of reserved. |
+| `notice` | `ReactNode` | `Reserved` | Notice on top of a reserved line, label/small. |
 | `image` | `ProductCardImage` |  | Figma `cover`: the cover image, 96 × 96. |
 | `href` | `string` |  | Product page URL: the title and the cover link to it. |
 | `title` * | `ReactNode` |  | Figma `product name`. Rendered as a heading; it also names the line and its Remove button. |
 | `headingLevel` | `2 \| 3 \| 4` | `2` | Heading level of the title, to fit the page outline. |
 | `releaseInfo` | `ReactNode` |  | Figma `release info`. |
-| `price` | `ReactNode` |  | Figma `price`, already formatted. Struck through when status=sold, not rendered when status=reserved. |
+| `price` | `ReactNode` |  | Figma `price`, already formatted. status=sold: struck through, after "SOLD OUT". Not rendered when status=reserved. |
 | `grading` | `ReactNode` |  | Figma `grading`, already formatted ("Record: VG+ / VG"). |
 | `cover` | `ReactNode` |  | Figma `cover` grade line ("Cover: NM"). Omit when not graded. |
 | `conditions` | `ReactNode` |  | The conditions comment on its own line, as in ProductCard. |
