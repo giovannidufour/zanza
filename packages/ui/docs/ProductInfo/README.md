@@ -2,7 +2,7 @@
 
 The text block of a product page: name + price, release info, tags, description, grading, cover grade, sample players. Figma: `product info` (device=desktop | mobile).
 
-Inner layout: 3-column grid, no gaps ([0012](../../../../design/decisions/0012-layout-mirrors-figma-grid.md)). Row 1 = details, full width. Row 2 = samples: **desktop columns 2–3, stacked (gap 8); mobile full width, in a row (gap 16, padding-bottom 8).**
+Inner layout: 3-column grid, no gaps ([0012](../../../../design/decisions/0012-layout-mirrors-figma-grid.md)). Row 1 = details, full width. Row 2 = samples: **desktop columns 2–3, stacked (gap 8); mobile full width, in a row (gap 16).** Padding-bottom on the component itself: **64 desktop, 32 mobile** (literal, no spacing token yet).
 
 ## API
 
@@ -34,3 +34,4 @@ Text `text-strong`. Type: name, price, release info `body-extra-large` (desktop)
 ## Dimensions (Figma)
 
 title block padding-bottom 16 · tags block gap 8, padding-bottom 16 · description block gap 4, padding-bottom 16.
+Component padding-bottom 64 (desktop) · 32 (mobile).

@@ -22,4 +22,4 @@ Padding `small` (8) · rule `border-divider-strong`.
 
 ## Dimensions (Figma)
 
-Desktop 41 (chip 24), mobile 61 (chip 44), as the breadcrumbs.
+Desktop 57 (chip 40: the medium chip with padding-top/bottom 8, Figma 2026-11-12), mobile 61 (chip 44). Mobile matches the breadcrumbs; desktop no longer does (breadcrumbs 41, see `design/open.md`).
