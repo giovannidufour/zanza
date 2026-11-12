@@ -13,10 +13,9 @@ The sample player docked at the bottom of the site: now playing (cover, track po
 | --- | --- | --- | --- |
 | `device` | `"desktop" \| "mobile"` |  | Omitted → responsive (breakpoint `--mobile` from tokens.json). |
 | `image` | `{ src: string; alt?: string }` |  | Cover of the product, 48 × 48. Figma: `product image`. |
-| `trackPosition` | `ReactNode` |  | Track position on the record, e.g. "A". Figma: `sample number`. |
 | `sampleTitle` * | `ReactNode` |  | The sample title, e.g. "Vocal". Figma: first `product name` text. |
 | `productName` * | `ReactNode` |  | "Artist - Title". Figma: second `product name` text. |
-| `index` | `number` | `1` | 1-based position of the sample in the queue ("1 of 3"). Previous is disabled at 1. |
+| `index` | `number` | `1` | 1-based position of the sample in the queue. Shown as the sample number (Figma: `sample number`) and in "1 of 3". Previous is disabled at 1. |
 | `total` | `number` | `1` | Queue length. Next is disabled at the last sample. |
 | `playing` | `boolean` |  | Nested `_player controls` state=playing: pause icon instead of play. |
 | `src` | `string` |  | Audio URL for the native player (a direct file: mp3, aac, ogg). |

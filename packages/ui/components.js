@@ -288,13 +288,14 @@
       'data-device': device,
       'data-playing': props.playing ? 'true' : 'false',
       'aria-label': props['aria-label'] || 'Player'
-    }, omit(props, ['device', 'image', 'trackPosition', 'sampleTitle', 'productName', 'index', 'total', 'playing', 'src',
+    }, omit(props, ['device', 'image', 'sampleTitle', 'productName', 'index', 'total', 'playing', 'src',
                     'actions', 'onPrevious', 'onNext', 'onTogglePlay', 'onClose', 'audioRef', 'className', 'aria-label'])),
-      // Figma: `now playing` — image 48 + title row (track position · sample title / product name)
+      // Figma: `now playing` — image 48 + title row (sample number · sample title / product name)
       h('div', { className: 'zz-player__now' },
         h('div', { className: 'zz-player__image' }, img.src ? h('img', { src: img.src, alt: img.alt || '', width: 48, height: 48 }) : null),
         h('p', { className: 'zz-player__title body-medium', 'aria-live': 'polite' },
-          h('span', { className: 'zz-player__track' }, props.trackPosition),
+          // sample number = position of the sample in the queue, as on the sample buttons (decision 0056)
+          h('span', { className: 'zz-player__number' }, props.index || 1),
           h('span', { className: 'zz-player__names' },
             h('span', { className: 'zz-player__sample' }, props.sampleTitle),
             h('span', { className: 'zz-player__product' }, props.productName)))),
