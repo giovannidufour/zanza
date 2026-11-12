@@ -70,6 +70,7 @@ function toProduct(row, mediaUrl) {
       status: effectiveStatus(row),
       price: row.price_cents == null ? null : { amount: row.price_cents, currency: row.currency },
       sku: row.sku,
+      weight_g: row.weight_g || null,   // shipping: own weight; null = the format's (decision 0057)
       custom_title: row.custom_title
     },
     release: {
@@ -146,4 +147,4 @@ async function loadProducts(site, { source } = {}) {
   return { products, source: useDb ? 'supabase' : 'json' };
 }
 
-module.exports = { loadProducts, effectiveStatus, toProduct, nameOf, byListingOrder, mediaUrlFor, fromSupabase };
+module.exports = { loadProducts, readEnv, effectiveStatus, toProduct, nameOf, byListingOrder, mediaUrlFor, fromSupabase };
