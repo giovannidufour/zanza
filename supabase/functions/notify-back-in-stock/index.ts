@@ -13,6 +13,17 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
 
+// same rule as the storefront (apps/storefront/data/products.js nameOf): "Artist - Title 1 / Title 2",
+// or "Artist 1 - Title 1 / Artist 2 - Title 2" when a later line has its own artist
+type Line = { position: number; artist: string | null; title: string };
+const nameOf = (raw: Line[]) => {
+  const lines = raw.slice().sort((a, b) => a.position - b.position);
+  if (!lines.length) return "";
+  const own = lines.slice(1).some((l) => l.artist && l.artist !== lines[0].artist);
+  if (!own) return `${lines[0].artist} - ${lines.map((l) => l.title).join(" / ")}`;
+  return lines.map((l) => `${l.artist || lines[0].artist} - ${l.title}`).join(" / ");
+};
+
 // same rule as public.effective_status (migration 0004): an expired checkout hold counts as available
 const isAvailable = (l: { status: string; reserved_until: string | null }) =>
   l.status === "available" || (l.status === "reserved" && !!l.reserved_until && new Date(l.reserved_until) <= new Date());
@@ -25,7 +36,7 @@ Deno.serve(async (req) => {
   const db = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), { auth: { persistSession: false } });
   const { data: rows, error } = await db
     .from("back_in_stock")
-    .select("id, email, listing:listings(id, slug, status, reserved_until, custom_title, release:releases(artist, title))")
+    .select("id, email, listing:listings(id, slug, status, reserved_until, custom_title, release:releases(lines:release_lines(position, artist, title)))")
     .is("sent_at", null)
     .limit(50);
   if (error) return json({ error: error.message }, 500);
@@ -37,7 +48,7 @@ Deno.serve(async (req) => {
     // deno-lint-ignore no-explicit-any
     const l = (row as any).listing;
     if (!l || !isAvailable(l)) continue;           // still reserved: wait for the next run
-    const name = l.custom_title || [l.release?.artist, l.release?.title].filter(Boolean).join(" - ") || "The record";
+    const name = l.custom_title || nameOf(l.release?.lines ?? []) || "The record";
     const href = `${shop}/products/${l.slug}/`;
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
