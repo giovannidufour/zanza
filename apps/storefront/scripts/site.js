@@ -253,6 +253,28 @@
     }
   }
 
+  /* -- mobile menu (Figma page `menu`, SiteMenu in pages/shell.js) --------- */
+  // The hamburger opens a native modal dialog: focus trapped, Esc closes, focus returns to the hamburger.
+  // Following a link closes it first; the soft navigation then swaps the page (header and menu included).
+  function initMenu() {
+    var btn = document.querySelector('[data-menu-open]');
+    var menu = document.querySelector('[data-site-menu]');
+    if (!btn || !menu || !menu.showModal) return;
+    btn.addEventListener('click', function () {
+      menu.showModal();
+      btn.setAttribute('aria-expanded', 'true');
+      menu.focus();   // as the filters layer (decision 0043): the dialog takes focus, screen readers hear "Menu"
+    });
+    menu.addEventListener('close', function () {
+      btn.setAttribute('aria-expanded', 'false');
+      if (document.contains(btn)) btn.focus();
+    });
+    menu.querySelector('[data-menu-close]').addEventListener('click', function () { menu.close(); });
+    menu.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('a[href]') && menu.open) menu.close();
+    });
+  }
+
   /* ---------------------------------------------------------------- 3. soft navigation */
 
   function shouldIntercept(e, a) {
@@ -854,6 +876,7 @@
       var target = url.hash && document.getElementById(decodeURIComponent(url.hash.slice(1)));
       if (target) target.scrollIntoView(); else window.scrollTo(0, 0);
       initHeader();
+      initMenu();
       initGallery();
       initFilters();
       initBag();
@@ -879,6 +902,7 @@
   }
 
   initHeader();
+  initMenu();
   initGallery();
   initFilters();
   initBag();

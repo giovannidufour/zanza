@@ -91,20 +91,39 @@ const productHref = (product, url) => url(`/products/${product.listing.slug}/`);
 // `section` = the active tab (none on /bag/). `current = 'bag'` → the Bag button is the current page (state active,
 // decision 0045). The Bag count is the button's suffix in brackets (Gio 2026-11-10): "(0)" in the static HTML,
 // scripts/site.js writes the real count from the bag in the browser ([data-bag-count]).
+// Mobile: the hamburger opens SiteMenu (scripts/site.js); it is rendered next to the header, inside .zz-page.
 function SiteHeader({ site, url, section, current }) {
-  return h(Z.Header, {
-    className: 'site-header',   // sticky on scroll up: base.css + scripts/site.js
-    logo: h('img', { src: url('/assets/logo.png'), alt: '', width: 64, height: 64 }),
-    storeName: site.storeName,
-    homeHref: url('/'),
-    tabs: h(Z.Tabs, { as: 'nav', value: section, 'aria-label': 'Section' },
-      h(Z.Tab, { value: 'sale', href: url('/sale/') }, 'For sale'),
-      h(Z.Tab, { value: 'trade', href: url('/trade/') }, 'For trade')),
-    actions: h(React.Fragment, null,
-      h(Z.Button, { hierarchy: 'secondary', className: 'zz-header__account' }, 'Account'),
-      h(Z.Button, { hierarchy: 'secondary', href: url('/bag/'), state: current === 'bag' ? 'active' : undefined,
-        suffix: '(0)', 'data-bag-count': '' }, 'Bag'))
-  });
+  return h(React.Fragment, null,
+    h(Z.Header, {
+      className: 'site-header',   // sticky on scroll up: base.css + scripts/site.js
+      logo: h('img', { src: url('/assets/logo.png'), alt: '', width: 64, height: 64 }),
+      storeName: site.storeName,
+      homeHref: url('/'),
+      menuProps: { 'aria-haspopup': 'dialog', 'aria-controls': 'site-menu', 'aria-expanded': 'false', 'data-menu-open': '' },
+      tabs: h(Z.Tabs, { as: 'nav', value: section, 'aria-label': 'Section' },
+        h(Z.Tab, { value: 'sale', href: url('/sale/') }, 'For sale'),
+        h(Z.Tab, { value: 'trade', href: url('/trade/') }, 'For trade')),
+      actions: h(React.Fragment, null,
+        h(Z.Button, { hierarchy: 'secondary', className: 'zz-header__account' }, 'Account'),
+        h(Z.Button, { hierarchy: 'secondary', href: url('/bag/'), state: current === 'bag' ? 'active' : undefined,
+          suffix: '(0)', 'data-bag-count': '' }, 'Bag'))
+    }),
+    h(SiteMenu, { url, current: current || section }));
+}
+
+// Figma page `menu` (proposal 2026-11-12): the mobile menu, a full-screen native modal dialog (focus trapped, Esc
+// closes, the page behind is inert). Account is the entry point to /account/ on mobile; the Bag stays in the header.
+// The Account detail is "Sign in to see your orders" until accounts exist (then: the signed-in email).
+function SiteMenu({ url, current }) {
+  const item = (key, label, href, detail) => h(Z.MenuItem, { key, label, href: url(href), detail, current: key === current });
+  const legal = [['Impressum', '/impressum/'], ['Privacy', '/privacy/'], ['Terms', '/terms/'], ['Withdrawal', '/withdrawal/']]
+    .map(([text, href]) => h('a', { key: href, href: url(href) }, text));
+  return h('dialog', { id: 'site-menu', className: 'site-menu', 'aria-label': 'Menu', tabIndex: -1, 'data-site-menu': '' },
+    h(Z.MenuLayer, { title: 'Menu', closeLabel: 'Close menu', legal },
+      h(Z.MenuGroup, null, item('sale', 'For sale', '/sale/'), item('trade', 'For trade', '/trade/')),
+      h(Z.MenuGroup, null, item('account', 'Account', '/account/', 'Sign in to see your orders')),
+      h(Z.MenuGroup, null, item('grading', 'Grading', '/grading/'), item('shipping', 'Shipping', '/shipping/'),
+        item('contact', 'Contact', '/contact/'))));
 }
 
 // the data the site player (scripts/site.js) reads from a PlayerButton: a product's samples are its queue

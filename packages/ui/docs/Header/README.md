@@ -16,6 +16,7 @@ The site header: logo and store name on the left, section tabs in the middle (de
 | `actions` | `ReactNode` |  | Trailing actions, usually secondary &lt;Button>s (Figma: `trailing actions`, gap 8). |
 | `onMenuClick` | `() => void` |  | Mobile only: click handler of the hamburger button. |
 | `menuLabel` | `string` |  | Mobile only: accessible name of the hamburger button. Default "Menu". |
+| `menuProps` | `Record<string, unknown>` |  | Mobile only: extra attributes of the hamburger button (aria-controls, aria-haspopup="dialog", aria-expanded). |
 
 `*` required.
 <!-- /api -->

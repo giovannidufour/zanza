@@ -1171,6 +1171,34 @@ a.zz-product-card__image { display: block; color: inherit; }
 /* the facet level shows one FilterBlock: its heading is the bar title, options gap 0 (rows carry the padding) */
 .zz-filters-layer .zz-filter-block__options { gap: 0; align-items: stretch; }
 
+/* ── MenuLayer / MenuGroup / MenuItem (Figma page `menu`, proposal 2026-11-12): the mobile menu. Same frame as
+   FiltersLayer (bar, body scrolling on its own) without the actions. ── */
+.zz-menu-layer { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; background: var(--surface-accent); color: var(--text-strong); }
+.zz-menu-layer__bar {
+  display: flex; align-items: center; gap: var(--small); flex: none;
+  padding: var(--medium-small) var(--page-margin-mobile);
+  border-bottom: 1px solid var(--border-divider-strong);
+}
+.zz-menu-layer__title { flex: 1 1 auto; min-width: 0; margin: 0; text-transform: uppercase; }
+.zz-menu-layer__body {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 24px;   /* Figma: 24 literal, no token (design/open.md) */
+  padding: var(--small) var(--page-margin-mobile) var(--medium-small);
+}
+.zz-menu-group { display: flex; flex-direction: column; }
+.zz-menu-item {
+  display: flex; align-items: center; gap: var(--small);
+  padding: var(--medium-small) var(--small);
+  border-bottom: 1px solid var(--border-divider-strong);
+  color: var(--text-strong); text-decoration: none;
+}
+.zz-menu-item[data-state="current"] { background-color: var(--tab-background-active); }
+.zz-menu-item__label { flex: 1 1 auto; min-width: 0; text-transform: uppercase; }
+.zz-menu-item__detail { flex: 0 1 auto; min-width: 0; color: var(--text-moderate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zz-menu-layer__legal { display: flex; flex-wrap: wrap; gap: var(--small) var(--medium-small); padding: 0 var(--small); }
+.zz-menu-layer__legal a { color: var(--text-strong); text-decoration: none; }
+.zz-menu-layer__legal a:hover { text-decoration: underline; }
+
 /* ── PlpHeader (Figma `PLP header`, device=mobile): filters trigger and sort, space-between, padding-y small,
    1px border-divider-strong under ── */
 .zz-plp-header { display: flex; flex-direction: column; }

@@ -44,6 +44,8 @@ export interface HeaderProps extends HTMLAttributes<HTMLElement> {
   onMenuClick?: () => void;
   /** Mobile only: accessible name of the hamburger button. Default "Menu". */
   menuLabel?: string;
+  /** Mobile only: extra attributes of the hamburger button (aria-controls, aria-haspopup="dialog", aria-expanded). */
+  menuProps?: Record<string, unknown>;
 }
 export declare function Header(props: HeaderProps): JSX.Element;
 
@@ -701,6 +703,41 @@ export interface PlpHeaderProps extends HTMLAttributes<HTMLDivElement> {
   sort?: ReactNode;
 }
 export declare function PlpHeader(props: PlpHeaderProps): JSX.Element;
+
+/** Mirrors the Figma component `menu item` (state default | current): a link row of the mobile menu. */
+export interface MenuItemProps extends HTMLAttributes<HTMLAnchorElement> {
+  href: string;
+  /** Figma: `label`. Uppercase via CSS. */
+  label: ReactNode;
+  /** Secondary text at the end of the row (Account: "Sign in to see your orders" or the email). Figma: `detail` + `detail text`. */
+  detail?: ReactNode;
+  /** The page you are on: aria-current="page", fill tab-background-active. Figma: state=current. */
+  current?: boolean;
+}
+export declare function MenuItem(props: MenuItemProps): JSX.Element;
+
+/** A group of MenuItem rows (Figma: frames `shop`, `account`, `info` inside `menu layer`). */
+export interface MenuGroupProps extends HTMLAttributes<HTMLDivElement> {
+  children?: ReactNode;
+}
+export declare function MenuGroup(props: MenuGroupProps): JSX.Element;
+
+/** Mirrors the Figma component `menu layer`: the mobile menu, full height, put in a native modal <dialog> by the page. */
+export interface MenuLayerProps extends HTMLAttributes<HTMLDivElement> {
+  /** Bar title, also the name of the <nav>. @default "Menu" */
+  title?: ReactNode;
+  /** MenuGroup elements. */
+  children?: ReactNode;
+  /** Legal links (<a> elements), body-small, wrapping. Figma: `legal`. */
+  legal?: ReactNode;
+  /** Accessible name of the legal links group. @default "Legal" */
+  legalLabel?: string;
+  /** Accessible name of the close button. @default "Close menu" */
+  closeLabel?: string;
+  /** Click on the close button (the storefront closes the dialog in scripts/site.js instead). */
+  onClose?: () => void;
+}
+export declare function MenuLayer(props: MenuLayerProps): JSX.Element;
 
 /** A native <select> drawn as a Button with a trailing chevron-down (Figma: button + trailing icon). The platform picker opens. */
 export interface SelectButtonProps extends HTMLAttributes<HTMLSelectElement> {
