@@ -1305,3 +1305,18 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-trade-step__number { flex: none; width: 24px; }
 .zz-trade-step__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .zz-trade-step__title, .zz-trade-step__body { margin: 0; }
+
+/* Discogs release picker (Figma page Trade: release option, release list, chosen release) */
+.zz-release-list { background: var(--surface-base); border: 1px solid var(--border-divider-strong); color: var(--text-strong); }
+.zz-release-list__options { margin: 0; padding: 0; list-style: none; }
+.zz-release-list__message, .zz-release-list__source { margin: 0; padding: var(--small); }
+.zz-release-list__source { color: var(--text-moderate); }
+.zz-release-option, .zz-chosen-release { display: flex; align-items: flex-start; gap: var(--small); padding: var(--small); color: var(--text-strong); }
+.zz-release-option { cursor: pointer; background: var(--surface-base); }
+.zz-release-option[data-highlighted="true"], .zz-release-option:hover { background: var(--surface-subtle); }
+.zz-release-option__thumb { flex: none; display: block; width: 40px; height: 40px; object-fit: cover; background: var(--surface-support-1); }
+.zz-release-option__text { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
+.zz-release-option__meta { color: var(--text-moderate); }
+.zz-chosen-release { border: 1px solid var(--border-divider-strong); }
+.zz-chosen-release__link { color: inherit; text-decoration: underline; align-self: flex-start; }
+.zz-chosen-release__change { flex: none; background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }

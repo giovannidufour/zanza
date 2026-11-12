@@ -56,13 +56,20 @@ function OfferTarget({ product, url, label = 'You want' }) {
 
 // Figma `offered record`: one record of the offer. `n` = its number; the first one has no Remove.
 // scripts/site.js clones the template for "Add another record" and renumbers.
-function OfferedRecord({ n }) {
+// "Which record" (Figma `which record`, decision 0069): with site.json → trade.searchEndpoint set, scripts/site.js turns
+// the field into a Discogs release search (suggestions while typing, a pasted release link resolves to its release);
+// without it, or if Discogs fails, it stays a plain text field. The release id travels in the hidden `release` input.
+function OfferedRecord({ n, search }) {
   const gradeOptions = GRADES.map((g) => h('option', { key: g, value: g }, g));
   return h('fieldset', { className: 'offered-record', 'data-offer-record': '' },
     h('div', { className: 'offered-record__head' },
       h('legend', { className: 'label-small', 'data-offer-record-title': '' }, `Record ${n}`),
       h('button', { type: 'button', className: 'offered-record__remove body-small', hidden: n === 1, 'data-offer-record-remove': '' }, 'Remove')),
-    h(Z.Input, { label: 'Which record', name: 'record', required: true, placeholder: 'Discogs link, or artist – title', autoComplete: 'off' }),
+    h('div', { className: 'release-picker', 'data-release-picker': '' },
+      h(Z.Input, { label: 'Which record', name: 'record', required: true, autoComplete: 'off', 'data-release-input': '',
+        placeholder: search ? 'Search Discogs or paste a release link' : 'Discogs link, or artist \u2013 title' }),
+      h('div', { className: 'release-picker__chosen', hidden: true, 'data-release-chosen': '' }),
+      h('input', { type: 'hidden', name: 'release', 'data-release-id': '' })),
     h('div', { className: 'offered-record__grades' },
       h(Z.Input, { variant: 'select', label: 'Record condition', name: 'media', required: true, placeholder: 'Grade' }, gradeOptions),
       h(Z.Input, { variant: 'select', label: 'Cover condition', name: 'sleeve', placeholder: 'Grade' }, gradeOptions.concat(h('option', { key: 'none', value: 'none' }, 'No cover')))));
@@ -74,16 +81,17 @@ const CHANNEL_LABEL = { discogs: 'on Discogs', instagram: 'on Instagram', email:
 function Offer({ product, site, url }) {
   const owner = site.owner || {};
   const days = (site.trade || {}).replyDays || 3;
+  const search = (site.trade || {}).searchEndpoint || '';
   return h('div', { className: 'zz-page' },
     h(SiteHeader, { site, url, section: 'trade' }),
     h('main', { className: 'trade-content', 'data-offer-page': '' },
       h('h1', { className: 'trade-content__title body-large', 'data-offer-title': '' }, 'Make an offer'),
       h('div', { className: 'trade-col trade-col--1' }, h(Z.Divider), h(OfferTarget, { product, url })),
       h('form', { className: 'trade-form', noValidate: true, 'data-offer-form': '', 'data-listing-slug': product.listing.slug,
-        'data-endpoint': (site.trade || {}).offerEndpoint || '' },
+        'data-endpoint': (site.trade || {}).offerEndpoint || '', 'data-search-endpoint': search },
         h('div', { className: 'trade-col trade-col--2' }, h(Z.Divider),
-          h('div', { className: 'offer-records', 'data-offer-records': '' }, h(OfferedRecord, { n: 1 })),
-          h('template', { 'data-offer-record-template': '' }, h(OfferedRecord, { n: 2 })),
+          h('div', { className: 'offer-records', 'data-offer-records': '' }, h(OfferedRecord, { n: 1, search })),
+          h('template', { 'data-offer-record-template': '' }, h(OfferedRecord, { n: 2, search })),
           h(Z.Button, { type: 'button', hierarchy: 'secondary', className: 'trade-form__add', 'data-offer-add': '' }, 'Add another record'),
           h(Z.Input, { variant: 'text-area', label: 'Your pitch', optional: true, name: 'pitch', maxLength: 2000,
             placeholder: 'Why should I take your record? Extras, a cash top-up, what makes it special…' })),

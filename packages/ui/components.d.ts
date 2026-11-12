@@ -820,3 +820,45 @@ export interface TradeStepProps extends HTMLAttributes<HTMLLIElement> {
   children?: ReactNode;
 }
 export declare function TradeStep(props: TradeStepProps): JSX.Element;
+
+/** Figma `release option` (page Trade): one Discogs release in the "Which record" suggestions. An <li role="option">. */
+export interface ReleaseOptionProps extends HTMLAttributes<HTMLLIElement> {
+  /** "Artist – Title" */
+  title: ReactNode;
+  /** label · catalog number · year · country · format */
+  meta?: ReactNode;
+  /** Discogs thumbnail URL; without it, an empty 40 px square */
+  thumb?: string;
+  /** the keyboard/hover active option (aria-activedescendant points to it) */
+  highlighted?: boolean;
+}
+export declare function ReleaseOption(props: ReleaseOptionProps): JSX.Element;
+
+/** Figma `release list` (page Trade): the suggestions box under "Which record". Children = ReleaseOption; `message` replaces them (no results). */
+export interface ReleaseListProps extends HTMLAttributes<HTMLDivElement> {
+  /** id of the listbox (the input's aria-controls) */
+  listId?: string;
+  /** accessible name of the listbox */
+  label?: string;
+  /** shown instead of the options, e.g. no match */
+  message?: ReactNode;
+  /** attribution footer, required by the Discogs API terms. Default "Data from Discogs" */
+  source?: ReactNode;
+  children?: ReactNode;
+}
+export declare function ReleaseList(props: ReleaseListProps): JSX.Element;
+
+/** Figma `chosen release` (page Trade): the release the trader picked, with a link to Discogs and Change. */
+export interface ChosenReleaseProps extends HTMLAttributes<HTMLDivElement> {
+  title: ReactNode;
+  meta?: ReactNode;
+  thumb?: string;
+  /** the release on discogs.com */
+  href?: string;
+  /** Default "On Discogs" */
+  linkLabel?: string;
+  /** Default "Change" */
+  changeLabel?: string;
+  onChange?: () => void;
+}
+export declare function ChosenRelease(props: ChosenReleaseProps): JSX.Element;

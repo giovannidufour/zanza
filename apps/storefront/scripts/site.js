@@ -1223,6 +1223,176 @@
   /* ── Trade offer (Figma page `Trade`, decision 0068) ───────────────────────
      /products/<slug>/offer/: "Add another record" clones the template (max 5), Remove renumbers, Send validates and posts JSON to the trade-offer function (site.json → trade.offerEndpoint). Nothing is stored
      in the browser. On success the form makes way for "Offer sent". */
+  /* "Which record" as a Discogs release search (Figma `which record`, decision 0069). ARIA 1.2 combobox: the input
+     keeps focus, arrows move aria-activedescendant, Enter picks, Escape closes. Typing 3+ letters asks the
+     discogs-search function (debounced, the previous request aborted); a pasted discogs.com/release/<id> link resolves
+     to that release. Picking shows the chosen release (Change = back). The text stays free: a trader can always type
+     artist – title. Nothing from Discogs is stored (API terms); "Data from Discogs" is always under the list. */
+  var pickerUid = 0;
+  function initReleasePicker(rec, endpoint) {
+    var picker = rec.querySelector('[data-release-picker]');
+    if (!endpoint || !picker || picker.hasAttribute('data-ready')) return;
+    picker.setAttribute('data-ready', '');
+    var input = picker.querySelector('[data-release-input]');
+    var inputBox = input.closest('.zz-input');
+    var hidden = picker.querySelector('[data-release-id]');
+    var chosenBox = picker.querySelector('[data-release-chosen]');
+    var uid = 'release-picker-' + (++pickerUid);
+    var box = document.createElement('div');
+    box.className = 'zz-release-list release-picker__list';
+    box.hidden = true;
+    inputBox.parentNode.insertBefore(box, inputBox.nextSibling);
+    var live = document.createElement('p');
+    live.className = 'zz-visually-hidden';
+    live.setAttribute('aria-live', 'polite');
+    picker.appendChild(live);
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-expanded', 'false');
+    input.setAttribute('aria-controls', uid + '-list');
+    var results = [], active = -1, timer = null, ctrl = null;
+
+    function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+    function thumb(src) {
+      if (!src) { var s = el('span', 'zz-release-option__thumb'); s.setAttribute('aria-hidden', 'true'); return s; }
+      var i = el('img', 'zz-release-option__thumb'); i.src = src; i.alt = ''; i.width = 40; i.height = 40; return i;
+    }
+    function textCol(r) {
+      var t = el('span', 'zz-release-option__text');
+      t.appendChild(el('span', 'zz-release-option__title body-medium', r.title));
+      if (r.meta) t.appendChild(el('span', 'zz-release-option__meta body-small', r.meta));
+      return t;
+    }
+    function close() {
+      clearTimeout(timer);
+      if (ctrl) { ctrl.abort(); ctrl = null; }
+      box.hidden = true; box.textContent = ''; active = -1;
+      input.setAttribute('aria-expanded', 'false');
+      input.removeAttribute('aria-activedescendant');
+    }
+    function footer() { box.appendChild(el('p', 'zz-release-list__source body-small', 'Data from Discogs')); }
+    function showMessage(text) {
+      results = []; box.textContent = '';
+      box.appendChild(el('p', 'zz-release-list__message body-small', text));
+      footer();
+      box.hidden = false;
+      input.setAttribute('aria-expanded', 'false');   // no listbox to go into, only a message
+      live.textContent = text;
+    }
+    function showResults(list) {
+      results = list; active = -1; box.textContent = '';
+      if (!list.length) { showMessage('No match on Discogs. Write it as you like: artist – title.'); return; }
+      var ul = el('ul', 'zz-release-list__options');
+      ul.id = uid + '-list';
+      ul.setAttribute('role', 'listbox');
+      ul.setAttribute('aria-label', 'Releases on Discogs');
+      list.forEach(function (r, i) {
+        var li = el('li', 'zz-release-option');
+        li.id = uid + '-opt-' + i;
+        li.setAttribute('role', 'option');
+        li.setAttribute('aria-selected', 'false');
+        li.appendChild(thumb(r.thumb));
+        li.appendChild(textCol(r));
+        li.addEventListener('click', function () { choose(r); });
+        ul.appendChild(li);
+      });
+      box.appendChild(ul);
+      footer();
+      box.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
+      live.textContent = list.length + (list.length === 1 ? ' release' : ' releases') + ' found. Use the arrow keys to choose.';
+    }
+    function highlight(i) {
+      var opts = box.querySelectorAll('[role="option"]');
+      if (!opts.length) return;
+      active = (i + opts.length) % opts.length;
+      Array.prototype.forEach.call(opts, function (o, k) {
+        var on = k === active;
+        o.setAttribute('aria-selected', on ? 'true' : 'false');
+        if (on) o.setAttribute('data-highlighted', 'true'); else o.removeAttribute('data-highlighted');
+      });
+      input.setAttribute('aria-activedescendant', opts[active].id);
+      opts[active].scrollIntoView({ block: 'nearest' });
+    }
+    function ask(params) {
+      if (ctrl) ctrl.abort();
+      ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+      var u = endpoint + (endpoint.indexOf('?') < 0 ? '?' : '&') + params;
+      return fetch(u, ctrl ? { signal: ctrl.signal } : {}).then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      });
+    }
+    function failed(err) {
+      if (err && err.name === 'AbortError') return;
+      showMessage('Discogs isn’t answering right now. Write it as you like: artist – title.');
+    }
+    function choose(r) {
+      hidden.value = String(r.id);
+      input.value = r.title + (r.meta ? ' (' + r.meta + ')' : '');
+      close();
+      chosenBox.textContent = '';
+      chosenBox.appendChild(el('p', 'body-small', 'Which record'));
+      var card = el('div', 'zz-chosen-release');
+      card.appendChild(thumb(r.thumb));
+      var t = textCol(r);
+      if (r.uri) {
+        var a = el('a', 'zz-chosen-release__link body-small', 'On Discogs');
+        a.href = r.uri; a.target = '_blank'; a.rel = 'noopener';
+        var arrow = el('span', null, ' ↗'); arrow.setAttribute('aria-hidden', 'true'); a.appendChild(arrow);
+        a.appendChild(el('span', 'zz-visually-hidden', ' (opens in a new tab)'));
+        t.appendChild(a);
+      }
+      card.appendChild(t);
+      var change = el('button', 'zz-chosen-release__change body-small', 'Change');
+      change.type = 'button';
+      change.setAttribute('aria-label', 'Change record: ' + r.title);
+      change.addEventListener('click', function () {
+        hidden.value = ''; input.value = '';
+        chosenBox.hidden = true; chosenBox.textContent = '';
+        inputBox.hidden = false;
+        input.focus();
+      });
+      card.appendChild(change);
+      chosenBox.appendChild(card);
+      inputBox.hidden = true;
+      chosenBox.hidden = false;
+      live.textContent = 'Chosen: ' + r.title;
+      change.focus();
+    }
+    input.addEventListener('input', function () {
+      hidden.value = '';
+      clearTimeout(timer);
+      var q = input.value.trim();
+      var link = q.match(/discogs\.com\/(?:[a-z-]+\/)?(release|master)\/(\d+)/i);
+      if (link && link[1].toLowerCase() === 'master') {
+        if (ctrl) ctrl.abort();
+        showMessage('That link is the master (every pressing). Search the title here and pick your pressing, or paste its release link.');
+        return;
+      }
+      if (link) {
+        ask('release=' + link[2]).then(function (d) {
+          if (d && d.release) choose(d.release); else showMessage('Can’t find that release on Discogs. Check the link, or write artist – title.');
+        }, failed);
+        return;
+      }
+      if (q.length < 3) { if (ctrl) ctrl.abort(); close(); return; }
+      timer = setTimeout(function () {
+        ask('q=' + encodeURIComponent(q)).then(function (d) { showResults((d && d.results) || []); }, failed);
+      }, 350);
+    });
+    input.addEventListener('keydown', function (e) {
+      var open = !box.hidden && results.length;
+      if (e.key === 'ArrowDown' && open) { e.preventDefault(); highlight(active + 1); }
+      else if (e.key === 'ArrowUp' && open) { e.preventDefault(); highlight(active - 1); }
+      else if (e.key === 'Enter' && open && active >= 0) { e.preventDefault(); choose(results[active]); }
+      else if (e.key === 'Escape' && !box.hidden) { e.preventDefault(); close(); }
+    });
+    // a click in the list must not blur the input first (that would close the list before the click lands)
+    box.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    input.addEventListener('blur', function () { close(); });
+  }
+
   var OFFER_MAX_RECORDS = 5;
   function initOffer() {
     var form = document.querySelector('[data-offer-form]');
@@ -1260,6 +1430,7 @@
       reId(rec);
       list.appendChild(frag);
       renumber();
+      initReleasePicker(rec, form.getAttribute('data-search-endpoint'));
       var first = rec.querySelector('input, select');
       if (first) first.focus();
     });
@@ -1293,7 +1464,7 @@
       var recs = records().map(function (r) {
         check(r.querySelector('[name="record"]'), !!val(r, 'record'));
         check(r.querySelector('[name="media"]'), !!val(r, 'media'));
-        return { record: val(r, 'record'), media: val(r, 'media'), sleeve: val(r, 'sleeve') };
+        return { record: val(r, 'record'), release: val(r, 'release'), media: val(r, 'media'), sleeve: val(r, 'sleeve') };
       });
       check(form.querySelector('[name="about"]'), !!val(form, 'about'));
       var hasProfile = !!(val(form, 'discogs') || val(form, 'instagram'));
@@ -1335,6 +1506,8 @@
         });
     });
     renumber();
+    var searchEndpoint = form.getAttribute('data-search-endpoint');
+    records().forEach(function (r) { initReleasePicker(r, searchEndpoint); });
   }
 
   var navToken = 0;
