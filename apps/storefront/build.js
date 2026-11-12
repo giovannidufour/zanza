@@ -36,7 +36,8 @@ const css = {
   base: readCss(path.join(APP, 'base.css')),
   pdp: readCss(path.join(APP, 'pdp.css')),
   plp: readCss(path.join(APP, 'plp.css')),
-  bag: readCss(path.join(APP, 'bag.css'))
+  bag: readCss(path.join(APP, 'bag.css')),
+  trade: readCss(path.join(APP, 'trade.css'))
 };
 const cssHref = (name) => url(`/css/${name}.css?v=${hashOf(css[name])}`);
 const siteJs = fs.readFileSync(path.join(APP, 'scripts/site.js'));
@@ -50,6 +51,7 @@ const shippingJsHref = url(`/js/shipping.js?v=${hashOf(shippingJs)}`);
 const { Pdp, title } = require('./pages/pdp.js');
 const Plp = require('./pages/plp.js');
 const Bag = require('./pages/bag.js');
+const Trade = require('./pages/trade.js');
 const Z = require(path.join(UI, 'components.js'));
 
 // the site player: one per page, outside .zz-page, so the soft navigation in site.js keeps it (and the audio) alive.
@@ -100,6 +102,7 @@ function page({ title: t, body }) {
 <link rel="stylesheet" href="${cssHref('pdp')}">
 <link rel="stylesheet" href="${cssHref('plp')}">
 <link rel="stylesheet" href="${cssHref('bag')}">
+<link rel="stylesheet" href="${cssHref('trade')}">
 <script src="${toastJsHref}" defer></script>
 <script src="${shippingJsHref}" defer></script>
 <script src="${siteJsHref}" defer></script>
@@ -150,6 +153,7 @@ write('css/base.css', css.base);
 write('css/pdp.css', css.pdp);
 write('css/plp.css', css.plp);
 write('css/bag.css', css.bag);
+write('css/trade.css', css.trade);
 write('js/site.js', siteJs);
 write('js/toast.js', toastJs);
 write('js/shipping.js', shippingJs);
@@ -178,6 +182,16 @@ for (const product of products) {
 const forSale = products.filter(p => p.listing.section === 'sale' && ['available', 'reserved', 'sold'].includes(p.listing.status));
 write('sale/index.html', page({ title: Plp.title('sale'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, allProducts: products, site, url })) }));
 
+// For trade (Figma page `Trade`, decision 0068): the trade PLP, one offer page per trade listing, How trading works, About.
+// Traded copies stay on the list like sold ones (behind "Show sold out").
+const forTrade = products.filter(p => p.listing.section === 'trade' && ['available', 'reserved', 'traded'].includes(p.listing.status));
+write('trade/index.html', page({ title: Plp.title('trade'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'trade', products: forTrade, allProducts: products, site, url })) }));
+for (const product of forTrade.filter(p => p.listing.status === 'available')) {
+  write(`products/${product.listing.slug}/offer/index.html`, page({ title: `Make an offer · ${title(product)}`, body: renderToStaticMarkup(React.createElement(Trade.Offer, { product, site, url })) }));
+}
+write('how-trading-works/index.html', page({ title: 'How trading works', body: renderToStaticMarkup(React.createElement(Trade.HowTrading, { site, url })) }));
+write('about/index.html', page({ title: 'About', body: renderToStaticMarkup(React.createElement(Trade.About, { site, url })) }));
+
 // Search results (Figma page `Search`, 2026-11-12): /search/?q=… is a PLP of the same copies, matched in the browser
 // (scripts/site.js) against each card's data-search text. Static and client-side: fine at hundreds of copies
 // (_context/stack.md: a search service only past ~2k).
@@ -190,6 +204,6 @@ write('bag/index.html', page({ title: Bag.title, body: renderToStaticMarkup(Reac
 
 // root: redirect to the PLP while there is no home page
 write('index.html', `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=${url('/sale/')}"><title>${escape(site.storeName)}</title>`);
-console.log(`done: ${products.length} product page(s), 1 listing (${forSale.length} for sale)`);
+console.log(`done: ${products.length} product page(s), ${forSale.length} for sale, ${forTrade.length} for trade`);
 }
 main().catch((err) => { console.error(err.message || err); process.exit(1); });

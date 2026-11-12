@@ -828,6 +828,9 @@ a.zz-product-card__image { display: block; color: inherit; }
   cursor: text;
 }
 .zz-input[data-size="compact"] .zz-input__field { gap: 4px; padding: 4px; }
+/* text area (Figma `_input-master` size=multiline, proposal 2026-11-12): field at least 120 tall, text from the top */
+.zz-input[data-variant="text-area"] .zz-input__field { align-items: flex-start; min-height: 120px; }
+.zz-input[data-variant="text-area"] .zz-input__control { min-height: 102px; resize: vertical; }
 
 .zz-input__control {
   flex: 1 1 0;
@@ -1288,3 +1291,20 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-toast-region .zz-toast { animation: zz-toast-in 150ms ease-out; }
 @keyframes zz-toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .zz-toast-region .zz-toast { animation: none; } }
+
+/* ── Trade (Figma page `Trade`, proposal 2026-11-12) ── */
+.zz-trade-note { display: flex; flex-direction: column; gap: var(--small); color: var(--text-strong); }
+.zz-trade-note__title, .zz-trade-note__signature { margin: 0; }
+.zz-trade-note__body p { margin: 0; }
+.zz-trade-note__signature { color: var(--text-moderate); }
+.zz-discogs-card { display: flex; flex-direction: column; gap: 4px; padding: var(--small); border: 1px solid var(--border-divider-strong); color: var(--text-strong); }
+.zz-discogs-card p { margin: 0; }
+.zz-discogs-card__label { color: var(--text-moderate); }
+.zz-discogs-card__link { color: inherit; text-decoration: underline; align-self: flex-start; }
+.zz-trade-step { display: flex; gap: var(--medium-small); color: var(--text-strong); }
+.zz-trade-step__number { flex: none; width: 24px; }
+.zz-trade-step__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.zz-trade-step__title, .zz-trade-step__body { margin: 0; }
+.zz-gig-row { display: flex; gap: var(--medium-small); padding: var(--small) 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
+.zz-gig-row__date { flex: none; width: 96px; }
+.zz-gig-row__place { flex: 1 1 0; min-width: 0; }

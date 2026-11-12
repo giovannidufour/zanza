@@ -1,0 +1,71 @@
+/* apps/storefront/trade.css — page layout of the trade pages (Figma page `Trade`, proposal 2026-11-12, decision 0068):
+   offer, how trading works, about; plus the trade actions column of the PDP. Layout only: components bring their own styles. */
+
+/* Figma `offer content` (= the Account content grid): 12 columns, title on row 1, three 4-column blocks on row 2 */
+.trade-content {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--gutter-small);
+  row-gap: var(--gutter-small);
+  padding: var(--small) 0;
+  align-items: start;
+}
+.trade-content__title { grid-column: 1 / -1; margin: 0; }
+/* the form's two columns sit in the page grid */
+.trade-form { display: contents; }
+.trade-col { display: flex; flex-direction: column; gap: var(--medium-small); min-width: 0; }
+.trade-col > p, .trade-col > h2 { margin: 0; }
+.trade-col--1 { grid-column: 1 / span 4; }
+.trade-col--2 { grid-column: 5 / span 4; }
+.trade-col--3 { grid-column: 9 / span 4; }
+.trade-col--steps { grid-column: 1 / span 8; }
+.trade-col[hidden], .trade-form[hidden] { display: none; }
+.trade-sent__signature { color: var(--text-moderate); }
+
+/* Figma `offer target`: cover 80 + text, gap small */
+.offer-target { display: flex; gap: var(--small); align-items: flex-start; }
+.offer-target__image { flex: none; width: 80px; height: 80px; object-fit: cover; }
+.offer-target__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; color: var(--text-strong); }
+.offer-target__text p { margin: 0; }
+.offer-target__text .offer-target__label { color: var(--text-moderate); }
+
+/* Figma `offered record`: head (title + Remove), record, two grade selects side by side; gap small */
+.offer-records { display: flex; flex-direction: column; gap: var(--medium-small); }
+.offered-record { display: flex; flex-direction: column; gap: var(--small); margin: 0; padding: 0; border: 0; min-width: 0; }
+.offered-record__head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--small); }
+.offered-record__head legend { float: left; padding: 0; color: var(--text-strong); }
+.offered-record__remove { background: none; border: 0; padding: 0; color: var(--text-strong); text-decoration: underline; cursor: pointer; font: inherit; }
+.offered-record__remove[hidden] { display: none; }
+.offered-record__grades { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gutter-small); }
+.trade-form__add, .trade-form__send { width: 100%; }
+.trade-form__error { margin: 0; color: var(--text-alert); }
+.trade-form__gigs { display: flex; flex-direction: column; gap: var(--small); }
+.trade-form__gigs[hidden] { display: none; }
+.trade-form__gigs p { margin: 0; }
+.gigs-list { margin: 0; padding: 0; list-style: none; }
+.trade-steps { display: flex; flex-direction: column; gap: var(--medium-small); margin: 0; padding: 0; list-style: none; }
+
+/* About: Figma `about intro` */
+.about-intro { display: flex; flex-direction: column; gap: var(--medium-small); color: var(--text-strong); }
+.about-intro h2, .about-intro p { margin: 0; }
+.about-intro__links { display: flex; flex-direction: column; gap: var(--small); }
+.about-intro__links > * { width: 100%; }
+
+/* PDP of a trade listing: Figma `actions container` = trade actions, trade note, discogs card; gap medium-small */
+.trade-actions { display: flex; flex-direction: column; gap: var(--medium-small); }
+.trade-actions__cta { display: flex; flex-direction: column; gap: var(--small); }
+.trade-actions__cta p { margin: 0; color: var(--text-strong); }
+.trade-actions__link { align-self: flex-start; }
+
+@media (--mobile) {
+  /* Figma Trade offer - mobile: one column, blocks stacked, gap medium-small */
+  .trade-content { grid-template-columns: minmax(0, 1fr); row-gap: var(--medium-small); }
+  .trade-content__title, .trade-col--1, .trade-col--2, .trade-col--3, .trade-col--steps { grid-column: 1; }
+}
+
+/* Figma `trade actions` → link, `offer target` → back: underlined body text links (unlike site-inline-link, 0043) */
+.trade-link { color: inherit; text-decoration: underline; }
+
+/* trade listings: no "Add to bag" in the site player (scripts/site.js sets hidden) */
+.site-player__add[hidden] { display: none; }
+.trade-form__add[hidden] { display: none; }

@@ -256,6 +256,8 @@ export interface ProductCardProps extends HTMLAttributes<HTMLElement> {
   samples?: ReactNode;
   /** Click on the add button. */
   onAdd?: () => void;
+  /** Makes the add button a link (trade listings: the offer page, label "Make an offer" / "Offer"). */
+  addHref?: string;
   /** Desktop button label (Figma: "Add to bag"). Default "Add to bag". */
   addLabel?: string;
   /** Mobile button label (Figma: "Add"). Default "Add". */
@@ -362,7 +364,7 @@ export declare function Gallery(props: GalleryProps): JSX.Element;
  *  Props not listed here go to the native <input> / <select> (name, value, onChange, required, disabled…). */
 export interface InputProps {
   /** Figma `type` (renamed: `type` is the native input attribute). search adds the magnifying glass, select the chevron. @default "text-field" */
-  variant?: "text-field" | "search" | "select";
+  variant?: "text-field" | "search" | "select" | "text-area";
   /** Figma `size`. medium = 38px field, compact = 30px. @default "medium" */
   size?: "medium" | "compact";
   /** Figma `label`. Rendered as a <label> (body-small). Without it, pass `aria-label`. */
@@ -782,3 +784,46 @@ export interface SelectButtonProps extends HTMLAttributes<HTMLSelectElement> {
 export declare function SelectButton(props: SelectButtonProps): JSX.Element;
 export declare function ChevronRightIcon(): JSX.Element;
 export declare function ChevronLeftIcon(): JSX.Element;
+
+/** Figma `trade note` (page Trade, proposal 2026-11-12): Gio's first-person note on a trade record. */
+export interface TradeNoteProps extends HTMLAttributes<HTMLDivElement> {
+  /** Figma `title`. @default "Why it's not for sale" */
+  title?: ReactNode;
+  /** Heading level of the title. @default 2 */
+  headingLevel?: 2 | 3 | 4;
+  /** Figma `signature`, e.g. "— Gio". */
+  signature?: ReactNode;
+  /** Figma `body`. */
+  children?: ReactNode;
+}
+export declare function TradeNote(props: TradeNoteProps): JSX.Element;
+
+/** Figma `discogs card` (page Trade): identity borrowed from Discogs. */
+export interface DiscogsCardProps extends HTMLAttributes<HTMLDivElement> {
+  /** Figma `label`. @default "On Discogs" */
+  label?: ReactNode;
+  /** Figma `handle`: the Discogs username. */
+  handle: ReactNode;
+  /** Figma `stats`, e.g. "Member since 2015 · 100% positive · 412 ratings". */
+  stats?: ReactNode;
+  /** Profile URL. Figma boolean `link`: omitted → no link. Opens in a new tab. */
+  href?: string;
+  /** @default "View profile" */
+  linkLabel?: ReactNode;
+}
+export declare function DiscogsCard(props: DiscogsCardProps): JSX.Element;
+
+/** Figma `trade step` (page Trade): one numbered step of How trading works. An <li>: put it in an <ol>. */
+export interface TradeStepProps extends HTMLAttributes<HTMLLIElement> {
+  number: ReactNode;
+  title: ReactNode;
+  children?: ReactNode;
+}
+export declare function TradeStep(props: TradeStepProps): JSX.Element;
+
+/** Figma `gig row` (page Trade): one upcoming gig. An <li>: put it in a <ul>. */
+export interface GigRowProps extends HTMLAttributes<HTMLLIElement> {
+  date: ReactNode;
+  place: ReactNode;
+}
+export declare function GigRow(props: GigRowProps): JSX.Element;

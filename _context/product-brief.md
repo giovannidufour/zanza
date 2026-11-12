@@ -12,6 +12,9 @@ Da liste e schede si ascoltano i sample dei dischi.
 3. Play sample da card (PLP) e da tracklist (PDP) senza interrompere la navigazione
 
 ### For Trade
+**Aggiornato 2026-11-12 (decisione 0068, sostituisce i punti sotto per l'MVP):** "non è in vendita, convincimi". PDP trade con "Trade only", la nota di Gio (la descrizione dell'admin) e la sua Discogs card; CTA *Make an offer* → pagina offerta: dischi offerti (1–5, con i gradi), pitch, presentazione (chi sei + Discogs e/o Instagram), dove parliamo (Discogs, Instagram, email, di persona a un gig), email. L'offerta arriva a Gio per email (funzione `trade-offer`), nessun account, niente salvato. Niente regola su chi spedisce: l'accordo si trova parlando. Pagine /how-trading-works/ e /about/. La wantlist di Gio non è mai pubblica. Fase 2: drop con finestra di offerte, card Discogs automatiche, offerte salvate.
+
+Bozza originale (pre-MVP):
 1. PLP trade → PDP trade (stessa anatomia, CTA **Trade** al posto di Add to cart)
 2. Form proposta: cosa offro (1+ dischi: ricerca Discogs o inserimento manuale + condizione media/sleeve + foto), eventuale conguaglio in €, messaggio
 3. Il negozio risponde: accetta / rifiuta / controproposta. Tutto tracciato in account → "My proposals"
