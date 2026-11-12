@@ -836,7 +836,12 @@ a.zz-product-card__image { display: block; color: inherit; }
   font: inherit;           /* overridden by the body-medium class on the element */
   appearance: none;
   -webkit-appearance: none;
-  /* focus: not designed (design/open.md) — the browser outline is kept on purpose, never removed */
+}
+/* focus (0063): the ring goes around the whole field, not the bare control inside it. Still the browser ring
+   (no border/focus token yet, design/open.md). Without :has the control keeps its own ring: never no ring. */
+@supports selector(:has(*)) {
+  .zz-input__control:focus-visible { outline: none; }
+  .zz-input__field:has(.zz-input__control:focus-visible) { outline: auto; }
 }
 .zz-input__control::placeholder { color: var(--text-moderate); opacity: 1; }
 .zz-input__control::-webkit-search-decoration,

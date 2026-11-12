@@ -86,3 +86,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0060](0060-mobile-menu.md) | Mobile menu: a full-screen layer from the hamburger, Account is its entry point | accepted |
 | [0061](0061-search-results-page.md) | Search: a results page that is a PLP; sold copies stay visible behind "Show sold out" | accepted |
 | [0062](0062-search-field-clear-and-submit.md) | Search field: the magnifier submits, a × clears while there is text; on mobile the field is in the menu | accepted |
+| [0063](0063-input-focus-ring-on-the-field.md) | Input focus: the ring goes around the whole field, not the native control inside it | accepted |
