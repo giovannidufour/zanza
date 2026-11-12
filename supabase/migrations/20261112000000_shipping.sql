@@ -2,7 +2,7 @@
 -- create-checkout will pass to Stripe. One config document, not four tables: ~4 formats, 2–3 packages, 3 zones and
 -- ~10 rates, always edited and read whole (admin page Shipping, shop build, create-checkout). The rules live in ONE
 -- place, packages/shipping/shipping.js (estimate + validate), used by all three.
--- NOT APPLIED until Gio says so.
+-- Applied on store-staging 2026-11-12 (Gio: "merge e applica la migrazione").
 
 create table public.shipping_settings (
   id          boolean primary key default true check (id),   -- one row
