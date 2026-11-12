@@ -17,6 +17,7 @@ A modal confirmation before an action (admin: every bulk action, decision 0025).
 | `onCancel` * | `() => void` |  | Cancel button and Esc. |
 | `busy` | `boolean` |  | The confirmed action is running: the confirm button ignores clicks and is aria-busy. |
 | `choices` | `ReactNode` |  | A required pick under the body, e.g. which artist to keep when merging: pass a &lt;RadioGroup>. Figma: `choices`. |
+| `field` | `ReactNode` |  |  |
 
 `*` required.
 <!-- /api -->

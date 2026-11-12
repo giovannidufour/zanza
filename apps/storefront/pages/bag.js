@@ -21,6 +21,7 @@ function BagLine({ product, url }) {
   const available = listing.status === 'available';
   return h('li', { className: 'bag-list__line', hidden: true, 'data-bag-line': listing.id,
       'data-price': listing.price ? listing.price.amount : 0, 'data-available': available ? 'true' : 'false',
+      'data-listing-status': listing.status,
       'data-format': release.format || '', 'data-weight': listing.weight_g || '' },
     h(Z.Divider),
     h(Z.BagItem, {

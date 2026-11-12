@@ -46,7 +46,10 @@ function Pdp({ product, related = [], site, url }) {
         }, sampleAttrs(product, s, url)), s.title || null)) : null
       }),
       h('div', { className: 'pdp-content__actions' },
-        h(Z.Button, { hierarchy: 'primary', size: 'large', className: 'pdp-content__cta', 'data-add-to-bag': listing.id }, 'Add to bag')),
+        h(Z.Button, { hierarchy: 'primary', size: 'large', className: 'pdp-content__cta', 'data-add-to-bag': listing.id, 'data-listing-status': listing.status }, 'Add to bag'),
+        // Reserved (proposal, design/open.md): one line under the CTA explains the hold; site.js shows it live
+        h('p', { className: 'pdp-content__note body-small', 'data-reserved-note': listing.id, hidden: listing.status !== 'reserved' },
+          'Someone is checking out this record. If they don\u2019t buy it, it\u2019s back within 30 minutes.')),
       // Figma: `you may also like` — desktop row 2, cols 5–12; mobile below the content. Cards are h3 under its h2.
       related.length ? h(Z.RelatedProducts, { className: 'pdp-content__related', title: 'More for sale:' },
         related.map((p) => h(ProductCardFor, { key: p.listing.slug, product: p, url, headingLevel: 3 }))) : null
