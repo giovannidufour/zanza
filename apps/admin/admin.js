@@ -633,7 +633,7 @@
         }));
     }
 
-    return h('div', { className: 'admin-page' }, main, side);
+    return h('div', { className: 'admin-page admin-page--edit' }, main, side);
   }
 
   // ── Listings ──────────────────────────────────────────────────────────────
