@@ -793,21 +793,25 @@
     });
     // ids with no line are listings that left the shop (unpublished, archived, deleted): drop them from the bag
     var known = ids.filter(function (id) { return !!lines[id]; });
-    var count = 0, cents = 0, sold = 0, held = 0;
+    var count = 0, cents = 0, sold = 0, held = 0, heldByHand = 0;
     known.forEach(function (id) {
       var li = lines[id];
       li.hidden = false;
       list.appendChild(li);   // in the order they were added
       if (li.getAttribute('data-available') === 'true') { count++; cents += parseInt(li.getAttribute('data-price'), 10) || 0; }
       else if (li.querySelector('.zz-bag-item[data-status="sold"]')) sold++;
-      else held++;
+      else { held++; if (holdKind && holdKind[id] === 'manual') heldByHand++; }
     });
-    // sold and reserved lines are not in the order: say it above Checkout (decisions 0064, 0065)
+    // sold and reserved lines are not in the order: say it above Checkout, in full sentences, so a partial checkout
+    // is explicit (decisions 0064, 0065; Gio 2026-11-12). A checkout hold ends within 30 min; a hold by hand has no end.
     var soldNote = root.querySelector('[data-bag-sold-out]');
     if (soldNote) {
       var notes = [];
-      if (sold) notes.push(sold === 1 ? '1 record sold out, not included.' : sold + ' records sold out, not included.');
-      if (held) notes.push(held === 1 ? '1 record reserved, not included.' : held + ' records reserved, not included.');
+      if (sold) notes.push(sold === 1 ? '1 record is sold out and won\u2019t be in this order.'
+        : sold + ' records are sold out and won\u2019t be in this order.');
+      if (held) notes.push((held === 1 ? '1 record is reserved and won\u2019t be in this order.'
+        : held + ' records are reserved and won\u2019t be in this order.') +
+        (heldByHand === held ? '' : held === 1 ? ' It may be back within 30 minutes.' : ' They may be back within 30 minutes.'));
       soldNote.hidden = notes.length === 0;
       soldNote.textContent = notes.join(' ');
     }
