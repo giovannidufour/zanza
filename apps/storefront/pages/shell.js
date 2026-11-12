@@ -143,6 +143,7 @@ function ProductCardFor({ product, url, headingLevel }) {
   const { listing, release, copy, samples } = product;
   return h(Z.ProductCard, {
     'data-listing-id': listing.id,   // its Add button puts this copy in the bag (scripts/site.js)
+    'data-listing-status': listing.status,   // status at build time; site.js updates it live (Reserved)
     href: productHref(product, url),
     image: release.cover ? { src: url(release.cover), alt: '' } : null,
     title: productNameLinked(product, url, productHref(product, url)),
