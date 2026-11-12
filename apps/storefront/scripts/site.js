@@ -30,8 +30,8 @@
    7. Live status (_context/backend.md -> Stato dal vivo)
       - the pages are static: each listing carries its status at build time (data-listing-status); with Supabase meta
         tags on the page, one read of listing_availability per page (and when the tab comes back) brings it up to date
-      - reserved (someone is in Stripe Checkout, max 30 min, or held by hand): the Add buttons read "Reserved" (secondary
-        + clock) and stay active: pressing one opens the "Reserved" dialog, which explains the hold and offers "Notify me"
+      - reserved (someone is in Stripe Checkout, max 30 min, or held by hand): the Add buttons read "(Reserved) Notify me"
+        (secondary + envelope, decision 0065) and stay active: pressing one opens the "Reserved" dialog, which explains the hold and offers "Notify me"
         (email, migration 0016). The bag line shows the notice "Reserved".
         sold: the Add buttons read "Sold out", disabled (decision 0061); the bag line: name struck, "SOLD OUT" + struck price (0064)
 
@@ -793,19 +793,23 @@
     });
     // ids with no line are listings that left the shop (unpublished, archived, deleted): drop them from the bag
     var known = ids.filter(function (id) { return !!lines[id]; });
-    var count = 0, cents = 0, sold = 0;
+    var count = 0, cents = 0, sold = 0, held = 0;
     known.forEach(function (id) {
       var li = lines[id];
       li.hidden = false;
       list.appendChild(li);   // in the order they were added
       if (li.getAttribute('data-available') === 'true') { count++; cents += parseInt(li.getAttribute('data-price'), 10) || 0; }
       else if (li.querySelector('.zz-bag-item[data-status="sold"]')) sold++;
+      else held++;
     });
-    // sold lines are not in the order: say it above Checkout (decision 0064)
+    // sold and reserved lines are not in the order: say it above Checkout (decisions 0064, 0065)
     var soldNote = root.querySelector('[data-bag-sold-out]');
     if (soldNote) {
-      soldNote.hidden = sold === 0;
-      soldNote.textContent = sold === 1 ? '1 record sold out, not included.' : sold + ' records sold out, not included.';
+      var notes = [];
+      if (sold) notes.push(sold === 1 ? '1 record sold out, not included.' : sold + ' records sold out, not included.');
+      if (held) notes.push(held === 1 ? '1 record reserved, not included.' : held + ' records reserved, not included.');
+      soldNote.hidden = notes.length === 0;
+      soldNote.textContent = notes.join(' ');
     }
     var empty = known.length === 0;
     list.hidden = empty;
@@ -886,12 +890,13 @@
   // on, icon-tick-large-thin), label "In bag", accessible name "In bag, view bag". Pressing it opens the bag: taking a
   // copy out happens only in the bag. Never disabled: struck through means unavailable (sold). The defaults are kept
   // in data-*-default so they come back when the copy leaves the bag.
-  // Reserved (decision 0059): a copy held by a checkout (or by hand) reads "Reserved", hierarchy secondary,
-  // leading icon = clock (icon-clock-counter-clockwise), accessible name "Reserved, find out more" (the dialog says which hold). It wins
-  // over "In bag". Never disabled (struck through = sold, decision 0058): pressing it explains the hold in a toast.
+  // Reserved (decisions 0059, 0065): a copy held by a checkout (or by hand) reads "(Reserved) Notify me": prefix
+  // "(Reserved)", label "Notify me", hierarchy secondary, trailing icon = envelope, no leading icon. Pressing it opens
+  // the "Reserved" dialog (explains the hold, asks the email). It wins over "In bag". Never disabled (struck = sold, 0058).
   function syncAddButton(btn, id, ids) {
     var label = btn.querySelector('.zz-button__label');
-    var text = label && label.firstChild;
+    // the label's own text node (a prefix span may sit before it, 0065)
+    var text = label && Array.prototype.filter.call(label.childNodes, function (n) { return n.nodeType === 3; })[0];
     if (!text || text.nodeType !== 3) return;
     if (!btn.hasAttribute('data-label-default')) btn.setAttribute('data-label-default', text.nodeValue);
     if (!btn.hasAttribute('data-hierarchy-default')) btn.setAttribute('data-hierarchy-default', btn.getAttribute('data-hierarchy') || 'primary');
@@ -901,14 +906,34 @@
     var reserved = !sold && st === 'reserved';
     var inBag = !sold && !reserved && !!id && (ids || readBag()).indexOf(id) !== -1;
     if ('disabled' in btn) btn.disabled = sold;
-    text.nodeValue = sold ? 'Sold out' : reserved ? 'Reserved' : inBag ? 'In bag' : btn.getAttribute('data-label-default');
+    text.nodeValue = sold ? 'Sold out' : reserved ? 'Notify me' : inBag ? 'In bag' : btn.getAttribute('data-label-default');
+    setPrefix(label, text, reserved ? '(Reserved)' : null);
     btn.setAttribute('data-hierarchy', sold || reserved || inBag ? 'secondary' : btn.getAttribute('data-hierarchy-default'));
     btn.setAttribute('data-in-bag', inBag ? 'true' : 'false');
     btn.setAttribute('data-reserved', reserved ? 'true' : 'false');
-    if (reserved) btn.setAttribute('aria-label', 'Reserved, find out more');
+    if (reserved) btn.setAttribute('aria-label', 'Reserved. Notify me if it is back');
     else if (inBag) btn.setAttribute('aria-label', 'In bag, view bag');
     else btn.removeAttribute('aria-label');
-    setLeadingIcon(btn, label, reserved ? 'zz-icon-clock' : inBag ? 'zz-icon-tick' : null);
+    setLeadingIcon(btn, label, inBag ? 'zz-icon-tick' : null);
+    setTrailingIcon(btn, reserved ? 'zz-icon-envelope' : null);
+  }
+  // the Button's prefix (Figma `prefix`, decision 0065): a span before the label text, same text style
+  function setPrefix(label, text, value) {
+    var cur = label.querySelector('.zz-button__prefix');
+    if (!value) { if (cur) label.removeChild(cur); return; }
+    if (!cur) { cur = document.createElement('span'); cur.className = 'zz-button__prefix'; label.insertBefore(cur, text); }
+    cur.textContent = value;
+  }
+  // the Button's trailing icon slot (only ever set by these states; the Add buttons have none by default)
+  function setTrailingIcon(btn, templateId) {
+    var cur = btn.querySelector('[data-trailing-icon]');
+    if (cur && cur.getAttribute('data-trailing-icon') === templateId) return;
+    if (cur) cur.parentNode.removeChild(cur);
+    var tpl = templateId && document.getElementById(templateId);
+    if (!tpl || !tpl.content.firstElementChild) return;
+    var icon = tpl.content.firstElementChild.cloneNode(true);
+    icon.setAttribute('data-trailing-icon', templateId);
+    btn.appendChild(icon);
   }
   // the Button's leading icon slot: one icon at a time, cloned from a <template> on the page (build.js)
   function setLeadingIcon(btn, label, templateId) {
@@ -1071,8 +1096,8 @@
   document.addEventListener('cancel', function (e) {
     if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-notify-dialog')) { e.preventDefault(); closeNotify(); }
   }, true);
-  // a bag line follows the live status, as pages/bag.js renders it: available (price), sold (name struck through,
-  // "SOLD OUT" beside the struck price, decision 0064), reserved ("Reserved", no price)
+  // a bag line follows the live status, as pages/bag.js renders it: available (price), sold / reserved (name struck
+  // through, "SOLD OUT" / "RESERVED" beside the struck price, decisions 0064, 0065)
   var BAG_STATUS = { available: 'available', sold: 'sold', traded: 'sold' };
   function syncBagLine(li) {
     var id = li.getAttribute('data-bag-line');
@@ -1084,18 +1109,12 @@
     var item = li.querySelector('.zz-bag-item');
     if (!item) return;
     item.setAttribute('data-status', line);
-    // reserved: the "Reserved" notice on top, no price
-    var info = item.querySelector('.zz-bag-item__info');
+    // sold and reserved (0064, 0065): no notice on top; the word beside the struck price
     var notice = item.querySelector('.zz-bag-item__notice');
-    if (line !== 'reserved' && notice) notice.parentNode.removeChild(notice);
-    if (line === 'reserved' && info && !notice) {
-      notice = document.createElement('p'); notice.className = 'zz-bag-item__notice label-small'; notice.textContent = 'Reserved';
-      info.insertBefore(notice, info.firstChild);
-    }
+    if (notice) notice.parentNode.removeChild(notice);
     var purchase = item.querySelector('.zz-bag-item__purchase');
     var price = item.querySelector('.zz-bag-item__price');
-    if (line === 'reserved' && price) price.parentNode.removeChild(price);
-    if (line !== 'reserved' && purchase) {
+    if (purchase) {
       if (!price) {
         price = document.createElement('p');
         price.className = 'zz-bag-item__price body-large body-medium--mobile';   // = BagItem responsive (CARD_TYPE.head)
@@ -1103,9 +1122,9 @@
       }
       var text = formatPrice(parseInt(li.getAttribute('data-price'), 10) || 0);
       price.textContent = '';
-      if (line === 'sold') {
-        // as BagItem: "SOLD OUT" + (screen readers) "not in your order" + the struck price
-        var label = document.createElement('span'); label.textContent = 'SOLD OUT';
+      if (!available) {
+        // as BagItem: "SOLD OUT" / "RESERVED" + (screen readers) "not in your order" + the struck price
+        var label = document.createElement('span'); label.textContent = line === 'sold' ? 'SOLD OUT' : 'RESERVED';
         var sr = document.createElement('span'); sr.className = 'zz-visually-hidden'; sr.textContent = ', not in your order, ';
         var s = document.createElement('s'); s.textContent = text;
         price.appendChild(label); price.appendChild(sr); price.appendChild(s);

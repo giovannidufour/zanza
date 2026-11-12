@@ -4,7 +4,7 @@
    added, computes the subtotal and swaps to the empty state. A copy is unique: one line per copy, no quantity.
    Adding to the bag does not hold the copy: the 30 min hold starts at checkout (_context/backend.md). A listing that
    is no longer available shows its notice: sold = name struck through, "SOLD OUT" beside the struck price (decision 0064), reserved (held by
-   another checkout) = "Reserved", no price. Only available lines count in the subtotal.
+   another checkout) = the same with "RESERVED" (decision 0065). Only available lines count in the subtotal.
    Shipping (decision 0057, Figma `bag summary` destination=served | not served): when shipping is set up (admin page
    Shipping), the summary has a "Ship to" country select and a total; the page carries the shipping config as JSON and
    site.js estimates with packages/shipping/shipping.js. create-checkout recalculates on the server. */
