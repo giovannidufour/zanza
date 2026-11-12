@@ -386,6 +386,9 @@ a.zz-tab {
 .zz-active-filter[hidden] { display: none; }
 .zz-active-filter__row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: var(--small); }   /* Figma: row padding `small`, counter-axis center */
 .zz-active-filter__rule { height: 1px; width: 100%; background: var(--border-divider-strong); }   /* Figma: border, fill border divider/strong */
+/* Figma 2026-11-12: on desktop the medium chip's instance has padding-top/bottom 8 → 40px tall (24 + 8 + 8).
+   Override in `active filter` only: the medium chip inside the admin EntityField stays 24 so the field keeps 38. */
+.zz-active-filter .zz-entity-chip:not([data-size="large"]) { height: 40px; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    Tag (Figma: tag item) · TagGroup (Figma: tag group)
@@ -558,8 +561,11 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
   grid-template-columns: repeat(3, minmax(0, 1fr));   /* Figma: 3 FLEX columns, no gaps */
   gap: 0;
   width: 100%;
+  padding-bottom: 64px;   /* Figma: device=desktop paddingBottom 64 (literal: no spacing token, open.md) */
   color: var(--text-strong);
 }
+.zz-product-info[data-device="mobile"] { padding-bottom: 32px; }   /* Figma: device=mobile paddingBottom 32 */
+@media (--mobile) { .zz-product-info[data-device="responsive"] { padding-bottom: 32px; } }
 /* type: every text node carries its text-style class (components.js); here only the UA margins are reset */
 .zz-product-info p, .zz-product-info :is(h1, h2, h3, h4, h5, h6) { margin: 0; }   /* the title level is a prop (headingLevel) */
 
@@ -571,15 +577,15 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
 .zz-product-info__tags { display: flex; flex-direction: column; gap: 8px; padding-bottom: 16px; }
 .zz-product-info__description-block { display: flex; flex-direction: column; gap: 4px; padding-bottom: 16px; }
 
-/* samples: desktop = middle column, vertical, gap 8 · mobile = full width, horizontal, wrap, gap 16 (rows and columns), padding-bottom 8 (Figma `slot container` 2018:10164) */
+/* samples: desktop = middle column, vertical, gap 8 · mobile = full width, horizontal, wrap, gap 16 (rows and columns) (Figma `slot container` 2018:10164); the bottom space is the component's own padding */
 .zz-product-info__samples { grid-column: 2 / 4; display: flex; flex-direction: column; gap: 8px; }
 .zz-product-info__samples .zz-player-button { width: 100%; justify-content: flex-start; }
 
-.zz-product-info[data-device="mobile"] .zz-product-info__samples { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-content: flex-start; gap: 16px; padding-bottom: 8px; }
+.zz-product-info[data-device="mobile"] .zz-product-info__samples { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-content: flex-start; gap: 16px; }
 .zz-product-info[data-device="mobile"] .zz-product-info__samples .zz-player-button { width: auto; }
 
 @media (--mobile) {
-  .zz-product-info[data-device="responsive"] .zz-product-info__samples { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-content: flex-start; gap: 16px; padding-bottom: 8px; }
+  .zz-product-info[data-device="responsive"] .zz-product-info__samples { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-content: flex-start; gap: 16px; }
   .zz-product-info[data-device="responsive"] .zz-product-info__samples .zz-player-button { width: auto; }
 }
 

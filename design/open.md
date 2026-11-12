@@ -4,6 +4,7 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 
 ## Pending decisions
 
+- **PLP desktop: active filter 57 vs breadcrumbs 41.** Since 2026-11-12 the desktop active-filter chip is 40px (padding 8 on the instance), so the row under the header grows by 16px when a filter link is followed. Options: breadcrumbs desktop to 57 too (padding-top/bottom 16), or accept the jump. The medium chip in the admin EntityField stays 24 (field 38).
 - **Interaction overlay for all clickables.** Reuse `action/floating/background/*` as the hover/pressed tint everywhere, links included? Proposal: rename to `interaction/overlay/*`, add an inverse pair (`white-a4/a8`) for dark surfaces, keep the underline on links (WCAG 1.4.1), implement as a `::before` overlay. See [0007](decisions/0007-floating-actions-foreground-background.md).
 - **Focus state.** None designed, none shipped. Needs a `border/focus` token before launch (WCAG 2.4.7). *Parked.*
 - **Motion tokens.** 150ms ease-out (dashed border, FileList reorder slide) and 200ms (header reveal) are placeholders. *Parked.*
