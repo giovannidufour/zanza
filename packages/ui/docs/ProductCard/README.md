@@ -29,6 +29,7 @@ One markup for both variants; CSS grid places the blocks ([0016](../../../../des
 | `tags` | `Array<string \| { label: string; href?: string }>` |  | Tag labels, or `{ label, href }` for a tag that links somewhere. Rendered as a TagGroup: size large on desktop, small on mobile. |
 | `samples` | `ReactNode` |  | &lt;PlayerButton>s, in a row (gap 8). |
 | `onAdd` | `() => void` |  | Click on the add button. |
+| `addHref` | `string` |  | Makes the add button a link (trade listings: the offer page, label "Make an offer" / "Offer"). |
 | `addLabel` | `string` |  | Desktop button label (Figma: "Add to bag"). Default "Add to bag". |
 | `addLabelShort` | `string` |  | Mobile button label (Figma: "Add"). Default "Add". |
 

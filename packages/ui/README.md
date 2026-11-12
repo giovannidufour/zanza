@@ -52,12 +52,16 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | BagSummary | page `Bag` → `bag summary` | ported: subtotal, shipping "Calculated at checkout", Checkout, note |
 | RelatedProducts | page `PDP` → `you may also like` | ported: one layout, cards carry the device |
 | Gallery | page `PDP` → `product image` ×2, `mobile gallery` | ported from page placement; Figma component pending |
-| Input | page `input` → `input` + `_input-master` | ported: variant text field / search / select × size medium / compact; error, locked (admin) |
+| Input | page `input` → `input` + `_input-master` | ported: variant text field / search / select / text area (2026-11-12, default state only) × size medium / compact; error, locked (admin) |
 | DropZone | page `uploads` → `drop zone` | ported |
 | FileList / FileItem | page `uploads` → `file item` (list = layout frame) | ported: type audio / image, state default / dragging, handle, featured, title field |
 | Divider | page `divider` → `divider` | ported |
 | ActionPanel | page `listing form` → `action panel` | ported |
 | ListingLine | page `listing form` → `listing line` | ported: removable, sample empty / uploaded, artist on label |
+| TradeNote | page `Trade` → `trade note` | ported (0068): title, body, signature |
+| DiscogsCard | page `Trade` → `discogs card` | ported (0068): label, handle, stats, link |
+| TradeStep | page `Trade` → `trade step` | ported (0068) |
+| GigRow | page `Trade` → `gig row` | ported (0068) |
 | Checkbox | page `controls` → `checkbox` | ported: state default / active (= checked) / indeterminate, `label` boolean (hideLabel), native input |
 | Dialog | page `dialog` → `dialog` | ported: native `<dialog>` + showModal, surface-base, backdrop surface-scrim, `choices` (radio group) |
 | Toast | page `toast` → `toast` | ported: `message`, `action` (Undo), `dismiss`; ToastRegion + `toast.js` (one at a time, 6 s without action, live region), decision 0049 |

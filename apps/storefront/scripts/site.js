@@ -118,7 +118,8 @@
       product: btn.getAttribute('data-product-name') || '',
       image: btn.getAttribute('data-product-image') || '',
       href: btn.getAttribute('data-product-href') || '',
-      listing: btn.getAttribute('data-listing-id') || ''
+      listing: btn.getAttribute('data-listing-id') || '',
+      section: btn.getAttribute('data-listing-section') || 'sale'
     };
   }
   // the queue of a sample button = the playable sample buttons of the same group (ProductInfo samples)
@@ -161,7 +162,8 @@
       var view = q('.site-player__view');
       if (view && cur.href) view.setAttribute('href', cur.href);
       var add = q('.site-player__add');
-      if (add) { add.disabled = !cur.listing; syncAddButton(add, cur.listing); }
+      // trade listings (decision 0068): no "Add to bag" in the player, the offer is made on the record's page
+      if (add) { add.hidden = cur.section === 'trade'; add.disabled = !cur.listing; if (cur.section !== 'trade') syncAddButton(add, cur.listing); }
       q('.zz-player__previous').disabled = index <= 0;
       q('.zz-player__next').disabled = index >= queue.length - 1;
     }
@@ -959,14 +961,16 @@
   }
   function syncAddButtons(ids) {
     Array.prototype.forEach.call(document.querySelectorAll('[data-listing-id] .zz-product-card__add'), function (b) {
-      syncAddButton(b, b.closest('[data-listing-id]').getAttribute('data-listing-id'), ids);
+      var holder = b.closest('[data-listing-id]');
+      if (holder.getAttribute('data-listing-section') === 'trade') return;   // a link to the offer page, not a bag button (0068)
+      syncAddButton(b, holder.getAttribute('data-listing-id'), ids);
     });
     Array.prototype.forEach.call(document.querySelectorAll('[data-add-to-bag]'), function (b) {
       syncAddButton(b, b.getAttribute('data-add-to-bag'), ids);
     });
     var add = player && player.querySelector('.site-player__add');
     var cur = typeof current === 'function' ? current() : null;
-    if (add && cur) syncAddButton(add, cur.listing, ids);
+    if (add && cur && cur.section !== 'trade') syncAddButton(add, cur.listing, ids);
   }
   // the Add buttons: Add to bag, or open the bag when the copy is already in it (decision 0058). The header Bag link
   // does the opening, so the soft navigation keeps the player; no toast (decision 0050)
@@ -1185,11 +1189,16 @@
     var t = e.target;
     if (!t || !t.closest) return;
     var card = t.closest('.zz-product-card__add');
-    if (card) { var holder = card.closest('[data-listing-id]'); if (holder) addOrOpen(holder.getAttribute('data-listing-id')); return; }
+    if (card) {
+      var holder = card.closest('[data-listing-id]');
+      if (holder && holder.getAttribute('data-listing-section') === 'trade') return;   // offer link, or a reserved/traded state (0068)
+      if (holder) addOrOpen(holder.getAttribute('data-listing-id'));
+      return;
+    }
     var cta = t.closest('[data-add-to-bag]');
     if (cta) { addOrOpen(cta.getAttribute('data-add-to-bag')); return; }
     var padd = t.closest('.site-player__add');
-    if (padd) { var cur = typeof current === 'function' ? current() : null; if (cur) addOrOpen(cur.listing); return; }
+    if (padd) { var cur = typeof current === 'function' ? current() : null; if (cur && cur.section !== 'trade') addOrOpen(cur.listing); return; }
     var remove = t.closest('.zz-bag-item__remove');
     if (remove) {
       var li = remove.closest('[data-bag-line]');
@@ -1209,6 +1218,129 @@
   });
   // another tab changed the bag
   window.addEventListener('storage', function (e) { if (e.key === BAG_KEY) renderBag(); });
+
+
+  /* ── Trade offer (Figma page `Trade`, decision 0068) ───────────────────────
+     /products/<slug>/offer/: "Add another record" clones the template (max 5), Remove renumbers, "In person" shows the
+     gigs, Send validates and posts JSON to the trade-offer function (site.json → trade.offerEndpoint). Nothing is stored
+     in the browser. On success the form makes way for "Offer sent". */
+  var OFFER_MAX_RECORDS = 5;
+  function initOffer() {
+    var form = document.querySelector('[data-offer-form]');
+    if (!form || form.hasAttribute('data-ready')) return;
+    form.setAttribute('data-ready', '');
+    var list = form.querySelector('[data-offer-records]');
+    var tpl = form.querySelector('[data-offer-record-template]');
+    var addBtn = form.querySelector('[data-offer-add]');
+    var errorEl = form.querySelector('[data-offer-error]');
+    var sendBtn = form.querySelector('[data-offer-send]');
+    var gigs = form.querySelector('[data-offer-gigs]');
+    var uid = 0;
+    function records() { return Array.prototype.slice.call(list.querySelectorAll('[data-offer-record]')); }
+    // every clone gets its own ids, so each <label for> still names its own field
+    function reId(root) {
+      uid++;
+      Array.prototype.forEach.call(root.querySelectorAll('[id]'), function (el) {
+        var old = el.id, next = old + '-r' + uid;
+        el.id = next;
+        Array.prototype.forEach.call(root.querySelectorAll('[for="' + old + '"]'), function (l) { l.setAttribute('for', next); });
+        Array.prototype.forEach.call(root.querySelectorAll('[aria-describedby="' + old + '"]'), function (l) { l.setAttribute('aria-describedby', next); });
+      });
+    }
+    function renumber() {
+      var rs = records();
+      rs.forEach(function (r, i) {
+        r.querySelector('[data-offer-record-title]').textContent = 'Record ' + (i + 1);
+        r.querySelector('[data-offer-record-remove]').hidden = i === 0;
+      });
+      addBtn.hidden = rs.length >= OFFER_MAX_RECORDS;
+    }
+    addBtn.addEventListener('click', function () {
+      if (records().length >= OFFER_MAX_RECORDS) return;
+      var frag = tpl.content.cloneNode(true);
+      var rec = frag.querySelector('[data-offer-record]');
+      reId(rec);
+      list.appendChild(frag);
+      renumber();
+      var first = rec.querySelector('input, select');
+      if (first) first.focus();
+    });
+    list.addEventListener('click', function (e) {
+      var rm = e.target.closest && e.target.closest('[data-offer-record-remove]');
+      if (!rm) return;
+      var rec = rm.closest('[data-offer-record]');
+      var prev = rec.previousElementSibling;
+      rec.parentNode.removeChild(rec);
+      renumber();
+      var f = prev && prev.querySelector('input');
+      if (f) f.focus();
+    });
+    form.addEventListener('change', function (e) {
+      if (e.target.name === 'channel' && gigs) gigs.hidden = e.target.value !== 'in-person';
+    });
+    function val(root, name) { var el = root.querySelector('[name="' + name + '"]'); return el ? String(el.value || '').trim() : ''; }
+    function mark(el, bad) {
+      if (!el) return;
+      el.setAttribute('aria-invalid', bad ? 'true' : 'false');
+      var box = el.closest('.zz-input');
+      if (box) box.setAttribute('data-invalid', bad ? 'true' : 'false');
+    }
+    function fail(text, el) {
+      errorEl.textContent = text;
+      errorEl.hidden = false;
+      if (el) el.focus();
+    }
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      errorEl.hidden = true;
+      var firstBad = null, bad;
+      function check(el, ok) { mark(el, !ok); if (!ok && !firstBad) firstBad = el; }
+      var recs = records().map(function (r) {
+        check(r.querySelector('[name="record"]'), !!val(r, 'record'));
+        check(r.querySelector('[name="media"]'), !!val(r, 'media'));
+        return { record: val(r, 'record'), media: val(r, 'media'), sleeve: val(r, 'sleeve') };
+      });
+      check(form.querySelector('[name="about"]'), !!val(form, 'about'));
+      var hasProfile = !!(val(form, 'discogs') || val(form, 'instagram'));
+      check(form.querySelector('[name="discogs"]'), hasProfile);
+      check(form.querySelector('[name="instagram"]'), hasProfile);
+      var email = form.querySelector('[name="email"]');
+      check(email, !!val(form, 'email') && email.checkValidity());
+      bad = firstBad;
+      if (bad) { fail('Fill in the marked fields: each record and its condition, a few words about you, your Discogs or Instagram, and your email.', bad); return; }
+      var endpoint = form.getAttribute('data-endpoint');
+      if (!endpoint) { fail('Offers aren’t switched on yet. Try again soon.'); return; }
+      var channel = (form.querySelector('[name="channel"]:checked') || {}).value || 'email';
+      var payload = {
+        listing: form.getAttribute('data-listing-slug'),
+        records: recs, pitch: val(form, 'pitch'), about: val(form, 'about'),
+        discogs: val(form, 'discogs'), instagram: val(form, 'instagram'),
+        channel: channel, email: val(form, 'email'), website: val(form, 'website')
+      };
+      var label = sendBtn.querySelector('.zz-button__label');
+      var idle = label ? label.textContent : '';
+      sendBtn.disabled = true;
+      if (label) label.textContent = 'Sending…';
+      fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        .then(function (res) { if (!res.ok) throw new Error('HTTP ' + res.status); })
+        .then(function () {
+          var sent = document.querySelector('[data-offer-sent]');
+          var ch = sent && sent.querySelector('[data-offer-sent-channel]');
+          if (ch) { try { ch.textContent = JSON.parse(ch.getAttribute('data-labels'))[channel] || ch.textContent; } catch (err) { /* keep the default */ } }
+          form.hidden = true;
+          if (sent) sent.hidden = false;
+          var title = document.querySelector('[data-offer-title]');
+          if (title) { title.textContent = 'Offer sent'; title.setAttribute('tabindex', '-1'); title.focus(); }
+          window.scrollTo(0, 0);
+        })
+        .catch(function () {
+          sendBtn.disabled = false;
+          if (label) label.textContent = idle;
+          fail('Your offer didn’t go through. Check your connection and try again.');
+        });
+    });
+    renumber();
+  }
 
   var navToken = 0;
   function navigate(href, push) {
@@ -1236,6 +1368,7 @@
       initFilters();
       initStatus();
       initBag();
+      initOffer();
       if (player && audio) render();
       // screen readers and keyboard: start from the new page's main heading, like a full load would
       var focusEl = document.querySelector('main h1') || document.querySelector('.zz-page h1:not([hidden])') || document.querySelector('main');
@@ -1264,4 +1397,5 @@
   initFilters();
   initStatus();
   initBag();
+  initOffer();
 })();

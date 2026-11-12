@@ -6,6 +6,7 @@ const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 
+const { TradeActions } = require('./trade.js');
 const { SECTION_LABEL, tagsOf, tagLinksOf, formatPrice, productName, productNameLinked, releaseInfoLinked, gradingProps, SiteHeader, sampleAttrs, ProductCardFor } = require('./shell.js');
 
 function breadcrumbItems(product, url) {
@@ -19,6 +20,7 @@ function breadcrumbItems(product, url) {
 
 function Pdp({ product, related = [], site, url }) {
   const { listing, release, copy, samples } = product;
+  const trade = listing.section === 'trade';
   return h('div', { className: 'zz-page' },
     h(SiteHeader, { site, url, section: listing.section }),
     h(Z.Breadcrumbs, { items: breadcrumbItems(product, url) }),
@@ -33,10 +35,11 @@ function Pdp({ product, related = [], site, url }) {
       h(Z.ProductInfo, {
         className: 'pdp-content__info',
         title: productNameLinked(product, url),
-        price: listing.section === 'sale' ? formatPrice(listing.price) : null,
+        // trade (Figma page Trade): "Trade only" in the price slot; the description becomes Gio's note in the actions column
+        price: listing.section === 'sale' ? formatPrice(listing.price) : 'Trade only',
         releaseInfo: releaseInfoLinked(release, url),
         tags: tagsOf(release).length ? h(Z.TagGroup, null, tagLinksOf(release, url).map((t) => h(Z.Tag, { key: t.label, size: 'large', href: t.href }, t.label))) : null,
-        description: copy.notes,
+        description: trade ? null : copy.notes,
         ...gradingProps(copy),
         // each PlayerButton carries what the site player needs (scripts/site.js): the product's samples are its queue
         // label = the track title when there is one; without it the button is icon-only and keeps an accessible name
@@ -45,13 +48,13 @@ function Pdp({ product, related = [], site, url }) {
           'aria-label': s.title ? undefined : `${productName(release)}, sample ${i + 1}`
         }, sampleAttrs(product, s, url)), s.title || null)) : null
       }),
-      h('div', { className: 'pdp-content__actions' },
+      trade ? h(TradeActions, { product, site, url }) : h('div', { className: 'pdp-content__actions' },
         h(Z.Button, { hierarchy: 'primary', size: 'large', className: 'pdp-content__cta', 'data-add-to-bag': listing.id, 'data-listing-status': listing.status }, 'Add to bag'),
         // Reserved (proposal, design/open.md): one line under the CTA explains the hold; site.js shows it live
         h('p', { className: 'pdp-content__note body-small', 'data-reserved-note': listing.id, hidden: listing.status !== 'reserved' },
           'Someone is checking out this record. If they don\u2019t buy it, it\u2019s back within 30 minutes.')),
       // Figma: `you may also like` — desktop row 2, cols 5–12; mobile below the content. Cards are h3 under its h2.
-      related.length ? h(Z.RelatedProducts, { className: 'pdp-content__related', title: 'More for sale:' },
+      related.length ? h(Z.RelatedProducts, { className: 'pdp-content__related', title: trade ? 'More for trade:' : 'More for sale:' },
         related.map((p) => h(ProductCardFor, { key: p.listing.slug, product: p, url, headingLevel: 3 }))) : null
     )
   );

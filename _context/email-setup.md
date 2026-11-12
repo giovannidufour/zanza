@@ -1,6 +1,6 @@
 # Email transazionali (Resend) — runbook
 
-Come sono configurate le email del negozio e **come rifare tutto da zero** con nome, dominio o email nuovi (il nome "Zanza" e il dominio sono provvisori). Prima email in uso: **Notify me** (decisione 0059, migrazione 0016, funzione `notify-back-in-stock`). Le prossime (conferma ordine) useranno lo stesso account e dominio.
+Come sono configurate le email del negozio e **come rifare tutto da zero** con nome, dominio o email nuovi (il nome "Zanza" e il dominio sono provvisori). Seconda: **offerte di scambio** (decisione 0068, funzione `trade-offer`: email a Gio con Reply-To del trader; secret in più `OFFER_TO` = indirizzo di Gio, Verify JWT **off**, chiamata dal browser, origini ammesse = `SHOP_URL` + anteprime Pages + `ALLOWED_ORIGINS`). Prima email in uso: **Notify me** (decisione 0059, migrazione 0016, funzione `notify-back-in-stock`). Le prossime (conferma ordine) useranno lo stesso account e dominio.
 
 ## Stato attuale (2026-11-12)
 

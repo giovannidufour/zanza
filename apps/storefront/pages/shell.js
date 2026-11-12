@@ -138,8 +138,8 @@ function SiteMenu({ url, current }) {
       h(SearchForm, { url, id: 'site-search-menu', className: 'site-menu__search' }),
       h(Z.MenuGroup, null, item('sale', 'For sale', '/sale/'), item('trade', 'For trade', '/trade/')),
       h(Z.MenuGroup, null, item('account', 'Account', '/account/', 'Sign in to see your orders')),
-      h(Z.MenuGroup, null, item('grading', 'Grading', '/grading/'), item('shipping', 'Shipping', '/shipping/'),
-        item('contact', 'Contact', '/contact/'))));
+      h(Z.MenuGroup, null, item('about', 'About', '/about/'), item('how-trading-works', 'How trading works', '/how-trading-works/'),
+        item('grading', 'Grading', '/grading/'), item('shipping', 'Shipping', '/shipping/'), item('contact', 'Contact', '/contact/'))));
 }
 
 // the data the site player (scripts/site.js) reads from a PlayerButton: a product's samples are its queue
@@ -152,7 +152,8 @@ function sampleAttrs(product, s, url) {
     'data-product-name': productName(release),
     'data-product-image': release.cover ? url(release.cover) : undefined,
     'data-product-href': productHref(product, url),
-    'data-listing-id': product.listing.id   // the player's "Add to bag" adds the playing product
+    'data-listing-id': product.listing.id,   // the player's "Add to bag" adds the playing product
+    'data-listing-section': product.listing.section   // trade listings: no Add to bag in the player
   };
 }
 
@@ -173,18 +174,25 @@ function tagLinksOf(release, url) {
   }));
   return out;
 }
+const TRADE_CARD_LABEL = { available: 'Make an offer', reserved: 'Reserved', traded: 'Traded' };
 // Figma labels the card samples 1, 2…; the accessible name keeps the product and the sample title.
 function ProductCardFor({ product, url, headingLevel }) {
   const { listing, release, copy, samples } = product;
   return h(Z.ProductCard, {
     'data-listing-id': listing.id,   // its Add button puts this copy in the bag (scripts/site.js)
     'data-listing-status': listing.status,   // status at build time; site.js updates it live (Reserved)
+    'data-listing-section': listing.section,
     href: productHref(product, url),
     image: release.cover ? { src: url(release.cover), alt: '' } : null,
     title: productNameLinked(product, url, productHref(product, url)),
     headingLevel,
     releaseInfo: releaseInfoLinked(release, url),
-    price: listing.section === 'sale' ? formatPrice(listing.price) : null,
+    price: listing.section === 'sale' ? formatPrice(listing.price) : 'Trade only',
+    // trade (Figma page Trade): the card button is a link to the offer page, not a bag button
+    // (only while available: a reserved or traded trade copy shows its state, and site.js ignores its button)
+    addHref: listing.section === 'trade' && listing.status === 'available' ? url(`/products/${listing.slug}/offer/`) : undefined,
+    addLabel: listing.section === 'trade' ? TRADE_CARD_LABEL[listing.status] || TRADE_CARD_LABEL.available : undefined,
+    addLabelShort: listing.section === 'trade' ? (listing.status === 'available' ? 'Offer' : TRADE_CARD_LABEL[listing.status]) : undefined,
     tags: tagLinksOf(release, url),
     description: copy.notes,
     ...gradingProps(copy),

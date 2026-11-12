@@ -90,3 +90,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0064](0064-sold-line-in-the-bag.md) | A sold copy in the bag: name struck through, "SOLD OUT" beside the struck price, a note above Checkout | accepted |
 | [0065](0065-reserved-button-notify-me.md) | Reserved: Add button "(Reserved) Notify me" with an envelope; the bag line looks like a sold one | accepted |
 | [0066](0066-icons-are-non-scaling-strokes.md) | Icons are 1px strokes that keep their thickness at any size | accepted |
+| [0068](0068-trade-is-a-conversation.md) | Trade: "not for sale, convince me"; the offer page asks for an introduction and starts a conversation, no shipping rule | accepted |
