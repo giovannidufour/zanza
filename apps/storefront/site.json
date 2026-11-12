@@ -30,8 +30,9 @@
     }
   },
   "trade": {
-    "note": "Trade offers (Figma page Trade). offerEndpoint = URL of the Supabase function trade-offer; empty = the form shows that offers are not switched on yet.",
+    "note": "Trade offers (Figma page Trade). offerEndpoint = URL of the Supabase function trade-offer; empty = the form shows that offers are not switched on yet. searchEndpoint = URL of the Supabase function discogs-search (decision 0069); empty = \"Which record\" is a plain text field.",
     "offerEndpoint": "",
+    "searchEndpoint": "",
     "replyDays": 3
   },
   "targets": {

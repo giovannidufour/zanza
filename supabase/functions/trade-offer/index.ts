@@ -28,6 +28,7 @@ function allowedOrigin(origin: string | null) {
 }
 
 const clip = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
+type Rec = { record: string; media: string; sleeve: string; release: string };
 
 Deno.serve(async (req) => {
   const origin = allowedOrigin(req.headers.get("origin"));
@@ -51,6 +52,8 @@ Deno.serve(async (req) => {
   const slug = clip(b.listing, 200);
   const records = (Array.isArray(b.records) ? b.records : []).slice(0, MAX_RECORDS).map((r: Record<string, unknown>) => ({
     record: clip(r.record, 300), media: clip(r.media, 4), sleeve: clip(r.sleeve, 4),
+    // Discogs release id when the trader picked one in "Which record" (decision 0069)
+    release: /^\d{1,10}$/.test(clip(r.release, 12)) ? clip(r.release, 12) : "",
   }));
   const offer = {
     pitch: clip(b.pitch, 2000), about: clip(b.about, 2000),
@@ -58,7 +61,7 @@ Deno.serve(async (req) => {
     channel: CHANNELS[clip(b.channel, 20)] ? clip(b.channel, 20) : "email",
     email: clip(b.email, 200),
   };
-  const bad = !slug || !records.length || records.some((r: { record: string; media: string; sleeve: string }) =>
+  const bad = !slug || !records.length || records.some((r: Rec) =>
       !r.record || !GRADES.includes(r.media) || (r.sleeve && r.sleeve !== "none" && !GRADES.includes(r.sleeve))) ||
     !offer.about || !(offer.discogs || offer.instagram) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(offer.email);
   if (bad) return json({ error: "Missing or invalid fields." }, 422);
@@ -74,8 +77,9 @@ Deno.serve(async (req) => {
   const href = `${shop}/products/${slug}/`;
   const discogsUrl = offer.discogs ? `https://www.discogs.com/user/${encodeURIComponent(offer.discogs.replace(/^@/, ""))}` : "";
   const igUrl = offer.instagram ? `https://www.instagram.com/${encodeURIComponent(offer.instagram.replace(/^@/, ""))}/` : "";
-  const recLine = (r: { record: string; media: string; sleeve: string }, i: number) =>
-    `${i + 1}. ${r.record} (record ${r.media}${r.sleeve ? `, cover ${r.sleeve === "none" ? "none" : r.sleeve}` : ""})`;
+  const releaseUrl = (r: Rec) => (r.release ? `https://www.discogs.com/release/${r.release}` : "");
+  const recLine = (r: Rec, i: number) =>
+    `${i + 1}. ${r.record} (record ${r.media}${r.sleeve ? `, cover ${r.sleeve === "none" ? "none" : r.sleeve}` : ""})${r.release ? ` ${releaseUrl(r)}` : ""}`;
   const text = [
     `New trade offer for ${href}`,
     "",
@@ -88,7 +92,7 @@ Deno.serve(async (req) => {
   ].join("\n");
   const link = (u: string) => (u ? `<a href="${escapeHtml(u)}">${escapeHtml(u)}</a>` : "-");
   const html = `<p>New trade offer for <a href="${escapeHtml(href)}">${escapeHtml(href)}</a></p>` +
-    `<p><strong>Offered</strong><br>${records.map((r: { record: string; media: string; sleeve: string }, i: number) => escapeHtml(recLine(r, i))).join("<br>")}</p>` +
+    `<p><strong>Offered</strong><br>${records.map((r: Rec, i: number) => escapeHtml(recLine({ ...r, release: "" }, i)) + (r.release ? ` ${link(releaseUrl(r))}` : "")).join("<br>")}</p>` +
     `<p><strong>Pitch</strong><br>${escapeHtml(offer.pitch || "-").replace(/\n/g, "<br>")}</p>` +
     `<p><strong>About them</strong><br>${escapeHtml(offer.about).replace(/\n/g, "<br>")}</p>` +
     `<p>Discogs: ${link(discogsUrl)}<br>Instagram: ${link(igUrl)}<br>Talk on: ${escapeHtml(CHANNELS[offer.channel])}<br>Email: ${escapeHtml(offer.email)}</p>` +
