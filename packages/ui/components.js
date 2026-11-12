@@ -440,22 +440,28 @@
   }
 
   /* ── BagSummary ─────────────────────────────────────────────────────────
-     Figma: page `Bag` → `bag summary` (2026-11-10). Column, gap 8: divider · subtotal row · shipping row (label left,
-     value right, body/medium) · Checkout (primary, large, fill) · note (body/small). Shipping and tax are computed by
-     Stripe Checkout, so the bag only knows the subtotal (decision 0044). */
+     Figma: page `Bag` → `bag summary` (2026-11-10; shipping estimate 2026-11-12, decision 0057). Column, gap 8: divider · `ship to` slot (a select) · subtotal row · shipping row ·
+     total row (label left, value right, body/medium) · Checkout (primary, large, fill) · note (body/small).
+     Figma `destination=not served` = no total, shipping "Not available", Checkout disabled: the consumer passes that
+     (total omitted, checkoutDisabled). Without `total` there is no total row (before shipping was set up). */
   function BagSummary(props) {
+    var hasTotal = props.total !== undefined && props.total !== null;
     return h('section', Object.assign({
       className: cx('zz-bag-summary', props.className),
       'aria-label': props['aria-label'] || 'Summary'
-    }, omit(props, ['subtotalLabel', 'subtotal', 'shippingLabel', 'shipping', 'checkoutLabel', 'onCheckout', 'checkoutDisabled', 'checkoutProps', 'note', 'className', 'children', 'aria-label'])),
+    }, omit(props, ['subtotalLabel', 'subtotal', 'shippingLabel', 'shipping', 'totalLabel', 'total', 'shipTo', 'checkoutLabel', 'onCheckout', 'checkoutDisabled', 'checkoutProps', 'note', 'className', 'children', 'aria-label'])),
       h(Divider),
+      props.shipTo ? h('div', { className: 'zz-bag-summary__ship-to' }, props.shipTo) : null,
       h('dl', { className: 'zz-bag-summary__rows' },
         h('div', { className: 'zz-bag-summary__row' },
           h('dt', { className: 'body-medium' }, props.subtotalLabel || 'Subtotal'),
           h('dd', { className: 'body-medium' }, props.subtotal)),
         h('div', { className: 'zz-bag-summary__row' },
           h('dt', { className: 'body-medium' }, props.shippingLabel || 'Shipping'),
-          h('dd', { className: 'body-medium' }, props.shipping || 'Calculated at checkout'))),
+          h('dd', { className: 'body-medium' }, props.shipping || 'Calculated at checkout')),
+        hasTotal ? h('div', { className: 'zz-bag-summary__row' },
+          h('dt', { className: 'body-medium' }, props.totalLabel || 'Total'),
+          h('dd', { className: 'body-medium' }, props.total)) : null),
       h(Button, Object.assign({ hierarchy: 'primary', size: 'large', className: 'zz-bag-summary__checkout', onClick: props.onCheckout, disabled: !!props.checkoutDisabled },
         props.checkoutProps || {}), props.checkoutLabel || 'Checkout'),
       props.note ? h('p', { className: 'zz-bag-summary__note body-small' }, props.note) : null);

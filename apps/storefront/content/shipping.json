@@ -1,0 +1,136 @@
+{
+  "_note": "Test data for the local JSON build (data/shipping.js). Example prices, NOT the carriers' price lists. The real config lives in public.shipping_settings and is edited on the admin page Shipping.",
+  "formats": [
+    {
+      "format": "7\"",
+      "weight_g": 45
+    },
+    {
+      "format": "10\"",
+      "weight_g": 110
+    },
+    {
+      "format": "12\"",
+      "weight_g": 180
+    },
+    {
+      "format": "LP",
+      "weight_g": 230
+    }
+  ],
+  "packages": [
+    {
+      "id": "small",
+      "name": "Small mailer",
+      "weight_g": 40,
+      "max": {
+        "7\"": 10
+      }
+    },
+    {
+      "id": "large",
+      "name": "Large mailer",
+      "weight_g": 250,
+      "max": {
+        "7\"": 20,
+        "10\"": 8,
+        "12\"": 5,
+        "LP": 5
+      }
+    }
+  ],
+  "zones": [
+    {
+      "id": "de",
+      "name": "Germany",
+      "countries": [
+        "DE"
+      ]
+    },
+    {
+      "id": "eu",
+      "name": "EU",
+      "countries": [
+        "AT",
+        "BE",
+        "BG",
+        "HR",
+        "CY",
+        "CZ",
+        "DK",
+        "EE",
+        "FI",
+        "FR",
+        "GR",
+        "HU",
+        "IE",
+        "IT",
+        "LV",
+        "LT",
+        "LU",
+        "MT",
+        "NL",
+        "PL",
+        "PT",
+        "RO",
+        "SK",
+        "SI",
+        "ES",
+        "SE"
+      ]
+    },
+    {
+      "id": "world",
+      "name": "World",
+      "countries": [
+        "CH",
+        "GB",
+        "US"
+      ]
+    }
+  ],
+  "rates": [
+    {
+      "zone_id": "de",
+      "package_id": "small",
+      "max_weight_g": 1000,
+      "service": "Deutsche Post Maxibrief",
+      "price_cents": 270
+    },
+    {
+      "zone_id": "de",
+      "package_id": "large",
+      "max_weight_g": 2000,
+      "service": "DHL Päckchen",
+      "price_cents": 419
+    },
+    {
+      "zone_id": "de",
+      "package_id": "large",
+      "max_weight_g": 10000,
+      "service": "DHL Paket",
+      "price_cents": 619
+    },
+    {
+      "zone_id": "eu",
+      "package_id": "small",
+      "max_weight_g": 1000,
+      "service": "Deutsche Post Warenpost International",
+      "price_cents": 500
+    },
+    {
+      "zone_id": "eu",
+      "package_id": "large",
+      "max_weight_g": 5000,
+      "service": "DHL Paket International",
+      "price_cents": 1799
+    },
+    {
+      "zone_id": "world",
+      "package_id": "large",
+      "max_weight_g": 5000,
+      "service": "DHL Paket International",
+      "price_cents": 3999
+    }
+  ]
+}
