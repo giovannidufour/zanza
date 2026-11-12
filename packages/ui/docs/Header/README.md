@@ -14,7 +14,7 @@ The site header: logo and store name on the left, section tabs in the middle (de
 | `homeHref` | `string` |  | When set, the store name becomes a link to this URL. |
 | `tabs` | `ReactNode` |  | A &lt;Tabs> element. Rendered on desktop only (Figma: no tabs in the mobile variant). |
 | `actions` | `ReactNode` |  | Trailing actions, usually secondary &lt;Button>s (Figma: `trailing actions`, gap 8). |
-| `search` | `ReactNode` |  | Figma boolean `search` (desktop): the search field, usually a &lt;form role="search"> with an &lt;Input variant="search">. Rendered 200px wide before `actions`. |
+| `search` | `ReactNode` |  | Figma boolean `search` (desktop): the search field, usually a &lt;form role="search"> with an &lt;Input variant="search">. Rendered 280px wide before `actions`. |
 | `searchHref` | `string` |  | Figma boolean `search` (mobile): the magnifier Button links here (the search page). |
 | `searchLabel` | `string` |  | Mobile only: accessible name of the magnifier Button. Default "Search". |
 | `onMenuClick` | `() => void` |  | Mobile only: click handler of the hamburger button. |

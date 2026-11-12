@@ -40,7 +40,7 @@ export interface HeaderProps extends HTMLAttributes<HTMLElement> {
   tabs?: ReactNode;
   /** Trailing actions, usually secondary <Button>s (Figma: `trailing actions`, gap 8). */
   actions?: ReactNode;
-  /** Figma boolean `search` (desktop): the search field, usually a <form role="search"> with an <Input variant="search">. Rendered 200px wide before `actions`. */
+  /** Figma boolean `search` (desktop): the search field, usually a <form role="search"> with an <Input variant="search">. Rendered 280px wide before `actions`. */
   search?: ReactNode;
   /** Figma boolean `search` (mobile): the magnifier Button links here (the search page). */
   searchHref?: string;
@@ -373,7 +373,13 @@ export interface InputProps {
   prefix?: ReactNode;
   /** Figma `suffix`. Visual only. */
   suffix?: ReactNode;
-  /** Figma `leading icon` (20px). Default: SearchIcon for search, none otherwise. */
+  /** Figma `leading icon` (20px). Default none (search: the magnifier is trailing since 2026-11-12). */
+  /** search only: accessible name of the trailing magnifier, which becomes the form's submit button (Figma type=search). Omit → decorative icon. */
+  submitLabel?: string;
+  /** search only: accessible name of the × in the leading slot (Figma type=search, state=filled), shown while the field has text. Needs a placeholder. */
+  clearLabel?: string;
+  /** search only: click on the × (empty the field and keep focus in it). */
+  onClear?: () => void;
   leadingIcon?: ReactNode;
   /** Figma `trailing icon` (20px). Default: ChevronDownIcon for select, none otherwise. */
   trailingIcon?: ReactNode;

@@ -17,7 +17,10 @@ Form field of the admin: label row, bordered field, support text. Figma: page `i
 | `error` | `ReactNode` |  | Figma state=error: alert border + this message in place of the support text (emphasis alert); sets aria-invalid. |
 | `prefix` | `ReactNode` |  | Figma `prefix`, e.g. "€". Visual only: say it in the label too. |
 | `suffix` | `ReactNode` |  | Figma `suffix`. Visual only. |
-| `leadingIcon` | `ReactNode` |  | Figma `leading icon` (20px). Default: SearchIcon for search, none otherwise. |
+| `submitLabel` | `string` |  | search only: accessible name of the trailing magnifier, which becomes the form's submit button (Figma type=search). Omit → decorative icon. |
+| `clearLabel` | `string` |  | search only: accessible name of the × in the leading slot (Figma type=search, state=filled), shown while the field has text. Needs a placeholder. |
+| `onClear` | `() => void` |  | search only: click on the × (empty the field and keep focus in it). |
+| `leadingIcon` | `ReactNode` |  |  |
 | `trailingIcon` | `ReactNode` |  | Figma `trailing icon` (20px). Default: ChevronDownIcon for select, none otherwise. |
 | `readOnly` | `boolean` |  | Figma state=locked: read-only, surface-subtle, no border (e.g. the automatic SKU). A locked select is disabled. |
 | `placeholder` | `string` |  | Placeholder text. For select: the empty first option (Figma "Select"). |
