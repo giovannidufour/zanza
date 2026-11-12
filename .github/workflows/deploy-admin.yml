@@ -11,6 +11,7 @@ on:
     paths:
       - 'apps/admin/**'
       - 'packages/ui/**'
+      - 'packages/shipping/**'
       - '.github/workflows/deploy-admin.yml'
   workflow_dispatch:
 

@@ -11,7 +11,10 @@ The bag's subtotal and the way to checkout. Figma: page `Bag` → `bag summary`.
 | `subtotalLabel` | `ReactNode` | `Subtotal` | Figma `subtotal label`, e.g. "Subtotal (3 records)". |
 | `subtotal` | `ReactNode` |  | Figma `subtotal`, already formatted ("33€"). |
 | `shippingLabel` | `ReactNode` | `Shipping` |  |
-| `shipping` | `ReactNode` |  | Default "Calculated at checkout". |
+| `shipping` | `ReactNode` |  | Default "Calculated at checkout". The estimate ("5€") or "Not available" (Figma destination=not served). |
+| `shipTo` | `ReactNode` |  | Figma `ship to`: the country select (Input variant select, label "Ship to") above the rows. |
+| `totalLabel` | `ReactNode` | `Total` |  |
+| `total` | `ReactNode` |  | Figma `total`, subtotal + shipping ("38€"). Omitted → no total row (destination=not served, or shipping not set up). |
 | `checkoutLabel` | `string` | `Checkout` | Checkout button label (primary, large, fill). |
 | `onCheckout` | `() => void` |  | Click on Checkout. |
 | `checkoutDisabled` | `boolean` |  | Disables Checkout (e.g. nothing available to buy). |

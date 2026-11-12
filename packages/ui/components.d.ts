@@ -296,8 +296,14 @@ export interface BagSummaryProps extends HTMLAttributes<HTMLElement> {
   subtotal?: ReactNode;
   /** @default "Shipping" */
   shippingLabel?: ReactNode;
-  /** Default "Calculated at checkout". */
+  /** Default "Calculated at checkout". The estimate ("5€") or "Not available" (Figma destination=not served). */
   shipping?: ReactNode;
+  /** Figma `ship to`: the country select (Input variant select, label "Ship to") above the rows. */
+  shipTo?: ReactNode;
+  /** @default "Total" */
+  totalLabel?: ReactNode;
+  /** Figma `total`, subtotal + shipping ("38€"). Omitted → no total row (destination=not served, or shipping not set up). */
+  total?: ReactNode;
   /** Checkout button label (primary, large, fill). @default "Checkout" */
   checkoutLabel?: string;
   /** Click on Checkout. */

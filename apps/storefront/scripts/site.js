@@ -25,6 +25,7 @@
       - "Add to bag" (card, PDP, player) adds and shows the toast "Added to bag." + View bag (decision 0050); then the button reads "Remove" and takes the copy out
         again, with a toast + Undo (decision 0054); the header Bag shows the count in brackets on every page
       - /bag/ (pages/bag.js) shows the lines of the bag, the subtotal of the available ones, or the empty state;
+        with shipping set up: "Ship to" country (remembered), shipping estimate and total (decision 0057);
         Remove takes a line out and shows a toast with Undo (packages/ui/toast.js, decision 0049). Checkout is not wired yet (create-checkout + Stripe, _context/backend.md)
 
    Looks live in base.css and packages/ui/components.css; this file only sets attributes and text. */
@@ -680,10 +681,59 @@
     root.querySelector('[data-bag-empty]').hidden = !empty;
     root.querySelector('[data-bag-subtotal-label]').textContent = 'Subtotal (' + count + (count === 1 ? ' record)' : ' records)');
     root.querySelector('[data-bag-subtotal]').textContent = formatPrice(cents);
+    var served = renderShipping(root, known.filter(function (id) { return lines[id].getAttribute('data-available') === 'true'; })
+      .map(function (id) { return lines[id]; }), cents);
     var checkout = root.querySelector('[data-bag-checkout]');
-    if (checkout) checkout.disabled = count === 0;
+    if (checkout) checkout.disabled = count === 0 || !served;
     return known;
   }
+
+  // shipping estimate (decision 0057, Figma `bag summary` destination=served | not served): the page carries the
+  // config (admin page Shipping), packages/shipping/shipping.js does the maths, the country is remembered.
+  // Returns false when the bag cannot go to checkout for this country (not served, too heavy). No config on the
+  // page = shipping not set up: "Calculated at checkout", as before.
+  var SHIP_KEY = 'zanza-ship-to';
+  function readShipTo() { try { return window.localStorage.getItem(SHIP_KEY); } catch (e) { return null; } }
+  function renderShipping(root, availableLines, subtotal) {
+    var select = root.querySelector('[data-bag-ship-to]');
+    var configEl = root.querySelector('[data-shipping-config]');
+    if (!select || !configEl || !window.ZanzaShipping) return true;
+    var config;
+    try { config = JSON.parse(configEl.textContent); } catch (e) { return true; }
+    var stored = readShipTo();
+    if (stored && select.value !== stored && select.querySelector('option[value="' + stored + '"]')) select.value = stored;
+    var country = select.value, name = select.options[select.selectedIndex] ? select.options[select.selectedIndex].text : country;
+    var items = availableLines.map(function (li) {
+      return { format: li.getAttribute('data-format'), weight_g: parseInt(li.getAttribute('data-weight'), 10) || null };
+    });
+    var est = window.ZanzaShipping.estimate(config, items, country);
+    var shipping = root.querySelector('[data-bag-shipping]'), total = root.querySelector('[data-bag-total]');
+    var note = root.querySelector('[data-bag-note]');
+    var totalRow = total && total.closest('.zz-bag-summary__row');
+    var served = est.status === 'ok' || est.status === 'empty';
+    if (est.status === 'ok') {
+      shipping.textContent = formatPrice(est.price_cents);
+      total.textContent = formatPrice(subtotal + est.price_cents);
+    } else if (est.status === 'empty') {
+      shipping.textContent = '\u2014';
+      total.textContent = formatPrice(subtotal);
+    } else shipping.textContent = 'Not available';
+    if (totalRow) totalRow.hidden = !served;
+    if (note) note.textContent = served
+      ? 'Shipping is an estimate for your country. You enter the address and pay on Stripe. Your records are held for 30 minutes once you start checkout.'
+      : est.status === 'not-served' ? 'We don\u2019t ship to ' + name + ' yet.'
+      : 'This bag is too big for one parcel. Remove a few records to check out.';
+    return served;
+  }
+  // a new country: remember it, recompute, and say the result (the rows change silently otherwise)
+  document.addEventListener('change', function (e) {
+    var select = e.target.closest && e.target.closest('[data-bag-ship-to]');
+    if (!select) return;
+    try { window.localStorage.setItem(SHIP_KEY, select.value); } catch (err) { /* ignore */ }
+    renderBag();
+    var root = document.querySelector('[data-bag-page]'), sh = root && root.querySelector('[data-bag-shipping]');
+    if (sh) announce('Shipping to ' + select.options[select.selectedIndex].text + ': ' + sh.textContent + '.');
+  });
 
   function renderBag() {
     var ids = readBag();

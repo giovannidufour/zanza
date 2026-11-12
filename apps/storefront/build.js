@@ -44,6 +44,9 @@ const siteJsHref = url(`/js/site.js?v=${hashOf(siteJs)}`);
 // toast behaviour (decision 0049): the same file as the admin, straight from packages/ui
 const toastJs = fs.readFileSync(path.join(UI, 'toast.js'));
 const toastJsHref = url(`/js/toast.js?v=${hashOf(toastJs)}`);
+// shipping estimate (decision 0057): the same file as the admin and create-checkout, straight from packages/shipping
+const shippingJs = fs.readFileSync(path.join(ROOT, 'packages/shipping/shipping.js'));
+const shippingJsHref = url(`/js/shipping.js?v=${hashOf(shippingJs)}`);
 const { Pdp, title } = require('./pages/pdp.js');
 const Plp = require('./pages/plp.js');
 const Bag = require('./pages/bag.js');
@@ -81,6 +84,7 @@ function page({ title: t, body }) {
 <link rel="stylesheet" href="${cssHref('plp')}">
 <link rel="stylesheet" href="${cssHref('bag')}">
 <script src="${toastJsHref}" defer></script>
+<script src="${shippingJsHref}" defer></script>
 <script src="${siteJsHref}" defer></script>
 </head>
 <body>
@@ -100,12 +104,16 @@ function write(rel, content) {
 }
 
 // products, in listing order
-const { loadProducts } = require('./data/products.js');
+const { loadProducts, readEnv } = require('./data/products.js');
+const shippingData = require('./data/shipping.js');
 const sourceArg = (process.argv.find(a => a.startsWith('--source=')) || '').split('=')[1];
 
 async function main() {
 const { products, source } = await loadProducts(site, { source: sourceArg });
 console.log(`products: ${products.length} from ${source}`);
+// shipping config from the same source as the products (null = not set up: the bag says "Calculated at checkout")
+const shipping = source === 'supabase' ? await shippingData.fromSupabase(readEnv()) : shippingData.fromJson();
+console.log(`shipping: ${shipping && (shipping.rates || []).length ? shipping.rates.length + ' rate(s)' : 'not set up'}`);
 
 // only now that the data is here: a failed fetch must not leave an empty dist/
 fs.rmSync(path.join(APP, 'dist'), { recursive: true, force: true });
@@ -120,6 +128,7 @@ write('css/plp.css', css.plp);
 write('css/bag.css', css.bag);
 write('js/site.js', siteJs);
 write('js/toast.js', toastJs);
+write('js/shipping.js', shippingJs);
 for (const f of fs.readdirSync(path.join(APP, 'public'))) write('assets/' + f, fs.readFileSync(path.join(APP, 'public', f)));
 
 const order = new Map(products.map((p, i) => [p, i]));
@@ -146,7 +155,7 @@ write('sale/index.html', page({ title: Plp.title('sale'), body: renderToStaticMa
 // Bag (decision 0044): one hidden line per listing of the sale section, whatever its status (a copy sold after it was
 // added still shows, as unavailable); scripts/site.js shows the visitor's own lines from localStorage
 const bagProducts = products.filter(p => p.listing.section === 'sale');
-write('bag/index.html', page({ title: Bag.title, body: renderToStaticMarkup(React.createElement(Bag.Bag, { products: bagProducts, site, url })) }));
+write('bag/index.html', page({ title: Bag.title, body: renderToStaticMarkup(React.createElement(Bag.Bag, { products: bagProducts, site, url, shipping, countries: shippingData.countries() })) }));
 
 // root: redirect to the PLP while there is no home page
 write('index.html', `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=${url('/sale/')}"><title>${escape(site.storeName)}</title>`);

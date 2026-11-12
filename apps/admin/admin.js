@@ -1,6 +1,6 @@
 /* apps/admin/admin.js — the admin single-page app (React via createElement, no build step).
    Screens: sign-in (email link) · listings (Figma BACKEND → Listings: bulk actions, archive, delete) · create / edit listing (Figma BACKEND → Create)
-   · attributes: artists, labels, genres, tags (Figma BACKEND → Attributes).
+   · attributes: artists, labels, genres, tags (Figma BACKEND → Attributes) · shipping (Figma BACKEND → Shipping).
    Data: Supabase with the signed-in user's session (RLS: only public.admins can write).
    Save = one call to public.admin_save_listing (one transaction). Files go straight to R2 through
    short-lived upload URLs from the Edge Function sign-upload; the database keeps only the keys. */
@@ -1171,6 +1171,229 @@
       h('div', null, h(Z.Button, { hierarchy: 'primary', type: 'submit', disabled: state && state.sending }, 'Send link')));
   }
 
+  // ── Shipping ──────────────────────────────────────────────────────────────
+  /* Figma BACKEND → Shipping (2201:4782, 2026-11-12, decision 0057): formats (weight per record), packaging, zones,
+     rates, and "Check an order" with the same maths as the shop (packages/shipping/shipping.js). One Save for the whole
+     page = public.admin_save_shipping (migration 0015), which also rebuilds the shop (the bag carries the config).
+     The form keeps text (what is typed); numbers are parsed on check and save. Route: #shipping */
+  var SHIP = window.ZanzaShipping;
+  var regionName = (function () {
+    try { var dn = new Intl.DisplayNames(['en'], { type: 'region' }); return function (c) { try { return dn.of(c); } catch (e) { return c; } }; }
+    catch (e) { return function (c) { return c; }; }
+  })();
+  function gramsText(g) { return g === null || g === undefined ? '' : String(g); }
+  function kgText(g) { return g === null || g === undefined ? '' : String(g / 1000).replace('.', ','); }
+  function toInt(t) { var s = String(t || '').trim(); return /^\d+$/.test(s) ? parseInt(s, 10) : NaN; }
+  function kgToGrams(t) { var s = String(t || '').trim().replace(',', '.'); return /^\d+(\.\d{1,3})?$/.test(s) ? Math.round(parseFloat(s) * 1000) : NaN; }
+  function codesOf(t) { return String(t || '').toUpperCase().split(/[\s,;]+/).filter(Boolean); }
+  function shipKey() { return 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+  function toForm(c) {
+    return {
+      formats: SHIP.FORMATS.map(function (f) {
+        var row = (c.formats || []).filter(function (x) { return x.format === f; })[0];
+        return { format: f, weight: row ? gramsText(row.weight_g) : '' };
+      }),
+      packages: (c.packages || []).map(function (p) {
+        var max = {}; SHIP.FORMATS.forEach(function (f) { max[f] = (p.max || {})[f] ? String(p.max[f]) : ''; });
+        return { id: p.id, name: p.name, max: max, weight: gramsText(p.weight_g) };
+      }),
+      zones: (c.zones || []).map(function (z) { return { id: z.id, name: z.name, countries: (z.countries || []).join(', ') }; }),
+      rates: (c.rates || []).map(function (r) { return { key: shipKey(), zone: r.zone_id, pkg: r.package_id, upTo: kgText(r.max_weight_g), service: r.service, price: centsToText(r.price_cents) }; })
+    };
+  }
+  function toConfig(f) {
+    return {
+      formats: f.formats.map(function (x) { return { format: x.format, weight_g: toInt(x.weight) }; }),
+      packages: f.packages.map(function (p) {
+        var max = {}; SHIP.FORMATS.forEach(function (fm) { var t = String(p.max[fm] || '').trim(); if (t) max[fm] = toInt(t); });
+        return { id: p.id, name: p.name.trim(), weight_g: toInt(p.weight), max: max };
+      }),
+      zones: f.zones.map(function (z) { return { id: z.id, name: z.name.trim(), countries: codesOf(z.countries) }; }),
+      rates: f.rates.map(function (r) { return { zone_id: r.zone, package_id: r.pkg, max_weight_g: kgToGrams(r.upTo), service: r.service.trim(), price_cents: textToCents(r.price) }; })
+    };
+  }
+  // "2 × 12", 1 × 7"" (also "2x12", "LP") → items for shipping.js
+  function parseRecords(t) {
+    var items = [], bad = [];
+    String(t || '').split(/[,;+]/).forEach(function (part) {
+      var s = part.trim(); if (!s) return;
+      var m = /^(?:(\d+)\s*[×x*]\s*)?(7|10|12|LP)\s*(?:"|''|”|inch)?$/i.exec(s);
+      if (!m) { bad.push(s); return; }
+      var f = /lp/i.test(m[2]) ? 'LP' : m[2] + '"';
+      for (var i = 0; i < (m[1] ? parseInt(m[1], 10) : 1); i++) items.push({ format: f, weight_g: null });
+    });
+    return { items: items, bad: bad };
+  }
+
+  function Shipping() {
+    var fs = useState(null), form = fs[0], setForm = fs[1];
+    var er = useState(null), error = er[0], setError = er[1];
+    var vs = useState([]), problems = vs[0], setProblems = vs[1];
+    var bs = useState(false), busy = bs[0], setBusy = bs[1];
+    var cs = useState('DE'), checkCountry = cs[0], setCheckCountry = cs[1];
+    var rs = useState('2 × 12", 1 × 7"'), checkRecords = rs[0], setCheckRecords = rs[1];
+
+    useEffect(function () {
+      sb.from('shipping_settings').select('config').maybeSingle().then(function (res) {
+        if (res.error) setError(res.error.message);
+        else if (!res.data) setError('no settings row');
+        else setForm(toForm(res.data.config));
+      });
+    }, []);
+    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' },
+      'Could not load the shipping settings: ' + error + '. Is migration 0015 (shipping) applied?');
+    if (!form) return h('p', { className: 'body-medium' }, 'Loading…');
+
+    function set(list, i, key, value) {
+      setForm(function (cur) {
+        var next = Object.assign({}, cur);
+        next[list] = cur[list].map(function (row, j) { if (j !== i) return row; var r = Object.assign({}, row); r[key] = value; return r; });
+        return next;
+      });
+      setProblems([]);
+    }
+    function add(list, row) { setForm(function (cur) { var next = Object.assign({}, cur); next[list] = cur[list].concat([row]); return next; }); }
+    function remove(list, i) { setForm(function (cur) { var next = Object.assign({}, cur); next[list] = cur[list].filter(function (_r, j) { return j !== i; }); return next; }); setProblems([]); }
+    function field(list, i, key, label, extra) {
+      return h(Z.Input, Object.assign({ size: 'compact', 'aria-label': label, value: form[list][i][key],
+        onChange: function (e) { set(list, i, key, e.target.value); } }, extra || {}));
+    }
+    // a field inside an object of a row (package max per format)
+    function subField(list, i, key, sub, label, extra) {
+      return h(Z.Input, Object.assign({ size: 'compact', 'aria-label': label, value: form[list][i][key][sub],
+        onChange: function (e) { var v = Object.assign({}, form[list][i][key]); v[sub] = e.target.value; set(list, i, key, v); } }, extra || {}));
+    }
+    function select(list, i, key, label, options) {
+      return h(Z.Input, { variant: 'select', size: 'compact', 'aria-label': label, value: form[list][i][key],
+        onChange: function (e) { set(list, i, key, e.target.value); } }, opts(options));
+    }
+    function removeButton(list, i, what) {
+      return h(Z.Button, { hierarchy: 'secondary', size: 'small', 'aria-label': 'Remove ' + what, onClick: function () { remove(list, i); } }, 'Remove');
+    }
+    function table(id, cols, rows) {
+      return h('div', { className: 'admin-table-wrap' },
+        h('table', { id: id, className: 'admin-table admin-shipping__table body-small' },
+          h('thead', null, h('tr', null, cols.map(function (c, i) { return h('th', { key: i, scope: 'col', className: c.className || '' }, c.label); }))),
+          h('tbody', null, rows)));
+    }
+    function section(key, heading, help, body, addLabel, onAdd) {
+      var hid = 'shipping-' + key;
+      return h('section', { className: 'admin-shipping__section', 'aria-labelledby': hid },
+        h('h2', { id: hid, className: 'label-medium' }, heading),
+        h('p', { className: 'body-small' }, help),
+        body,
+        addLabel ? h('div', null, h(Z.Button, { hierarchy: 'secondary', onClick: onAdd }, addLabel)) : null);
+    }
+
+    var pkgOptions = form.packages.map(function (p) { return [p.id, p.name || '(no name)']; });
+    var zoneOptions = form.zones.map(function (z) { return [z.id, z.name || '(no name)']; });
+    var config = toConfig(form);
+    var used = function (key, id) { return form.rates.some(function (r) { return r[key] === id; }); };
+
+    // Check an order: the same estimate as the bag
+    var parsed = parseRecords(checkRecords);
+    var est = parsed.bad.length ? null : SHIP.estimate(config, parsed.items, checkCountry);
+    var countriesInZones = form.zones.reduce(function (all, z) { return all.concat(codesOf(z.countries)); }, []);
+    var checkOptions = countriesInZones.concat(countriesInZones.indexOf(checkCountry) === -1 ? [checkCountry] : [])
+      .map(function (c) { return [c, regionName(c)]; }).sort(function (a, b) { return a[1].localeCompare(b[1]); });
+    var result;
+    if (parsed.bad.length) result = 'Write the records as “2 × 12", 1 × 7"” (formats 7", 10", 12", LP): “' + parsed.bad[0] + '” is not clear.';
+    else if (!est || est.status === 'empty') result = 'Add some records.';
+    else if (est.status === 'not-configured') result = 'No rates yet: the shop says “Calculated at checkout”.';
+    else if (est.status === 'not-served') result = regionName(checkCountry) + ' is in no zone: the bag says “We don’t ship to ' + regionName(checkCountry) + ' yet”.';
+    else if (est.status === 'no-package') result = 'No package takes every format of this order: give a package a maximum for it.';
+    else if (est.status === 'too-heavy') result = 'A parcel is heavier than every rate of ' + est.zone.name + ' for its package. The bag says it is too big for one parcel.';
+    else {
+      var weights = {}; config.formats.forEach(function (f) { weights[f.format] = f.weight_g; });
+      var lines = est.parcels.map(function (pc) {
+        var counts = {}; pc.items.forEach(function (it) { counts[it.format] = (counts[it.format] || 0) + 1; });
+        var parts = Object.keys(counts).map(function (f) { return (counts[f] > 1 ? counts[f] + ' × ' : '') + weights[f] + ' g'; });
+        return pc.package.name + ' · ' + parts.join(' + ') + ' + ' + pc.package.weight_g + ' g packaging = ' + pc.weight_g + ' g → ' +
+          pc.rate.service + ' · ' + centsToText(pc.rate.price_cents).replace('.', ',') + '€';
+      });
+      result = lines.join('\n') + (est.parcels.length > 1 ? '\n' + est.parcels.length + ' parcels · ' + centsToText(est.price_cents).replace('.', ',') + '€' : '');
+    }
+
+    async function save() {
+      var errs = SHIP.validate(config);
+      if (errs.length) { setProblems(errs); return; }
+      setBusy(true);
+      var res = await sb.rpc('admin_save_shipping', { p_config: config });
+      setBusy(false);
+      if (res.error) { setProblems(['Nothing saved: ' + res.error.message]); return; }
+      setProblems([]);
+      toast('Shipping saved. The shop updates in about 2 minutes.');
+    }
+
+    return h('div', { className: 'admin-section admin-shipping' },
+      h('h1', { className: 'label-extra-large' }, 'Shipping'),
+      h('div', { className: 'admin-toolbar' },
+        h('p', { className: 'body-small admin-shipping__intro' }, 'Prices come from the carriers’ price lists (DHL, Deutsche Post, Hermes): update them when the lists change. The bag shows an estimate for the chosen country; checkout recalculates it on the server.'),
+        h(Z.Button, { hierarchy: 'secondary', 'aria-busy': busy || undefined, onClick: busy ? undefined : save }, 'Save')),
+      problems.length ? h('ul', { className: 'admin-shipping__problems body-small admin-status--error', role: 'alert' },
+        problems.map(function (p, i) { return h('li', { key: i }, p); })) : null,
+
+      section('formats', 'Formats', 'Weight of one record with its sleeve. A listing can override it (heavy pressings, box sets).',
+        table('shipping-formats', [{ label: 'Format', className: 'admin-shipping__w-name' }, { label: 'Weight per record', className: 'admin-shipping__w-weight' }, { label: '' }],
+          form.formats.map(function (f, i) {
+            return h('tr', { key: f.format }, h('td', null, f.format),
+              h('td', { className: 'admin-shipping__w-weight' }, field('formats', i, 'weight', 'Weight per record, ' + f.format + ', grams', { suffix: 'g', inputMode: 'numeric' })),
+              h('td', null));
+          }))),
+
+      section('packaging', 'Packaging', 'How many records of each format fit in a package (empty = none). A mixed order shares the space: 2 LP out of 5 leave 60% for the rest. The bag picks the cheapest way to pack an order, in more parcels if it has to. The package weight is added to the records.',
+        table('shipping-packages', [{ label: 'Package' }].concat(SHIP.FORMATS.map(function (f) { return { label: 'Max ' + f }; }),
+          [{ label: 'Packaging weight' }, { label: '', className: 'admin-shipping__actions' }]),
+          form.packages.map(function (p, i) {
+            var name = p.name || 'package ' + (i + 1);
+            return h('tr', { key: p.id },
+              h('td', { className: 'admin-shipping__w-name' }, field('packages', i, 'name', 'Package ' + (i + 1) + ' name')),
+              SHIP.FORMATS.map(function (f) {
+                return h('td', { key: f, className: 'admin-shipping__w-count' }, subField('packages', i, 'max', f, name + ': maximum ' + f + ' records', { inputMode: 'numeric' }));
+              }),
+              h('td', { className: 'admin-shipping__w-weight' }, field('packages', i, 'weight', name + ': packaging weight, grams', { suffix: 'g', inputMode: 'numeric' })),
+              h('td', { className: 'admin-shipping__actions' }, used('pkg', p.id) ? null : removeButton('packages', i, name)));
+          })),
+        'Add package', function () { add('packages', { id: shipKey(), name: '', max: { '7"': '', '10"': '', '12"': '', 'LP': '' }, weight: '' }); }),
+
+      section('zones', 'Zones', 'Countries outside every zone can’t check out: the bag says “We don’t ship to … yet”. Countries as two-letter codes (DE, FR, GB…).',
+        table('shipping-zones', [{ label: 'Zone', className: 'admin-shipping__w-name' }, { label: 'Countries' }, { label: '', className: 'admin-shipping__actions' }],
+          form.zones.map(function (z, i) {
+            var name = z.name || 'zone ' + (i + 1);
+            var codes = codesOf(z.countries);
+            return h('tr', { key: z.id },
+              h('td', { className: 'admin-shipping__w-name' }, field('zones', i, 'name', 'Zone ' + (i + 1) + ' name')),
+              h('td', null, field('zones', i, 'countries', name + ': countries, two-letter codes',
+                { supportText: codes.length ? codes.map(regionName).join(', ') : 'No countries yet.' })),
+              h('td', { className: 'admin-shipping__actions' }, used('zone', z.id) ? null : removeButton('zones', i, name)));
+          })),
+        'Add zone', function () { add('zones', { id: shipKey(), name: '', countries: '' }); }),
+
+      section('rates', 'Rates', 'For each zone and package, the first row whose weight limit fits the order wins. An order heavier than every row can’t check out.',
+        table('shipping-rates', [{ label: 'Zone', className: 'admin-shipping__w-select' }, { label: 'Package', className: 'admin-shipping__w-select' }, { label: 'Up to', className: 'admin-shipping__w-short' }, { label: 'Service (shown at checkout)' }, { label: 'Price', className: 'admin-shipping__w-short' }, { label: '', className: 'admin-shipping__actions' }],
+          form.rates.map(function (r, i) {
+            var n = 'Rate ' + (i + 1);
+            return h('tr', { key: r.key },
+              h('td', { className: 'admin-shipping__w-select' }, select('rates', i, 'zone', n + ': zone', zoneOptions)),
+              h('td', { className: 'admin-shipping__w-select' }, select('rates', i, 'pkg', n + ': package', pkgOptions)),
+              h('td', { className: 'admin-shipping__w-short' }, field('rates', i, 'upTo', n + ': up to, kilograms', { suffix: 'kg', inputMode: 'decimal' })),
+              h('td', null, field('rates', i, 'service', n + ': service')),
+              h('td', { className: 'admin-shipping__w-short' }, field('rates', i, 'price', n + ': price, euros', { suffix: '€', inputMode: 'decimal' })),
+              h('td', { className: 'admin-shipping__actions' }, removeButton('rates', i, n)));
+          })),
+        'Add rate', function () {
+          add('rates', { key: shipKey(), zone: (form.zones[0] || {}).id || '', pkg: (form.packages[form.packages.length - 1] || {}).id || '', upTo: '', service: '', price: '' });
+        }),
+
+      section('check', 'Check an order', 'Try a bag before saving: the same calculation the shop and checkout use.',
+        h('div', null,
+          h('div', { className: 'admin-shipping__check' },
+            h(Z.Input, { variant: 'select', label: 'Country', value: checkCountry, onChange: function (e) { setCheckCountry(e.target.value); } }, opts(checkOptions)),
+            h(Z.Input, { label: 'Records', value: checkRecords, onChange: function (e) { setCheckRecords(e.target.value); } })),
+          h('p', { className: 'body-medium admin-shipping__result', role: 'status' }, result))));
+  }
+
   // ── App ───────────────────────────────────────────────────────────────────
   // [hash, visit]: visit changes on every navigation, so "Create listing" always opens an empty form
   function useHash() {
@@ -1206,6 +1429,7 @@
     else if (/^#edit-/.test(hash)) body = h(EditLoader, { key: hash + route.visit, id: hash.slice(6) });
     else if (/^#attributes\/[a-z]+\/[^/]+$/.test(hash)) body = h(AttributeForm, { key: hash + route.visit, kind: hash.split('/')[1], id: hash.split('/')[2] });
     else if (/^#attributes/.test(hash)) body = h(Attributes, { key: 'attributes', kind: hash.split('/')[1] || 'artist' });
+    else if (hash === '#shipping') body = h(Shipping, { key: 'shipping-' + route.visit });
     else body = h(Listings, { key: 'list-' + route.visit });
 
     return h('div', { className: 'admin' },
@@ -1213,6 +1437,7 @@
         h('nav', { className: 'admin-bar__nav', 'aria-label': 'Admin' },
           h(Z.Button, { hierarchy: 'secondary', size: 'small', href: '#' }, 'Listings'),
           h(Z.Button, { hierarchy: 'secondary', size: 'small', href: '#attributes' }, 'Attributes'),
+          h(Z.Button, { hierarchy: 'secondary', size: 'small', href: '#shipping' }, 'Shipping'),
           h(Z.Button, { hierarchy: 'primary', size: 'small', href: '#new' }, 'Create listing')),
         h('div', { className: 'admin-bar__nav' },
           h('span', { className: 'body-small' }, session.user.email),
