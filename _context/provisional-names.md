@@ -11,6 +11,8 @@ Legenda colonna *Cambio*: 🟢 facile (testo/config) · 🟡 da pianificare (URL
 | Servizio | Cosa usa nome/email | Dove si cambia | Cambio |
 |---|---|---|---|
 | Buttondown (newsletter, 2026-11-12) | login = email personale · **username `dufour`** → pagina pubblica `buttondown.com/dufour` ed endpoint del form `https://buttondown.com/api/emails/embed-subscribe/dufour` · newsletter name "Zanza" · sender (From) "Zanza" | Settings → General (username, nome) · Settings → Email (sender, mailing address) · Account (email login) | 🟡 username: cambia l'URL pubblico e l'endpoint del form nel codice |
+| Resend (email transazionali, 2026-11-12) | login con l'email Google personale · dominio di invio **`gio-d.xyz`** (regione eu-west-1) con 3 record DNS su Cloudflare: `resend._domainkey` TXT, CNAME `rsend` e `send` | Dashboard Resend → Domains (nuovo dominio + DNS); runbook completo in `_context/email-setup.md` | 🟡 nuovo dominio = nuovi record DNS e verifica |
+| Supabase Edge Function `notify-back-in-stock` (secrets) | `MAIL_FROM` "Zanza <shop@gio-d.xyz>" (proposto, non ancora confermato da Gio) · `STORE_NAME` "Zanza" · `SHOP_URL` https://store-front-6fx.pages.dev — nulla hard-coded nel repo | Dashboard → Edge Functions → Secrets (vedi `_context/email-setup.md`) | 🟢 |
 | Supabase | org "Gios", progetto `store-staging` (nome neutro), login con email personale · Auth Site URL / redirect = URL admin | Dashboard → Organization / Auth → URL configuration | 🟢 nomi · 🟡 email di login |
 | Cloudflare (R2 + Pages) | account di gio-d.xyz (email personale) · bucket `store-media`, Pages `store-front` / `store-admin` (nomi neutri) · URL `*.pages.dev`, `pub-…r2.dev` | Dashboard; dominio custom al posto dei `*.pages.dev` / `r2.dev` | 🟡 al cambio dominio (vedi `stack.md` → Portabilità) |
 | Stripe | account `acct_1RGEAj2LZr7JToM4`, email personale, nome pubblico del business da impostare | Settings → Business / Public details | 🟢 prima di attivare il live |
@@ -35,7 +37,7 @@ Legenda colonna *Cambio*: 🟢 facile (testo/config) · 🟡 da pianificare (URL
 
 | Dove | Cosa | Cambio |
 |---|---|---|
-| Mittente email transazionali (Resend, non ancora configurato) | nome e indirizzo mittente | 🟢 config (`stack.md` → Portabilità) |
+| Mittente email transazionali (Resend) | nome e indirizzo mittente (`MAIL_FROM`, `STORE_NAME` nei secrets, vedi sopra) | 🟢 config (`stack.md` → Portabilità) |
 | Newsletter (Buttondown) | sender name, mailing address/Impressum nel footer delle mail | 🟢 |
 | Pagine legali (Impressum, Datenschutz…, da fare) | nome del negozio, email di contatto, provider elencati | 🟢 |
 
