@@ -68,13 +68,12 @@ function OfferedRecord({ n }) {
       h(Z.Input, { variant: 'select', label: 'Cover condition', name: 'sleeve', placeholder: 'Grade' }, gradeOptions.concat(h('option', { key: 'none', value: 'none' }, 'No cover')))));
 }
 
-const CHANNELS = [['discogs', 'Discogs messages'], ['instagram', 'Instagram DM'], ['email', 'Email'], ['in-person', 'In person, at one of my gigs']];
-const CHANNEL_LABEL = { discogs: 'on Discogs', instagram: 'on Instagram', email: 'by email', 'in-person': 'by email, to fix the gig' };
+const CHANNELS = [['discogs', 'Discogs messages'], ['instagram', 'Instagram DM'], ['email', 'Email'], ['in-person', 'Or we meet in person']];
+const CHANNEL_LABEL = { discogs: 'on Discogs', instagram: 'on Instagram', email: 'by email', 'in-person': 'by email, to meet in person' };
 
 function Offer({ product, site, url }) {
   const owner = site.owner || {};
   const days = (site.trade || {}).replyDays || 3;
-  const gigs = owner.gigs || [];
   return h('div', { className: 'zz-page' },
     h(SiteHeader, { site, url, section: 'trade' }),
     h('main', { className: 'trade-content', 'data-offer-page': '' },
@@ -100,9 +99,6 @@ function Offer({ product, site, url }) {
             supportText: 'At least one of the two. I look at your profile before answering.' }),
           h(Z.RadioGroup, { legend: 'Where do we talk?', name: 'channel', className: 'trade-form__channels' },
             CHANNELS.map(([value, label], i) => h(Z.Radio, { key: value, value, label, defaultChecked: i === 0 }))),
-          gigs.length ? h('div', { className: 'trade-form__gigs', hidden: true, 'data-offer-gigs': '' },
-            h('p', { className: 'body-small' }, 'Next gigs. Bring your record, we swap on the spot.'),
-            h('ul', { className: 'gigs-list' }, gigs.map((g, i) => h(Z.GigRow, { key: i, date: g.date, place: g.place })))) : null,
           h(Z.Input, { label: 'Email', name: 'email', type: 'email', required: true, autoComplete: 'email', placeholder: 'you@example.com',
             supportText: 'Only to answer this offer.' }),
           // honeypot: hidden from people, bots fill it (the function drops those offers)
@@ -125,7 +121,7 @@ const STEPS = [
   ['You make an offer', 'Pick the records you\u2019d give and tell me why I should take them. No account needed.'],
   ['You introduce yourself', 'Who you are, your Discogs, your Instagram. I don\u2019t trade with strangers: convince me I can trust you.'],
   ['We talk', 'I answer personally within 3 days, where you chose. You can look at my profiles too.'],
-  ['We find an agreement', 'Videos of the records, how and when we swap, or we meet at one of my gigs. Nothing is agreed until we both say yes.'],
+  ['We find an agreement', 'Videos of the records, how and when we swap, or we meet in person. Nothing is agreed until we both say yes.'],
   ['We trade', 'And if it went well, we both say so where we talked.']
 ];
 function HowTrading({ site, url }) {
@@ -143,7 +139,6 @@ function HowTrading({ site, url }) {
 
 function About({ site, url }) {
   const o = site.owner || {};
-  const gigs = o.gigs || [];
   return h('div', { className: 'zz-page' },
     h(SiteHeader, { site, url, current: 'about' }),
     h('main', { className: 'trade-content' },
@@ -154,12 +149,8 @@ function About({ site, url }) {
           h('p', { className: 'body-medium' }, o.bio),
           h('div', { className: 'about-intro__links' }, (o.links || []).map((l) => h(Z.Button, { key: l.href + l.label, hierarchy: 'secondary', href: l.href,
             target: '_blank', rel: 'noopener' }, l.label, h('span', { 'aria-hidden': 'true' }, ' ↗'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')))))),
-      h('div', { className: 'trade-col trade-col--2' }, h(Z.Divider),
-        h('h2', { className: 'label-small' }, 'Next gigs'),
-        h('p', { className: 'body-small' }, 'Bring the record you want to trade. We swap on the spot, no shipping.'),
-        gigs.length ? h('ul', { className: 'gigs-list' }, gigs.map((g, i) => h(Z.GigRow, { key: i, date: g.date, place: g.place })))
-          : h('p', { className: 'body-small' }, 'No dates right now.')),
-      h('div', { className: 'trade-col trade-col--3' }, h(Z.Divider), h(OwnerDiscogs, { site }))));
+      // Gio 2026-11-12: no gigs anywhere; the Discogs card moves up to the second column
+      h('div', { className: 'trade-col trade-col--2' }, h(Z.Divider), h(OwnerDiscogs, { site }))));
 }
 
 module.exports = { TradeActions, Offer, HowTrading, About, offerHref };

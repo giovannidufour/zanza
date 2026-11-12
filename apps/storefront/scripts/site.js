@@ -1221,8 +1221,7 @@
 
 
   /* ── Trade offer (Figma page `Trade`, decision 0068) ───────────────────────
-     /products/<slug>/offer/: "Add another record" clones the template (max 5), Remove renumbers, "In person" shows the
-     gigs, Send validates and posts JSON to the trade-offer function (site.json → trade.offerEndpoint). Nothing is stored
+     /products/<slug>/offer/: "Add another record" clones the template (max 5), Remove renumbers, Send validates and posts JSON to the trade-offer function (site.json → trade.offerEndpoint). Nothing is stored
      in the browser. On success the form makes way for "Offer sent". */
   var OFFER_MAX_RECORDS = 5;
   function initOffer() {
@@ -1234,7 +1233,6 @@
     var addBtn = form.querySelector('[data-offer-add]');
     var errorEl = form.querySelector('[data-offer-error]');
     var sendBtn = form.querySelector('[data-offer-send]');
-    var gigs = form.querySelector('[data-offer-gigs]');
     var uid = 0;
     function records() { return Array.prototype.slice.call(list.querySelectorAll('[data-offer-record]')); }
     // every clone gets its own ids, so each <label for> still names its own field
@@ -1274,9 +1272,6 @@
       renumber();
       var f = prev && prev.querySelector('input');
       if (f) f.focus();
-    });
-    form.addEventListener('change', function (e) {
-      if (e.target.name === 'channel' && gigs) gigs.hidden = e.target.value !== 'in-person';
     });
     function val(root, name) { var el = root.querySelector('[name="' + name + '"]'); return el ? String(el.value || '').trim() : ''; }
     function mark(el, bad) {

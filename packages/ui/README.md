@@ -61,7 +61,6 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | TradeNote | page `Trade` → `trade note` | ported (0068): title, body, signature |
 | DiscogsCard | page `Trade` → `discogs card` | ported (0068): label, handle, stats, link |
 | TradeStep | page `Trade` → `trade step` | ported (0068) |
-| GigRow | page `Trade` → `gig row` | ported (0068) |
 | Checkbox | page `controls` → `checkbox` | ported: state default / active (= checked) / indeterminate, `label` boolean (hideLabel), native input |
 | Dialog | page `dialog` → `dialog` | ported: native `<dialog>` + showModal, surface-base, backdrop surface-scrim, `choices` (radio group) |
 | Toast | page `toast` → `toast` | ported: `message`, `action` (Undo), `dismiss`; ToastRegion + `toast.js` (one at a time, 6 s without action, live region), decision 0049 |

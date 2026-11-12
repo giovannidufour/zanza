@@ -11,7 +11,7 @@ const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "
 
 const GRADES = ["M", "NM", "NM-", "EX+", "EX", "EX-", "VG+", "VG", "VG-", "G+", "G", "G-", "F"];
 const CHANNELS: Record<string, string> = {
-  discogs: "Discogs messages", instagram: "Instagram DM", email: "Email", "in-person": "In person, at one of my gigs",
+  discogs: "Discogs messages", instagram: "Instagram DM", email: "Email", "in-person": "In person",
 };
 const MAX_RECORDS = 5;
 

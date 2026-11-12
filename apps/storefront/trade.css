@@ -39,10 +39,6 @@
 .offered-record__grades { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gutter-small); }
 .trade-form__add, .trade-form__send { width: 100%; }
 .trade-form__error { margin: 0; color: var(--text-alert); }
-.trade-form__gigs { display: flex; flex-direction: column; gap: var(--small); }
-.trade-form__gigs[hidden] { display: none; }
-.trade-form__gigs p { margin: 0; }
-.gigs-list { margin: 0; padding: 0; list-style: none; }
 .trade-steps { display: flex; flex-direction: column; gap: var(--medium-small); margin: 0; padding: 0; list-style: none; }
 
 /* About: Figma `about intro` */
