@@ -1114,7 +1114,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-radio-group__legend { padding: 0; margin: 0 0 8px; }
 
 /* ── Filter / FilterBlock / Filters (Figma: page filters, 2026-11-10) ──────
-   filter: box 16, gap 8, label body/small text/strong, count body/small text/moderate (⚠ contrast, design/open.md).
+   filter: box 16, gap 8, label body/small text/strong, count body/small text/moderate (4.6:1 on acid green, 0067).
    filter block: heading label/extra small, gap 16, options gap 8. filters: blocks gap 24, padding 0 8. */
 .zz-filter { display: inline-flex; align-items: center; gap: 8px; color: var(--text-strong); cursor: pointer; position: relative; }
 .zz-filter__control { position: absolute; left: 0; top: 50%; width: 16px; height: 16px; margin: -8px 0 0; opacity: 0; cursor: inherit; }
