@@ -100,9 +100,8 @@ function SiteHeader({ site, url, section, current }) {
       storeName: site.storeName,
       homeHref: url('/'),
       menuProps: { 'aria-haspopup': 'dialog', 'aria-controls': 'site-menu', 'aria-expanded': 'false', 'data-menu-open': '' },
-      // Figma `header` boolean `search` (2026-11-12): the field on desktop, the magnifier on mobile → /search/
+      // Figma `header` boolean `search` (2026-11-12): the field on desktop; on mobile it lives in the menu (Gio 2026-11-12)
       search: h(SearchForm, { url, id: 'site-search-header' }),
-      searchHref: url('/search/'),
       tabs: h(Z.Tabs, { as: 'nav', value: section, 'aria-label': 'Section' },
         h(Z.Tab, { value: 'sale', href: url('/sale/') }, 'For sale'),
         h(Z.Tab, { value: 'trade', href: url('/trade/') }, 'For trade')),
@@ -126,7 +125,7 @@ function SearchForm({ url, id, className }) {
 }
 const cx = (...c) => c.filter(Boolean).join(' ');
 
-// Figma page `menu` (proposal 2026-11-12): the mobile menu, a full-screen native modal dialog (focus trapped, Esc
+// Figma page `menu` (proposal 2026-11-12, search field on top since 2026-11-12): the mobile menu, a full-screen native modal dialog (focus trapped, Esc
 // closes, the page behind is inert). Account is the entry point to /account/ on mobile; the Bag stays in the header.
 // The Account detail is "Sign in to see your orders" until accounts exist (then: the signed-in email).
 function SiteMenu({ url, current }) {
@@ -135,6 +134,8 @@ function SiteMenu({ url, current }) {
     .map(([text, href]) => h('a', { key: href, href: url(href) }, text));
   return h('dialog', { id: 'site-menu', className: 'site-menu', 'aria-label': 'Menu', tabIndex: -1, 'data-site-menu': '' },
     h(Z.MenuLayer, { title: 'Menu', closeLabel: 'Close menu', legal },
+      // Figma `menu layer`: the search field on top of the body (Gio 2026-11-12: mobile search in the menu, not the header)
+      h(SearchForm, { url, id: 'site-search-menu', className: 'site-menu__search' }),
       h(Z.MenuGroup, null, item('sale', 'For sale', '/sale/'), item('trade', 'For trade', '/trade/')),
       h(Z.MenuGroup, null, item('account', 'Account', '/account/', 'Sign in to see your orders')),
       h(Z.MenuGroup, null, item('grading', 'Grading', '/grading/'), item('shipping', 'Shipping', '/shipping/'),
