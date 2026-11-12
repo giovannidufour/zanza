@@ -19,6 +19,13 @@
     return Array.prototype.filter.call(arguments, Boolean).join(' ');
   }
 
+  /* Icons (Figma page `icons`): drawn with 1px strokes, as in Figma, and `vector-effect: non-scaling-stroke`, so a
+     line stays 1px at any icon size (Gio 2026-11-12). Inside-aligned strokes = a 2px stroke clipped to the shape.
+     Solid shapes (play triangle, radio dot) are fills. Markup is static and trusted (generated from Figma). */
+  function strokeIcon(w, hh, markup) {
+    return h('svg', { viewBox: '0 0 ' + w + ' ' + hh, fill: 'none', dangerouslySetInnerHTML: { __html: markup } });
+  }
+
   /* ── Button ─────────────────────────────────────────────────────────────
      Figma: `button` (page buttons → section button). Variants hierarchy × size; states via pseudo-classes. */
   function Button(props) {
@@ -116,9 +123,7 @@
      Figma: `header` (device=desktop | mobile). Composition: logo + store name, Tabs (desktop), actions, menu (mobile), 1px rule.
      `device` omitted → responsive: both the menu button and the tabs are rendered and CSS shows one of them (see components.css). */
   function HamburgerIcon() {
-    // Figma: icon/hamburger-menu-ultra (20×20)
-    return h('svg', { viewBox: '0 0 20 20', fill: 'none' },
-      h('path', { d: 'M20 13.333H0V12.333H20V13.333ZM20 10H0V9H20V10ZM20 6.66699H0V5.66699H20V6.66699Z', fill: 'currentColor' }));
+    return strokeIcon(24, 24, '<path d="M0 8H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M0 12H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M0 16H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>');
   }
 
   function Header(props) {
@@ -212,10 +217,10 @@
   /* ── PlayerButton ───────────────────────────────────────────────────────
      Figma: `player button` (state default | playing). icon 24 + label body/medium, gap 0. */
   function PlayIcon() {   // Figma: icon/icon-play-ultra
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M24 12L0 23.999V0.000976562L24 12Z', fill: 'currentColor' }));
+    return strokeIcon(24, 24, '<path d="M 0 24 L 24 12 L 0 0 Z" fill="currentColor"/>');
   }
   function PauseIcon() {  // Figma: icon/pause-ultra
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M9 24H8V0H9V24ZM16 24H15V0H16V24Z', fill: 'currentColor' }));
+    return strokeIcon(24, 24, '<path d="M8.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M15.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>');
   }
   /* Figma: `_player button-icon` (building block, state default | playing): the 24px play/pause icon.
      Internal, like the `_` component in Figma: PlayerButton exposes its state as the nested `playing` prop. */
@@ -272,13 +277,13 @@
      Desktop row: actions · now playing (fill) · _player controls · native player (326) · close.
      Mobile column: now playing + close / actions · _player controls / native player. */
   function PreviousIcon() {   // Figma: icon/play-previous-ultra
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M1 11.5L24 0V24L1 12.5V24H0V0H1V11.5ZM2.23633 12L23 22.3818V1.61816L2.23633 12Z', fill: 'currentColor' }));
+    return strokeIcon(24, 24, '<defs><clipPath id="zz-icon-prev-clip"><path transform="translate(0 0)" d="M 24 24 L 0 12 L 24 0 Z"/></clipPath></defs><path transform="translate(0 0)" d="M 24 24 L 0 12 L 24 0 Z" clip-path="url(#zz-icon-prev-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M0.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>');
   }
   function NextIcon() {       // Figma: icon/play-next-ultra
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M24 24H23V12.5L0 24V0.000976562L23 11.5V0H24V24ZM1 22.3818L21.7637 12L1 1.61816V22.3818Z', fill: 'currentColor' }));
+    return strokeIcon(24, 24, '<defs><clipPath id="zz-icon-next-clip"><path transform="translate(0 0)" d="M 0 24 L 24 12 L 0 0 Z"/></clipPath></defs><path transform="translate(0 0)" d="M 0 24 L 24 12 L 0 0 Z" clip-path="url(#zz-icon-next-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M23.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>');
   }
   function CloseIcon() {      // Figma: icon/icon-x-ultra
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M11.7483 11.2881L23.0129 0.0233791L23.72 0.730486L12.4554 11.9952L23.7249 23.2647L23.0178 23.9718L11.7483 12.7023L0.725267 23.7253L0.0181598 23.0182L11.0412 11.9952L0.0229935 0.977006L0.7301 0.2699L11.7483 11.2881Z', fill: 'currentColor' }));
+    return strokeIcon(24, 24, '<path transform="matrix(0.707 0.707 -0.707 0.707 0.023 0.977)" d="M0 0L32.52 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path transform="matrix(-0.707 0.707 -0.707 -0.707 23.014 0.023)" d="M0 0L32.52 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>');
   }
   /* Figma: `_player controls` (state default | playing): position "n of total" + previous · play/pause · next.
      Internal (0008): Player exposes its state as `playing`. Previous/next are disabled at the ends of the queue. */
@@ -528,13 +533,13 @@
      Used by the admin (Figma page BACKEND → Create). Render inside data-theme="backend" (Figma mode `backend`). */
 
   function SearchIcon() {        // Figma: icon/icon-magnifying-glass
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M11.3613 1.68359C16.3162 1.68363 20.3336 5.70051 20.334 10.6553C20.334 13.1749 19.2928 15.4502 17.6201 17.0801L22.4941 21.7676C22.6929 21.9589 22.6988 22.2756 22.5078 22.4746C22.3164 22.6734 21.9997 22.6796 21.8008 22.4883L16.8633 17.7393C15.3435 18.9214 13.4357 19.6279 11.3613 19.6279C6.40638 19.6278 2.38965 15.6103 2.38965 10.6553C2.39002 5.7006 6.40661 1.68377 11.3613 1.68359ZM11.3613 2.68359C6.95889 2.68377 3.39002 6.25288 3.38965 10.6553C3.38965 15.058 6.95866 18.6278 11.3613 18.6279C15.7641 18.6279 19.334 15.0581 19.334 10.6553C19.3336 6.2528 15.7639 2.68363 11.3613 2.68359Z', fill: 'currentColor' }));
+    return strokeIcon(24, 24, '<path transform="translate(16.891 17.074)" d="M 5.256 5.054 L 0 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/><path transform="translate(2.89 2.184)" d="M 16.944 8.472 C 16.944 13.151 13.151 16.944 8.472 16.944 C 3.793 16.944 0 13.151 0 8.472 C 0 3.793 3.793 0 8.472 0 C 13.151 0 16.944 3.793 16.944 8.472 Z" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
   }
   function ChevronDownIcon() {   // Figma: icon/icon-chevron-down-small-thin
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M17.6465 9.14652C17.8417 8.95126 18.1583 8.95126 18.3535 9.14652C18.5487 9.34179 18.5488 9.6583 18.3535 9.85355L12.3535 15.8536C12.1583 16.0488 11.8417 16.0488 11.6465 15.8536L5.64648 9.85355C5.45122 9.65829 5.45122 9.34178 5.64648 9.14652C5.84175 8.95126 6.15825 8.95126 6.35352 9.14652L12 14.793L17.6465 9.14652Z', fill: 'currentColor' }));
+    return strokeIcon(24, 24, '<path transform="matrix(0 -1 1 0 6 15.5)" d="M 6 0 L 0 6 L 6 12" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
   }
   function DragHandleIcon() {    // Figma: icon/hamburger-menu-ultra at 24 (the `drag handle` instance)
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M24 16H0V15H24V16ZM24 12H0V11H24V12ZM24 8H0V7H24V8Z', fill: 'currentColor' }));
+    return strokeIcon(24, 24, '<path d="M0 8H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M0 12H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M0 16H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>');
   }
 
   var idCounter = 0;
@@ -852,13 +857,13 @@
      hidden and drives the drawn box (icon/icon-square ↔ icon/icon-square-tick); the label is clickable.
      state=active = checked. Focus: browser ring on the box (no focus token yet, design/open.md). */
   function SquareIcon() {        // Figma: icon/icon-square
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M19.5 3.25C20.1904 3.25 20.75 3.80964 20.75 4.5V19.5C20.75 20.1904 20.1904 20.75 19.5 20.75H4.5C3.80964 20.75 3.25 20.1904 3.25 19.5V4.5C3.25 3.80964 3.80964 3.25 4.5 3.25H19.5ZM4.5 4.25C4.36193 4.25 4.25 4.36193 4.25 4.5V19.5C4.25 19.6381 4.36193 19.75 4.5 19.75H19.5C19.6381 19.75 19.75 19.6381 19.75 19.5V4.5C19.75 4.36193 19.6381 4.25 19.5 4.25H4.5Z', fill: 'currentColor' }));
+    return strokeIcon(24, 24, '<path transform="translate(3.75 3.75)" d="M 0.75 0 L 15.75 0 C 16.164 0 16.5 0.336 16.5 0.75 L 16.5 15.75 C 16.5 16.164 16.164 16.5 15.75 16.5 L 0.75 16.5 C 0.336 16.5 0 16.164 0 15.75 L 0 0.75 C 0 0.336 0.336 0 0.75 0 Z" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
   }
   function SquareTickIcon() {    // Figma: icon/icon-square-tick
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M19.5 3.25C20.1904 3.25 20.75 3.80964 20.75 4.5V19.5C20.75 20.1904 20.1904 20.75 19.5 20.75H4.5C3.80964 20.75 3.25 20.1904 3.25 19.5V4.5C3.25 3.80964 3.80964 3.25 4.5 3.25H19.5ZM4.5 4.25C4.36193 4.25 4.25 4.36193 4.25 4.5V19.5C4.25 19.6381 4.36193 19.75 4.5 19.75H19.5C19.6381 19.75 19.75 19.6381 19.75 19.5V4.5C19.75 4.36193 19.6381 4.25 19.5 4.25H4.5ZM15.3965 9.39648C15.5917 9.20122 15.9083 9.20122 16.1035 9.39648C16.2988 9.59175 16.2988 9.90825 16.1035 10.1035L10.8535 15.3535C10.6583 15.5488 10.3417 15.5488 10.1465 15.3535L7.89648 13.1035C7.70122 12.9083 7.70122 12.5917 7.89648 12.3965C8.09175 12.2012 8.40825 12.2012 8.60352 12.3965L10.5 14.293L15.3965 9.39648Z', fill: 'currentColor' }));
+    return strokeIcon(24, 24, '<path transform="translate(8.25 9.75)" d="M 0 3 L 2.25 5.25 L 7.5 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/><path transform="translate(3.75 3.75)" d="M 0.75 0 L 15.75 0 C 16.164 0 16.5 0.336 16.5 0.75 L 16.5 15.75 C 16.5 16.164 16.164 16.5 15.75 16.5 L 0.75 16.5 C 0.336 16.5 0 16.164 0 15.75 L 0 0.75 C 0 0.336 0.336 0 0.75 0 Z" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
   }
   function SquareMinusIcon() {   // Figma: icon/icon-square-minus (2026-11-10, checkbox state=indeterminate)
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M19.5 3.25C20.1904 3.25 20.75 3.80964 20.75 4.5V19.5C20.75 20.1904 20.1904 20.75 19.5 20.75H4.5C3.80964 20.75 3.25 20.1904 3.25 19.5V4.5C3.25 3.80964 3.80964 3.25 4.5 3.25H19.5ZM4.5 4.25C4.36193 4.25 4.25 4.36193 4.25 4.5V19.5C4.25 19.6381 4.36193 19.75 4.5 19.75H19.5C19.6381 19.75 19.75 19.6381 19.75 19.5V4.5C19.75 4.36193 19.6381 4.25 19.5 4.25H4.5ZM16 12.5H8V11.5H16V12.5Z', fill: 'currentColor' }));
+    return strokeIcon(24, 24, '<path d="M8 12H16" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path transform="translate(3.75 3.75)" d="M 0.75 0 L 15.75 0 C 16.164 0 16.5 0.336 16.5 0.75 L 16.5 15.75 C 16.5 16.164 16.164 16.5 15.75 16.5 L 0.75 16.5 C 0.336 16.5 0 16.164 0 15.75 L 0 0.75 C 0 0.336 0.336 0 0.75 0 Z" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
   }
   /* state=indeterminate (Figma 2026-11-10): `indeterminate` sets the native property (no HTML attribute exists), so
      screen readers announce "mixed". label=false (Figma boolean `label`): `hideLabel` keeps the label for assistive
@@ -941,10 +946,10 @@
      text/strong. Native radio (0018): the input is visually hidden over the control; arrow keys move between the
      radios of a group (browser behaviour). RadioGroup = <fieldset> + <legend>, gap 8 (Figma: dialog `choices`). */
   function RadioEmptyIcon() {   // Figma: icon/icon-radio-empty (18)
-    return h('svg', { viewBox: '0 0 18 18', fill: 'none' }, h('path', { d: 'M9 0C13.9706 0 18 4.02944 18 9C18 13.9706 13.9706 18 9 18C4.02944 18 0 13.9706 0 9C0 4.02944 4.02944 0 9 0ZM9 1C4.58172 1 1 4.58172 1 9C1 13.4183 4.58172 17 9 17C13.4183 17 17 13.4183 17 9C17 4.58172 13.4183 1 9 1Z', fill: 'currentColor' }));
+    return strokeIcon(18, 18, '<defs><clipPath id="zz-icon-radio-empty-clip"><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z"/></clipPath></defs><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z" clip-path="url(#zz-icon-radio-empty-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>');
   }
   function RadioDotIcon() {     // Figma: icon/icon-radio-dot (18)
-    return h('svg', { viewBox: '0 0 18 18', fill: 'none' }, h('path', { d: 'M9 0C13.9706 0 18 4.02944 18 9C18 13.9706 13.9706 18 9 18C4.02944 18 0 13.9706 0 9C0 4.02944 4.02944 0 9 0ZM9 1C4.58172 1 1 4.58172 1 9C1 13.4183 4.58172 17 9 17C13.4183 17 17 13.4183 17 9C17 4.58172 13.4183 1 9 1ZM9 3C12.3137 3 15 5.68629 15 9C15 12.3137 12.3137 15 9 15C5.68629 15 3 12.3137 3 9C3 5.68629 5.68629 3 9 3Z', fill: 'currentColor' }));
+    return strokeIcon(18, 18, '<defs><clipPath id="zz-icon-radio-dot-clip"><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z"/></clipPath></defs><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z" clip-path="url(#zz-icon-radio-dot-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M3 9A6 6 0 1 0 15 9A6 6 0 1 0 3 9Z" fill="currentColor"/>');
   }
   var RadioGroupContext = React.createContext(null);
   function Radio(props) {
@@ -1007,10 +1012,10 @@
      `PLP header` (device=mobile): "Filter" + the number of applied filters as suffix, and the sort, a native select
      drawn as a small secondary button with a trailing chevron (Gio: every select opens the native dropdown). */
   function ChevronRightIcon() {   // Figma: icon/icon-chevron-right-small-thin (= chevron-down turned)
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('g', { transform: 'rotate(-90 12 12)' }, ChevronDownIcon().props.children));
+    return strokeIcon(24, 24, '<path transform="translate(9 6)" d="M 0 0 L 6 6 L 0 12" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
   }
   function ChevronLeftIcon() {    // Figma: icon/icon-chevron-left-small-thin
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('g', { transform: 'rotate(90 12 12)' }, ChevronDownIcon().props.children));
+    return strokeIcon(24, 24, '<path transform="translate(9 6)" d="M 6 0 L 0 6 L 6 12" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
   }
   function FilterFacet(props) {
     var hasValue = props.value !== undefined && props.value !== null && props.value !== false && props.value !== '';
@@ -1106,19 +1111,19 @@
      Enter, Escape, Backspace on the empty field removes the last chip). `multiple={false}`: one chip, and the text
      box is hidden while it is there (remove the chip to change it). */
   function XThinIcon() {      // Figma: icon/icon-x-thin
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M5.07538 5.07538C5.27064 4.88014 5.58723 4.88012 5.78248 5.07538L12.5 11.7929L19.2175 5.07538C19.4128 4.88012 19.7294 4.88012 19.9246 5.07538C20.1199 5.27064 20.1199 5.58723 19.9246 5.78249L13.2071 12.5L19.9246 19.2175C20.1199 19.4128 20.1199 19.7294 19.9246 19.9246C19.7294 20.1199 19.4128 20.1199 19.2175 19.9246L12.5 13.2071L5.78248 19.9246C5.58723 20.1199 5.27064 20.1199 5.07538 19.9246C4.88012 19.7294 4.88012 19.4128 5.07538 19.2175L11.7929 12.5L5.07538 5.78249C4.88012 5.58722 4.88012 5.27064 5.07538 5.07538Z', fill: 'currentColor' }));
+    return strokeIcon(24, 24, '<path transform="matrix(0.707 -0.707 0.707 0.707 5.429 5.429)" d="M 0 0 L 0 20" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/><path transform="matrix(0.707 -0.707 0.707 0.707 5.429 19.571)" d="M 20 0 L 0 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
   }
   function TickLargeThinIcon() {      // Figma: icon/icon-tick-large-thin leading icon of "In bag" (decision 0058)
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M20.6533 4.63961C20.8522 4.44831 21.1689 4.45445 21.3604 4.65328C21.5516 4.85218 21.5454 5.16886 21.3467 5.36031L7.84668 18.3603L7.5 18.6943L7.15332 18.3603L2.65332 14.0263C2.45468 13.8349 2.44849 13.5192 2.63965 13.3203C2.8312 13.1214 3.1478 13.1151 3.34668 13.3066L7.49902 17.3056L20.6533 4.63961Z', fill: 'currentColor' }));
+    return strokeIcon(24, 24, '<path transform="translate(3 5)" d="M 0 8.667 L 4.5 13 L 18 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/>');
   }
   function ClockCounterClockwiseIcon() {   // Figma: icon/icon-clock-counter-clockwise, leading icon of "Reserved" (proposal, design/open.md)
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M10.7109 2.18164C13.1114 1.89386 15.5345 2.49568 17.5215 3.87305C19.5085 5.25048 20.9223 7.30829 21.4951 9.65723C22.0679 12.0062 21.7598 14.4845 20.6299 16.6221C19.4999 18.7593 17.6257 20.4083 15.3623 21.2578C13.0987 22.1073 10.6019 22.0978 8.34473 21.2314C6.76776 20.6261 5.38412 19.6316 4.31348 18.3555L4.67383 21.2109C4.70808 21.4846 4.51387 21.7349 4.24023 21.7695C3.96627 21.8039 3.71609 21.6089 3.68164 21.335L3.05957 16.3877L2.96582 15.6416L3.68945 15.8438L8.54785 17.1973C8.81352 17.2714 8.96924 17.5477 8.89551 17.8135C8.82127 18.0792 8.54511 18.2341 8.2793 18.1602L4.6416 17.1455C5.65013 18.5661 7.05982 19.667 8.70312 20.2979C10.7319 21.0765 12.9761 21.0857 15.0107 20.3223C17.0453 19.5586 18.7304 18.0756 19.7461 16.1543C20.7617 14.233 21.0382 12.0059 20.5234 9.89453C20.0086 7.78309 18.7382 5.9325 16.9521 4.69434C15.1661 3.45629 12.9878 2.91615 10.8301 3.1748C8.67233 3.43358 6.68396 4.47435 5.24121 6.09961C3.79854 7.72497 3.00105 9.82279 3 11.9961C2.99975 12.2719 2.77579 12.4959 2.5 12.4961C2.22386 12.496 1.99987 12.2713 2 11.9951C2.00123 9.57738 2.88821 7.24372 4.49316 5.43555C6.09823 3.62742 8.3104 2.46953 10.7109 2.18164ZM11.8887 6.375C12.1648 6.37501 12.3887 6.59887 12.3887 6.875V11.4961H17.0098C17.2858 11.4962 17.5098 11.72 17.5098 11.9961C17.5096 12.272 17.2857 12.496 17.0098 12.4961H11.3887V6.875C11.3887 6.59886 11.6125 6.375 11.8887 6.375Z', fill: 'currentColor' }));
+    return strokeIcon(24, 24, '<path transform="translate(11.889 6.875)" d="M 0 0 L 0 5.121 L 5.121 5.121" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/><path transform="translate(3.555 16.326)" d="M 0.622 4.948 L 0 0 L 4.858 1.354" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/><path transform="translate(2.5 2.612)" d="M 1.056 13.714 C 2.113 15.752 3.881 17.331 6.024 18.154 C 8.167 18.976 10.537 18.985 12.687 18.179 C 14.836 17.372 16.615 15.806 17.688 13.777 C 18.761 11.747 19.053 9.395 18.509 7.164 C 17.966 4.934 16.623 2.98 14.737 1.673 C 12.85 0.365 10.55 -0.207 8.27 0.067 C 5.991 0.34 3.891 1.439 2.367 3.156 C 0.843 4.873 0.001 7.089 0 9.384" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/>');
   }
   function EnvelopeIcon() {   // Figma: icon/icon-envelope, trailing icon of "(Reserved) Notify me" (decision 0065)
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M24 24H0V0H24V24ZM12.3818 14.1982L12 14.6494L11.6182 14.1982L1 1.64941V23H23V1.64941L12.3818 14.1982ZM12 13.0996L22.2393 1H1.76074L12 13.0996Z', fill: 'currentColor' }));
+    return strokeIcon(24, 24, '<path transform="translate(1 0.875)" d="M 22 0 L 11 13 L 0 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><defs><clipPath id="zz-icon-envelope-clip"><path transform="translate(0 0)" d="M0 0H24V24H0Z"/></clipPath></defs><path transform="translate(0 0)" d="M0 0H24V24H0Z" clip-path="url(#zz-icon-envelope-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>');
   }
   function PlusSmallThinIcon() {      // Figma: icon/icon-plus-small-thin
-    return h('svg', { viewBox: '0 0 24 24', fill: 'none' }, h('path', { d: 'M12 6.5C12.2761 6.5 12.5 6.72386 12.5 7V11.5H17C17.2761 11.5 17.5 11.7239 17.5 12C17.5 12.2761 17.2761 12.5 17 12.5H12.5V17C12.5 17.2761 12.2761 17.5 12 17.5C11.7239 17.5 11.5 17.2761 11.5 17V12.5H7C6.72386 12.5 6.5 12.2761 6.5 12C6.5 11.7239 6.72386 11.5 7 11.5H11.5V7C11.5 6.72386 11.7239 6.5 12 6.5Z', fill: 'currentColor' }));
+    return strokeIcon(24, 24, '<path d="M12 7V17" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 12H7" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
   }
   function EntityChip(props) {
     var label = props.label !== undefined ? props.label : props.children;

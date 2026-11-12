@@ -72,3 +72,6 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus, main[tabindex="-1"]:focus, dia
 }
 .site-menu:not([open]) { display: none; }
 .site-menu::backdrop { background: var(--surface-accent); }
+
+/* "(Reserved) Notify me" (decision 0065): on mobile only "Reserved" + the envelope (Gio 2026-11-12) */
+@media (--mobile) { .site-reserved__bracket, .site-reserved__action { display: none; } }
