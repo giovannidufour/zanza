@@ -87,4 +87,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0061](0061-search-results-page.md) | Search: a results page that is a PLP; sold copies stay visible behind "Show sold out" | accepted |
 | [0062](0062-search-field-clear-and-submit.md) | Search field: the magnifier submits, a × clears while there is text; on mobile the field is in the menu | accepted |
 | [0063](0063-input-focus-ring-on-the-field.md) | Input focus: the ring goes around the whole field, not the native control inside it | accepted |
-| [0064](0064-sold-line-in-the-bag.md) | A sold copy in the bag: "Sold out · not in your order", price struck through, a note above Checkout | accepted |
+| [0064](0064-sold-line-in-the-bag.md) | A sold copy in the bag: name struck through, "SOLD OUT" beside the struck price, a note above Checkout | accepted |

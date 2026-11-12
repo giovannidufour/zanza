@@ -410,8 +410,8 @@
      Figma: page `Bag` → `bag item` (device=desktop | mobile × status=available | sold | reserved, text `notice`).
      One line of the bag = one copy (copies are unique: no quantity, Remove only). Row: cover 96 · info (title block,
      grade lines, samples; gap 8) · purchase (price, Remove secondary small; right-aligned, gap 8); gaps 16.
-     sold: `notice` on top (label/small, "Sold out · not in your order"), price struck through (decision 0064: struck = unavailable for
-     good, as the disabled Button). reserved (held by someone else's checkout or by hand): `notice` "Reserved", no
+     sold: product name struck through, "SOLD OUT" beside the struck price, in the price style (decision 0064: struck =
+     unavailable for good, as the disabled Button); no notice. reserved (held by someone else's checkout or by hand): `notice` "Reserved", no
      price. `unavailable` (before 0064) = reserved. Samples stay (Gio 2026-11-10). Desktop type = ProductCard desktop,
      mobile = ProductCard mobile. Decision 0044. */
   function BagItem(props) {
@@ -431,7 +431,7 @@
       h(props.href ? 'a' : 'div', props.href ? { className: 'zz-bag-item__image', href: props.href, tabIndex: -1, 'aria-hidden': 'true' } : { className: 'zz-bag-item__image' },
         img && img.src ? h('img', { src: img.src, alt: img.alt || '', loading: 'lazy' }) : null),
       h('div', { className: 'zz-bag-item__info' },
-        unavailable ? h('p', { className: 'zz-bag-item__notice label-small' }, props.notice || (status === 'sold' ? 'Sold out \u00b7 not in your order' : 'Reserved')) : null,
+        status === 'reserved' ? h('p', { className: 'zz-bag-item__notice label-small' }, props.notice || 'Reserved') : null,
         h('div', { className: 'zz-bag-item__title-block' },
           h('h' + (props.headingLevel || 2), { id: titleId, className: cx('zz-bag-item__name', t.head) },
             props.href ? h('a', { className: 'zz-bag-item__link', href: props.href }, props.title) : props.title),
@@ -444,8 +444,11 @@
           : null,
         props.samples ? h('div', { className: 'zz-bag-item__samples' }, props.samples) : null),
       h('div', { className: 'zz-bag-item__purchase' },
-        status !== 'reserved' && props.price != null ? h('p', { className: cx('zz-bag-item__price', t.head) },
-          status === 'sold' ? h('s', null, props.price) : props.price) : null,
+        status === 'sold'
+          ? h('p', { className: cx('zz-bag-item__price', t.head) },
+              h('span', null, 'SOLD OUT'), h('span', { className: 'zz-visually-hidden' }, ', not in your order, '),
+              props.price != null ? h('s', null, props.price) : null)
+          : status === 'available' && props.price != null ? h('p', { className: cx('zz-bag-item__price', t.head) }, props.price) : null,
         h(Button, { hierarchy: 'secondary', size: 'small', className: 'zz-bag-item__remove', onClick: props.onRemove, 'aria-describedby': titleId },
           props.removeLabel || 'Remove')));
   }

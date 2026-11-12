@@ -684,6 +684,10 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-bag-item__description { display: flex; flex-direction: column; gap: 4px; }
 .zz-bag-item__samples { display: flex; flex-wrap: wrap; gap: 8px; }
 .zz-bag-item__purchase { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: var(--small); }
+/* sold (decision 0064): name struck through; "SOLD OUT" beside the struck price (Figma `price row`, gap small) */
+.zz-bag-item[data-status="sold"] .zz-bag-item__name,
+.zz-bag-item[data-status="sold"] .zz-bag-item__link { text-decoration: line-through; }
+.zz-bag-item[data-status="sold"] .zz-bag-item__price { display: flex; align-items: center; gap: var(--small); white-space: nowrap; }
 /* mobile: samples padding-top 8 (Figma: copied from the mobile product card) */
 .zz-bag-item[data-device="mobile"] .zz-bag-item__samples { padding-top: 8px; }
 @media (--mobile) { .zz-bag-item[data-device="responsive"] .zz-bag-item__samples { padding-top: 8px; } }
