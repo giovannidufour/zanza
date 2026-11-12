@@ -63,3 +63,12 @@ body[data-player-open] .site-toasts { --zz-toast-offset: var(--site-player-heigh
 /* Programmatic focus targets (decision 0043): a heading, <main> or a dialog that only receives focus so screen readers
    and the Tab order start there. Not controls: no ring (Claude's choice, not drawn in Figma). */
 h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus, main[tabindex="-1"]:focus, dialog[tabindex="-1"]:focus { outline: none; }
+
+/* mobile menu (Figma page `menu`, SiteMenu in pages/shell.js): a native modal dialog filling the screen, like the
+   PLP filters layer. Opened only by the mobile hamburger. */
+.site-menu {
+  position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none;
+  margin: 0; padding: 0; border: 0; background: var(--surface-accent); color: var(--text-strong);
+}
+.site-menu:not([open]) { display: none; }
+.site-menu::backdrop { background: var(--surface-accent); }

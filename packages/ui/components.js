@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"}]} */
 /* packages/ui/components.js — the ONE implementation of the Zanza components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
@@ -128,10 +128,10 @@
     return h('header', Object.assign({
       className: cx('zz-header', props.className),
       'data-device': device
-    }, omit(props, ['device', 'logo', 'storeName', 'homeHref', 'tabs', 'actions', 'onMenuClick', 'menuLabel', 'className', 'children'])),
+    }, omit(props, ['device', 'logo', 'storeName', 'homeHref', 'tabs', 'actions', 'onMenuClick', 'menuLabel', 'menuProps', 'className', 'children'])),
       h('div', { className: 'zz-header__row' },
         h('div', { className: 'zz-header__leading' },
-          showMenu ? h(Button, { className: 'zz-header__menu', hierarchy: 'secondary', leadingIcon: h(HamburgerIcon), 'aria-label': props.menuLabel || 'Menu', onClick: props.onMenuClick }) : null,
+          showMenu ? h(Button, Object.assign({ className: 'zz-header__menu', hierarchy: 'secondary', leadingIcon: h(HamburgerIcon), 'aria-label': props.menuLabel || 'Menu', onClick: props.onMenuClick }, props.menuProps)) : null,
           props.logo ? h('div', { className: 'zz-header__logo' }, props.logo) : null,
           props.storeName ? h(nameTag, nameAttrs, props.storeName) : null),
         showTabs ? h('div', { className: 'zz-header__tabs' }, props.tabs) : null,
@@ -1016,6 +1016,37 @@
       h('div', { className: 'zz-plp-header__controls' }, props.filters, props.sort),
       h('div', { className: 'zz-plp-header__rule', 'aria-hidden': 'true' }));
   }
+  /* ── MenuItem / MenuGroup / MenuLayer (mobile menu, Figma page `menu`, proposal 2026-11-12) ──
+     Opened by the header hamburger. `menu layer`: the frame of `filters layer` (bar: title label/medium + close;
+     body scrolls on its own) without the actions. Body: padding small (top) / medium-small (bottom) × page-margin-mobile,
+     groups 24 apart (Figma literal, no token). `menu item` (state default | current): a link row like `filter facet`
+     without the chevron, padding medium-small × small, 1px border-divider-strong at the bottom; label label-medium
+     (uppercase), detail body-small text-moderate; current = the page you are on (aria-current) on tab-background-active.
+     Legal links: body-small, wrap, gap medium-small × small, padding-x small (Gio 2026-11-12: rows keep padding 8). */
+  function MenuItem(props) {
+    var current = !!props.current;
+    var hasDetail = props.detail !== undefined && props.detail !== null && props.detail !== false && props.detail !== '';
+    return h('a', Object.assign({ className: cx('zz-menu-item', props.className), 'data-state': current ? 'current' : 'default',
+      'aria-current': current ? 'page' : undefined }, omit(props, ['label', 'detail', 'current', 'className', 'children'])),
+      h('span', { className: 'zz-menu-item__label label-medium' }, props.label),
+      hasDetail ? h('span', { className: 'zz-menu-item__detail body-small' }, props.detail) : null);
+  }
+  function MenuGroup(props) {
+    return h('div', Object.assign({ className: cx('zz-menu-group', props.className) }, omit(props, ['children', 'className'])), props.children);
+  }
+  function MenuLayer(props) {
+    var titleId = useId();
+    return h('div', Object.assign({ className: cx('zz-menu-layer', props.className) },
+      omit(props, ['title', 'legal', 'legalLabel', 'onClose', 'closeLabel', 'children', 'className'])),
+      h('div', { className: 'zz-menu-layer__bar' },
+        h('h2', { id: titleId, className: 'zz-menu-layer__title label-medium' }, props.title || 'Menu'),
+        h(IconButton, { className: 'zz-menu-layer__close', icon: h(XThinIcon), 'aria-label': props.closeLabel || 'Close menu',
+          onClick: props.onClose, 'data-menu-close': '' })),
+      h('nav', { className: 'zz-menu-layer__body', 'aria-labelledby': titleId },
+        props.children,
+        props.legal ? h('div', { className: 'zz-menu-layer__legal body-small', role: 'group', 'aria-label': props.legalLabel || 'Legal' }, props.legal) : null));
+  }
+
   // a native <select> drawn as a Button (Figma: button + trailing icon chevron-down): the select is invisible over
   // the button, so the platform picker opens (Gio, 2026-11-10). The visible text is the selected option's label.
   function SelectButton(props) {
@@ -1175,5 +1206,5 @@
            EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon, TickLargeThinIcon: TickLargeThinIcon, ClockCounterClockwiseIcon: ClockCounterClockwiseIcon,
            Radio: Radio, RadioGroup: RadioGroup, RadioEmptyIcon: RadioEmptyIcon, RadioDotIcon: RadioDotIcon,
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
-           FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon };
+           FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon };
 });
