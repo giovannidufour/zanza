@@ -365,6 +365,16 @@
       input.value = onSearch ? q : '';
     });
   }
+  // × in the search field (Figma `input` type=search, state=filled): empties it and keeps focus in it
+  document.addEventListener('click', function (e) {
+    var clear = e.target.closest && e.target.closest('.zz-input__clear');
+    if (!clear) return;
+    var input = clear.parentNode.querySelector('input');
+    if (!input) return;
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.focus();
+  });
   document.addEventListener('submit', function (e) {
     var form = e.target.closest && e.target.closest('form[data-site-search]');
     if (!form) return;

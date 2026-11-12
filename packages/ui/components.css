@@ -347,8 +347,8 @@ a.zz-tab {
 
 /* responsive header (device omitted): one of menu / tabs is shown.
    Breakpoint: `--mobile` from tokens.json → breakpoint (expanded at build time by media.js). */
-/* search (Figma boolean `search`, 2026-11-12): the field on desktop (200 wide), the magnifier Button on mobile */
-.zz-header__search { width: 200px; }
+/* search (Figma boolean `search`, 2026-11-12): the field on desktop (280 wide, Gio 2026-11-12), the magnifier Button on mobile */
+.zz-header__search { width: 280px; }
 .zz-header[data-device="responsive"] .zz-header__search-link { display: none; }
 .zz-header[data-device="responsive"] .zz-header__menu { display: none; }
 @media (--mobile) {
@@ -852,6 +852,15 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-input__icon { display: inline-flex; flex: none; width: 20px; height: 20px; color: var(--icon-strong); }
 .zz-input__icon svg { width: 100%; height: 100%; display: block; }
 .zz-input__icon--trailing { pointer-events: none; }
+/* search actions (Figma `input` type=search, 2026-11-12): × clear (leading, only with text) and magnifier submit
+   (trailing). Same 20px icon slot as the decorative icons; the button adds no box of its own. */
+.zz-input__action {
+  display: inline-flex; flex: none; width: 20px; height: 20px; padding: 0; margin: 0;
+  border: 0; background: none; color: var(--icon-strong); cursor: pointer;
+}
+.zz-input__action svg { width: 100%; height: 100%; display: block; }
+.zz-input__clear:has(+ .zz-input__control:placeholder-shown),
+.zz-input:has(.zz-input__control:placeholder-shown) .zz-input__clear { display: none; }
 
 .zz-input__support { margin: 0; color: var(--text-strong); }
 

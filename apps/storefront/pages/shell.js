@@ -121,6 +121,7 @@ function SearchForm({ url, id, className }) {
   return h('form', { className: cx('site-search', className), role: 'search', 'aria-label': 'Search', action: url('/search/'),
     method: 'get', 'data-site-search': '' },
     h(Z.Input, { variant: 'search', id, name: 'q', placeholder: 'Search', 'aria-label': 'Search records',
+      submitLabel: 'Search', clearLabel: 'Clear search',
       autoComplete: 'off', enterKeyHint: 'search', 'data-search-input': '' }));
 }
 const cx = (...c) => c.filter(Boolean).join(' ');

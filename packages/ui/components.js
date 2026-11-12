@@ -137,7 +137,7 @@
           props.storeName ? h(nameTag, nameAttrs, props.storeName) : null),
         showTabs ? h('div', { className: 'zz-header__tabs' }, props.tabs) : null,
         (props.actions || hasSearch) ? h('div', { className: 'zz-header__trailing' },
-          // Figma boolean `search` (2026-11-12): desktop = the search field (input type=search, 200 wide) before the
+          // Figma boolean `search` (2026-11-12): desktop = the search field (input type=search, 280 wide) before the
           // actions; mobile = a secondary icon Button (magnifier, like the hamburger) that leads to the search page
           hasSearch && device !== 'mobile' && props.search ? h('div', { className: 'zz-header__search' }, props.search) : null,
           hasSearch && device !== 'desktop' && props.searchHref ? h(Button, { className: 'zz-header__search-link', hierarchy: 'secondary',
@@ -542,10 +542,20 @@
     var hasError = props.error !== undefined && props.error !== null && props.error !== false && props.error !== '';
     var support = hasError ? props.error : props.supportText;
     var locked = !!props.readOnly;
-    var leading = props.leadingIcon !== undefined ? props.leadingIcon : (variant === 'search' ? h(SearchIcon) : null);
-    var trailing = props.trailingIcon !== undefined ? props.trailingIcon : (variant === 'select' ? h(ChevronDownIcon) : null);
+    // search (Figma `input` type=search, state default | filled, Gio 2026-11-12): the magnifier sits in the trailing slot;
+    // with `submitLabel` it is the form's submit button. With `clearLabel` a × button sits in the leading slot, shown
+    // only while the field has text (CSS :placeholder-shown, needs a placeholder); clearing is the consumer's job
+    // (`onClear`; the storefront wires it in scripts/site.js).
+    var isSearch = variant === 'search';
+    var leading = props.leadingIcon !== undefined ? props.leadingIcon : null;
+    var trailing = props.trailingIcon !== undefined ? props.trailingIcon : (variant === 'select' ? h(ChevronDownIcon) : isSearch ? h(SearchIcon) : null);
+    var clearBtn = isSearch && props.clearLabel ? h('button', { type: 'button', className: 'zz-input__action zz-input__clear',
+      'aria-label': props.clearLabel, onClick: props.onClear }, h(XThinIcon)) : null;
+    var submitBtn = isSearch && props.submitLabel ? h('button', { type: 'submit', className: 'zz-input__action zz-input__submit',
+      'aria-label': props.submitLabel }, trailing) : null;
     var own = ['variant', 'size', 'label', 'optional', 'optionalLabel', 'supportText', 'error', 'prefix', 'suffix',
-               'leadingIcon', 'trailingIcon', 'className', 'style', 'id', 'children', 'placeholder', 'readOnly'];
+               'leadingIcon', 'trailingIcon', 'className', 'style', 'id', 'children', 'placeholder', 'readOnly',
+               'clearLabel', 'onClear', 'submitLabel'];
     var controlAttrs = Object.assign({
       id: id,
       className: 'zz-input__control body-medium',
@@ -575,11 +585,12 @@
         props.optional ? ' ' : null,   // whitespace between the two names (not rendered in the flex row)
         props.optional ? h('span', { className: 'zz-input__optional body-small' }, props.optionalLabel || 'Optional') : null) : null,
       h('div', { className: 'zz-input__field' },
+        clearBtn,
         leading ? h('span', { className: 'zz-input__icon', 'aria-hidden': 'true' }, leading) : null,
         props.prefix ? h('span', { className: 'zz-input__affix body-medium', 'aria-hidden': 'true' }, props.prefix) : null,
         control,
         props.suffix ? h('span', { className: 'zz-input__affix body-medium', 'aria-hidden': 'true' }, props.suffix) : null,
-        trailing ? h('span', { className: 'zz-input__icon zz-input__icon--trailing', 'aria-hidden': 'true' }, trailing) : null),
+        submitBtn || (trailing ? h('span', { className: 'zz-input__icon zz-input__icon--trailing', 'aria-hidden': 'true' }, trailing) : null)),
       support ? h('p', { id: supportId, className: 'zz-input__support body-small' }, support) : null);
   }
 
