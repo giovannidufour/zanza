@@ -45,6 +45,7 @@ Architettura: **headless**, frontend custom, servizi terzi per commerce/pagament
 | `_context/product-brief.md` | Cos'è, flussi, modello dati, feedback di prodotto |
 | `_context/stack.md` | Stack deciso (Supabase + R2 + Stripe Checkout + admin custom), portabilità, tasse |
 | `_context/backend.md` | Schema DB, chiavi di storage, flussi (upload, hold/checkout, pubblicazione) |
+| `_context/email-setup.md` | Email transazionali (Resend): config attuale e runbook per rifarla con nome/dominio/email nuovi |
 | `_context/open-questions.md` | Decisioni aperte — da chiudere prima del codice |
 | `design/README.md` | Mappa della documentazione DS + flusso Figma → codice + checklist di porting di un componente |
 | `design/decisions/` | **Il perché**: una decisione di design per file (inglese, append-only, con la *Rule* da applicare). Leggere prima di portare o modificare un componente |
