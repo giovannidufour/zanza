@@ -549,8 +549,8 @@ export interface ToastProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function Toast(props: ToastProps): JSX.Element;
 
-/** The one place toasts appear: fixed at the bottom of the viewport, a visually hidden live region (role=status,
- *  polite) present at load, an empty slot and a template of the Toast. Render it once per page, outside the swapped
+/** The one place toasts appear: fixed at the top of the viewport, gutter-small below `--zz-toast-offset` (the shop:
+ *  its visible header, 0071); a visually hidden live region (role=status, polite) present at load, an empty slot and a template of the Toast. Render it once per page, outside the swapped
  *  page content; the behaviour is `ZanzaToast.show()` in packages/ui/toast.js. */
 export interface ToastRegionProps extends HTMLAttributes<HTMLElement> {
   /** Landmark name. Default "Notifications". */

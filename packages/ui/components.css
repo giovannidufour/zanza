@@ -1248,23 +1248,20 @@ a.zz-product-card__image { display: block; color: inherit; }
    Toast + ToastRegion (Figma: page `toast` → `toast` 2177:439; decision 0049)
    The look: surface-base (opaque, 0023), 1px border-divider-strong dashed [16,16] (0053), padding and gap medium-small,
    message body/medium text-strong, no radius, no shadow. Action = Button secondary small, dismiss = IconButton ×.
-   Region: fixed at the bottom of the viewport, gutter-small above whatever is docked there (--zz-toast-offset: the
-   shop sets it to the player height while the player is open). Desktop: right-aligned at the page margin, 360 wide
-   (Figma). Mobile: full width minus the page margins.
+   Region: fixed at the top of the viewport (Gio, decision 0071; was the bottom in 0049), gutter-small below whatever
+   is docked there (--zz-toast-offset: the shop sets it to the visible part of its sticky header, so the toast follows
+   the header as it slides away and back), or below the safe area (notch) when that is larger. Desktop: right-aligned
+   at the page margin, 360 wide (Figma). Mobile: full width minus the page margins.
    ═══════════════════════════════════════════════════════════════════════ */
 .zz-toast-region {
   position: fixed; z-index: 30;
   right: var(--page-margin-desktop);
-  bottom: calc(var(--zz-toast-offset, 0px) + var(--zz-toast-gap, var(--gutter-small)));
+  top: calc(max(var(--zz-toast-offset, 0px), env(safe-area-inset-top, 0px)) + var(--gutter-small));
   width: min(360px, calc(100vw - 2 * var(--page-margin-desktop)));
   pointer-events: none;   /* the empty region never blocks the page; the toast itself takes the pointer */
 }
 @media (--mobile) {
-  .zz-toast-region { left: var(--page-margin-mobile); right: var(--page-margin-mobile); width: auto;
-    /* phones with rounded screen corners clip a toast 8px from the bottom: medium-small above the bottom edge, or the
-       safe area when the browser reports a larger one (Gio, decision 0055; 0052's 2 × medium-small + safe area was too
-       high). The shop resets the gap to gutter-small while the player is open (the player sits at the bottom) */
-    --zz-toast-gap: max(var(--medium-small), env(safe-area-inset-bottom, 0px)); }
+  .zz-toast-region { left: var(--page-margin-mobile); right: var(--page-margin-mobile); width: auto; }
 }
 .zz-toast-region__slot:empty { display: none; }
 .zz-toast {
@@ -1287,9 +1284,9 @@ a.zz-product-card__image { display: block; color: inherit; }
 }
 .zz-toast__message { flex: 1 1 auto; min-width: 0; margin: 0; }
 .zz-toast__action, .zz-toast__dismiss { flex: none; }
-/* enter: fade + rise. TODO motion: 150ms ease-out is the DS placeholder (no motion tokens); none with reduced motion */
+/* enter: fade + drop from above (the region is at the top, 0071). TODO motion: 150ms ease-out is the DS placeholder (no motion tokens); none with reduced motion */
 .zz-toast-region .zz-toast { animation: zz-toast-in 150ms ease-out; }
-@keyframes zz-toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes zz-toast-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .zz-toast-region .zz-toast { animation: none; } }
 
 /* ── Trade (Figma page `Trade`, proposal 2026-11-12) ── */
