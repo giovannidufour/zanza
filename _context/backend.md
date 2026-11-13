@@ -91,6 +91,7 @@ available ──► sold / traded diretto (venduto fuori dal sito: fiera, Discog
 Regola (Gio 2026-11-12): **il bag non blocca mai niente**. Un disco è bloccato solo mentre qualcuno è dentro Stripe Checkout (max 30 min) e per gli altri si vede **Reserved**, non sold: resta in PLP, il bottone apre la spiegazione e "Notify me".
 1. Il sito chiama `create-checkout` con gli id dei listing.
 2. Update atomico: `status = 'reserved', reserved_until = now() + 30 min` **solo se** `available` (o se l'hold è scaduto). Se una copia non passa → "appena venduto", niente sessione.
+2b. **Ordine minimo** (decisione 0072, Gio 2026-11-13): somma dei prezzi (dal DB) delle copie davvero bloccate, spedizione esclusa, contro `shipping_settings.config.min_order_cents` con `ZanzaShipping.minimumOrder()` (stesso file del Bag). Sotto il minimo → rilascia gli hold appena presi e risponde `below_minimum` con quanto manca; niente sessione Stripe.
 3. Crea la sessione Stripe Checkout (`expires_at` = 30 min, il minimo di Stripe; righe con il prezzo letto dal DB, mai quello inviato dal client; tariffe di spedizione per zona).
 4. Webhook `checkout.session.completed` → `orders` + `order_items`, listing `sold`, email Resend.
 5. Webhook `checkout.session.expired` → listing di nuovo `available`.
@@ -103,6 +104,7 @@ Regola (Gio 2026-11-12): **il bag non blocca mai niente**. Un disco è bloccato 
 - Segreti: Vault `notify_back_in_stock_url`, `notify_back_in_stock_secret`; funzione: `NOTIFY_SECRET`, `RESEND_API_KEY`, `MAIL_FROM`, `SHOP_URL`, `STORE_NAME`. Deploy con `--no-verify-jwt`. Config e runbook: `email-setup.md`.
 
 ### Spedizione (0057, 2026-11-12)
+- **Ordine minimo** (0072, 2026-11-13): `min_order_cents` nella stessa config (vuoto = nessun minimo), sezione "Minimum order" della pagina admin Shipping. Conta solo i dischi disponibili, spedizione esclusa. Il Bag lo mostra e blocca Checkout; create-checkout lo ricontrolla (sopra, passo 2b).
 - Config in `shipping_settings` (una riga, JSON: formati con peso, mailer con max dischi per formato + peso, zone con paesi ISO, tariffe zona × mailer × peso massimo → servizio + prezzo). Si modifica dalla pagina admin **Shipping** (`admin_save_shipping`, che segna anche la ricostruzione del negozio).
 - Calcolo unico in `packages/shipping/shipping.js`: il Bag mostra la stima per il paese scelto; create-checkout la ricalcola sul server e la passa a Stripe come una sola tariffa, con l'indirizzo limitato a quel paese.
 - Solo paese, niente CAP. Finché non ci sono tariffe il Bag dice "Calculated at checkout".

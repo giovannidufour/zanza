@@ -94,3 +94,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0070](0070-traders-prove-their-profiles.md) | Traders give Discogs + Instagram or Facebook and prove them by sending Gio a two-word password from each; the conversation stays by email | accepted |
 | [0069](0069-which-record-searches-discogs.md) | "Which record" in the offer form searches Discogs releases while typing and accepts release links; plain text stays possible | accepted |
 | [0071](0071-toasts-at-the-top.md) | Toasts sit at the top: below the visible sticky header, top-right on desktop, full width on mobile | accepted |
+| [0072](0072-minimum-order.md) | Minimum order: records only (shipping excluded), set in admin Shipping; the bag says what is missing and Checkout waits, described by the note | accepted |

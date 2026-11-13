@@ -1199,7 +1199,8 @@
         return { id: p.id, name: p.name, max: max, weight: gramsText(p.weight_g) };
       }),
       zones: (c.zones || []).map(function (z) { return { id: z.id, name: z.name, countries: (z.countries || []).join(', ') }; }),
-      rates: (c.rates || []).map(function (r) { return { key: shipKey(), zone: r.zone_id, pkg: r.package_id, upTo: kgText(r.max_weight_g), service: r.service, price: centsToText(r.price_cents) }; })
+      rates: (c.rates || []).map(function (r) { return { key: shipKey(), zone: r.zone_id, pkg: r.package_id, upTo: kgText(r.max_weight_g), service: r.service, price: centsToText(r.price_cents) }; }),
+      minimum: c.min_order_cents > 0 ? centsToText(c.min_order_cents).replace('.', ',') : ''
     };
   }
   function toConfig(f) {
@@ -1210,7 +1211,9 @@
         return { id: p.id, name: p.name.trim(), weight_g: toInt(p.weight), max: max };
       }),
       zones: f.zones.map(function (z) { return { id: z.id, name: z.name.trim(), countries: codesOf(z.countries) }; }),
-      rates: f.rates.map(function (r) { return { zone_id: r.zone, package_id: r.pkg, max_weight_g: kgToGrams(r.upTo), service: r.service.trim(), price_cents: textToCents(r.price) }; })
+      rates: f.rates.map(function (r) { return { zone_id: r.zone, package_id: r.pkg, max_weight_g: kgToGrams(r.upTo), service: r.service.trim(), price_cents: textToCents(r.price) }; }),
+      // empty = no minimum (null); "20" / "20,50" → cents (decision 0072)
+      min_order_cents: textToCents(f.minimum)
     };
   }
   // "2 × 12", 1 × 7"" (also "2x12", "LP") → items for shipping.js
@@ -1333,6 +1336,13 @@
         h(Z.Button, { hierarchy: 'secondary', 'aria-busy': busy || undefined, onClick: busy ? undefined : save }, 'Save')),
       problems.length ? h('ul', { className: 'admin-shipping__problems body-small admin-status--error', role: 'alert' },
         problems.map(function (p, i) { return h('li', { key: i }, p); })) : null,
+
+      // Figma BACKEND → Shipping → `minimum order` (2247:3101, decision 0072): records only, shipping excluded
+      section('minimum', 'Minimum order', 'The value of the records in the bag (shipping excluded) needed to check out. Empty = no minimum.',
+        h('div', { className: 'admin-shipping__minimum' },
+          h('label', { className: 'body-small', htmlFor: 'shipping-minimum-value' }, 'Minimum'),
+          h(Z.Input, { size: 'compact', id: 'shipping-minimum-value', value: form.minimum, suffix: '€', inputMode: 'decimal',
+            onChange: function (e) { var v = e.target.value; setForm(function (cur) { return Object.assign({}, cur, { minimum: v }); }); setProblems([]); } }))),
 
       section('formats', 'Formats', 'Weight of one record with its sleeve. A listing can override it (heavy pressings, box sets).',
         table('shipping-formats', [{ label: 'Format', className: 'admin-shipping__w-name' }, { label: 'Weight per record', className: 'admin-shipping__w-weight' }, { label: '' }],

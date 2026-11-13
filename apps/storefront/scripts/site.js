@@ -825,9 +825,37 @@
     root.querySelector('[data-bag-subtotal]').textContent = formatPrice(cents);
     var served = renderShipping(root, known.filter(function (id) { return lines[id].getAttribute('data-available') === 'true'; })
       .map(function (id) { return lines[id]; }), cents);
+    var below = renderMinimum(root, count, cents);
     var checkout = root.querySelector('[data-bag-checkout]');
-    if (checkout) checkout.disabled = count === 0 || !served;
+    if (checkout) checkout.disabled = count === 0 || !served || below;
     return known;
+  }
+
+  // minimum order (decision 0072, Figma `bag summary` minimum=below): the available records' subtotal, shipping
+  // excluded, must reach the minimum set on the admin page Shipping. Under it: the note says the minimum and what is
+  // missing, Checkout is disabled and described by the note (never an unexplained disabled button); the note is a
+  // live region and reaching the minimum is announced. create-checkout checks again on the server (shipping.js minimumOrder).
+  // Returns true while the bag is under the minimum.
+  var minimumWasBelow = null;
+  function renderMinimum(root, count, cents) {
+    var summary = root.querySelector('[data-bag-summary]');
+    var note = root.querySelector('[data-bag-minimum]');
+    var checkout = root.querySelector('[data-bag-checkout]');
+    var min = summary ? parseInt(summary.getAttribute('data-min-order-cents'), 10) || 0 : 0;
+    var below = min > 0 && count > 0 && cents < min;
+    if (note) {
+      note.hidden = !below;
+      note.textContent = below ? 'Minimum order ' + formatPrice(min) + '. Add ' + formatPrice(min - cents) + ' more to check out.' : '';
+    }
+    if (checkout && note) {
+      if (below) checkout.setAttribute('aria-describedby', note.id);
+      else if (checkout.getAttribute('aria-describedby') === note.id) checkout.removeAttribute('aria-describedby');
+    }
+    // the note is its own polite live region (bag.js), so "Add 3€ more" is heard when it appears or changes, next to
+    // the bag's own "Removed from bag." Reaching the minimum hides it: say that in the bag's status instead.
+    if (minimumWasBelow === true && !below && min > 0 && count > 0) announce('Minimum order reached. You can check out.');
+    minimumWasBelow = below;
+    return below;
   }
 
   // shipping estimate (decision 0057, Figma `bag summary` destination=served | not served): the page carries the
