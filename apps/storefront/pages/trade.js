@@ -75,8 +75,19 @@ function OfferedRecord({ n, search }) {
       h(Z.Input, { variant: 'select', label: 'Cover condition', name: 'sleeve', placeholder: 'Grade' }, gradeOptions.concat(h('option', { key: 'none', value: 'none' }, 'No cover')))));
 }
 
-const CHANNELS = [['discogs', 'Discogs messages'], ['instagram', 'Instagram DM'], ['email', 'Email'], ['in-person', 'Or we meet in person']];
-const CHANNEL_LABEL = { discogs: 'on Discogs', instagram: 'on Instagram', email: 'by email', 'in-person': 'by email, to meet in person' };
+// Gio 2026-11-13: we talk on a profile, never by email (an email proves nothing about who writes)
+const CHANNELS = [['discogs', 'Discogs messages'], ['instagram', 'Instagram DM'], ['facebook', 'Facebook Messenger'], ['in-person', 'Or we meet in person']];
+const CHANNEL_LABEL = { discogs: 'on Discogs', instagram: 'on Instagram', facebook: 'on Facebook', 'in-person': 'on Discogs, to set a time and place' };
+
+// Where the trader sends the code: a new message to Gio on each network (site.json → owner)
+function verifyLinks(owner) {
+  const o = owner || {};
+  return [
+    { key: 'discogs', label: 'Send it on Discogs', href: (o.discogs || {}).message },
+    { key: 'instagram', label: 'Send it on Instagram', href: (o.instagram || {}).message },
+    { key: 'facebook', label: 'Send it on Facebook', href: (o.facebook || {}).message },
+  ].filter((v) => v.href);
+}
 
 function Offer({ product, site, url }) {
   const owner = site.owner || {};
@@ -95,29 +106,39 @@ function Offer({ product, site, url }) {
           h(Z.Button, { type: 'button', hierarchy: 'secondary', className: 'trade-form__add', 'data-offer-add': '' }, 'Add another record'),
           h(Z.Input, { variant: 'text-area', label: 'Your pitch', optional: true, name: 'pitch', maxLength: 2000,
             placeholder: 'Why should I take your record? Extras, a cash top-up, what makes it special…' })),
-        // Figma `contact block` → "Introduce yourself" (Gio 2026-11-12): the trader has to earn trust; their
-        // Discogs and Instagram are how Gio gets to know them (at least one, checked by site.js and the function)
+        // Figma `contact block` → "Introduce yourself" (Gio 2026-11-12/13): the trader has to earn trust. Discogs is
+        // required, plus Instagram or Facebook (checked by site.js and the function); after sending, the trader proves
+        // both profiles are theirs by sending Gio a code from each (decision 0070)
         h('div', { className: 'trade-col trade-col--3 trade-form__intro', role: 'group', 'aria-labelledby': 'offer-intro-title' }, h(Z.Divider),
           h('h2', { id: 'offer-intro-title', className: 'label-small' }, 'Introduce yourself'),
           h('p', { className: 'body-small' }, 'I don\u2019t trade with strangers. Tell me who you are and where I can see your records and your trades: that\u2019s how I learn to trust you.'),
           h(Z.Input, { variant: 'text-area', label: 'About you', name: 'about', required: true, maxLength: 2000,
             placeholder: 'Who you are, what you collect, trades you\u2019ve done\u2026' }),
-          h(Z.Input, { label: 'Discogs username', name: 'discogs', autoComplete: 'off', placeholder: 'username', 'data-offer-profile': '' }),
-          h(Z.Input, { label: 'Instagram', name: 'instagram', autoComplete: 'off', placeholder: '@username', 'data-offer-profile': '',
-            supportText: 'At least one of the two. I look at your profile before answering.' }),
+          h(Z.Input, { label: 'Discogs username', name: 'discogs', required: true, autoComplete: 'off', placeholder: 'username' }),
+          h(Z.Input, { label: 'Instagram', name: 'instagram', autoComplete: 'off', placeholder: '@username', 'data-offer-social': '' }),
+          h(Z.Input, { label: 'Facebook', name: 'facebook', autoComplete: 'off', placeholder: 'Profile link or username', 'data-offer-social': '',
+            supportText: 'Instagram or Facebook, at least one. I look at your profiles before answering.' }),
           h(Z.RadioGroup, { legend: 'Where do we talk?', name: 'channel', className: 'trade-form__channels' },
             CHANNELS.map(([value, label], i) => h(Z.Radio, { key: value, value, label, defaultChecked: i === 0 }))),
           h(Z.Input, { label: 'Email', name: 'email', type: 'email', required: true, autoComplete: 'email', placeholder: 'you@example.com',
-            supportText: 'Only to answer this offer.' }),
+            supportText: 'Only to let you know about this offer. We talk on your profiles.' }),
           // honeypot: hidden from people, bots fill it (the function drops those offers)
           h('div', { className: 'zz-visually-hidden', 'aria-hidden': 'true' },
             h('label', null, 'Website', h('input', { type: 'text', name: 'website', tabIndex: -1, autoComplete: 'off' }))),
           h('p', { className: 'body-small' }, 'Nothing is agreed until we both say yes. How, when and who ships, we work out together.'),
           h('p', { className: 'trade-form__error body-small', role: 'alert', hidden: true, 'data-offer-error': '' }),
           h(Z.Button, { type: 'submit', hierarchy: 'primary', className: 'trade-form__send', 'data-offer-send': '' }, 'Send offer'))),
-      // Figma `offer sent`: shown by site.js after a successful send (the channel name follows the radio)
+      // Figma `offer sent`: shown by site.js after a successful send. First the proof (decision 0070): the code the
+      // function made, to send from the trader's Discogs and from their Instagram or Facebook; then the usual note.
       h('div', { className: 'trade-col trade-col--2 trade-sent', hidden: true, 'data-offer-sent': '' }, h(Z.Divider),
-        h('p', { className: 'body-medium' }, 'Got it. I read every offer myself and answer within ', String(days), ' days, ',
+        h('h2', { className: 'label-small' }, 'One last step: show me it\u2019s you'),
+        h('p', { className: 'body-medium' }, 'Send me this code from your Discogs and from your Instagram or Facebook. Until it reaches me from both, I can\u2019t know the offer is really yours.'),
+        h('p', { className: 'trade-sent__code body-extra-large', 'data-offer-code': '' }),
+        h('div', { className: 'trade-sent__verify' },
+          verifyLinks(owner).map((v) => h(Z.Button, { key: v.key, hierarchy: 'secondary', href: v.href, target: '_blank', rel: 'noopener',
+            hidden: v.key !== 'discogs', 'data-verify': v.key }, v.label, h('span', { 'aria-hidden': 'true' }, ' \u2197'),
+            h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')))),
+        h('p', { className: 'body-medium' }, 'Then I read your offer myself and answer within ', String(days), ' days, ',
           h('span', { 'data-offer-sent-channel': '', 'data-labels': JSON.stringify(CHANNEL_LABEL) }, CHANNEL_LABEL.discogs),
           '. If it\u2019s a yes, we work out the details together there.'),
         h('p', { className: 'trade-sent__signature body-small' }, `— ${owner.name || ''}`),
@@ -127,8 +148,9 @@ function Offer({ product, site, url }) {
 // Gio 2026-11-12: generic, no shipping rule: trust comes from introductions and the conversation
 const STEPS = [
   ['You make an offer', 'Pick the records you\u2019d give and tell me why I should take them. No account needed.'],
-  ['You introduce yourself', 'Who you are, your Discogs, your Instagram. I don\u2019t trade with strangers: convince me I can trust you.'],
-  ['We talk', 'I answer personally within 3 days, where you chose. You can look at my profiles too.'],
+  ['You introduce yourself', 'Who you are, your Discogs and your Instagram or Facebook: there I can see who we know in common. I don\u2019t trade with strangers: convince me I can trust you.'],
+  ['You show me it\u2019s you', 'After sending, you get a code: send it to me from your Discogs and from your Instagram or Facebook. That\u2019s how I know the profiles are yours.'],
+  ['We talk', 'I answer personally within 3 days, on the profile you chose. You can look at my profiles too.'],
   ['We find an agreement', 'Videos of the records, how and when we swap, or we meet in person. Nothing is agreed until we both say yes.'],
   ['We trade', 'And if it went well, we both say so where we talked.']
 ];
