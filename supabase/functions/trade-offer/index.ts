@@ -10,10 +10,7 @@ const env = (k: string) => Deno.env.get(k) ?? "";
 const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
 
 const GRADES = ["M", "NM", "NM-", "EX+", "EX", "EX-", "VG+", "VG", "VG-", "G+", "G", "G-", "F"];
-// Gio 2026-11-13: we talk on a profile, not by email
-const CHANNELS: Record<string, string> = {
-  discogs: "Discogs messages", instagram: "Instagram DM", facebook: "Facebook Messenger", "in-person": "In person",
-};
+// Gio 2026-11-13: the conversation is by email (Reply-To = the trader); the profiles only prove who they are
 // decision 0070: a short code the trader sends Gio from their Discogs and from their Instagram/Facebook, so Gio knows
 // the profiles are theirs. No 0/O, 1/I/L. Not stored: it is in Gio's email and on the trader's screen.
 const CODE_CHARS = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
@@ -63,13 +60,12 @@ Deno.serve(async (req) => {
   const offer = {
     pitch: clip(b.pitch, 2000), about: clip(b.about, 2000),
     discogs: clip(b.discogs, 100), instagram: clip(b.instagram, 100), facebook: clip(b.facebook, 200),
-    channel: CHANNELS[clip(b.channel, 20)] ? clip(b.channel, 20) : "discogs",
+    inPerson: b.inPerson === true,
     email: clip(b.email, 200),
   };
   const bad = !slug || !records.length || records.some((r: Rec) =>
       !r.record || !GRADES.includes(r.media) || (r.sleeve && r.sleeve !== "none" && !GRADES.includes(r.sleeve))) ||
     !offer.about || !offer.discogs || !(offer.instagram || offer.facebook) ||
-    (offer.channel === "instagram" && !offer.instagram) || (offer.channel === "facebook" && !offer.facebook) ||
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(offer.email);
   if (bad) return json({ error: "Missing or invalid fields." }, 422);
 
@@ -99,8 +95,8 @@ Deno.serve(async (req) => {
     "", `Pitch: ${offer.pitch || "-"}`,
     "", `About them: ${offer.about}`,
     `Discogs: ${discogsUrl || "-"}`, `Instagram: ${igUrl || "-"}`, `Facebook: ${fbUrl || offer.facebook || "-"}`,
-    `Talk on: ${CHANNELS[offer.channel]}`, `Email: ${offer.email}`,
-    "", "Answer them on their profile, not by email (anyone can type an email).",
+    `Meet in person: ${offer.inPerson ? "yes, they'd rather" : "-"}`, `Email: ${offer.email}`,
+    "", "Reply to this email to answer them, once the code has arrived from their profiles.",
   ].join("\n");
   const link = (u: string) => (u ? `<a href="${escapeHtml(u)}">${escapeHtml(u)}</a>` : "-");
   const html = `<p>New trade offer for <a href="${escapeHtml(href)}">${escapeHtml(href)}</a></p>` +
@@ -108,8 +104,8 @@ Deno.serve(async (req) => {
     `<p><strong>Offered</strong><br>${records.map((r: Rec, i: number) => escapeHtml(recLine({ ...r, release: "" }, i)) + (r.release ? ` ${link(releaseUrl(r))}` : "")).join("<br>")}</p>` +
     `<p><strong>Pitch</strong><br>${escapeHtml(offer.pitch || "-").replace(/\n/g, "<br>")}</p>` +
     `<p><strong>About them</strong><br>${escapeHtml(offer.about).replace(/\n/g, "<br>")}</p>` +
-    `<p>Discogs: ${link(discogsUrl)}<br>Instagram: ${link(igUrl)}<br>Facebook: ${fbUrl ? link(fbUrl) : escapeHtml(offer.facebook || "-")}<br>Talk on: ${escapeHtml(CHANNELS[offer.channel])}<br>Email: ${escapeHtml(offer.email)}</p>` +
-    `<p>Answer them on their profile, not by email (anyone can type an email).</p>`;
+    `<p>Discogs: ${link(discogsUrl)}<br>Instagram: ${link(igUrl)}<br>Facebook: ${fbUrl ? link(fbUrl) : escapeHtml(offer.facebook || "-")}<br>Meet in person: ${offer.inPerson ? "yes, they'd rather" : "-"}<br>Email: ${escapeHtml(offer.email)}</p>` +
+    `<p>Reply to this email to answer them, once the code has arrived from their profiles.</p>`;
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",

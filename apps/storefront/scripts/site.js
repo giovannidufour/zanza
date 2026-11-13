@@ -1467,23 +1467,22 @@
         return { record: val(r, 'record'), release: val(r, 'release'), media: val(r, 'media'), sleeve: val(r, 'sleeve') };
       });
       check(form.querySelector('[name="about"]'), !!val(form, 'about'));
-      // Discogs, plus Instagram or Facebook (Gio 2026-11-13); the channel must be a profile they gave
+      // Discogs, plus Instagram or Facebook (Gio 2026-11-13): only to prove who they are; we talk by email
       check(form.querySelector('[name="discogs"]'), !!val(form, 'discogs'));
       var hasSocial = !!(val(form, 'instagram') || val(form, 'facebook'));
-      var channel = (form.querySelector('[name="channel"]:checked') || {}).value || 'discogs';
-      check(form.querySelector('[name="instagram"]'), hasSocial && !(channel === 'instagram' && !val(form, 'instagram')));
-      check(form.querySelector('[name="facebook"]'), hasSocial && !(channel === 'facebook' && !val(form, 'facebook')));
+      check(form.querySelector('[name="instagram"]'), hasSocial);
+      check(form.querySelector('[name="facebook"]'), hasSocial);
       var email = form.querySelector('[name="email"]');
       check(email, !!val(form, 'email') && email.checkValidity());
       bad = firstBad;
-      if (bad) { fail('Fill in the marked fields: each record and its condition, a few words about you, your Discogs, your Instagram or Facebook (the one where we talk, if you chose it), and your email.', bad); return; }
+      if (bad) { fail('Fill in the marked fields: each record and its condition, a few words about you, your Discogs, your Instagram or Facebook, and your email.', bad); return; }
       var endpoint = form.getAttribute('data-endpoint');
       if (!endpoint) { fail('Offers aren’t switched on yet. Try again soon.'); return; }
       var payload = {
         listing: form.getAttribute('data-listing-slug'),
         records: recs, pitch: val(form, 'pitch'), about: val(form, 'about'),
         discogs: val(form, 'discogs'), instagram: val(form, 'instagram'), facebook: val(form, 'facebook'),
-        channel: channel, email: val(form, 'email'), website: val(form, 'website')
+        inPerson: !!(form.querySelector('[name="inPerson"]') || {}).checked, email: val(form, 'email'), website: val(form, 'website')
       };
       var label = sendBtn.querySelector('.zz-button__label');
       var idle = label ? label.textContent : '';
@@ -1500,8 +1499,6 @@
             var k = b.getAttribute('data-verify');
             b.hidden = k !== 'discogs' && !payload[k];
           });
-          var ch = sent && sent.querySelector('[data-offer-sent-channel]');
-          if (ch) { try { ch.textContent = JSON.parse(ch.getAttribute('data-labels'))[channel] || ch.textContent; } catch (err) { /* keep the default */ } }
           form.hidden = true;
           if (sent) sent.hidden = false;
           var title = document.querySelector('[data-offer-title]');

@@ -1,5 +1,5 @@
 /* apps/storefront/pages/trade.js — the trade side (Figma page `Trade`, proposal 2026-11-12, decision 0068).
-   "This record isn't for sale, convince me": a trader makes an offer, Gio answers personally on the channel they pick.
+   "This record isn't for sale, convince me": a trader makes an offer, Gio answers personally by email.
    Pure functions: data in, React tree out. scripts/site.js runs the offer form (add a record, send, sent state).
    - TradeActions: the PDP actions of a trade listing (Make an offer, the deal in one line, note, Discogs card)
    - Offer: /products/<slug>/offer/ — the offer form; its "sent" state is in the same page (hidden until sent)
@@ -75,9 +75,7 @@ function OfferedRecord({ n, search }) {
       h(Z.Input, { variant: 'select', label: 'Cover condition', name: 'sleeve', placeholder: 'Grade' }, gradeOptions.concat(h('option', { key: 'none', value: 'none' }, 'No cover')))));
 }
 
-// Gio 2026-11-13: we talk on a profile, never by email (an email proves nothing about who writes)
-const CHANNELS = [['discogs', 'Discogs messages'], ['instagram', 'Instagram DM'], ['facebook', 'Facebook Messenger'], ['in-person', 'Or we meet in person']];
-const CHANNEL_LABEL = { discogs: 'on Discogs', instagram: 'on Instagram', facebook: 'on Facebook', 'in-person': 'on Discogs, to set a time and place' };
+// Gio 2026-11-13: we talk by email (his favourite); the profiles only prove who the trader is (decision 0070)
 
 // Where the trader sends the code: a new message to Gio on each network (site.json → owner)
 function verifyLinks(owner) {
@@ -118,10 +116,9 @@ function Offer({ product, site, url }) {
           h(Z.Input, { label: 'Instagram', name: 'instagram', autoComplete: 'off', placeholder: '@username', 'data-offer-social': '' }),
           h(Z.Input, { label: 'Facebook', name: 'facebook', autoComplete: 'off', placeholder: 'Profile link or username', 'data-offer-social': '',
             supportText: 'Instagram or Facebook, at least one. I look at your profiles before answering.' }),
-          h(Z.RadioGroup, { legend: 'Where do we talk?', name: 'channel', className: 'trade-form__channels' },
-            CHANNELS.map(([value, label], i) => h(Z.Radio, { key: value, value, label, defaultChecked: i === 0 }))),
           h(Z.Input, { label: 'Email', name: 'email', type: 'email', required: true, autoComplete: 'email', placeholder: 'you@example.com',
-            supportText: 'Only to let you know about this offer. We talk on your profiles.' }),
+            supportText: 'This is where I answer you.' }),
+          h(Z.Checkbox, { name: 'inPerson', value: 'yes', label: 'I\u2019d rather meet in person' }),
           // honeypot: hidden from people, bots fill it (the function drops those offers)
           h('div', { className: 'zz-visually-hidden', 'aria-hidden': 'true' },
             h('label', null, 'Website', h('input', { type: 'text', name: 'website', tabIndex: -1, autoComplete: 'off' }))),
@@ -138,9 +135,8 @@ function Offer({ product, site, url }) {
           verifyLinks(owner).map((v) => h(Z.Button, { key: v.key, hierarchy: 'secondary', href: v.href, target: '_blank', rel: 'noopener',
             hidden: v.key !== 'discogs', 'data-verify': v.key }, v.label, h('span', { 'aria-hidden': 'true' }, ' \u2197'),
             h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')))),
-        h('p', { className: 'body-medium' }, 'Then I read your offer myself and answer within ', String(days), ' days, ',
-          h('span', { 'data-offer-sent-channel': '', 'data-labels': JSON.stringify(CHANNEL_LABEL) }, CHANNEL_LABEL.discogs),
-          '. If it\u2019s a yes, we work out the details together there.'),
+        h('p', { className: 'body-medium' }, 'Then I read your offer myself and answer you by email within ', String(days),
+          ' days. If it\u2019s a yes, we work out the details together.'),
         h('p', { className: 'trade-sent__signature body-small' }, `— ${owner.name || ''}`),
         h(Z.Button, { hierarchy: 'secondary', href: url('/trade/') }, 'More records for trade'))));
 }
@@ -150,7 +146,7 @@ const STEPS = [
   ['You make an offer', 'Pick the records you\u2019d give and tell me why I should take them. No account needed.'],
   ['You introduce yourself', 'Who you are, your Discogs and your Instagram or Facebook: there I can see who we know in common. I don\u2019t trade with strangers: convince me I can trust you.'],
   ['You show me it\u2019s you', 'After sending, you get a code: send it to me from your Discogs and from your Instagram or Facebook. That\u2019s how I know the profiles are yours.'],
-  ['We talk', 'I answer personally within 3 days, on the profile you chose. You can look at my profiles too.'],
+  ['We talk', 'I answer you personally by email within 3 days. You can look at my profiles too.'],
   ['We find an agreement', 'Videos of the records, how and when we swap, or we meet in person. Nothing is agreed until we both say yes.'],
   ['We trade', 'And if it went well, we both say so where we talked.']
 ];

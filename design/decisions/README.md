@@ -91,5 +91,5 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0065](0065-reserved-button-notify-me.md) | Reserved: Add button "(Reserved) Notify me" with an envelope; the bag line looks like a sold one | accepted |
 | [0066](0066-icons-are-non-scaling-strokes.md) | Icons are 1px strokes that keep their thickness at any size | accepted |
 | [0068](0068-trade-is-a-conversation.md) | Trade: "not for sale, convince me"; the offer page asks for an introduction and starts a conversation, no shipping rule | accepted |
-| [0070](0070-traders-prove-their-profiles.md) | Traders give Discogs + Instagram or Facebook and prove them by sending Gio a code from each; email is not a channel | accepted |
+| [0070](0070-traders-prove-their-profiles.md) | Traders give Discogs + Instagram or Facebook and prove them by sending Gio a code from each; the conversation stays by email | accepted |
 | [0069](0069-which-record-searches-discogs.md) | "Which record" in the offer form searches Discogs releases while typing and accepts release links; plain text stays possible | accepted |
