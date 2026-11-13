@@ -330,6 +330,10 @@ export interface BagSummaryProps extends HTMLAttributes<HTMLElement> {
   soldOutNote?: ReactNode;
   /** Extra attributes for the sold out note (data-*, hidden), so a script can fill it; rendered even without `soldOutNote`. */
   soldOutNoteProps?: Record<string, unknown>;
+  /** Figma `minimum note` (variant minimum=below), body/small, above Checkout: the minimum order and what is missing ("Minimum order 20€. Add 8€ more to check out.", decision 0072). Pass it with `checkoutDisabled` and point Checkout's aria-describedby (via `checkoutProps`) at the note, so the disabled button is never unexplained. */
+  minimumNote?: ReactNode;
+  /** Extra attributes for the minimum note (id, data-*, hidden), so a script can fill it; rendered even without `minimumNote`. */
+  minimumNoteProps?: Record<string, unknown>;
 }
 export declare function BagSummary(props: BagSummaryProps): JSX.Element;
 

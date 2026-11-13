@@ -121,6 +121,9 @@ html:has(.admin-shipping) { background: var(--surface-base); }
 .admin-shipping__w-short { width: 120px; }
 .admin-shipping__w-count { width: 72px; }
 .admin-shipping__actions { width: 88px; white-space: nowrap; text-align: right; }
+.admin-shipping__minimum { display: flex; align-items: center; }   /* Figma `minimum order` row: label column 280, field 200 */
+.admin-shipping__minimum > label { width: 280px; }
+.admin-shipping__minimum > .zz-input { width: 200px; }
 .admin-shipping__check { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
 .admin-shipping__check > :first-child { width: 240px; }
 .admin-shipping__check > :last-child { width: 400px; max-width: 100%; }

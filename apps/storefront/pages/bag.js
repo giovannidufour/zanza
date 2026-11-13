@@ -7,7 +7,9 @@
    another checkout) = the same with "RESERVED" (decision 0065). Only available lines count in the subtotal.
    Shipping (decision 0057, Figma `bag summary` destination=served | not served): when shipping is set up (admin page
    Shipping), the summary has a "Ship to" country select and a total; the page carries the shipping config as JSON and
-   site.js estimates with packages/shipping/shipping.js. create-checkout recalculates on the server. */
+   site.js estimates with packages/shipping/shipping.js. create-checkout recalculates on the server.
+   Minimum order (decision 0072, Figma `bag summary` minimum=below): the page carries the minimum (admin page Shipping)
+   in data-min-order-cents; under it site.js shows the `minimum note` and disables Checkout. */
 'use strict';
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
@@ -50,6 +52,8 @@ const DEFAULT_COUNTRY = 'DE';   // Figma: Ship to → Germany
 
 function Bag({ products, site, url, shipping, countries }) {
   const withShipping = !!(shipping && (shipping.rates || []).length);
+  // minimum order (decision 0072): in the shipping settings, but independent of the rates
+  const minimum = shipping && shipping.min_order_cents > 0 ? shipping.min_order_cents : 0;
   return h('div', { className: 'zz-page' },
     h(SiteHeader, { site, url, current: 'bag' }),
     h('main', { className: 'bag-content', 'data-bag-page': '' },
@@ -60,12 +64,16 @@ function Bag({ products, site, url, shipping, countries }) {
         className: 'bag-content__summary',
         hidden: true,
         'data-bag-summary': '',
+        'data-min-order-cents': minimum || undefined,
         subtotalLabel: h('span', { 'data-bag-subtotal-label': '' }, 'Subtotal (0 records)'),
         subtotal: h('span', { 'data-bag-subtotal': '' }, formatPrice({ amount: 0 })),
         // TODO checkout: create-checkout (hold + Stripe Checkout session) is not built yet (_context/backend.md)
         checkoutProps: { 'data-bag-checkout': '' },
         // sold lines are not in the order (decision 0064): site.js fills and shows it
         soldOutNoteProps: { 'data-bag-sold-out': '', hidden: true },
+        // minimum order (decision 0072, Figma `bag summary` minimum=below): site.js fills it, disables Checkout and
+        // points Checkout's aria-describedby at it while the available records are under the minimum
+        minimumNoteProps: { id: 'bag-minimum', 'data-bag-minimum': '', 'aria-live': 'polite', hidden: true },
         ...(withShipping ? {
           shipTo: h(Z.Input, { variant: 'select', label: 'Ship to', id: 'bag-ship-to', 'data-bag-ship-to': '', defaultValue: DEFAULT_COUNTRY },
             countries.map((c) => h('option', { key: c.code, value: c.code }, c.name))),

@@ -706,6 +706,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-bag-summary__checkout { width: 100%; }   /* Figma: button layout=fill */
 .zz-bag-summary__note { margin: 0; }
 .zz-bag-summary__sold-out { margin: 0; }
+.zz-bag-summary__minimum { margin: 0; }
 .zz-bag-summary__sold-out[hidden] { display: none; }
 
 /* ═══════════════════════════════════════════════════════════════════════

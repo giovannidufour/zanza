@@ -466,7 +466,9 @@
   /* ── BagSummary ─────────────────────────────────────────────────────────
      Figma: page `Bag` → `bag summary` (2026-11-10; shipping estimate 2026-11-12, decision 0057). Column, gap 8: divider · `ship to` slot (a select) · subtotal row · shipping row ·
      total row (label left, value right, body/medium) · `sold out note` (body/small, when the bag has sold lines:
-     "1 record sold out, not included.", decision 0064) · Checkout (primary, large, fill) · note (body/small).
+     "1 record sold out, not included.", decision 0064) · `minimum note` (body/small, Figma minimum=below: "Minimum
+     order 20€. Add 8€ more to check out.", decision 0072; the consumer also disables Checkout and points its
+     aria-describedby at the note) · Checkout (primary, large, fill) · note (body/small).
      Figma `destination=not served` = no total, shipping "Not available", Checkout disabled: the consumer passes that
      (total omitted, checkoutDisabled). Without `total` there is no total row (before shipping was set up). */
   function BagSummary(props) {
@@ -474,7 +476,7 @@
     return h('section', Object.assign({
       className: cx('zz-bag-summary', props.className),
       'aria-label': props['aria-label'] || 'Summary'
-    }, omit(props, ['subtotalLabel', 'subtotal', 'shippingLabel', 'shipping', 'totalLabel', 'total', 'shipTo', 'checkoutLabel', 'onCheckout', 'checkoutDisabled', 'checkoutProps', 'note', 'soldOutNote', 'soldOutNoteProps', 'className', 'children', 'aria-label'])),
+    }, omit(props, ['subtotalLabel', 'subtotal', 'shippingLabel', 'shipping', 'totalLabel', 'total', 'shipTo', 'checkoutLabel', 'onCheckout', 'checkoutDisabled', 'checkoutProps', 'note', 'soldOutNote', 'soldOutNoteProps', 'minimumNote', 'minimumNoteProps', 'className', 'children', 'aria-label'])),
       h(Divider),
       props.shipTo ? h('div', { className: 'zz-bag-summary__ship-to' }, props.shipTo) : null,
       h('dl', { className: 'zz-bag-summary__rows' },
@@ -489,6 +491,9 @@
           h('dd', { className: 'body-medium' }, props.total)) : null),
       props.soldOutNote || props.soldOutNoteProps
         ? h('p', Object.assign({ className: 'zz-bag-summary__sold-out body-small' }, props.soldOutNoteProps || {}), props.soldOutNote)
+        : null,
+      props.minimumNote || props.minimumNoteProps
+        ? h('p', Object.assign({ className: 'zz-bag-summary__minimum body-small' }, props.minimumNoteProps || {}), props.minimumNote)
         : null,
       h(Button, Object.assign({ hierarchy: 'primary', size: 'large', className: 'zz-bag-summary__checkout', onClick: props.onCheckout, disabled: !!props.checkoutDisabled },
         props.checkoutProps || {}), props.checkoutLabel || 'Checkout'),

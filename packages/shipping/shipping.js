@@ -9,7 +9,10 @@
        packages: [{ id, name, weight_g: 250, max: { '7"': 10, 'LP': 5 } }, …],  a mailer and how many records of each
                                                                               format it takes (missing / 0 = none)
        zones:    [{ id, name, countries: ['AT', 'BE', …] }, …],                ISO 3166-1 alpha-2, a country in one zone
-       rates:    [{ zone_id, package_id, max_weight_g, service, price_cents }, …]
+       rates:    [{ zone_id, package_id, max_weight_g, service, price_cents }, …],
+       min_order_cents: 2000 | null                                            minimum order (decision 0072): the
+                                                                              available records' subtotal, shipping
+                                                                              excluded; null / 0 = no minimum
      }
    Rules (Gio 2026-11-12: "ogni mailer deve avere un massimo di dischi per formato"):
    · a parcel is full when Σ (records of a format / that format's max) reaches 1, so a mixed order shares the space
@@ -95,6 +98,17 @@
     return { status: 'ok', zone: zone, price_cents: best.price_cents, parcels: best.parcels };
   }
 
+  /* minimum order (decision 0072, Gio 2026-11-13): the subtotal of the records being bought (available lines only,
+     shipping excluded) must reach config.min_order_cents. Not a shipping rule, but it lives in the same settings row
+     (one admin page, one Save, one rebuild) and must be checked by the same code in the bag and in create-checkout.
+     → { min_cents, missing_cents, ok } — min_cents 0 = no minimum, always ok. */
+  function minimumOf(config) { var m = config && config.min_order_cents; return m > 0 ? m : 0; }
+  function minimumOrder(config, subtotalCents) {
+    var min = minimumOf(config);
+    var missing = Math.max(0, min - (subtotalCents > 0 ? subtotalCents : 0));
+    return { min_cents: min, missing_cents: missing, ok: missing === 0 };
+  }
+
   /* problems of a config before it is saved (admin) or used (server): [] = fine. Plain sentences for the admin. */
   function validate(config) {
     var errors = [];
@@ -129,8 +143,10 @@
       if (!String(r.service || '').trim()) errors.push(n + ': service missing (it is shown at checkout).');
       if (!(r.price_cents >= 0)) errors.push(n + ': price missing.');
     });
+    var m = c.min_order_cents;
+    if (m !== undefined && m !== null && !(m >= 0 && m % 1 === 0)) errors.push('Minimum order: an amount in euros, like 20 or 20,50 (empty = no minimum).');
     return errors;
   }
 
-  return { estimate: estimate, validate: validate, zoneOf: zoneOf, isConfigured: isConfigured, FORMATS: FORMATS };
+  return { estimate: estimate, validate: validate, minimumOrder: minimumOrder, zoneOf: zoneOf, isConfigured: isConfigured, FORMATS: FORMATS };
 });
