@@ -5,14 +5,14 @@
   "basePath": "/zanza",
   "mediaBaseUrl": "https://pub-a98e506f6d2e48c49301fca9123a3b20.r2.dev",
   "owner": {
-    "note": "Who runs the shop (Figma page Trade / About). PLACEHOLDERS until Gio fills them: name, bio, Instagram and Mixes links. Discogs is real (Gio, 2026-11-12); stats show only the join year until the ratings are checked. No legal name or address here (that is the Impressum).",
+    "note": "Who runs the shop (Figma page Trade / About). PLACEHOLDERS until Gio fills them: name, bio, Instagram and Mixes links. Discogs (highmuzik) and Instagram (giouann) are real (Gio, 2026-11-12/13); facebook.message = Gio's m.me link, empty until he gives it (then Facebook verification has no button); stats show only the join year until the ratings are checked. No legal name or address here (that is the Impressum).",
     "name": "Gio",
     "djName": "DJ name",
     "bio": "Placeholder: who you are in three lines. DJ and collector, what you play, where. These records come from my own crates.",
     "links": [
       {
         "label": "Instagram",
-        "href": "https://www.instagram.com/"
+        "href": "https://www.instagram.com/giouann/"
       },
       {
         "label": "Discogs",
@@ -26,7 +26,17 @@
     "discogs": {
       "username": "highmuzik",
       "href": "https://www.discogs.com/user/highmuzik",
-      "stats": "Member since 2015"
+      "stats": "Member since 2015",
+      "message": "https://www.discogs.com/messages/compose?to=highmuzik"
+    },
+    "instagram": {
+      "handle": "giouann",
+      "href": "https://www.instagram.com/giouann/",
+      "message": "https://ig.me/m/giouann"
+    },
+    "facebook": {
+      "href": "",
+      "message": ""
     }
   },
   "trade": {
