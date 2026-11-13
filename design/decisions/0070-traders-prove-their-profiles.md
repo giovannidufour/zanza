@@ -1,4 +1,4 @@
-# 0070 — Traders prove their profiles with a code
+# 0070 — Traders prove their profiles with a password phrase
 
 **Date.** 2026-11-13 · **Status.** accepted (Gio)
 
@@ -12,3 +12,5 @@
 **Rule.** Identity on the trade side is proven by the trader acting from their own accounts (challenge, then response from the account), never by data they type. Gio answers by email only once the code has arrived from the profiles.
 
 **Where.** `apps/storefront/pages/trade.js` (Offer, STEPS; the in-person checkbox), `scripts/site.js` (validation, code and buttons in the sent state), `trade.css`, `site.json` → owner (`discogs.message`, `instagram`, `facebook`), `supabase/functions/trade-offer` (code, Facebook, validation). Figma page `Trade`: `offer sent`, `contact block` channels, How trading works step 3.
+
+**Update 2026-11-13 (Gio: "we are humans, not computers").** The 4-character code becomes a **password of two friendly words** (adjective + noun, record and reggae flavour: "golden riddim", "mellow bassline"), shown in quotes. 48 × 48 words, easy to spell, nothing about drugs, religion or politics. It only pairs a message with an offer, it is not a secret. The API field is `phrase` (the page still reads an old `code`).

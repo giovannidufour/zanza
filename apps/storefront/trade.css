@@ -21,8 +21,8 @@
 .trade-col--steps { grid-column: 1 / span 8; }
 .trade-col[hidden], .trade-form[hidden] { display: none; }
 .trade-sent__signature { color: var(--text-moderate); }
-/* decision 0070: the verification code and where to send it */
-.trade-sent__code { margin: 0; color: var(--text-strong); }
+/* decision 0070: the password phrase and where to send it */
+.trade-sent__phrase { margin: 0; color: var(--text-strong); }
 .trade-sent__verify { display: flex; flex-direction: column; gap: var(--small); }
 .trade-sent__verify > [hidden] { display: none; }
 

@@ -77,7 +77,7 @@ function OfferedRecord({ n, search }) {
 
 // Gio 2026-11-13: we talk by email (his favourite); the profiles only prove who the trader is (decision 0070)
 
-// Where the trader sends the code: a new message to Gio on each network (site.json → owner)
+// Where the trader sends the phrase: a new message to Gio on each network (site.json → owner)
 function verifyLinks(owner) {
   const o = owner || {};
   return [
@@ -106,7 +106,7 @@ function Offer({ product, site, url }) {
             placeholder: 'Why should I take your record? Extras, a cash top-up, what makes it special…' })),
         // Figma `contact block` → "Introduce yourself" (Gio 2026-11-12/13): the trader has to earn trust. Discogs is
         // required, plus Instagram or Facebook (checked by site.js and the function); after sending, the trader proves
-        // both profiles are theirs by sending Gio a code from each (decision 0070)
+        // both profiles are theirs by sending Gio a short phrase from each (decision 0070)
         h('div', { className: 'trade-col trade-col--3 trade-form__intro', role: 'group', 'aria-labelledby': 'offer-intro-title' }, h(Z.Divider),
           h('h2', { id: 'offer-intro-title', className: 'label-small' }, 'Introduce yourself'),
           h('p', { className: 'body-small' }, 'I don\u2019t trade with strangers. Tell me who you are and where I can see your records and your trades: that\u2019s how I learn to trust you.'),
@@ -125,12 +125,12 @@ function Offer({ product, site, url }) {
           h('p', { className: 'body-small' }, 'Nothing is agreed until we both say yes. How, when and who ships, we work out together.'),
           h('p', { className: 'trade-form__error body-small', role: 'alert', hidden: true, 'data-offer-error': '' }),
           h(Z.Button, { type: 'submit', hierarchy: 'primary', className: 'trade-form__send', 'data-offer-send': '' }, 'Send offer'))),
-      // Figma `offer sent`: shown by site.js after a successful send. First the proof (decision 0070): the code the
-      // function made, to send from the trader's Discogs and from their Instagram or Facebook; then the usual note.
+      // Figma `offer sent`: shown by site.js after a successful send. First the proof (decision 0070): the phrase the
+      // function made (two friendly words, Gio: “we are humans, not computers”), to send from the trader's Discogs and from their Instagram or Facebook; then the usual note.
       h('div', { className: 'trade-col trade-col--2 trade-sent', hidden: true, 'data-offer-sent': '' }, h(Z.Divider),
         h('h2', { className: 'label-small' }, 'One last step: show me it\u2019s you'),
-        h('p', { className: 'body-medium' }, 'Send me this code from your Discogs and from your Instagram or Facebook. Until it reaches me from both, I can\u2019t know the offer is really yours.'),
-        h('p', { className: 'trade-sent__code body-extra-large', 'data-offer-code': '' }),
+        h('p', { className: 'body-medium' }, 'Our password is below. Send it to me from your Discogs and from your Instagram or Facebook: until it reaches me from both, I can\u2019t know the offer is really yours.'),
+        h('p', { className: 'trade-sent__phrase body-extra-large', 'data-offer-phrase': '' }),
         h('div', { className: 'trade-sent__verify' },
           verifyLinks(owner).map((v) => h(Z.Button, { key: v.key, hierarchy: 'secondary', href: v.href, target: '_blank', rel: 'noopener',
             hidden: v.key !== 'discogs', 'data-verify': v.key }, v.label, h('span', { 'aria-hidden': 'true' }, ' \u2197'),
@@ -145,7 +145,7 @@ function Offer({ product, site, url }) {
 const STEPS = [
   ['You make an offer', 'Pick the records you\u2019d give and tell me why I should take them. No account needed.'],
   ['You introduce yourself', 'Who you are, your Discogs and your Instagram or Facebook: there I can see who we know in common. I don\u2019t trade with strangers: convince me I can trust you.'],
-  ['You show me it\u2019s you', 'After sending, you get a code: send it to me from your Discogs and from your Instagram or Facebook. That\u2019s how I know the profiles are yours.'],
+  ['You show me it\u2019s you', 'After sending, you get our password, a couple of words: send them to me from your Discogs and from your Instagram or Facebook. That\u2019s how I know the profiles are yours.'],
   ['We talk', 'I answer you personally by email within 3 days. You can look at my profiles too.'],
   ['We find an agreement', 'Videos of the records, how and when we swap, or we meet in person. Nothing is agreed until we both say yes.'],
   ['We trade', 'And if it went well, we both say so where we talked.']

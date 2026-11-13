@@ -1492,9 +1492,10 @@
         .then(function (res) { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json().catch(function () { return {}; }); })
         .then(function (d) {
           var sent = document.querySelector('[data-offer-sent]');
-          // decision 0070: the code to send from each profile, and the buttons for the networks they gave
-          var codeEl = sent && sent.querySelector('[data-offer-code]');
-          if (codeEl) codeEl.textContent = (d && d.code) || '';
+          // decision 0070: the phrase to send from each profile (in quotes), and the buttons for the networks they gave
+          var phraseEl = sent && sent.querySelector('[data-offer-phrase]');
+          var phrase = (d && (d.phrase || d.code)) || '';
+          if (phraseEl) phraseEl.textContent = phrase ? '\u201c' + phrase + '\u201d' : '';
           if (sent) Array.prototype.forEach.call(sent.querySelectorAll('[data-verify]'), function (b) {
             var k = b.getAttribute('data-verify');
             b.hidden = k !== 'discogs' && !payload[k];
