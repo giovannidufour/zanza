@@ -7,7 +7,8 @@
    another checkout) = the same with "RESERVED" (decision 0065). Only available lines count in the subtotal.
    Shipping (decision 0057, Figma `bag summary` destination=served | not served): when shipping is set up (admin page
    Shipping), the summary has a "Ship to" country select and a total; the page carries the shipping config as JSON and
-   site.js estimates with packages/shipping/shipping.js. create-checkout recalculates on the server.
+   site.js estimates with packages/shipping/shipping.js. create-checkout recalculates on the server. The select lists
+   only the countries the shop ships to (decision 0075).
    Minimum order (decision 0072, Figma `bag summary` minimum=below): the page carries the minimum (admin page Shipping)
    in data-min-order-cents; under it site.js shows the `minimum note` and disables Checkout. */
 'use strict';
@@ -48,10 +49,12 @@ function BagLine({ product, url }) {
 // the served note and the not-served one (Figma `note` of each variant); site.js swaps them
 const NOTE = 'You pay on Stripe. Your records are held for 30 minutes once you start checkout.';
 const NOTE_SHIPPING = 'Shipping is an estimate for your country. You enter the address and pay on Stripe. Your records are held for 30 minutes once you start checkout.';
-const DEFAULT_COUNTRY = 'DE';   // Figma: Ship to → Germany
+const DEFAULT_COUNTRY = 'DE';   // Figma: Ship to → Germany; the first country when Germany is in no zone with rates
 
 function Bag({ products, site, url, shipping, countries }) {
-  const withShipping = !!(shipping && (shipping.rates || []).length);
+  // countries = only the ones the shop ships to (decision 0075): none = no select, "Calculated at checkout"
+  const withShipping = !!(shipping && (shipping.rates || []).length && countries.length);
+  const defaultCountry = countries.some((c) => c.code === DEFAULT_COUNTRY) ? DEFAULT_COUNTRY : (countries[0] || {}).code;
   // minimum order (decision 0072): in the shipping settings, but independent of the rates
   const minimum = shipping && shipping.min_order_cents > 0 ? shipping.min_order_cents : 0;
   return h('div', { className: 'zz-page' },
@@ -75,7 +78,7 @@ function Bag({ products, site, url, shipping, countries }) {
         // points Checkout's aria-describedby at it while the available records are under the minimum
         minimumNoteProps: { id: 'bag-minimum', 'data-bag-minimum': '', 'aria-live': 'polite', hidden: true },
         ...(withShipping ? {
-          shipTo: h(Z.Input, { variant: 'select', label: 'Ship to', id: 'bag-ship-to', 'data-bag-ship-to': '', defaultValue: DEFAULT_COUNTRY },
+          shipTo: h(Z.Input, { variant: 'select', label: 'Ship to', id: 'bag-ship-to', 'data-bag-ship-to': '', defaultValue: defaultCountry },
             countries.map((c) => h('option', { key: c.code, value: c.code }, c.name))),
           shipping: h('span', { 'data-bag-shipping': '' }, 'Calculated at checkout'),
           total: h('span', { 'data-bag-total': '' }, formatPrice({ amount: 0 })),

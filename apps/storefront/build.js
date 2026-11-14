@@ -200,7 +200,7 @@ write('search/index.html', page({ title: 'Search', body: renderToStaticMarkup(Re
 // Bag (decision 0044): one hidden line per listing of the sale section, whatever its status (a copy sold after it was
 // added still shows, as unavailable); scripts/site.js shows the visitor's own lines from localStorage
 const bagProducts = products.filter(p => p.listing.section === 'sale');
-write('bag/index.html', page({ title: Bag.title, body: renderToStaticMarkup(React.createElement(Bag.Bag, { products: bagProducts, site, url, shipping, countries: shippingData.countries() })) }));
+write('bag/index.html', page({ title: Bag.title, body: renderToStaticMarkup(React.createElement(Bag.Bag, { products: bagProducts, site, url, shipping, countries: shippingData.countries(shipping) })) }));
 
 // root: redirect to the PLP while there is no home page
 write('index.html', `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=${url('/sale/')}"><title>${escape(site.storeName)}</title>`);
