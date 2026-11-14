@@ -16,7 +16,7 @@ A message that blocks an action or changes what the user gets, in a red box: wha
 
 ## Tokens
 
-Background `surface-alert` (frontend → `hollywood-cerise` #ff00ae, backend → `red` #e0201b) · text `text-on-alert` (frontend black 5.9:1, backend white 4.8:1; AA for body/small) · the pink box against `surface-accent` is 2.8:1: the message is carried by the text.
+Background `surface-alert` (frontend → `pink-flamingo` #f563ff, backend → `red` #e0201b) · text `text-on-alert` (frontend black 8.1:1, backend white 4.8:1; AA for body/small) · the pink box against `surface-accent` is 2.0:1: the message is carried by the text.
 
 ## Dimensions (Figma)
 
