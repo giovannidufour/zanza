@@ -5,7 +5,8 @@ const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 
-const SECTION_LABEL = { sale: 'For sale', trade: 'For trade' };
+// catalog = every record, sale and trade mixed (/catalog/, reached only from the home's "See all", decision 0085)
+const SECTION_LABEL = { sale: 'For sale', trade: 'For trade', catalog: 'Catalog' };
 
 // ── data → text (mapping confirmed 2026-11-07) ──
 const formatPrice = (p) => `${p.amount % 100 === 0 ? p.amount / 100 : (p.amount / 100).toFixed(2)}€`;

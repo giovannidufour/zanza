@@ -199,6 +199,10 @@ write('sale/index.html', page({ title: Plp.title('sale'), body: renderToStaticMa
 // Traded copies stay on the list like sold ones (behind "Show sold out").
 const forTrade = products.filter(p => p.listing.section === 'trade' && ['available', 'reserved', 'traded'].includes(p.listing.status));
 write('trade/index.html', page({ title: Plp.title('trade'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'trade', products: forTrade, allProducts: products, site, url })) }));
+// Catalog (decision 0085, Gio 2026-11-15): every record of both sections mixed, newest first, with the PLP filters.
+// Linked only from the home's "See all" under Just in (no tab, no menu item).
+const catalog = products.filter(p => forSale.includes(p) || forTrade.includes(p));
+write('catalog/index.html', page({ title: Plp.title('catalog'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'catalog', products: catalog, allProducts: products, site, url })) }));
 for (const product of forTrade.filter(p => p.listing.status === 'available')) {
   write(`products/${product.listing.slug}/offer/index.html`, page({ title: `Make an offer · ${title(product)}`, body: renderToStaticMarkup(React.createElement(Trade.Offer, { product, site, url })) }));
 }
