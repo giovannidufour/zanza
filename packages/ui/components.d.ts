@@ -840,6 +840,7 @@ export interface SelectButtonProps extends HTMLAttributes<HTMLSelectElement> {
   /** Text before the value, same style, gap 4 ("Sort:", desktop). Figma: `prefix` + `prefix text`. */
   prefix?: ReactNode;
 }
+/** Focus ring: keyboard only (0081). The page sets data-focus-source="pointer" on the outer box after a pointer press (the shop does it in site.js). */
 export declare function SelectButton(props: SelectButtonProps): JSX.Element;
 export declare function ChevronRightIcon(): JSX.Element;
 export declare function ChevronLeftIcon(): JSX.Element;
