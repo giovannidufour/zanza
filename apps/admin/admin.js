@@ -581,7 +581,7 @@
       h(Z.ActionPanel, null,
         h(Z.Button, { hierarchy: 'primary', disabled: saving || locked, onClick: function () { save('available'); } }, f.status === 'available' ? 'Update' : 'Publish now'),
         h(Z.Button, { hierarchy: 'secondary', disabled: saving || locked || f.status === 'available', onClick: function () { save('draft'); } }, 'Save draft'),
-        h(Z.Button, { hierarchy: 'secondary', href: shopUrl || undefined, disabled: !shopUrl, target: '_blank', rel: 'noopener' }, 'View in store')),
+        shopUrl ? h(Z.Button, { hierarchy: 'secondary', href: shopUrl, target: '_blank', rel: 'noopener' }, 'View in store') : null),
       h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : ''),
       h(Z.Input, { id: 'sku', label: 'Sku', readOnly: true, value: f.sku ? String(f.sku) : '', placeholder: 'On first save', supportText: 'Automatic-generated' }),
       shopPreview(),
