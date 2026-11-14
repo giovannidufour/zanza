@@ -420,7 +420,7 @@
      Figma: page `Bag` → `bag item` (device=desktop | mobile × status=available | sold | reserved, text `notice`).
      One line of the bag = one copy (copies are unique: no quantity, Remove only). Row: cover 96 · info (title block,
      grade lines, samples; gap 8) · purchase (price, Remove secondary small; right-aligned, gap 8); gaps 16.
-     sold: product name in text-unavailable (red, decision 0078; was struck through), "SOLD OUT" beside the struck price, in the price style (decision 0064: struck =
+     sold: product name plain (decision 0078; was struck through), "SOLD OUT" in an inline Alert (red box) beside the struck price, in the price style (decision 0064: struck =
      unavailable for good, as the disabled Button); no notice. reserved (held by someone else's checkout or by hand):
      the same line with "RESERVED" (Gio 2026-11-12, decision 0065). `notice` overrides the word. `unavailable` (before 0064) = reserved. Samples stay (Gio 2026-11-10). Desktop type = ProductCard desktop,
      mobile = ProductCard mobile. Decision 0044. */
@@ -455,7 +455,7 @@
       h('div', { className: 'zz-bag-item__purchase' },
         unavailable
           ? h('p', { className: cx('zz-bag-item__price', t.head) },
-              h('span', { className: 'zz-bag-item__status' }, props.notice || (status === 'sold' ? 'SOLD OUT' : 'RESERVED')),
+              h(Alert, { layout: 'inline', className: 'zz-bag-item__status' }, props.notice || (status === 'sold' ? 'SOLD OUT' : 'RESERVED')),
               h('span', { className: 'zz-visually-hidden' }, ', not in your order, '),
               props.price != null ? h('s', null, props.price) : null)
           : status === 'available' && props.price != null ? h('p', { className: cx('zz-bag-item__price', t.head) }, props.price) : null,
@@ -829,10 +829,14 @@
      Figma: page `Bag` → `alert` (2026-11-14, decision 0077): a message that blocks an action or changes what the user
      gets (records left out of the order), in a red box. Padding 8
      (small), surface/alert, text body/small in text/strong-invert, fills its container. A <p>: the consumer adds the
-     live region / id it needs (the bag's minimum note is aria-live polite and Checkout's aria-describedby). Not a toast:
+     live region / id it needs (the bag's minimum note is aria-live polite and Checkout's aria-describedby). Figma
+     `layout`: block (default, a <p>) | inline (a <span>, padding 2/4 as Tag extra-small, hugs: bag item SOLD OUT /
+     RESERVED, decision 0078). Not a toast:
      it stays as long as the condition holds. */
   function Alert(props) {
-    return h('p', Object.assign({}, omit(props, ['className', 'children']), { className: cx('zz-alert body-small', props.className) }), props.children);
+    var inline = props.layout === 'inline';
+    return h(inline ? 'span' : 'p', Object.assign({}, omit(props, ['className', 'children', 'layout']),
+      { className: cx('zz-alert body-small', props.className), 'data-layout': inline ? 'inline' : 'block' }), props.children);
   }
 
   /* ── Divider ────────────────────────────────────────────────────────────

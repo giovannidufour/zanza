@@ -269,7 +269,7 @@ export declare function ProductCard(props: ProductCardProps): JSX.Element;
 export interface BagItemProps extends HTMLAttributes<HTMLElement> {
   /** Omitted → responsive (breakpoint `--mobile` from tokens.json): desktop type = ProductCard desktop, mobile = ProductCard mobile. */
   device?: "desktop" | "mobile";
-  /** Figma `status`. sold: name and "SOLD OUT" in red (text-unavailable, decision 0078), "SOLD OUT" beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). Samples stay. `unavailable` is the pre-0064 name of reserved. @default "available" */
+  /** Figma `status`. sold: name plain, "SOLD OUT" in an inline Alert (red box, decision 0078) beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). Samples stay. `unavailable` is the pre-0064 name of reserved. @default "available" */
   status?: "available" | "sold" | "reserved" | "unavailable";
   /** The word beside the struck price of a sold / reserved line. @default "SOLD OUT" / "RESERVED" */
   notice?: ReactNode;
@@ -466,7 +466,9 @@ export declare function FileItem(props: FileItemProps): JSX.Element;
 
 /** Mirrors the Figma component `alert` (page `Bag`, decision 0077): a message that blocks an action, in a red box
  *  (surface-alert, text-strong-invert, body/small, padding small), full width. Renders <p>; add aria-live / id as needed. */
-export interface AlertProps extends HTMLAttributes<HTMLParagraphElement> {
+export interface AlertProps extends HTMLAttributes<HTMLElement> {
+  /** Figma `layout`. block: a <p>, padding small, fills its container. inline: a <span>, padding 2/4, hugs (bag item SOLD OUT / RESERVED, decision 0078). @default "block" */
+  layout?: "block" | "inline";
   /** The message: what blocks the action and what to do, e.g. "Minimum order 20€. Add 8€ more to check out." */
   children?: ReactNode;
 }
