@@ -106,4 +106,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0081](0081-select-ring-for-keyboard-only.md) | SelectButton (Sort): the focus ring shows for keyboard focus only; after a mouse pick focus stays, the ring hides | accepted |
 | [0082](0082-year-or-decade.md) | Year field takes an exact year or a decade ("1990s"): `year` stays a number, `year_precision` = year / decade | accepted |
 | [0083](0083-view-in-store-button.md) | Admin action panel: the button that opens the live shop page reads "View in store"; "Preview" names only the in-admin shop preview | accepted |
-| [0085](0085-home-page.md) | Home page: Just in (8 newest sale, Play all), For trade (4), Genres, About; PLP grid on desktop; store name lit as the current page | accepted |
+| [0085](0085-home-page.md) | Home page: Just in (8 newest, sale and trade mixed, Play all), Genres, About; PLP grid on desktop, Genres on top on mobile; store name lit as the current page (amended 2026-11-15) | accepted |

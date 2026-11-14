@@ -1361,7 +1361,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-chosen-release__change { flex: none; background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Home (Figma page `Home`, 2026-11-14): section head, genre links, trade intro, home about
+   Home (Figma page `Home`, 2026-11-14): section head, genre links, home about
    ═══════════════════════════════════════════════════════════════════════ */
 .zz-section-head { display: flex; flex-direction: column; gap: var(--medium-small); }
 .zz-section-head__row { display: flex; align-items: center; justify-content: space-between; gap: var(--small); }
@@ -1371,9 +1371,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-genre-links { display: flex; flex-direction: column; gap: var(--medium-small); }
 .zz-genre-links__list { display: flex; flex-wrap: wrap; gap: var(--small); margin: 0; padding: 0; list-style: none; }
 
-.zz-trade-intro { display: flex; flex-direction: column; align-items: flex-start; gap: var(--small); color: var(--text-strong); }
-.zz-trade-intro p { margin: 0; }
-.zz-trade-intro__link, .zz-home-about__link { color: var(--text-strong); text-decoration: underline; }
+.zz-home-about__link { color: var(--text-strong); text-decoration: underline; }
 
 .zz-home-about { display: flex; flex-direction: column; align-items: stretch; gap: var(--medium-small); color: var(--text-strong); }
 .zz-home-about__bio { margin: 0; }
