@@ -130,7 +130,7 @@ const cx = (...c) => c.filter(Boolean).join(' ');
 // The Account detail is "Sign in to see your orders" until accounts exist (then: the signed-in email).
 function SiteMenu({ url, current }) {
   const item = (key, label, href, detail) => h(Z.MenuItem, { key, label, href: url(href), detail, current: key === current });
-  const legal = [['Impressum', '/impressum/'], ['Privacy', '/privacy/'], ['Terms', '/terms/'], ['Withdrawal', '/withdrawal/']]
+  const legal = LEGAL_LINKS
     .map(([text, href]) => h('a', { key: href, href: url(href) }, text));
   return h('dialog', { id: 'site-menu', className: 'site-menu', 'aria-label': 'Menu', tabIndex: -1, 'data-site-menu': '' },
     h(Z.MenuLayer, { title: 'Menu', closeLabel: 'Close menu', legal },
@@ -140,6 +140,30 @@ function SiteMenu({ url, current }) {
       h(Z.MenuGroup, null, item('account', 'Account', '/account/', 'Sign in to see your orders')),
       h(Z.MenuGroup, null, item('about', 'About', '/about/'), item('how-trading-works', 'How trading works', '/how-trading-works/'),
         item('grading', 'Grading', '/grading/'), item('shipping', 'Shipping', '/shipping/'), item('contact', 'Contact', '/contact/'))));
+}
+
+// Figma page `footer` (decision 0076): the same on every shop page, after <main>. Links = the mobile menu's
+// (SiteMenu), so both lead to the same places; social = Gio's Instagram and Discogs (site.json → owner, his personal
+// identity). The newsletter slot shows only when site.json → newsletter.action is set (Buttondown subscribe URL):
+// it stays off until the Privacy page names Buttondown (German law, design/open.md).
+const LEGAL_LINKS = [['Impressum', '/impressum/'], ['Privacy', '/privacy/'], ['Terms', '/terms/'], ['Withdrawal', '/withdrawal/']];
+function SiteFooter({ site, url }) {
+  const owner = site.owner || {};
+  const nl = site.newsletter || {};
+  const link = (label, href) => ({ label, href: url(href) });
+  const social = [owner.instagram && owner.instagram.href && { label: 'Instagram', href: owner.instagram.href },
+    owner.discogs && owner.discogs.href && { label: 'Discogs', href: owner.discogs.href }].filter(Boolean);
+  return h(Z.Footer, {
+    className: 'site-footer',
+    newsletter: nl.action ? h(Z.FooterNewsletter, { action: nl.action,
+      note: ['New records in your inbox. You confirm by email and can leave anytime. ', h('a', { key: 'p', href: url('/privacy/') }, 'Privacy')] }) : null,
+    legal: LEGAL_LINKS.map(([text, href]) => h('a', { key: href, href: url(href) }, text)),
+    copyright: `\u00a9 ${new Date().getFullYear()} ${site.storeName}`
+  },
+  h(Z.FooterLinks, { label: 'Shop', links: [link('For sale', '/sale/'), link('For trade', '/trade/')] }),
+  h(Z.FooterLinks, { label: 'Info', links: [link('About', '/about/'), link('How trading works', '/how-trading-works/'),
+    link('Grading', '/grading/'), link('Shipping', '/shipping/'), link('Contact', '/contact/')] }),
+  social.length ? h(Z.FooterLinks, { label: 'Follow', links: social }) : null);
 }
 
 // the data the site player (scripts/site.js) reads from a PlayerButton: a product's samples are its queue
@@ -203,4 +227,4 @@ function ProductCardFor({ product, url, headingLevel }) {
   });
 }
 
-module.exports = { SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, sampleAttrs, ProductCardFor };
+module.exports = { SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor };

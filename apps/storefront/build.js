@@ -86,6 +86,11 @@ const envelopeTemplate = `<template id="zz-icon-envelope">${renderToStaticMarkup
 let liveMeta = '';
 
 
+// the site footer (decision 0076): the same on every shop page, the last child of .zz-page (after <main>), so the soft
+// navigation in site.js swaps it with the page. Rendered once here instead of in every page module.
+const footerHtml = renderToStaticMarkup(React.createElement(require('./pages/shell.js').SiteFooter, { site, url }));
+const withFooter = (body) => (body.startsWith('<div class="zz-page"') && body.endsWith('</div>') ? body.slice(0, -6) + footerHtml + '</div>' : body);
+
 function page({ title: t, body }) {
   return `<!doctype html>
 <html lang="${site.lang}">
@@ -108,7 +113,7 @@ function page({ title: t, body }) {
 <script src="${siteJsHref}" defer></script>
 ${liveMeta}</head>
 <body>
-${body}
+${withFooter(body)}
 ${playerHtml}
 ${toastRegionHtml}
 ${notifyDialogHtml}

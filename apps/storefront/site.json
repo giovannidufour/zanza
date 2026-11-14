@@ -39,6 +39,10 @@
       "message": ""
     }
   },
+  "newsletter": {
+    "note": "Footer newsletter signup (decision 0076). action = the Buttondown subscribe URL (https://buttondown.com/api/emails/embed-subscribe/dufour). Empty = the footer shows no signup: keep it empty until the Privacy page (Datenschutz) names Buttondown.",
+    "action": ""
+  },
   "trade": {
     "note": "Trade offers (Figma page Trade). offerEndpoint = URL of the Supabase function trade-offer; empty = the form shows that offers are not switched on yet. searchEndpoint = URL of the Supabase function discogs-search (decision 0069); empty = \"Which record\" is a plain text field.",
     "offerEndpoint": "https://hhpknvyfypqipxufmbys.supabase.co/functions/v1/trade-offer",
