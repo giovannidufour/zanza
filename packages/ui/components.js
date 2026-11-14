@@ -377,7 +377,7 @@
 
   /* ── Sold-out cross ─────────────────────────────────────────────────────
      Figma: `product image` boolean `sold out` (ON in the component, OFF in instances), decision 0086. A 1px X from
-     corner to corner over the whole image, icon/strong-invert (white) with a 1px icon/strong (black) shadow below (CSS). The viewBox is stretched to the image
+     corner to corner over the whole image, surface/alert (the alert pink, as the SOLD OUT alert). The viewBox is stretched to the image
      (preserveAspectRatio none) and the stroke stays 1px at any size (non-scaling-stroke, as the icons). Decorative:
      the sold state is said in text by the component that shows it ("Sold out" button, "SOLD OUT" alert).
      scripts/site.js builds the same markup when a copy is sold while the page is open. Internal (decision 0008). */
