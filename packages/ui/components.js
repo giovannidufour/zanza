@@ -420,7 +420,7 @@
      Figma: page `Bag` → `bag item` (device=desktop | mobile × status=available | sold | reserved, text `notice`).
      One line of the bag = one copy (copies are unique: no quantity, Remove only). Row: cover 96 · info (title block,
      grade lines, samples; gap 8) · purchase (price, Remove secondary small; right-aligned, gap 8); gaps 16.
-     sold: product name struck through, "SOLD OUT" beside the struck price, in the price style (decision 0064: struck =
+     sold: product name in text-unavailable (red, decision 0078; was struck through), "SOLD OUT" beside the struck price, in the price style (decision 0064: struck =
      unavailable for good, as the disabled Button); no notice. reserved (held by someone else's checkout or by hand):
      the same line with "RESERVED" (Gio 2026-11-12, decision 0065). `notice` overrides the word. `unavailable` (before 0064) = reserved. Samples stay (Gio 2026-11-10). Desktop type = ProductCard desktop,
      mobile = ProductCard mobile. Decision 0044. */
