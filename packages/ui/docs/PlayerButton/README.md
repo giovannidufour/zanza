@@ -29,7 +29,7 @@ Icon and label share the foreground; the box takes the background ([0007](../../
 | pressed | `action-floating-foreground-pressed` | `action-floating-background-pressed` |
 | disabled | `action-floating-foreground-disabled` | `action-floating-background-disabled` |
 
-Type `body-medium`. Icons `icon/icon-play-ultra`, `icon/pause-ultra` (`currentColor`).
+Type `body-medium`. Icons `icon/icon-play`, `icon/icon-pause` (`currentColor`).
 
 ## Dimensions (Figma)
 
