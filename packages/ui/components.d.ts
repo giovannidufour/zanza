@@ -38,6 +38,8 @@ export interface HeaderProps extends HTMLAttributes<HTMLElement> {
   storeName?: ReactNode;
   /** When set, the store name becomes a link to this URL. */
   homeHref?: string;
+  /** Figma `store name` state=active: the page is the home page. Lit like the active tab; aria-current="page" on the link. */
+  homeCurrent?: boolean;
   /** A <Tabs> element. Rendered on desktop only (Figma: no tabs in the mobile variant). */
   tabs?: ReactNode;
   /** Trailing actions, usually secondary <Button>s (Figma: `trailing actions`, gap 8). */
@@ -922,3 +924,61 @@ export interface ChosenReleaseProps extends HTMLAttributes<HTMLDivElement> {
   onChange?: () => void;
 }
 export declare function ChosenRelease(props: ChosenReleaseProps): JSX.Element;
+
+/** Figma `section head` (page Home): heading of a home section. Divider on top, title, actions on the right. */
+export interface SectionHeadProps extends HTMLAttributes<HTMLDivElement> {
+  /** Figma `title`. */
+  title: ReactNode;
+  /** Heading level of the title. @default 2 */
+  headingLevel?: 2 | 3 | 4;
+  /** Figma boolean `divider`: false for the first section under the header (the header border is already there). @default true */
+  divider?: boolean;
+  /** Figma booleans `play` and `see all`: secondary Buttons ("Play all", "See all"). Omit → no actions. */
+  actions?: ReactNode;
+  /** id of the title, to name the section (aria-labelledby). */
+  titleId?: string;
+}
+export declare function SectionHead(props: SectionHeadProps): JSX.Element;
+
+/** Figma `genre links` (page Home): the catalogue's genres as Tag links (size medium) to the filtered PLP. A <section>. */
+export interface GenreLinksProps extends HTMLAttributes<HTMLElement> {
+  /** @default "Genres" */
+  title?: ReactNode;
+  /** The genres, in order. */
+  genres: { label: ReactNode; href: string }[];
+  /** @default 2 */
+  headingLevel?: 2 | 3 | 4;
+  /** The SectionHead divider. @default true */
+  divider?: boolean;
+}
+export declare function GenreLinks(props: GenreLinksProps): JSX.Element;
+
+/** Figma `trade intro` (page Home): one line on trading + a link to How trading works. */
+export interface TradeIntroProps extends HTMLAttributes<HTMLDivElement> {
+  /** Figma `pitch`: the line. */
+  children: ReactNode;
+  /** Figma boolean `link`: omit → no link. */
+  href?: string;
+  /** @default "How trading works" */
+  linkLabel?: ReactNode;
+}
+export declare function TradeIntro(props: TradeIntroProps): JSX.Element;
+
+/** Figma `home about` (page Home): who is behind the shop. A <section>. */
+export interface HomeAboutProps extends HTMLAttributes<HTMLElement> {
+  /** @default "About" */
+  title?: ReactNode;
+  /** @default 2 */
+  headingLevel?: 2 | 3 | 4;
+  /** The SectionHead divider. @default true */
+  divider?: boolean;
+  /** Figma `bio`: one line. */
+  children?: ReactNode;
+  /** Figma boolean `discogs`: the DiscogsCard props. Omit → no card. */
+  discogs?: DiscogsCardProps;
+  /** Link to the About page. Omit → no link. */
+  href?: string;
+  /** @default "More about me" */
+  linkLabel?: ReactNode;
+}
+export declare function HomeAbout(props: HomeAboutProps): JSX.Element;

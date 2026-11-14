@@ -329,10 +329,10 @@ a.zz-tab {
   background-clip: border-box;
   background-repeat: no-repeat;
   background-image:
-    repeating-linear-gradient(90deg,  var(--border-divider-strong) 0 8px, transparent 8px 16px),
-    repeating-linear-gradient(90deg,  var(--border-divider-strong) 0 8px, transparent 8px 16px),
-    repeating-linear-gradient(180deg, var(--border-divider-strong) 0 8px, transparent 8px 16px),
-    repeating-linear-gradient(180deg, var(--border-divider-strong) 0 8px, transparent 8px 16px);
+    repeating-linear-gradient(90deg,  var(--zz-name-border, var(--border-divider-strong)) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(90deg,  var(--zz-name-border, var(--border-divider-strong)) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(180deg, var(--zz-name-border, var(--border-divider-strong)) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(180deg, var(--zz-name-border, var(--border-divider-strong)) 0 8px, transparent 8px 16px);
   background-size: 100% 1px, 100% 1px, 1px 100%, 1px 100%;
   background-position: 0 0, 0 100%, 0 0, 100% 0;
   border-radius: 0;
@@ -341,6 +341,11 @@ a.zz-tab {
   /* type: class label-medium on the element */
   white-space: nowrap;
 }
+
+/* Figma `store name` state=active (2026-11-14): the home page lights the store name like the tab of the current
+   section (tab/background/active, tab/border/active); the dashed border stays */
+.zz-header__name[data-state="active"] { --zz-name-border: var(--tab-border-active); background-color: var(--tab-background-active); }
+.zz-header__name[aria-current="page"] { cursor: default; }
 
 /* bottom rule — Figma has it hardcoded #000000; the token it should bind to is border divider/strong */
 .zz-header__rule { height: 1px; width: 100%; background: var(--border-divider-strong); }
@@ -1354,3 +1359,22 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-chosen-release { border: 1px solid var(--border-divider-strong); }
 .zz-chosen-release__link { color: inherit; text-decoration: underline; align-self: flex-start; }
 .zz-chosen-release__change { flex: none; background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Home (Figma page `Home`, 2026-11-14): section head, genre links, trade intro, home about
+   ═══════════════════════════════════════════════════════════════════════ */
+.zz-section-head { display: flex; flex-direction: column; gap: var(--medium-small); }
+.zz-section-head__row { display: flex; align-items: center; justify-content: space-between; gap: var(--small); }
+.zz-section-head__title { margin: 0; color: var(--text-strong); }
+.zz-section-head__actions { display: flex; gap: var(--small); flex: none; }
+
+.zz-genre-links { display: flex; flex-direction: column; gap: var(--medium-small); }
+.zz-genre-links__list { display: flex; flex-wrap: wrap; gap: var(--small); margin: 0; padding: 0; list-style: none; }
+
+.zz-trade-intro { display: flex; flex-direction: column; align-items: flex-start; gap: var(--small); color: var(--text-strong); }
+.zz-trade-intro p { margin: 0; }
+.zz-trade-intro__link, .zz-home-about__link { color: var(--text-strong); text-decoration: underline; }
+
+.zz-home-about { display: flex; flex-direction: column; align-items: stretch; gap: var(--medium-small); color: var(--text-strong); }
+.zz-home-about__bio { margin: 0; }
+.zz-home-about__link { align-self: flex-start; }

@@ -1,6 +1,6 @@
 /* apps/storefront/build.js — static build.
    products (Supabase, or content/products/*.json: see data/products.js) → dist/products/<slug>/index.html,
-   dist/sale/index.html (PLP), dist/search/index.html (search results), dist/bag/index.html (bag), dist/<legal page>/index.html (content/legal/*.md) (+ css, fonts, assets). `--source=json` forces the local JSON.
+   dist/index.html (home), dist/sale/index.html (PLP), dist/search/index.html (search results), dist/bag/index.html (bag), dist/<legal page>/index.html (content/legal/*.md) (+ css, fonts, assets). `--source=json` forces the local JSON.
    Upload the whole `dist/` folder to the web root. Run: npm run build
    Cloudflare Pages: `npm run build:pages` (= --target=pages --source=supabase: root basePath, never the local JSON). */
 'use strict';
@@ -43,7 +43,8 @@ const css = {
   plp: readCss(path.join(APP, 'plp.css')),
   bag: readCss(path.join(APP, 'bag.css')),
   trade: readCss(path.join(APP, 'trade.css')),
-  legal: readCss(path.join(APP, 'legal.css'))
+  legal: readCss(path.join(APP, 'legal.css')),
+  home: readCss(path.join(APP, 'home.css'))
 };
 const cssHref = (name) => url(`/css/${name}.css?v=${hashOf(css[name])}`);
 const siteJs = fs.readFileSync(path.join(APP, 'scripts/site.js'));
@@ -60,6 +61,7 @@ const Bag = require('./pages/bag.js');
 const Trade = require('./pages/trade.js');
 const Legal = require('./pages/legal.js');
 const Seo = require('./pages/seo.js');
+const Home = require('./pages/home.js');
 const Z = require(path.join(UI, 'components.js'));
 const { NotFound } = require('./pages/not-found.js');
 
@@ -119,6 +121,7 @@ ${Seo.headTags(meta, { site, title: fullTitle, abs })}<link rel="icon" href="${u
 <link rel="stylesheet" href="${cssHref('bag')}">
 <link rel="stylesheet" href="${cssHref('trade')}">
 <link rel="stylesheet" href="${cssHref('legal')}">
+<link rel="stylesheet" href="${cssHref('home')}">
 <script src="${toastJsHref}" defer></script>
 <script src="${shippingJsHref}" defer></script>
 <script src="${siteJsHref}" defer></script>
@@ -172,6 +175,7 @@ write('css/plp.css', css.plp);
 write('css/bag.css', css.bag);
 write('css/trade.css', css.trade);
 write('css/legal.css', css.legal);
+write('css/home.css', css.home);
 write('js/site.js', siteJs);
 write('js/toast.js', toastJs);
 write('js/shipping.js', shippingJs);
@@ -241,19 +245,17 @@ for (const p of Legal.PAGES) {
   if (missing.length) console.log(`    to fill: ${missing.join(' · ')}`);
 }
 
-// root: redirect to the PLP while there is no home page
-write('index.html', `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=${url('/sale/')}"><title>${escape(site.storeName)}</title>`);
+// Home (Figma page `Home`, decision 0085): Just in, For trade, Genres, About
+write('index.html', page({ title: Home.title, meta: { path: '/', description: Seo.sectionDescription('home') },
+  body: renderToStaticMarkup(React.createElement(Home.Home, { products, site, url })) }));
+indexable.unshift('/');
 // 404 (decision 0084): served with status 404 by Cloudflare Pages for any unknown path, instead of the home page with 200
 write('404.html', page({ title: 'Page not found', meta: { index: false }, body: renderToStaticMarkup(React.createElement(NotFound, { site, url })) }));
 
-// robots.txt, sitemap.xml (only once launched: siteUrl), and on Cloudflare Pages the noindex of *.pages.dev + the root 301
+// robots.txt, sitemap.xml (only once launched: siteUrl), and on Cloudflare Pages the noindex of *.pages.dev
 write('robots.txt', Seo.robots(site, { abs }));
 if (SITE_URL) write('sitemap.xml', Seo.sitemap(indexable, { abs }));
-if (targetArg === 'pages') {
-  write('_headers', Seo.PAGES_HEADERS);
-  // the root 301 only while index.html is still the redirect stub: a real home page at / turns it off by itself
-  if (/http-equiv="refresh"/.test(fs.readFileSync(path.join(DIST, 'index.html'), 'utf8'))) write('_redirects', Seo.pagesRedirects(url));
-}
+if (targetArg === 'pages') write('_headers', Seo.PAGES_HEADERS);
 console.log(SITE_URL ? `seo: ${indexable.length} page(s) in sitemap.xml, canonical on ${SITE_URL}` : 'seo: site.json → siteUrl is empty: every page is noindex (not launched)');
 console.log(`done: ${products.length} product page(s), ${forSale.length} for sale, ${forTrade.length} for trade`);
 }

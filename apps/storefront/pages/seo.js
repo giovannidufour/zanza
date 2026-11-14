@@ -1,6 +1,6 @@
 /* apps/storefront/pages/seo.js — what search engines and link previews read (decision 0084).
    Pure functions: the <head> tags of a page, the PDP description and JSON-LD, sitemap.xml, robots.txt and the
-   Cloudflare Pages _headers / _redirects. Everything absolute starts from site.json → siteUrl (the domain, no
+   Cloudflare Pages _headers. Everything absolute starts from site.json → siteUrl (the domain, no
    trailing slash): empty = the site is not launched yet, so every page is noindex, robots.txt disallows all and
    there is no canonical, og:url or sitemap. Changing domain = changing that one value. */
 'use strict';
@@ -103,11 +103,11 @@ const PAGES_HEADERS = `https://:project.pages.dev/*
 https://:version.:project.pages.dev/*
   X-Robots-Tag: noindex
 `;
-// the root has no page of its own yet: a real 301 instead of the meta refresh of index.html (kept for other hosts)
-const pagesRedirects = (url) => `/ ${url('/sale/')} 301\n`;
 
-const sectionDescription = (section) => (section === 'trade'
+const sectionDescription = (section) => (section === 'home'
+  ? 'Reggae and dancehall records from a DJ\u2019s own crates: graded 7" and 12" copies for sale with samples, and records for trade.'
+  : section === 'trade'
   ? 'Reggae and dancehall records from my own crates, not for sale: make me an offer with a record of yours.'
   : 'Reggae and dancehall 7" and 12" records from a DJ’s own crates. Graded copies, listen to the samples before you buy.');
 
-module.exports = { headTags, productDescription, productJsonLd, sitemap, robots, PAGES_HEADERS, pagesRedirects, sectionDescription, AVAILABILITY };
+module.exports = { headTags, productDescription, productJsonLd, sitemap, robots, PAGES_HEADERS, sectionDescription, AVAILABILITY };

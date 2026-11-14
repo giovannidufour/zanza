@@ -107,3 +107,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0082](0082-year-or-decade.md) | Year field takes an exact year or a decade ("1990s"): `year` stays a number, `year_precision` = year / decade | accepted |
 | [0083](0083-view-in-store-button.md) | Admin action panel: the button that opens the live shop page reads "View in store"; "Preview" names only the in-admin shop preview | accepted |
 | [0084](0084-seo-from-site-url.md) | SEO: `site.json` → `siteUrl` drives canonical, sitemap, OG; empty = noindex everywhere; JSON-LD Product/Offer on sale PDPs; search, bag, offer, legal noindex; `*.pages.dev` noindex; real 404 | accepted |
+| [0085](0085-home-page.md) | Home page: Just in (8 newest sale, Play all), For trade (4), Genres, About; PLP grid on desktop; store name lit as the current page | accepted |
