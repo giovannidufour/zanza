@@ -1,24 +1,28 @@
 /* apps/storefront/home.css — page layout of the home page (Figma page `Home`, decision 0085).
-   Layout only: components bring their own styles from packages/ui. Desktop = the PLP grid (12 columns, side 3 + main 9). */
+   Layout only: components bring their own styles from packages/ui. Desktop = the PLP grid (12 columns, side 3 + main 9):
+   Genres (row 1) and About (row 2) in the side, Just in across both rows of the main. */
 .home-content {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: auto 1fr;
   column-gap: var(--gutter-small);
   row-gap: var(--medium-small);
   padding: var(--small) 0;
   align-items: start;
 }
-.home-main { grid-column: 4 / span 9; grid-row: 1; display: flex; flex-direction: column; gap: var(--medium-small); min-width: 0; }
-.home-side { grid-column: 1 / span 3; grid-row: 1; display: flex; flex-direction: column; gap: var(--medium-small); min-width: 0; }
+.home-genres  { grid-column: 1 / span 3; grid-row: 1; min-width: 0; }
+.home-about   { grid-column: 1 / span 3; grid-row: 2; min-width: 0; }
+.home-just-in { grid-column: 4 / span 9; grid-row: 1 / span 2; min-width: 0; }
 .home-section { display: flex; flex-direction: column; gap: var(--small); }
 .home-list { display: flex; flex-direction: column; gap: var(--small); }   /* Figma: as the PLP list, gap 8 */
 .home-empty { margin: 0; color: var(--text-strong); }
-/* desktop: Genres is the first block of the side column, right under the header: no divider (Figma `section head` divider off) */
-.home-side__genres > .zz-section-head > .zz-divider { display: none; }
+/* desktop: Just in sits right under the header: no divider (Figma `section head` divider off) */
+.home-just-in > .zz-section-head > .zz-divider { display: none; }
 
-/* Figma Home - mobile: one column, Just in, For trade, then Genres and About (with their dividers) */
+/* Figma Home - mobile (Gio 2026-11-15): one column in DOM order, Genres on top (no divider), then Just in and About
+   with their dividers */
 @media (--mobile) {
-  .home-content { grid-template-columns: minmax(0, 1fr); }
-  .home-main, .home-side { grid-column: 1; grid-row: auto; }
-  .home-side__genres > .zz-section-head > .zz-divider { display: block; }
+  .home-content { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .home-genres, .home-about, .home-just-in { grid-column: 1; grid-row: auto; }
+  .home-just-in > .zz-section-head > .zz-divider { display: block; }
 }

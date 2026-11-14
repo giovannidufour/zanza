@@ -213,8 +213,12 @@ write('sale/index.html', page({ title: Plp.title('sale'), meta: { description: S
 // For trade (Figma page `Trade`, decision 0068): the trade PLP, one offer page per trade listing, How trading works, About.
 // Traded copies stay on the list like sold ones (behind "Show sold out").
 const forTrade = products.filter(p => p.listing.section === 'trade' && ['available', 'reserved', 'traded'].includes(p.listing.status));
-indexable.push('/sale/', '/trade/');
+indexable.push('/sale/', '/trade/', '/catalog/');
 write('trade/index.html', page({ title: Plp.title('trade'), meta: { description: Seo.sectionDescription('trade'), path: '/trade/' }, body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'trade', products: forTrade, allProducts: products, site, url })) }));
+// Catalog (decision 0085, Gio 2026-11-15): every record of both sections mixed, newest first, with the PLP filters.
+// Linked only from the home's "See all" under Just in (no tab, no menu item).
+const catalog = products.filter(p => forSale.includes(p) || forTrade.includes(p));
+write('catalog/index.html', page({ title: Plp.title('catalog'), meta: { description: Seo.sectionDescription('catalog'), path: '/catalog/' }, body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'catalog', products: catalog, allProducts: products, site, url })) }));
 for (const product of forTrade.filter(p => p.listing.status === 'available')) {
   write(`products/${product.listing.slug}/offer/index.html`, page({ title: `Make an offer · ${title(product)}`, meta: { index: false }, body: renderToStaticMarkup(React.createElement(Trade.Offer, { product, site, url })) }));
 }

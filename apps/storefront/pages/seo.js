@@ -106,6 +106,8 @@ https://:version.:project.pages.dev/*
 
 const sectionDescription = (section) => (section === 'home'
   ? 'Reggae and dancehall records from a DJ\u2019s own crates: graded 7" and 12" copies for sale with samples, and records for trade.'
+  : section === 'catalog'
+  ? 'Every record in the crates, for sale and for trade: reggae and dancehall 7" and 12", newest first, with samples.'
   : section === 'trade'
   ? 'Reggae and dancehall records from my own crates, not for sale: make me an offer with a record of yours.'
   : 'Reggae and dancehall 7" and 12" records from a DJ’s own crates. Graded copies, listen to the samples before you buy.');
