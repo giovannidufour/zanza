@@ -43,6 +43,18 @@
     "note": "Footer newsletter signup (decision 0076). action = the Buttondown subscribe URL (https://buttondown.com/api/emails/embed-subscribe/dufour). Empty = the footer shows no signup: keep it empty until the Privacy page (Datenschutz) names Buttondown.",
     "action": ""
   },
+  "legal": {
+    "note": "Legal pages (decision 0079): content/legal/*.md, {{legal.x}} is filled from here. EMPTY = the page shows the bracketed placeholder and the build lists it: Gio fills these himself (his legal name and a postal address where he can be served, required by § 5 DDG; no P.O. box). email = the shop contact address (provisional: see _context/provisional-names.md). vat = the VAT line of the Impressum, decided with the tax advisor (Q5b). updated = date of the last change to Privacy and Terms.",
+    "name": "",
+    "street": "",
+    "postcode": "",
+    "city": "",
+    "country": "Germany",
+    "email": "",
+    "phone": "",
+    "vat": "",
+    "updated": "2026-11-14"
+  },
   "trade": {
     "note": "Trade offers (Figma page Trade). offerEndpoint = URL of the Supabase function trade-offer; empty = the form shows that offers are not switched on yet. searchEndpoint = URL of the Supabase function discogs-search (decision 0069); empty = \"Which record\" is a plain text field.",
     "offerEndpoint": "https://hhpknvyfypqipxufmbys.supabase.co/functions/v1/trade-offer",

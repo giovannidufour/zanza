@@ -61,7 +61,7 @@ Legenda colonna *Cambio*: 🟢 facile (testo/config) · 🟡 da pianificare (URL
 |---|---|---|
 | Mittente email transazionali (Resend) | nome e indirizzo mittente (`MAIL_FROM`, `STORE_NAME` nei secrets, vedi sopra) | 🟢 config (`stack.md` → Portabilità) |
 | Newsletter (Buttondown) | sender name, mailing address/Impressum nel footer delle mail | 🟢 |
-| Pagine legali (Impressum, Datenschutz…, da fare) | nome del negozio, email di contatto, provider elencati | 🟢 |
+| Pagine legali (2026-11-14, decisione 0079) | nome del negozio da `site.json` → storeName; **email di contatto, nome legale, indirizzo, telefono** in `site.json` → legal (vuoti, li inserisce Gio); provider elencati in `content/legal/privacy.md` (Cloudflare, Supabase, Resend, Buttondown, Stripe, Discogs, Meta) | 🟢 testo/config; al cambio email aggiornare `legal.email` |
 
 ## Al cambio nome: ordine consigliato
 1. Dominio + email del negozio → 2. login dei servizi sulla nuova email → 3. username Buttondown + endpoint nel codice → 4. config (`site.json`, `admin.json`, URL Supabase/Stripe/R2) → 5. ricerca `zanza` / `Zanza` nel repo → 6. GitHub, Figma, claude.ai.
