@@ -618,7 +618,7 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
   color: var(--text-strong);   /* Figma: text fills unbound #000 → text/strong (open.md) */
 }
 /* ── Sold-out cross (Figma: `product image` boolean `sold out`, decision 0086) ─────────────────────────────
-   A 1px X from corner to corner over the whole image, in icon/strong-invert. Sits in a positioned image box
+   A 1px X from corner to corner over the whole image, in icon/strong-invert, with a 1px icon/strong line below. Sits in a positioned image box
    (ProductCard, BagItem, Gallery item); the stroke does not scale (vector-effect in the markup). */
 .zz-sold-out {
   position: absolute; inset: 0;
@@ -627,6 +627,7 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
   fill: none;
   stroke: var(--icon-strong-invert);
   stroke-width: 1;
+  filter: drop-shadow(0 1px 0 var(--icon-strong));   /* Figma: drop shadow y 1, blur 0, icon/strong: reads on light covers */
   pointer-events: none;
 }
 
