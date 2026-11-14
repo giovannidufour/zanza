@@ -6,7 +6,7 @@
 **Decision.**
 - The record name goes back to `text/strong`, **not** struck through.
 - "SOLD OUT" / "RESERVED" sits in the same red box as the bag's alerts (0077): `alert` gets a variant `layout` = block (the existing one: padding small, fills) | inline (padding 2/4 as Tag extra-small, hugs). Same tokens (`surface/alert` + `text/strong-invert`, 4.8:1) and body/small.
-- The price stays black and struck through beside the box: it is the amount you are not charged.
+- The price stays black and struck through beside the box: it is the amount you are not charged. On mobile the box sits **below** the price (Figma mobile `price row` vertical: price then box, right-aligned, gap small; Gio 2026-11-14, first "sopra" then "sotto al prezzo"), beside it on desktop.
 - `text/unavailable` and `red-dark` (from PR #91) are removed from Figma and code: nothing uses them.
 - Colour is not the only cue (WCAG 1.4.1): the box holds the word; the screen reader text ", not in your order," is unchanged.
 **Rule.** A status that takes an item out of the order is a word in an inline `alert` next to its price; the item's name stays plain.
