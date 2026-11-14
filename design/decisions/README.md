@@ -98,3 +98,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0073](0073-genre-tag-chip-shows-the-value.md) | PLP genre / tag chip shows only the value; the type stays in the remove button's accessible name | accepted |
 | [0074](0074-bag-item-gap-matches-product-card.md) | Bag item row gap = ProductCard column gap (`gutter/small`), in Figma and code | accepted |
 | [0075](0075-ship-to-lists-served-countries.md) | Bag "Ship to" lists only the countries in a zone with rates, derived from the shipping config | accepted |
+| [0076](0076-footer.md) | Site footer: newsletter slot (off until Privacy names Buttondown), the mobile menu's links, Instagram/Discogs, legal + copyright; same tokens as the header | accepted |

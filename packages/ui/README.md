@@ -71,6 +71,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | Filter · FilterBlock · Filters | page `filters` → `filter`, `filter block`, `filters` | ported: content label / tag × state × device (responsive), count; shop PLP (0028) |
 | FiltersLayer · FilterFacet · PlpHeader · SelectButton | page `filters` → `filters layer`, `filter facet`, `PLP header` | ported: mobile filters, level main / facet, sticky actions; sort = native select as a button (0038) |
 | MenuLayer · MenuGroup · MenuItem | page `menu` → `menu layer`, `menu item` | ported: mobile menu opened by the header hamburger (0060) |
+| Footer · FooterLinks · FooterNewsletter | page `footer` → `footer`, `footer link list`, `footer newsletter`, `footer legal` | ported (0076): `<footer>` landmark, newsletter slot, link columns, legal + copyright; desktop / mobile responsive |
 | EntityField · EntityChip | `input` › `chips` + `_input chips`, `entity chip` (tags), `entity option` (input › building blocks) | ported: chips, menu (entity / alias / create), keyboard; Label = one chip; chip size medium / large |
 
 ## Open items

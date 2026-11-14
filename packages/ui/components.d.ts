@@ -770,6 +770,51 @@ export interface MenuLayerProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function MenuLayer(props: MenuLayerProps): JSX.Element;
 
+/** Mirrors the Figma component `footer` (device=desktop | mobile, one responsive markup): the site footer, a <footer> landmark. */
+export interface FooterProps extends HTMLAttributes<HTMLElement> {
+  /** Figma boolean `newsletter`: the signup (a FooterNewsletter). Omit → the link columns take the whole row. */
+  newsletter?: ReactNode;
+  /** FooterLinks columns (Figma `footer link list` instances: shop, info, social). Rendered in a <nav>. */
+  children?: ReactNode;
+  /** Accessible name of the footer <nav>. @default "Footer" */
+  navLabel?: string;
+  /** Legal links (<a> elements), body-small, wrapping. Figma: `footer legal`. */
+  legal?: ReactNode;
+  /** Accessible name of the legal links group. @default "Legal" */
+  legalLabel?: string;
+  /** Figma `copyright`, e.g. "© 2026 rythem-trax". */
+  copyright?: ReactNode;
+}
+export declare function Footer(props: FooterProps): JSX.Element;
+
+/** Mirrors the Figma component `footer link list` (group=shop | info | social): one column of links, body-small, no title. */
+export interface FooterLinksProps extends HTMLAttributes<HTMLDivElement> {
+  /** The links, in order. */
+  links: { href: string; label: ReactNode; rel?: string; target?: string }[];
+  /** Name of the list for screen readers (aria-label: the columns have no title in Figma). */
+  label?: string;
+}
+export declare function FooterLinks(props: FooterLinksProps): JSX.Element;
+
+/** Mirrors the Figma component `footer newsletter`: an HTML form to the provider's subscribe endpoint (works without JS). */
+export interface FooterNewsletterProps extends HTMLAttributes<HTMLFormElement> {
+  /** The form action: the provider's subscribe URL (Buttondown embed-subscribe). */
+  action: string;
+  /** @default "post" */
+  method?: string;
+  /** Field label. @default "Newsletter" */
+  label?: ReactNode;
+  /** @default "Your email" */
+  placeholder?: string;
+  /** Name of the email field sent to the provider. @default "email" */
+  name?: string;
+  /** Button text (secondary). @default "Subscribe" */
+  submitLabel?: ReactNode;
+  /** Figma `note`: what you get and how double opt-in works, ending with the Privacy link (underlined). Describes the field. */
+  note?: ReactNode;
+}
+export declare function FooterNewsletter(props: FooterNewsletterProps): JSX.Element;
+
 /** A native <select> drawn as a Button with a trailing chevron-down (Figma: button + trailing icon). The platform picker opens. */
 export interface SelectButtonProps extends HTMLAttributes<HTMLSelectElement> {
   /** The choices; the visible text is the selected option's label. */

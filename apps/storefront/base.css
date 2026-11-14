@@ -14,7 +14,12 @@ html { background: var(--surface-accent); }
   font-family: var(--font-sans);
   padding: 0 var(--page-margin-desktop);
   box-sizing: border-box;
+  /* column, so the footer (last child) sits at the bottom of a short page (empty bag) */
+  display: flex;
+  flex-direction: column;
 }
+/* the site footer (packages/ui Footer, decision 0076): after the content, pushed to the bottom of a short page */
+.site-footer { margin-top: auto; }
 /* breakpoint: `--mobile` from packages/ui/tokens.json → breakpoint (expanded at build time) */
 @media (--mobile) { .zz-page { padding: 0 var(--page-margin-mobile); } }
 

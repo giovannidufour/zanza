@@ -1229,6 +1229,33 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-menu-layer__legal a { color: var(--text-strong); text-decoration: none; }
 .zz-menu-layer__legal a:hover { text-decoration: underline; }
 
+/* ── Footer (Figma page `footer`, decision 0076): border-top = the header border (1px border-divider-strong);
+   main = newsletter + link columns, padding-y medium-small, gap medium-small; bottom = copyright + legal, padding-bottom
+   medium-small. Desktop: side by side, flex 1 each (Figma FILL), so without the newsletter the links take the whole row.
+   Mobile: stacked, links in two columns (Figma: wrap, (374 - 16) / 2), legal above the copyright. ── */
+.zz-footer { background: var(--surface-accent); color: var(--text-strong); border-top: 1px solid var(--border-divider-strong); }
+.zz-footer__main { display: flex; gap: var(--medium-small); padding: var(--medium-small) 0; }
+.zz-footer__main > * { flex: 1 1 0; min-width: 0; }
+.zz-footer__links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--medium-small); align-items: start; }
+.zz-footer__bottom { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--small) var(--medium-small); padding-bottom: var(--medium-small); }
+.zz-footer__copyright { margin: 0; }
+.zz-footer__legal { display: flex; flex-wrap: wrap; gap: var(--small) var(--medium-small); }
+/* links: as the menu legal row (text-strong, underline on hover). 16px lines 24px apart (gap small) = WCAG 2.5.8 by spacing */
+.zz-footer a { color: var(--text-strong); text-decoration: none; }
+@media (hover: hover) { .zz-footer a:hover { text-decoration: underline; } }
+.zz-footer-links__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--small); }
+.zz-footer-newsletter { display: flex; flex-direction: column; gap: var(--small); margin: 0; }
+.zz-footer-newsletter__row { display: flex; align-items: flex-end; gap: var(--small); }
+.zz-footer-newsletter__input { flex: 1 1 auto; min-width: 0; }
+.zz-footer-newsletter__note { margin: 0; }
+/* a link inside the note is told apart from the text by the underline, not by colour only (WCAG 1.4.1) */
+.zz-footer .zz-footer-newsletter__note a { text-decoration: underline; }
+@media (--mobile) {
+  .zz-footer__main { flex-direction: column; }
+  .zz-footer__links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .zz-footer__bottom { flex-direction: column-reverse; }
+}
+
 /* ── PlpHeader (Figma `PLP header`, device=mobile): filters trigger and sort, space-between, padding-y small,
    1px border-divider-strong under ── */
 .zz-plp-header { display: flex; flex-direction: column; }

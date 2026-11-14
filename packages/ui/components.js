@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"}]} */
 /* packages/ui/components.js — the ONE implementation of the rythem-trax components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
@@ -1158,6 +1158,43 @@
         props.legal ? h('div', { className: 'zz-menu-layer__legal body-small', role: 'group', 'aria-label': props.legalLabel || 'Legal' }, props.legal) : null));
   }
 
+  /* ── Footer / FooterLinks / FooterNewsletter (Figma page `footer`: `footer` device=desktop | mobile,
+     `footer link list` group=shop | info | social, `footer newsletter`, `footer legal`; decision 0076) ──
+     One responsive markup: desktop = newsletter and the link columns side by side, mobile (--mobile) = stacked,
+     links in two columns. The page gives the content: the DS has no site data. */
+  function Footer(props) {
+    return h('footer', Object.assign({ className: cx('zz-footer', props.className) },
+      omit(props, ['newsletter', 'children', 'navLabel', 'legal', 'legalLabel', 'copyright', 'className'])),
+      h('div', { className: 'zz-footer__main' },
+        props.newsletter ? h('div', { className: 'zz-footer__newsletter' }, props.newsletter) : null,   // Figma boolean `newsletter`
+        h('nav', { className: 'zz-footer__links', 'aria-label': props.navLabel || 'Footer' }, props.children)),
+      h('div', { className: 'zz-footer__bottom body-small' },
+        props.copyright ? h('p', { className: 'zz-footer__copyright' }, props.copyright) : null,   // Figma `copyright`
+        props.legal ? h('div', { className: 'zz-footer__legal', role: 'group', 'aria-label': props.legalLabel || 'Legal' }, props.legal) : null));
+  }
+  // Figma `footer link list`: one column of links. `links` = [{ href, label }]. `label` names the list for screen readers
+  // (aria-label: the columns have no titles in Figma). No useId: the storefront renders the footer as its own React
+  // root, where generated ids would repeat the page's.
+  function FooterLinks(props) {
+    return h('div', Object.assign({ className: cx('zz-footer-links', props.className) }, omit(props, ['links', 'label', 'className'])),
+      h('ul', { className: 'zz-footer-links__list body-small', role: 'list', 'aria-label': props.label },
+        (props.links || []).map(function (l) {
+          return h('li', { key: l.href + l.label }, h('a', { href: l.href, rel: l.rel, target: l.target }, l.label));
+        })));
+  }
+  // Figma `footer newsletter`: a plain HTML form (works without JS) → the provider's subscribe endpoint (Buttondown,
+  // double opt-in). Input text field (label) + secondary Button, then the note (`note`, links inside are underlined).
+  function FooterNewsletter(props) {
+    var noteId = (props.id || 'zz-footer-newsletter') + '-note';   // fixed, not useId (see FooterLinks)
+    return h('form', Object.assign({ className: cx('zz-footer-newsletter', props.className), action: props.action, method: props.method || 'post' },
+      omit(props, ['action', 'method', 'label', 'placeholder', 'submitLabel', 'note', 'name', 'className'])),
+      h('div', { className: 'zz-footer-newsletter__row' },
+        h(Input, { id: (props.id || 'zz-footer-newsletter') + '-email', className: 'zz-footer-newsletter__input', label: props.label || 'Newsletter', type: 'email', name: props.name || 'email',
+          placeholder: props.placeholder || 'Your email', autoComplete: 'email', required: true, 'aria-describedby': props.note ? noteId : undefined }),
+        h(Button, { hierarchy: 'secondary', type: 'submit' }, props.submitLabel || 'Subscribe')),
+      props.note ? h('p', { id: noteId, className: 'zz-footer-newsletter__note body-small' }, props.note) : null);
+  }
+
   // a native <select> drawn as a Button (Figma: button + trailing icon chevron-down): the select is invisible over
   // the button, so the platform picker opens (Gio, 2026-11-10). The visible text is the selected option's label.
   function SelectButton(props) {
@@ -1320,7 +1357,7 @@
            EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon, TickLargeThinIcon: TickLargeThinIcon, ClockCounterClockwiseIcon: ClockCounterClockwiseIcon, EnvelopeIcon: EnvelopeIcon,
            Radio: Radio, RadioGroup: RadioGroup, RadioEmptyIcon: RadioEmptyIcon, RadioDotIcon: RadioDotIcon,
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
-           FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
+           FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
            ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease };
 });
