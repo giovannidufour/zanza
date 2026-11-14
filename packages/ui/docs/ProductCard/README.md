@@ -17,7 +17,7 @@ One markup for both variants; CSS grid places the blocks ([0016](../../../../des
 | --- | --- | --- | --- |
 | `device` | `"desktop" \| "mobile"` |  | Omitted → responsive (breakpoint `--mobile` from tokens.json, &lt;768px placeholder). |
 | `image` | `ProductCardImage` |  | Figma `product image`: the cover, square. |
-| `soldOut` | `boolean` |  | Figma `product image` boolean `sold out`: a 1px X in surface/alert (alert pink) from corner to corner over the cover (decision 0086). Decorative: the card says "Sold out" on its button. |
+| `soldOut` | `boolean` |  | Figma `product image` boolean `sold out`: a 1px white X (icon/strong-invert), image desaturated and multiplied on the background, from corner to corner over the cover (decision 0086). Decorative: the card says "Sold out" on its button. |
 | `href` | `string` |  | Product page URL: the cover becomes a link to it (no visual change; a designed link style is in open.md). |
 | `title` * | `ReactNode` |  | Figma `product name`. Rendered as a heading; it also names the card and its button. |
 | `headingLevel` | `2 \| 3 \| 4` | `2` | Heading level of the title, to fit the page outline. |
