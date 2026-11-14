@@ -39,9 +39,9 @@ function Home({ products, site, url }) {
       h('h1', { className: 'zz-visually-hidden' }, site.storeName),
       genres.length ? h(Z.GenreLinks, { id: 'home-genres', genres, divider: false, className: 'home-genres' }) : null,
       h('section', { className: 'home-section home-just-in', 'aria-labelledby': 'home-just-in', 'data-play-scope': '' },
-        h(Z.SectionHead, { title: 'Just in', titleId: 'home-just-in', actions: h(React.Fragment, null,
-          hasSamples ? btn('Play all', { type: 'button', 'data-play-all': '' }) : null,
-          btn('See all', { href: url('/sale/') })) }),
+        // no "See all": the list mixes sale and trade, the full lists are the header tabs (Gio 2026-11-15)
+        h(Z.SectionHead, { title: 'Just in', titleId: 'home-just-in',
+          actions: hasSamples ? btn('Play all', { type: 'button', 'data-play-all': '' }) : null }),
         justIn.length ? list(justIn) : h('p', { className: 'body-medium home-empty' }, 'No records right now.')),
       h(Z.HomeAbout, { id: 'home-about', href: url('/about/'), className: 'home-about',
         discogs: discogs.username ? { handle: discogs.username, stats: discogs.stats, href: discogs.href } : undefined },
