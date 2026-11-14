@@ -43,7 +43,7 @@ If a record is reserved and you ask to be told when it is back, I store your ema
 
 ## Trade offers
 
-When you make an offer on a record for trade, the form sends me: the records you offer and their condition, your pitch, what you tell me about yourself, your Discogs, Instagram and/or Facebook profile, your email address and whether you would like to meet in person. The data passes through a function on Supabase and reaches me as an email sent through Resend. It is not stored in a database. The offer and our conversation are kept in my mailbox, with my email provider, for as long as we talk and the trade needs; offers that do not lead to a trade are deleted after [[TO FILL: e.g. 6 months]].
+When you make an offer on a record for trade, the form sends me: the records you offer and their condition, your pitch, what you tell me about yourself, your Discogs, Instagram and/or Facebook profile, your email address and whether you would like to meet in person. The data passes through a function on Supabase and reaches me as an email sent through Resend. It is not stored in a database. The offer and our conversation are kept in my mailbox, with my email provider, for as long as we talk and the trade needs; offers that do not lead to a trade are deleted after [[p:6 months]].
 
 To decide whether to trade with you, I look at the public profiles you gave me. To check that the profiles are yours, you send me a short phrase from them: that message is processed by Discogs, Instagram (Meta) or Facebook (Meta) under their own privacy policies.
 
@@ -64,7 +64,7 @@ You can unsubscribe at any time with the link in every email, or by writing to m
 When you buy a record, I process your name, shipping address, email address, the records you ordered and the payment status, to fulfil the contract.
 
 - Payment is handled by Stripe (Stripe Payments Europe, Ltd., Dublin, Ireland) on Stripe's own checkout page. I never see your card or bank details. Stripe is responsible for the payment data it processes; see Stripe's privacy policy.
-- Your name and address are given to the shipping company that delivers your parcel: [[TO FILL: carrier, e.g. Deutsche Post / DHL]].
+- Your name and address are given to the shipping company that delivers your parcel: [[p:Deutsche Post / DHL]].
 - Order emails are sent through Resend.
 - Legal basis: Art. 6(1)(b) GDPR (contract) and Art. 6(1)(c) GDPR (tax and commercial law). Order records are kept for as long as tax and commercial law require, usually 8 to 10 years, and are then deleted.
 
@@ -91,7 +91,7 @@ You have the right to:
 
 To use any of these rights, write to {{legal.email}}.
 
-You also have the right to complain to a data protection supervisory authority (Art. 77 GDPR), for example the one where you live or the one responsible for me: [[TO FILL: the authority of your federal state, e.g. Berliner Beauftragte für Datenschutz und Informationsfreiheit]].
+You also have the right to complain to a data protection supervisory authority (Art. 77 GDPR), for example the one where you live or the one responsible for me: [[p:Berliner Beauftragte für Datenschutz und Informationsfreiheit]].
 
 ## Do you have to give me data?
 

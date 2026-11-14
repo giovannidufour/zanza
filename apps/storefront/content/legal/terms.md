@@ -19,7 +19,7 @@ Every record in the shop is a single, used copy from my own collection. Its cond
 
 ## 3. Prices and shipping costs
 
-1. Prices are in euros and are final prices. [[TO FILL: VAT note, once your tax advisor has confirmed the regime, e.g. "No VAT is charged under the small business scheme (§ 19 UStG)."]]
+1. Prices are in euros and are final prices. [[TO FILL: VAT note, to be confirmed with a tax advisor]]
 2. Shipping costs are added and depend on the country and on the records; the bag shows them for your country before you pay. Details on the [Shipping](/shipping/) page.
 3. For deliveries outside the EU, import duties and taxes of the destination country may apply. They are paid by you to the carrier or the customs office.
 

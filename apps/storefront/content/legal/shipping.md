@@ -14,7 +14,7 @@ The cost depends on your country and on how many records, and which formats, you
 
 ## When it arrives
 
-I ship within [[TO FILL: e.g. 3 working days]] after your payment. Usual delivery times after shipping: [[TO FILL: e.g. Germany 1–3 working days, EU 3–7, rest of the world 7–21]].
+I ship within [[p:3 working days]] after your payment. Usual delivery times after shipping: [[p:Germany 1–3 working days, EU 3–7, rest of the world 7–21]].
 
 ## Customs
 

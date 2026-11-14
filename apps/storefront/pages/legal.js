@@ -8,7 +8,9 @@
    - inline: **bold**, [text](/path or https://…)
    - `{{legal.x}}` / `{{storeName}}` = a value from site.json; empty → its bracketed placeholder (PLACEHOLDERS below)
    - `{{shipping.countries}}` (alone in a block) = the served countries by zone, from the shipping config (decision 0075)
-   - `[[TO FILL: …]]` = text Gio still has to write: shown as "[TO FILL: …]" */
+   - `[[TO FILL: …]]` = text Gio still has to write: shown as "[TO FILL: …]"
+   - `[[p:value]]` = a PLACEHOLDER value chosen by Claude (Gio 2026-11-14: "metti dei placeholder"): shown as plain text,
+     listed by the build and in _context/provisional-names.md → Pagine legali, to be confirmed or replaced by Gio */
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -35,7 +37,8 @@ function fill(text, site, missing) {
     if (v != null && String(v).trim() !== '') return String(v);
     missing.add(PLACEHOLDERS[key] || `[${key}]`);
     return PLACEHOLDERS[key] || `[${key}]`;
-  }).replace(/\[\[([^\]]+)\]\]/g, (m, t) => { missing.add(`[${t}]`); return `[${t}]`; });
+  }).replace(/\[\[p:([^\]]+)\]\]/g, (m, t) => { missing.add(`placeholder "${t}"`); return t; })
+    .replace(/\[\[([^\]]+)\]\]/g, (m, t) => { missing.add(`[${t}]`); return `[${t}]`; });
 }
 
 // inline: **bold** and [text](href); a site path goes through url() (basePath)
