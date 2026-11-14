@@ -155,7 +155,7 @@
     var le = r.label_entity;
     f.label = le ? [chip(le)] : r.label ? [{ id: null, name: r.label }] : [];
     f.preRelease = !!r.pre_release;
-    f.labelSpelled = !!le && differs(r.label, le.name); f.labelCredit = f.labelSpelled ? r.label : ''; f.country = r.country || ''; f.year = r.year ? String(r.year) : ''; f.format = r.format || '';
+    f.labelSpelled = !!le && differs(r.label, le.name); f.labelCredit = f.labelSpelled ? r.label : ''; f.country = r.country || ''; f.year = yearText(r.year, r.year_precision); f.format = r.format || '';
     f.section = row.section; f.price = centsToText(row.price_cents);
     var byPos = function (a, b) { return a.position - b.position; };
     var genreRows = (r.genre_rows || []).slice().sort(byPos);
@@ -222,6 +222,13 @@
   }
 
   // ── validation: what the database needs (format, condition, line 1, price for sale) ──
+  // Year field (decision 0082): an exact year ("1983") or a decade ("1990s", stored as 1990 + year_precision 'decade')
+  function parseYear(text) {
+    var m = /^((?:19|20)\d\d)$/.exec(text.trim()) || /^((?:19|20)\d0)s$/i.exec(text.trim());
+    if (!m) return null;
+    return { year: m[1], precision: /s$/i.test(text.trim()) ? 'decade' : 'year' };
+  }
+  function yearText(year, precision) { return year ? String(year) + (precision === 'decade' ? 's' : '') : ''; }
   function validate(f) {
     var e = {};
     if (!f.lines[0].artists.length) e['artist-0'] = 'Pick or create the artist.';
@@ -231,7 +238,7 @@
     var cents = textToCents(f.price);
     if (f.section === 'sale' && cents === null) e.price = 'Enter a price.';
     else if (Number.isNaN(cents)) e.price = 'Use a number, e.g. 12 or 12.50.';
-    if (f.year && !/^(19|20)\d\d$/.test(f.year.trim())) e.year = 'Use four digits, e.g. 1983.';
+    if (f.year.trim() && !parseYear(f.year)) e.year = 'Use a year (1983) or a decade (1990s).';
     if (f.discogs && discogsId(f.discogs) === null) e.discogs = 'Paste a Discogs release URL or its number.';
     if (f.images.some(function (x) { return x.uploading; }) || f.samples.some(function (x) { return x.uploading; })) e.uploads = 'Wait for the uploads to finish.';
     return e;
@@ -243,7 +250,7 @@
         discogs_release_id: f.discogs ? discogsId(f.discogs) : null,
         label: f.label.length ? f.label[0].name : '', label_credit: f.labelSpelled ? f.labelCredit : '',
         pre_release: f.preRelease,
-        label_id: f.label.length ? f.label[0].id : null, label_discogs_id: f.label.length ? f.label[0].discogsId || null : null, cat_no: f.catNo, year: f.year.trim(), country: f.country, format: f.format,
+        label_id: f.label.length ? f.label[0].id : null, label_discogs_id: f.label.length ? f.label[0].discogsId || null : null, cat_no: f.catNo, year: (parseYear(f.year) || {}).year || '', year_precision: (parseYear(f.year) || {}).precision || 'year', country: f.country, format: f.format,
         macro_genre: f.macroGenre ? [f.macroGenre] : [],
         genres: f.genres.map(function (t) { return { id: t.id, name: t.name }; }),
         tags: f.tags.map(function (t) { return { id: t.id, name: t.name }; })
@@ -516,7 +523,7 @@
           h(Z.EntityField, { className: 'span-4', id: 'label', label: 'Label', multiple: false, placeholder: 'Search or create',
             options: entities && entities.labels, value: f.label, error: errors.label, onChange: setLabel }),
           h(Z.Input, Object.assign({ className: 'span-2', id: 'country', label: 'Country', variant: 'select', placeholder: '' }, bind('country')), opts(COUNTRIES)),
-          h(Z.Input, Object.assign({ className: 'span-2', id: 'year', label: 'Year', optional: true, inputMode: 'numeric', maxLength: 4 }, bind('year'))),
+          h(Z.Input, Object.assign({ className: 'span-2', id: 'year', label: 'Year', optional: true, placeholder: '1983 or 1990s', maxLength: 5 }, bind('year'))),
           // Figma 2104:21454: a pre-release ("blank") of the same label → the shop shows "Pre" next to the label
           h(Z.Checkbox, { className: 'span-4 row-start', label: 'Pre-release', checked: f.preRelease,
             onChange: function (e) { set({ preRelease: e.target.checked }); } }),
