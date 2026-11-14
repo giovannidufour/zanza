@@ -104,3 +104,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0079](0079-legal-pages.md) | Legal pages (Impressum, Privacy, Terms, Withdrawal, Shipping): one text template, text in `content/legal/*.md`, Gio's data in `site.json` → legal; Inter self-hosted | accepted |
 | [0080](0080-one-icon-per-name.md) | One icon per name: the "-ultra" drawings replaced the originals and took their names; no suffixed copies (amended: icon-bars-three, code re-aligned with Figma icons) | accepted |
 | [0081](0081-select-ring-for-keyboard-only.md) | SelectButton (Sort): the focus ring shows for keyboard focus only; after a mouse pick focus stays, the ring hides | accepted |
+| [0082](0082-year-or-decade.md) | Year field takes an exact year or a decade ("1990s"): `year` stays a number, `year_precision` = year / decade | accepted |
