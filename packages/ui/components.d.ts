@@ -330,7 +330,7 @@ export interface BagSummaryProps extends HTMLAttributes<HTMLElement> {
   soldOutNote?: ReactNode;
   /** Extra attributes for the sold out note (data-*, hidden), so a script can fill it; rendered even without `soldOutNote`. */
   soldOutNoteProps?: Record<string, unknown>;
-  /** Figma `minimum note` (variant minimum=below), body/small, above Checkout: the minimum order and what is missing ("Minimum order 20€. Add 8€ more to check out.", decision 0072). Pass it with `checkoutDisabled` and point Checkout's aria-describedby (via `checkoutProps`) at the note, so the disabled button is never unexplained. */
+  /** Figma `minimum note` (variant minimum=below), an `Alert` (red box, decision 0077) above Checkout: the minimum order and what is missing ("Minimum order 20€. Add 8€ more to check out.", decision 0072). Pass it with `checkoutDisabled` and point Checkout's aria-describedby (via `checkoutProps`) at the note, so the disabled button is never unexplained. */
   minimumNote?: ReactNode;
   /** Extra attributes for the minimum note (id, data-*, hidden), so a script can fill it; rendered even without `minimumNote`. */
   minimumNoteProps?: Record<string, unknown>;
@@ -463,6 +463,14 @@ export interface FileItemProps extends HTMLAttributes<HTMLDivElement> {
   children?: ReactNode;
 }
 export declare function FileItem(props: FileItemProps): JSX.Element;
+
+/** Mirrors the Figma component `alert` (page `Bag`, decision 0077): a message that blocks an action, in a red box
+ *  (surface-alert, text-strong-invert, body/small, padding small), full width. Renders <p>; add aria-live / id as needed. */
+export interface AlertProps extends HTMLAttributes<HTMLParagraphElement> {
+  /** The message: what blocks the action and what to do, e.g. "Minimum order 20€. Add 8€ more to check out." */
+  children?: ReactNode;
+}
+export declare function Alert(props: AlertProps): JSX.Element;
 
 /** Mirrors the Figma component `divider` (page `divider`): a 1px rule in border/divider/strong, full width. Renders <hr>. */
 export interface DividerProps extends HTMLAttributes<HTMLHRElement> {}

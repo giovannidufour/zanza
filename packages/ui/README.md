@@ -55,6 +55,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | Input | page `input` → `input` + `_input-master` | ported: variant text field / search / select / text area (2026-11-12, default state only) × size medium / compact; error, locked (admin) |
 | DropZone | page `uploads` → `drop zone` | ported |
 | FileList / FileItem | page `uploads` → `file item` (list = layout frame) | ported: type audio / image, state default / dragging, handle, featured, title field |
+| Alert | page `Bag` → `alert` | ported (0077): red box, used by BagSummary `minimumNote` |
 | Divider | page `divider` → `divider` | ported |
 | ActionPanel | page `listing form` → `action panel` | ported |
 | ListingLine | page `listing form` → `listing line` | ported: removable, sample empty / uploaded, artist on label |
@@ -71,7 +72,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | Filter · FilterBlock · Filters | page `filters` → `filter`, `filter block`, `filters` | ported: content label / tag × state × device (responsive), count; shop PLP (0028) |
 | FiltersLayer · FilterFacet · PlpHeader · SelectButton | page `filters` → `filters layer`, `filter facet`, `PLP header` | ported: mobile filters, level main / facet, sticky actions; sort = native select as a button (0038) |
 | MenuLayer · MenuGroup · MenuItem | page `menu` → `menu layer`, `menu item` | ported: mobile menu opened by the header hamburger (0060) |
-| Footer · FooterLinks · FooterNewsletter | page `footer` → `footer`, `footer link list`, `footer newsletter`, `footer legal` | ported (0076): `<footer>` landmark, newsletter slot, link columns, legal + copyright; desktop / mobile responsive |
+| Footer · FooterLinks · FooterNewsletter | page `footer` → `footer`, `footer link list`, `footer newsletter`, `footer legal` | ported (0077): `<footer>` landmark, newsletter slot, link columns, legal + copyright; desktop / mobile responsive |
 | EntityField · EntityChip | `input` › `chips` + `_input chips`, `entity chip` (tags), `entity option` (input › building blocks) | ported: chips, menu (entity / alias / create), keyboard; Label = one chip; chip size medium / large |
 
 ## Open items

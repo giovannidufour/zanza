@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"}]} */
 /* packages/ui/components.js — the ONE implementation of the rythem-trax components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
@@ -466,7 +466,7 @@
   /* ── BagSummary ─────────────────────────────────────────────────────────
      Figma: page `Bag` → `bag summary` (2026-11-10; shipping estimate 2026-11-12, decision 0057). Column, gap 8: divider · `ship to` slot (a select) · subtotal row · shipping row ·
      total row (label left, value right, body/medium) · `sold out note` (body/small, when the bag has sold lines:
-     "1 record sold out, not included.", decision 0064) · `minimum note` (body/small, Figma minimum=below: "Minimum
+     "1 record sold out, not included.", decision 0064) · `minimum note` (an Alert, decision 0077; Figma minimum=below: "Minimum
      order 20€. Add 8€ more to check out.", decision 0072; the consumer also disables Checkout and points its
      aria-describedby at the note) · Checkout (primary, large, fill) · note (body/small).
      Figma `destination=not served` = no total, shipping "Not available", Checkout disabled: the consumer passes that
@@ -493,7 +493,7 @@
         ? h('p', Object.assign({ className: 'zz-bag-summary__sold-out body-small' }, props.soldOutNoteProps || {}), props.soldOutNote)
         : null,
       props.minimumNote || props.minimumNoteProps
-        ? h('p', Object.assign({ className: 'zz-bag-summary__minimum body-small' }, props.minimumNoteProps || {}), props.minimumNote)
+        ? h(Alert, Object.assign({}, props.minimumNoteProps || {}, { className: 'zz-bag-summary__minimum' }), props.minimumNote)
         : null,
       h(Button, Object.assign({ hierarchy: 'primary', size: 'large', className: 'zz-bag-summary__checkout', onClick: props.onCheckout, disabled: !!props.checkoutDisabled },
         props.checkoutProps || {}), props.checkoutLabel || 'Checkout'),
@@ -823,6 +823,15 @@
       hasBody ? remove : null),
       props.children || null),
       hasBody ? null : remove);
+  }
+
+  /* ── Alert ──────────────────────────────────────────────────────────────
+     Figma: page `Bag` → `alert` (2026-11-14, decision 0077): a message that blocks an action, in a red box. Padding 8
+     (small), surface/alert, text body/small in text/strong-invert, fills its container. A <p>: the consumer adds the
+     live region / id it needs (the bag's minimum note is aria-live polite and Checkout's aria-describedby). Not a toast:
+     it stays as long as the condition holds. */
+  function Alert(props) {
+    return h('p', Object.assign({}, omit(props, ['className', 'children']), { className: cx('zz-alert body-small', props.className) }), props.children);
   }
 
   /* ── Divider ────────────────────────────────────────────────────────────
@@ -1159,7 +1168,7 @@
   }
 
   /* ── Footer / FooterLinks / FooterNewsletter (Figma page `footer`: `footer` device=desktop | mobile,
-     `footer link list` group=shop | info | social, `footer newsletter`, `footer legal`; decision 0076) ──
+     `footer link list` group=shop | info | social, `footer newsletter`, `footer legal`; decision 0077) ──
      One responsive markup: desktop = newsletter and the link columns side by side, mobile (--mobile) = stacked,
      links in two columns. The page gives the content: the DS has no site data. */
   function Footer(props) {
@@ -1353,7 +1362,7 @@
   return { Button: Button, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, ActiveFilter: ActiveFilter, Tag: Tag, TagGroup: TagGroup,
            PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, BagItem: BagItem, BagSummary: BagSummary, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
            Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, DragHandleIcon: DragHandleIcon,
-           Checkbox: Checkbox, Divider: Divider, ActionPanel: ActionPanel, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog, Toast: Toast, ToastRegion: ToastRegion,
+           Checkbox: Checkbox, Alert: Alert, Divider: Divider, ActionPanel: ActionPanel, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog, Toast: Toast, ToastRegion: ToastRegion,
            EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon, TickLargeThinIcon: TickLargeThinIcon, ClockCounterClockwiseIcon: ClockCounterClockwiseIcon, EnvelopeIcon: EnvelopeIcon,
            Radio: Radio, RadioGroup: RadioGroup, RadioEmptyIcon: RadioEmptyIcon, RadioDotIcon: RadioDotIcon,
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
