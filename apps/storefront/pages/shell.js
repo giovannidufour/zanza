@@ -88,7 +88,7 @@ function gradingProps(c) {
 const productHref = (product, url) => url(`/products/${product.listing.slug}/`);
 
 // Figma: `header` (device=desktop | mobile), the same on every page.
-// `section` = the active tab (none on /bag/). `current = 'bag'` → the Bag button is the current page (state active,
+// `section` = the active tab (none on /bag/). `current = 'home'` → the store name is lit (decision 0085). `current = 'bag'` → the Bag button is the current page (state active,
 // decision 0045). The Bag count is the button's suffix in brackets (Gio 2026-11-10): "(0)" in the static HTML,
 // scripts/site.js writes the real count from the bag in the browser ([data-bag-count]).
 // Mobile: the hamburger opens SiteMenu (scripts/site.js); it is rendered next to the header, inside .zz-page.
@@ -99,6 +99,7 @@ function SiteHeader({ site, url, section, current }) {
       logo: h('img', { src: url('/assets/logo.png'), alt: '', width: 64, height: 64 }),
       storeName: site.storeName,
       homeHref: url('/'),
+      homeCurrent: current === 'home',   // Figma `store name` state=active on the home page (decision 0085)
       menuProps: { 'aria-haspopup': 'dialog', 'aria-controls': 'site-menu', 'aria-expanded': 'false', 'data-menu-open': '' },
       // Figma `header` boolean `search` (2026-11-12): the field on desktop; on mobile it lives in the menu (Gio 2026-11-12)
       search: h(SearchForm, { url, id: 'site-search-header' }),
