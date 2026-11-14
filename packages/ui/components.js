@@ -164,11 +164,13 @@
     var nameTag = props.homeHref ? 'a' : 'div';
     var nameAttrs = { className: 'zz-header__name label-medium' };
     if (props.homeHref) nameAttrs.href = props.homeHref;
+    // Figma `store name` state=active (2026-11-14): on the home page the store name is lit like the tab of the current section
+    if (props.homeCurrent) { nameAttrs['data-state'] = 'active'; if (props.homeHref) nameAttrs['aria-current'] = 'page'; }
 
     return h('header', Object.assign({
       className: cx('zz-header', props.className),
       'data-device': device
-    }, omit(props, ['device', 'logo', 'storeName', 'homeHref', 'tabs', 'actions', 'search', 'searchHref', 'searchLabel', 'onMenuClick', 'menuLabel', 'menuProps', 'className', 'children'])),
+    }, omit(props, ['device', 'logo', 'storeName', 'homeHref', 'homeCurrent', 'tabs', 'actions', 'search', 'searchHref', 'searchLabel', 'onMenuClick', 'menuLabel', 'menuProps', 'className', 'children'])),
       h('div', { className: 'zz-header__row' },
         h('div', { className: 'zz-header__leading' },
           showMenu ? h(Button, Object.assign({ className: 'zz-header__menu', hierarchy: 'secondary', leadingIcon: h(HamburgerIcon), 'aria-label': props.menuLabel || 'Menu', onClick: props.onMenuClick }, props.menuProps)) : null,
@@ -1355,6 +1357,41 @@
       support ? h('p', { id: supportId, className: 'zz-input__support body-small' }, support) : null);
   }
 
+  /* ── Home (Figma page `Home`, 2026-11-14) ────────────────────────────────
+     SectionHead: `section head` — divider on top (boolean `divider`), then a row: title body/large text/strong, actions on
+       the right (gap small): `play` ("Play all") and `see all`, secondary Buttons; gap medium-small.
+     GenreLinks: `genre links` — SectionHead (no actions) + the genres as Tag size=medium links, wrapping, gap small.
+     TradeIntro: `trade intro` — one line body/medium + an underlined link (boolean `link`), gap small.
+     HomeAbout: `home about` — SectionHead (no actions) + bio body/medium + DiscogsCard (boolean `discogs`) + an underlined link; gap medium-small. */
+  function SectionHead(props) {
+    var HeadingTag = 'h' + (props.headingLevel || 2);
+    return h('div', Object.assign({}, omit(props, ['title', 'headingLevel', 'divider', 'actions', 'titleId', 'className']), { className: cx('zz-section-head', props.className) }),
+      props.divider === false ? null : h(Divider),
+      h('div', { className: 'zz-section-head__row' },
+        h(HeadingTag, { className: 'zz-section-head__title body-large', id: props.titleId }, props.title),
+        props.actions ? h('div', { className: 'zz-section-head__actions' }, props.actions) : null));
+  }
+  function GenreLinks(props) {
+    var genres = props.genres || [];
+    return h('section', Object.assign({}, omit(props, ['title', 'genres', 'headingLevel', 'divider', 'className']), { className: cx('zz-genre-links', props.className), 'aria-labelledby': props.id ? props.id + '-title' : undefined }),
+      h(SectionHead, { title: props.title || 'Genres', headingLevel: props.headingLevel, divider: props.divider, titleId: props.id ? props.id + '-title' : undefined }),
+      h('ul', { className: 'zz-genre-links__list' }, genres.map(function (g) {
+        return h('li', { key: g.href }, h(Tag, { size: 'medium', href: g.href }, g.label));
+      })));
+  }
+  function TradeIntro(props) {
+    return h('div', Object.assign({}, omit(props, ['href', 'linkLabel', 'className', 'children']), { className: cx('zz-trade-intro', props.className) }),
+      h('p', { className: 'body-medium' }, props.children),
+      props.href ? h('a', { className: 'zz-trade-intro__link body-medium', href: props.href }, props.linkLabel || 'How trading works') : null);
+  }
+  function HomeAbout(props) {
+    return h('section', Object.assign({}, omit(props, ['title', 'headingLevel', 'divider', 'discogs', 'href', 'linkLabel', 'className', 'children']), { className: cx('zz-home-about', props.className), 'aria-labelledby': props.id ? props.id + '-title' : undefined }),
+      h(SectionHead, { title: props.title || 'About', headingLevel: props.headingLevel, divider: props.divider, titleId: props.id ? props.id + '-title' : undefined }),
+      props.children ? h('p', { className: 'zz-home-about__bio body-medium' }, props.children) : null,
+      props.discogs ? h(DiscogsCard, props.discogs) : null,
+      props.href ? h('a', { className: 'zz-home-about__link body-medium', href: props.href }, props.linkLabel || 'More about me') : null);
+  }
+
   return { Button: Button, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, ActiveFilter: ActiveFilter, Tag: Tag, TagGroup: TagGroup,
            PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, BagItem: BagItem, BagSummary: BagSummary, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
            Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, ChevronDownLargeIcon: ChevronDownLargeIcon, DragHandleIcon: DragHandleIcon,
@@ -1364,5 +1401,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease };
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease,
+           SectionHead: SectionHead, GenreLinks: GenreLinks, TradeIntro: TradeIntro, HomeAbout: HomeAbout };
 });

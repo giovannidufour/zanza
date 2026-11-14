@@ -1,0 +1,24 @@
+/* apps/storefront/home.css — page layout of the home page (Figma page `Home`, decision 0085).
+   Layout only: components bring their own styles from packages/ui. Desktop = the PLP grid (12 columns, side 3 + main 9). */
+.home-content {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--gutter-small);
+  row-gap: var(--medium-small);
+  padding: var(--small) 0;
+  align-items: start;
+}
+.home-main { grid-column: 4 / span 9; grid-row: 1; display: flex; flex-direction: column; gap: var(--medium-small); min-width: 0; }
+.home-side { grid-column: 1 / span 3; grid-row: 1; display: flex; flex-direction: column; gap: var(--medium-small); min-width: 0; }
+.home-section { display: flex; flex-direction: column; gap: var(--small); }
+.home-list { display: flex; flex-direction: column; gap: var(--small); }   /* Figma: as the PLP list, gap 8 */
+.home-empty { margin: 0; color: var(--text-strong); }
+/* desktop: Genres is the first block of the side column, right under the header: no divider (Figma `section head` divider off) */
+.home-side__genres > .zz-section-head > .zz-divider { display: none; }
+
+/* Figma Home - mobile: one column, Just in, For trade, then Genres and About (with their dividers) */
+@media (--mobile) {
+  .home-content { grid-template-columns: minmax(0, 1fr); }
+  .home-main, .home-side { grid-column: 1; grid-row: auto; }
+  .home-side__genres > .zz-section-head > .zz-divider { display: block; }
+}

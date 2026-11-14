@@ -5,6 +5,7 @@
       - scroll up: it comes back sticky at the top (animated reveal, see base.css [data-revealing])
    2. Player (packages/ui Player, rendered once per page outside .zz-page)
       - a PlayerButton with data-sample-src plays its sample; the PlayerButtons of the same product are the queue
+      - a [data-play-all] button (home) queues every sample of its [data-play-scope] section
       - previous / play-pause / next, the native audio controls and the Media Session (lock screen) stay in sync
       - opens by sliding up from the bottom of the viewport; the close button stops playback and slides it away
    3. Soft navigation
@@ -241,8 +242,22 @@
     load(i, true);
   }
 
+  // "Play all" (home, decision 0085): every playable sample of its section ([data-play-scope]) becomes the queue,
+  // in page order, from the first one
+  function onPlayAll(btn) {
+    var scope = btn.closest('[data-play-scope]') || document;
+    var items = Array.prototype.slice.call(scope.querySelectorAll('[data-sample-src]'))
+      .filter(function (b) { return !b.disabled; }).map(sampleFrom);
+    if (!items.length) return;
+    lastTrigger = btn;
+    queue = items;
+    load(0, true);
+  }
+
   if (player && audio) {
     document.addEventListener('click', function (e) {
+      var all = e.target.closest && e.target.closest('[data-play-all]');
+      if (all) { onPlayAll(all); return; }
       var btn = e.target.closest && e.target.closest('[data-sample-src]');
       if (btn && !btn.disabled) onSampleClick(btn);
     });
