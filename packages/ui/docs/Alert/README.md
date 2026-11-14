@@ -1,6 +1,6 @@
 # Alert
 
-A message that blocks an action, in a red box: what is wrong and what to do. Figma: page `Bag` → `alert` (2026-11-14, decision [0077](../../../../design/decisions/0077-blocking-message-in-a-red-box.md)). First use: the bag's minimum order note above Checkout (BagSummary `minimumNote`). Not a toast: it stays while the condition holds.
+A message that blocks an action or changes what the user gets, in a red box: what is wrong and what to do. Figma: page `Bag` → `alert` (2026-11-14, decision [0077](../../../../design/decisions/0077-blocking-message-in-a-red-box.md)). Used by the bag: minimum order note and sold out note above Checkout (BagSummary `minimumNote`, `soldOutNote`). Not a toast: it stays while the condition holds.
 
 ## API
 
