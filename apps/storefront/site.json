@@ -1,6 +1,7 @@
 {
   "storeName": "rythem-trax",
   "lang": "en",
+  "siteUrl": "",
   "outputDir": "zanza",
   "basePath": "/zanza",
   "mediaBaseUrl": "https://pub-a98e506f6d2e48c49301fca9123a3b20.r2.dev",
@@ -65,7 +66,8 @@
     "pages": {
       "basePath": "",
       "outputDir": "",
-      "note": "Cloudflare Pages (npm run build:pages): served from the web root. The top-level values are the GoDaddy staging (gio-d.xyz/zanza)."
+      "siteUrl": "",
+      "note": "Cloudflare Pages (npm run build:pages): served from the web root. The top-level values are the GoDaddy staging (gio-d.xyz/zanza). siteUrl = the shop domain once bought (e.g. https://rythem-trax.com, no trailing slash): it turns on canonical, sitemap.xml and indexing (decision 0084); empty = noindex everywhere."
     }
   }
 }

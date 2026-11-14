@@ -25,7 +25,7 @@ Legenda colonna *Cambio*: 🟢 facile (testo/config) · 🟡 da pianificare (URL
 - Figma: rinominare il file "Zanza - Record Store" (l'API non può; la key non cambia).
 - claude.ai: progetto "Zanza" e artifact "Zanza Design System" (va rigenerato con `npm run build:artifact` per avere il titolo nuovo).
 - Supabase → Edge Functions → Secrets: `STORE_NAME` = rythem-trax e `MAIL_FROM` col nuovo nome (oggi "Zanza", lo vedono i clienti nelle email Notify me e nelle email di offerta).
-- Dominio + email del negozio (es. rythem-trax.*): da comprare/verificare; poi Resend, Cloudflare Pages custom domain, `SHOP_URL`, Stripe public details. Ordine in fondo a questo file.
+- Dominio + email del negozio (es. rythem-trax.*): da comprare/verificare; poi Resend, Cloudflare Pages custom domain, `SHOP_URL`, `site.json` → `targets.pages.siteUrl` (accende indicizzazione, canonical e sitemap, decisione 0084), Stripe public details. Ordine in fondo a questo file.
 - Logo (`apps/storefront/public/logo.png`, illustrazione): non contiene il nome, non toccato.
 
 ## Pagine legali: segnaposto (2026-11-14, decisione 0079)
