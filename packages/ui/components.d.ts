@@ -269,7 +269,7 @@ export declare function ProductCard(props: ProductCardProps): JSX.Element;
 export interface BagItemProps extends HTMLAttributes<HTMLElement> {
   /** Omitted → responsive (breakpoint `--mobile` from tokens.json): desktop type = ProductCard desktop, mobile = ProductCard mobile. */
   device?: "desktop" | "mobile";
-  /** Figma `status`. sold: name struck through, "SOLD OUT" beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). Samples stay. `unavailable` is the pre-0064 name of reserved. @default "available" */
+  /** Figma `status`. sold: name and "SOLD OUT" in red (text-unavailable, decision 0078), "SOLD OUT" beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). Samples stay. `unavailable` is the pre-0064 name of reserved. @default "available" */
   status?: "available" | "sold" | "reserved" | "unavailable";
   /** The word beside the struck price of a sold / reserved line. @default "SOLD OUT" / "RESERVED" */
   notice?: ReactNode;

@@ -684,9 +684,10 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-bag-item__description { display: flex; flex-direction: column; gap: 4px; }
 .zz-bag-item__samples { display: flex; flex-wrap: wrap; gap: 8px; }
 .zz-bag-item__purchase { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: var(--small); }
-/* sold (decision 0064) and reserved (0065): name struck through; "SOLD OUT" / "RESERVED" beside the struck price (Figma `price row`, gap small) */
+/* sold (decision 0064) and reserved (0065): name and the SOLD OUT / RESERVED word in text-unavailable, name not struck (decision 0078); "SOLD OUT" / "RESERVED" beside the struck price (Figma `price row`, gap small) */
 .zz-bag-item:is([data-status="sold"], [data-status="reserved"]) .zz-bag-item__name,
-.zz-bag-item:is([data-status="sold"], [data-status="reserved"]) .zz-bag-item__link { text-decoration: line-through; }
+.zz-bag-item:is([data-status="sold"], [data-status="reserved"]) .zz-bag-item__link,
+.zz-bag-item__status { color: var(--text-unavailable); }
 .zz-bag-item:is([data-status="sold"], [data-status="reserved"]) .zz-bag-item__price { display: flex; align-items: center; gap: var(--small); white-space: nowrap; }
 /* mobile: samples padding-top 8 (Figma: copied from the mobile product card) */
 .zz-bag-item[data-device="mobile"] .zz-bag-item__samples { padding-top: 8px; }

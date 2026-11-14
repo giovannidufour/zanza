@@ -100,3 +100,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0075](0075-ship-to-lists-served-countries.md) | Bag "Ship to" lists only the countries in a zone with rates, derived from the shipping config | accepted |
 | [0076](0076-footer.md) | Site footer: newsletter slot (off until Privacy names Buttondown), the mobile menu's links, Instagram/Discogs, legal + copyright; same tokens as the header | accepted |
 | [0077](0077-blocking-message-in-a-red-box.md) | A message that blocks an action or changes the order (minimum, sold out lines) sits in a red box (`alert`); new tokens `red` + `surface/alert` | accepted |
+| [0078](0078-unavailable-name-in-red.md) | Bag: sold / reserved record name and SOLD OUT / RESERVED in red (`text/unavailable` → `red-dark`, 4.7:1 on acid green), no strikethrough | accepted |
