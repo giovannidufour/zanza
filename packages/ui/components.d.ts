@@ -326,7 +326,7 @@ export interface BagSummaryProps extends HTMLAttributes<HTMLElement> {
   checkoutProps?: Record<string, unknown>;
   /** Figma `note`, body/small, below the button. */
   note?: ReactNode;
-  /** Figma `sold out` + `sold out note`, body/small, above Checkout: says that sold lines are not in the order ("1 record sold out, not included.", decision 0064). Omit when the bag has no sold lines. */
+  /** Figma `sold out` + `sold out note`, an `Alert` (red box, decision 0077) above Checkout: says that sold lines are not in the order ("1 record sold out, not included.", decision 0064). Omit when the bag has no sold lines. */
   soldOutNote?: ReactNode;
   /** Extra attributes for the sold out note (data-*, hidden), so a script can fill it; rendered even without `soldOutNote`. */
   soldOutNoteProps?: Record<string, unknown>;

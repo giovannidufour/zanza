@@ -465,7 +465,7 @@
 
   /* ── BagSummary ─────────────────────────────────────────────────────────
      Figma: page `Bag` → `bag summary` (2026-11-10; shipping estimate 2026-11-12, decision 0057). Column, gap 8: divider · `ship to` slot (a select) · subtotal row · shipping row ·
-     total row (label left, value right, body/medium) · `sold out note` (body/small, when the bag has sold lines:
+     total row (label left, value right, body/medium) · `sold out note` (an Alert, decision 0077, when the bag has sold lines:
      "1 record sold out, not included.", decision 0064) · `minimum note` (an Alert, decision 0077; Figma minimum=below: "Minimum
      order 20€. Add 8€ more to check out.", decision 0072; the consumer also disables Checkout and points its
      aria-describedby at the note) · Checkout (primary, large, fill) · note (body/small).
@@ -490,7 +490,7 @@
           h('dt', { className: 'body-medium' }, props.totalLabel || 'Total'),
           h('dd', { className: 'body-medium' }, props.total)) : null),
       props.soldOutNote || props.soldOutNoteProps
-        ? h('p', Object.assign({ className: 'zz-bag-summary__sold-out body-small' }, props.soldOutNoteProps || {}), props.soldOutNote)
+        ? h(Alert, Object.assign({}, props.soldOutNoteProps || {}, { className: 'zz-bag-summary__sold-out' }), props.soldOutNote)
         : null,
       props.minimumNote || props.minimumNoteProps
         ? h(Alert, Object.assign({}, props.minimumNoteProps || {}, { className: 'zz-bag-summary__minimum' }), props.minimumNote)
@@ -826,7 +826,8 @@
   }
 
   /* ── Alert ──────────────────────────────────────────────────────────────
-     Figma: page `Bag` → `alert` (2026-11-14, decision 0077): a message that blocks an action, in a red box. Padding 8
+     Figma: page `Bag` → `alert` (2026-11-14, decision 0077): a message that blocks an action or changes what the user
+     gets (records left out of the order), in a red box. Padding 8
      (small), surface/alert, text body/small in text/strong-invert, fills its container. A <p>: the consumer adds the
      live region / id it needs (the bag's minimum note is aria-live polite and Checkout's aria-describedby). Not a toast:
      it stays as long as the condition holds. */
