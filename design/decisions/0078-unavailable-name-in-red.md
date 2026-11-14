@@ -6,6 +6,6 @@
 **Decision.**
 - New primitive `red-dark` = `#c11c17`, the same hue darkened until it passes AA as text: 4.7:1 on acid green (`surface-accent`), 6.1:1 on white.
 - New semantic `text/unavailable` → `red-dark` (both modes, scope text fill). Named for its role, not `text/alert`, because code already has a PROVISIONAL `text-alert` (the orange of the input error, still an open question in `design/open.md`).
-- Bag item status=sold | reserved: `product name` in `text/unavailable`, no strikethrough. The price stays struck and "SOLD OUT" / "RESERVED" stays beside it, so colour is never the only cue (WCAG 1.4.1); the screen reader text ", not in your order," is unchanged.
-**Rule.** An unavailable item's name is shown in `text/unavailable`, always next to a word that says why; strikethrough stays only on prices and on disabled actions.
+- Bag item status=sold | reserved: `product name` and the `status label` ("SOLD OUT" / "RESERVED", Gio: "anche quelle scritte fai le rosse") in `text/unavailable`; no strikethrough on the name. The price stays black and struck. The price stays struck and "SOLD OUT" / "RESERVED" stays beside it, so colour is never the only cue (WCAG 1.4.1); the screen reader text ", not in your order," is unchanged.
+**Rule.** An unavailable item's name and the word that says why are shown in `text/unavailable`; the word is always there; strikethrough stays only on prices and on disabled actions.
 **Supersedes.** The "name struck through" part of 0064 / 0065 (bag only).

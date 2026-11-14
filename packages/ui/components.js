@@ -455,7 +455,7 @@
       h('div', { className: 'zz-bag-item__purchase' },
         unavailable
           ? h('p', { className: cx('zz-bag-item__price', t.head) },
-              h('span', null, props.notice || (status === 'sold' ? 'SOLD OUT' : 'RESERVED')),
+              h('span', { className: 'zz-bag-item__status' }, props.notice || (status === 'sold' ? 'SOLD OUT' : 'RESERVED')),
               h('span', { className: 'zz-visually-hidden' }, ', not in your order, '),
               props.price != null ? h('s', null, props.price) : null)
           : status === 'available' && props.price != null ? h('p', { className: cx('zz-bag-item__price', t.head) }, props.price) : null,
