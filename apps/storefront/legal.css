@@ -1,0 +1,29 @@
+/* apps/storefront/legal.css — page layout of the legal pages (Figma page `Legal`, decision 0079): Impressum, Privacy,
+   Terms, Withdrawal, Shipping. Layout only: type classes and the Divider come from packages/ui. */
+
+/* Figma `legal content`: the trade pages' 12-column grid (trade.css); the text takes 6 columns on desktop so a line stays
+   readable (about 80 characters of body-medium at 1440), the full width on mobile */
+.legal-content {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--gutter-small);
+  row-gap: var(--gutter-small);
+  padding: var(--small) 0;
+  align-items: start;
+}
+.legal-content__title { grid-column: 1 / -1; margin: 0; color: var(--text-strong); }
+/* Figma `legal text`: divider, then the sections; gap medium-small (as the trade columns) */
+.legal-text { grid-column: 1 / span 6; display: flex; flex-direction: column; gap: var(--medium-small); min-width: 0; color: var(--text-strong); }
+/* Figma `legal section`: heading, then paragraphs and lists; gap small */
+.legal-text__section { display: flex; flex-direction: column; gap: var(--small); }
+.legal-text__section h2, .legal-text__section p { margin: 0; }
+.legal-text__list { margin: 0; padding-left: 1.5em; }   /* Figma `legal section` → list: bullets, no gap between items; the indent is the browser's default (no token) */
+.legal-text__list li { margin: 0; }
+/* links inside running text are underlined (decision 0076 rule, WCAG 1.4.1) */
+.legal-text a { color: inherit; text-decoration: underline; }
+.legal-text strong { font-weight: 500; }
+
+@media (--mobile) {
+  .legal-content { grid-template-columns: minmax(0, 1fr); row-gap: var(--medium-small); }
+  .legal-content__title, .legal-text { grid-column: 1; }
+}

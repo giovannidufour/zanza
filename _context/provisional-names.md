@@ -28,6 +28,20 @@ Legenda colonna *Cambio*: 🟢 facile (testo/config) · 🟡 da pianificare (URL
 - Dominio + email del negozio (es. rythem-trax.*): da comprare/verificare; poi Resend, Cloudflare Pages custom domain, `SHOP_URL`, Stripe public details. Ordine in fondo a questo file.
 - Logo (`apps/storefront/public/logo.png`, illustrazione): non contiene il nome, non toccato.
 
+## Pagine legali: segnaposto (2026-11-14, decisione 0079)
+
+Gio (2026-11-14): "fai tutto tu per ora, metti dei placeholder". Online ci sono questi valori **provvisori**: vanno confermati o sostituiti da Gio, e i testi rivisti da un avvocato o un generatore (eRecht24, IT-Recht Kanzlei). La build li elenca tutti (`to fill:` per ogni pagina).
+
+| Dove | Segnaposto | Stato |
+|---|---|---|
+| `site.json` → legal: name, street, postcode, city, email, phone | mostrati tra parentesi quadre ("[Your full name]"…): dati personali, Claude non li inventa | 🔴 servono a Gio prima di vendere (Impressum obbligatorio, § 5 DDG) |
+| `site.json` → legal.vat + `terms.md` § 3 | "[VAT line…]", "[TO FILL: VAT note…]" | 🔴 dipende da Q5b (commercialista) |
+| `privacy.md` → Trade offers | offerte senza scambio cancellate dopo "6 months" | 🟡 proposta di Claude |
+| `privacy.md` → Orders | corriere "Deutsche Post / DHL" | 🟡 da confermare |
+| `privacy.md` → Your rights | autorità di controllo "Berliner Beauftragte für Datenschutz und Informationsfreiheit" (vale se Gio risiede a Berlino) | 🟡 |
+| `shipping.md` → When it arrives | spedizione entro "3 working days", consegna "Germany 1–3 working days, EU 3–7, rest of the world 7–21" | 🟡 |
+| Scelta di fondo | testi scritti come venditore Unternehmer (recesso 14 giorni, garanzia legale): scelta di Claude, card chiusa così su "fai tutto tu" | 🟡 |
+
 ## Account di servizi (email personale di Gio)
 
 | Servizio | Cosa usa nome/email | Dove si cambia | Cambio |
@@ -61,7 +75,7 @@ Legenda colonna *Cambio*: 🟢 facile (testo/config) · 🟡 da pianificare (URL
 |---|---|---|
 | Mittente email transazionali (Resend) | nome e indirizzo mittente (`MAIL_FROM`, `STORE_NAME` nei secrets, vedi sopra) | 🟢 config (`stack.md` → Portabilità) |
 | Newsletter (Buttondown) | sender name, mailing address/Impressum nel footer delle mail | 🟢 |
-| Pagine legali (Impressum, Datenschutz…, da fare) | nome del negozio, email di contatto, provider elencati | 🟢 |
+| Pagine legali (2026-11-14, decisione 0079) | nome del negozio da `site.json` → storeName; **email di contatto, nome legale, indirizzo, telefono** in `site.json` → legal (vuoti, li inserisce Gio); provider elencati in `content/legal/privacy.md` (Cloudflare, Supabase, Resend, Buttondown, Stripe, Discogs, Meta) | 🟢 testo/config; al cambio email aggiornare `legal.email` |
 
 ## Al cambio nome: ordine consigliato
 1. Dominio + email del negozio → 2. login dei servizi sulla nuova email → 3. username Buttondown + endpoint nel codice → 4. config (`site.json`, `admin.json`, URL Supabase/Stripe/R2) → 5. ricerca `zanza` / `Zanza` nel repo → 6. GitHub, Figma, claude.ai.
