@@ -8,3 +8,5 @@
 **Where.** `packages/ui/components.js` (`SoldOutCross`, internal), `components.css` (`.zz-sold-out`), `components.d.ts`; `apps/storefront/pages/shell.js` (`isSoldOut`, ProductCardFor), `pages/pdp.js` (Gallery), `scripts/site.js` (`syncSoldCrosses`).
 
 **Amended 2026-11-15 (Gio: "ok").** White alone vanished on light covers (white labels): the cross gets a 1px black line right below it, a drop shadow y 1, blur 0, `icon/strong` (Figma effect on `sold out cross`, CSS `filter: drop-shadow`). Figma page `PDP` gets `PDP - desktop · sold out` (2292:5783) and `PDP - mobile · sold out` (2292:6147): every gallery image with `sold out` ON, CTA = Button secondary disabled "Sold out" struck through.
+
+**Amended again 2026-11-15 (Gio: "del colore usato per l'alert… solo 1px non doppia riga").** The cross is one 1px line in `surface/alert` (frontend: pink-flamingo, the colour of the SOLD OUT alert), no shadow. This replaces the white + black line above. `surface/*` on a stroke is a semantic stretch, chosen to keep one alert colour; if a `border/alert` or `icon/alert` variable is added later, rebind to it.
