@@ -709,9 +709,9 @@ a.zz-product-card__image { display: block; color: inherit; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    Alert (Figma: page Bag → `alert`; decision 0077)
-   A blocking message in a red box: padding 8 (small), surface-alert, body/small in text-strong-invert, full width.
+   A blocking message in a coloured box: padding 8 (small), surface-alert, body/small in text-on-alert, full width.
    ═══════════════════════════════════════════════════════════════════════ */
-.zz-alert { margin: 0; padding: var(--small); background: var(--surface-alert); color: var(--text-strong-invert); font-family: var(--font-sans); }
+.zz-alert { margin: 0; padding: var(--small); background: var(--surface-alert); color: var(--text-on-alert); font-family: var(--font-sans); }
 .zz-alert[data-layout="inline"] { display: inline-flex; padding: 2px 4px; }   /* Figma layout=inline: as Tag extra-small */
 .zz-alert[hidden] { display: none; }
 
