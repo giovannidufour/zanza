@@ -105,3 +105,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0080](0080-one-icon-per-name.md) | One icon per name: the "-ultra" drawings replaced the originals and took their names; no suffixed copies (amended: icon-bars-three, code re-aligned with Figma icons) | accepted |
 | [0081](0081-select-ring-for-keyboard-only.md) | SelectButton (Sort): the focus ring shows for keyboard focus only; after a mouse pick focus stays, the ring hides | accepted |
 | [0082](0082-year-or-decade.md) | Year field takes an exact year or a decade ("1990s"): `year` stays a number, `year_precision` = year / decade | accepted |
+| [0083](0083-view-in-store-button.md) | Admin action panel: the button that opens the live shop page reads "View in store"; "Preview" names only the in-admin shop preview | accepted |
