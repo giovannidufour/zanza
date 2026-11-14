@@ -1,0 +1,12 @@
+# 0077 — A message that blocks an action sits in a red box (Alert), on new tokens `red` + `surface/alert`
+
+`2026-11-14` · accepted (Gio: "metterlo in un riquadro di colore rosso con il testo nella stessa posizione") · Figma: `_primitives/red`, `color/surface/alert`; page Bag → component `alert` (2262:1771), used as exposed instance `minimum note` in `bag summary` minimum=below
+
+**Context.** The bag's minimum order note (0072) was plain body/small text above the disabled Checkout and did not stand out. The system had no red: only the provisional orange literal `#ff5d16` of the input error (`text-alert` / `border-alert`, 3.1:1 on white, see `design/open.md`).
+**Decision.**
+- New primitive `red` = `#e0201b`, chosen for contrast: white text on it 4.8:1 (AA for 14px), the box against acid green 3.7:1 and against white 4.8:1 (1.4.11). The orange `#ff5d16` was rejected: white on it is 3.1:1.
+- New semantic `surface/alert` → `red`, same in both modes, scopes frame/shape fill. Text on it reuses `text/strong-invert` (white): no new text token.
+- New component `alert`: padding `small`, fill `surface/alert`, TEXT property `message` (body/small, `text/strong-invert`), fills its container. In `bag summary` minimum=below it replaces the `minimum note` text in the same position (between the rows and Checkout); the instance is exposed, so the message is set from the screen. The old TEXT property `minimum note` of `bag summary` was removed.
+- Code: `Alert` in `packages/ui` (a `<p class="zz-alert">`); BagSummary renders `minimumNote` with it. Behaviour of 0072 unchanged (hidden when reached, polite live region, Checkout's aria-describedby).
+**Rule.** A message that stops the user from completing an action goes in an `alert` (red box, white text), next to the action it blocks. Informational notes (sold out lines, shipping note) stay plain text. Red is never the only signal: the words say what is wrong.
+**Not done.** The input error state still uses the orange literal; aliasing it to `red` (or a text/alert at ≥4.5:1 on light grounds) is in `design/open.md`.

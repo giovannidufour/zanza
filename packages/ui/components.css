@@ -706,8 +706,14 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-bag-summary__checkout { width: 100%; }   /* Figma: button layout=fill */
 .zz-bag-summary__note { margin: 0; }
 .zz-bag-summary__sold-out { margin: 0; }
-.zz-bag-summary__minimum { margin: 0; }
 .zz-bag-summary__sold-out[hidden] { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Alert (Figma: page Bag → `alert`; decision 0077)
+   A blocking message in a red box: padding 8 (small), surface-alert, body/small in text-strong-invert, full width.
+   ═══════════════════════════════════════════════════════════════════════ */
+.zz-alert { margin: 0; padding: var(--small); background: var(--surface-alert); color: var(--text-strong-invert); font-family: var(--font-sans); }
+.zz-alert[hidden] { display: none; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    RelatedProducts (Figma: PDP `you may also like`, device=desktop | mobile — same layout, only the cards differ)
@@ -1229,7 +1235,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-menu-layer__legal a { color: var(--text-strong); text-decoration: none; }
 .zz-menu-layer__legal a:hover { text-decoration: underline; }
 
-/* ── Footer (Figma page `footer`, decision 0076): border-top = the header border (1px border-divider-strong);
+/* ── Footer (Figma page `footer`, decision 0077): border-top = the header border (1px border-divider-strong);
    main = newsletter + link columns, padding-y medium-small, gap medium-small; bottom = copyright + legal, padding-bottom
    medium-small. Desktop: side by side, flex 1 each (Figma FILL), so without the newsletter the links take the whole row.
    Mobile: stacked, links in two columns (Figma: wrap, (374 - 16) / 2), legal above the copyright. ── */

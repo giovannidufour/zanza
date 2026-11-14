@@ -22,7 +22,7 @@ The bag's subtotal and the way to checkout. Figma: page `Bag` → `bag summary`.
 | `note` | `ReactNode` |  | Figma `note`, body/small, below the button. |
 | `soldOutNote` | `ReactNode` |  | Figma `sold out` + `sold out note`, body/small, above Checkout: says that sold lines are not in the order ("1 record sold out, not included.", decision 0064). Omit when the bag has no sold lines. |
 | `soldOutNoteProps` | `Record<string, unknown>` |  | Extra attributes for the sold out note (data-*, hidden), so a script can fill it; rendered even without `soldOutNote`. |
-| `minimumNote` | `ReactNode` |  | Figma `minimum note` (variant minimum=below), body/small, above Checkout: the minimum order and what is missing ("Minimum order 20€. Add 8€ more to check out.", decision 0072). Pass it with `checkoutDisabled` and point Checkout's aria-describedby (via `checkoutProps`) at the note, so the disabled button is never unexplained. |
+| `minimumNote` | `ReactNode` |  | Figma `minimum note` (variant minimum=below), an `Alert` (red box, decision 0077) above Checkout: the minimum order and what is missing ("Minimum order 20€. Add 8€ more to check out.", decision 0072). Pass it with `checkoutDisabled` and point Checkout's aria-describedby (via `checkoutProps`) at the note, so the disabled button is never unexplained. |
 | `minimumNoteProps` | `Record<string, unknown>` |  | Extra attributes for the minimum note (id, data-*, hidden), so a script can fill it; rendered even without `minimumNote`. |
 
 `*` required.
