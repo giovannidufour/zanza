@@ -665,12 +665,12 @@ a.zz-product-card__image { display: block; color: inherit; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    BagItem (Figma: page Bag → `bag item`, device=desktop | mobile × status=available | unavailable; decision 0044)
-   Row: cover 96 · info (gap 8) · purchase (right-aligned, gap 8); gaps 16. Type classes come from components.js.
+   Row: cover 96 · info (gap 8) · purchase (right-aligned, gap 8); row gap gutter/small, as ProductCard (0074). Type classes come from components.js.
    ═══════════════════════════════════════════════════════════════════════ */
 .zz-bag-item {
   display: flex;
   align-items: flex-start;
-  gap: var(--medium-small);                   /* Figma: itemSpacing → dimension/medium-small */
+  gap: var(--gutter-small);                   /* Figma: itemSpacing → gutter/small, same as ProductCard columns (0074) */
   color: var(--text-strong);
   font-family: var(--font-sans);
 }

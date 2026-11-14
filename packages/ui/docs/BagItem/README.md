@@ -29,7 +29,7 @@ One line of the bag: one copy (copies are unique, so there is no quantity: Remov
 
 ## Anatomy (Figma)
 
-Row, gap `medium-small` (16): cover 96 × 96 · info (gap `small`: notice when sold or reserved, title block, grade lines with gap 4, samples) · purchase (right-aligned, gap `small`: price (struck through when sold, none when reserved), Remove = Button secondary small).
+Row, gap `gutter/small` (8, as ProductCard, [0074](../../../../design/decisions/0074-bag-item-gap-matches-product-card.md)): cover 96 × 96 · info (gap `small`: notice when sold or reserved, title block, grade lines with gap 4, samples) · purchase (right-aligned, gap `small`: price (struck through when sold, none when reserved), Remove = Button secondary small).
 Type: desktop as ProductCard desktop (body/large, body/medium), mobile as ProductCard mobile (body/medium, body/small). Notice: label/small.
 
 ## Tokens
