@@ -33,7 +33,7 @@
       - reserved (someone is in Stripe Checkout, max 30 min, or held by hand): the Add buttons read "(Reserved) Notify me"
         (secondary + envelope, decision 0065) and stay active: pressing one opens the "Reserved" dialog, which explains the hold and offers "Notify me"
         (email, migration 0016). The bag line shows the notice "Reserved".
-        sold: the Add buttons read "Sold out", disabled (decision 0061); the bag line: name struck, "SOLD OUT" + struck price (0064)
+        sold: the Add buttons read "Sold out", disabled (decision 0061); the bag line: "SOLD OUT" in a red box + struck price (0064, 0078)
 
    Looks live in base.css and packages/ui/components.css; this file only sets attributes and text. */
 (function () {
@@ -1142,8 +1142,8 @@
   document.addEventListener('cancel', function (e) {
     if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-notify-dialog')) { e.preventDefault(); closeNotify(); }
   }, true);
-  // a bag line follows the live status, as pages/bag.js renders it: available (price), sold / reserved (name struck
-  // through, "SOLD OUT" / "RESERVED" beside the struck price, decisions 0064, 0065)
+  // a bag line follows the live status, as pages/bag.js renders it: available (price), sold / reserved (name plain,
+  // "SOLD OUT" / "RESERVED" in a red inline Alert beside the struck price, decisions 0064, 0065, 0078)
   var BAG_STATUS = { available: 'available', sold: 'sold', traded: 'sold' };
   function syncBagLine(li) {
     var id = li.getAttribute('data-bag-line');
@@ -1170,7 +1170,9 @@
       price.textContent = '';
       if (!available) {
         // as BagItem: "SOLD OUT" / "RESERVED" + (screen readers) "not in your order" + the struck price
+        // the word in an inline Alert (red box, decision 0078): same classes as Alert layout=inline
         var label = document.createElement('span'); label.textContent = line === 'sold' ? 'SOLD OUT' : 'RESERVED';
+        label.className = 'zz-alert body-small zz-bag-item__status'; label.setAttribute('data-layout', 'inline');
         var sr = document.createElement('span'); sr.className = 'zz-visually-hidden'; sr.textContent = ', not in your order, ';
         var s = document.createElement('s'); s.textContent = text;
         price.appendChild(label); price.appendChild(sr); price.appendChild(s);
