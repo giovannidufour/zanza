@@ -953,17 +953,6 @@ export interface GenreLinksProps extends HTMLAttributes<HTMLElement> {
 }
 export declare function GenreLinks(props: GenreLinksProps): JSX.Element;
 
-/** Figma `trade intro` (page Home): one line on trading + a link to How trading works. */
-export interface TradeIntroProps extends HTMLAttributes<HTMLDivElement> {
-  /** Figma `pitch`: the line. */
-  children: ReactNode;
-  /** Figma boolean `link`: omit → no link. */
-  href?: string;
-  /** @default "How trading works" */
-  linkLabel?: ReactNode;
-}
-export declare function TradeIntro(props: TradeIntroProps): JSX.Element;
-
 /** Figma `home about` (page Home): who is behind the shop. A <section>. */
 export interface HomeAboutProps extends HTMLAttributes<HTMLElement> {
   /** @default "About" */

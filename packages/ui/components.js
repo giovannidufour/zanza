@@ -1361,7 +1361,6 @@
      SectionHead: `section head` — divider on top (boolean `divider`), then a row: title body/large text/strong, actions on
        the right (gap small): `play` ("Play all") and `see all`, secondary Buttons; gap medium-small.
      GenreLinks: `genre links` — SectionHead (no actions) + the genres as Tag size=medium links, wrapping, gap small.
-     TradeIntro: `trade intro` — one line body/medium + an underlined link (boolean `link`), gap small.
      HomeAbout: `home about` — SectionHead (no actions) + bio body/medium + DiscogsCard (boolean `discogs`) + an underlined link; gap medium-small. */
   function SectionHead(props) {
     var HeadingTag = 'h' + (props.headingLevel || 2);
@@ -1378,11 +1377,6 @@
       h('ul', { className: 'zz-genre-links__list' }, genres.map(function (g) {
         return h('li', { key: g.href }, h(Tag, { size: 'medium', href: g.href }, g.label));
       })));
-  }
-  function TradeIntro(props) {
-    return h('div', Object.assign({}, omit(props, ['href', 'linkLabel', 'className', 'children']), { className: cx('zz-trade-intro', props.className) }),
-      h('p', { className: 'body-medium' }, props.children),
-      props.href ? h('a', { className: 'zz-trade-intro__link body-medium', href: props.href }, props.linkLabel || 'How trading works') : null);
   }
   function HomeAbout(props) {
     return h('section', Object.assign({}, omit(props, ['title', 'headingLevel', 'divider', 'discogs', 'href', 'linkLabel', 'className', 'children']), { className: cx('zz-home-about', props.className), 'aria-labelledby': props.id ? props.id + '-title' : undefined }),
@@ -1402,5 +1396,5 @@
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
            ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease,
-           SectionHead: SectionHead, GenreLinks: GenreLinks, TradeIntro: TradeIntro, HomeAbout: HomeAbout };
+           SectionHead: SectionHead, GenreLinks: GenreLinks, HomeAbout: HomeAbout };
 });
