@@ -7,7 +7,7 @@ const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 
 const { TradeActions } = require('./trade.js');
-const { SECTION_LABEL, tagsOf, tagLinksOf, formatPrice, productName, productNameLinked, releaseInfoLinked, gradingProps, SiteHeader, sampleAttrs, ProductCardFor } = require('./shell.js');
+const { SECTION_LABEL, tagsOf, tagLinksOf, formatPrice, productName, productNameLinked, releaseInfoLinked, gradingProps, SiteHeader, sampleAttrs, ProductCardFor, isSoldOut } = require('./shell.js');
 
 function breadcrumbItems(product, url) {
   const { listing, release } = product;
@@ -30,6 +30,10 @@ function Pdp({ product, related = [], site, url }) {
       // Figma: `product image` ×2 / `mobile gallery` — images: cover + first copy photo
       h(Z.Gallery, {
         className: 'pdp-content__gallery',
+        // sold out: the cross on every image (decision 0086); the status lets site.js keep it live
+        soldOut: isSoldOut(listing),
+        'data-listing-id': listing.id,
+        'data-listing-status': listing.status,
         images: [release.cover, copy.photos[0]].filter(Boolean).map((src, i) => ({ src: url(src), alt: i === 0 ? productName(release) : '' }))
       }),
       h(Z.ProductInfo, {

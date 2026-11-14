@@ -1197,6 +1197,30 @@
       } else price.textContent = text;
     }
   }
+  // the sold-out cross (decision 0086): the same markup as SoldOutCross in packages/ui/components.js, added to or
+  // removed from each image box of a copy when its live status says sold / traded (or back)
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  function syncSoldCross(box, sold) {
+    var cross = box.querySelector(':scope > .zz-sold-out');
+    if (!sold) { if (cross) box.removeChild(cross); return; }
+    if (cross) return;
+    cross = document.createElementNS(SVG_NS, 'svg');
+    cross.setAttribute('class', 'zz-sold-out');
+    cross.setAttribute('viewBox', '0 0 100 100');
+    cross.setAttribute('preserveAspectRatio', 'none');
+    cross.setAttribute('aria-hidden', 'true');
+    cross.setAttribute('focusable', 'false');
+    var path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', 'M0 0L100 100M100 0L0 100');
+    path.setAttribute('vector-effect', 'non-scaling-stroke');
+    cross.appendChild(path);
+    box.appendChild(cross);
+  }
+  var SOLD_IMAGE_BOXES = '.zz-product-card__image, .zz-bag-item__image, .zz-gallery__item';
+  function syncSoldCrosses(el, status) {
+    var sold = status === 'sold' || status === 'traded';
+    Array.prototype.forEach.call(el.querySelectorAll(SOLD_IMAGE_BOXES), function (box) { syncSoldCross(box, sold); });
+  }
   function applyStatus() {
     Array.prototype.forEach.call(document.querySelectorAll('[data-bag-line]'), syncBagLine);
     Array.prototype.forEach.call(document.querySelectorAll('[data-reserved-note]'), function (p) {
@@ -1207,6 +1231,7 @@
     Array.prototype.forEach.call(document.querySelectorAll('[data-listing-status]'), function (el) {
       var id = listingIdOf(el);
       if (id && !el.hasAttribute('data-bag-line')) el.setAttribute('data-listing-status', statusFor(id));
+      if (id) syncSoldCrosses(el, statusFor(id));   // cards, PDP gallery, bag lines (0086)
     });
   }
   function readLive(force) {

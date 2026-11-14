@@ -70,6 +70,7 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 ## Accessibility risks
 
 - **IconButton** is exactly 24px: needs ≥ 24px clear space from neighbouring targets.
+- **Sold-out cross** (0086): 1px white on light covers (white labels, white sleeves) almost disappears. Decorative (the state is in text), so not a WCAG failure, but the signal is lost there. Options: a 1px `black` line under the white one (offset 1px), or the cross in `text/strong` on light covers (needs per-image data). Gio to decide.
 
 ## Figma to fix
 
@@ -79,7 +80,7 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - `tab`: single-value `hierarchy`, unused `layout` variant.
 - `tag group / orientation=vertical` is not vertical · `tag item` gap 8 with one child.
 - `product info`: 8 text nodes with hardcoded `#000000` → `text/strong` · placeholder name "Artist 1 - Title 1 / Artist 2 - Title 2" needs a data model for split releases.
-- `product card`: all 10 text nodes have unbound fills (`#000000`) → `text/strong` · button and product image descriptions say "Codice: .cw-button · ui_button()" / ".cw-product-image · ui_product_image()": not Zanza names (`zz-`, React `Button`), looks copied from another project → rewrite · product image description says 80×80 (here it is 249 / 109).
+- `product card`: all 10 text nodes have unbound fills (`#000000`) → `text/strong` · button description says "Codice: .cw-button · ui_button()": not Zanza names (`zz-`, React `Button`), looks copied from another project → rewrite (the `product image` one was rewritten with 0086).
 - `you may also like`: padding 8 and gaps 8 literal (→ `small` / `gutter/small`?) · name vs title: component "you may also like", copy "More for sale:" → rename the component `related products` (code: `RelatedProducts`) · mobile variant width 375 hug vs desktop fill: make both fill · a loose instance (2061:18468) sits on the PDP page outside any frame: delete if it's a leftover.
 - `PDP - mobile` › `pdp content`: padding-bottom 24 literal, no token for 24 (scale has 8 / 16) → add one (e.g. `medium`) or use 16.
 - `PLP - desktop`: content frame named `pdp content`, list frame `Frame 46`, card instances `Frame 43/44/45` → `plp content`, `product list`, `product card`.
@@ -92,6 +93,8 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - `player`: native-player placeholder fill unbound (placeholder only, fine).
 - `buttons` page: loose component `Frame 1` (2191:27533) with no name or use → delete or name it.
 - Icons: `icon-bars-three` (hamburger) lines have a white stroke · `icon-pencil` uses unbound `#212121`.
+
+- PDP: no sold-out screen yet (the gallery is not a component; its images are `product image` instances, so set `sold out` on each). Add a `PDP - desktop · sold` frame when the sold PDP is designed (also the open item about Add to bag on a sold PDP).
 
 ## Code to do
 
