@@ -35,6 +35,9 @@
         (email, migration 0016). The bag line shows the notice "Reserved".
         sold: the Add buttons read "Sold out", disabled (decision 0061); the bag line: "SOLD OUT" in a red box + struck price (0064, 0078)
 
+   8. SelectButton focus (decision 0081)
+      - the ring of a native select shows for keyboard focus only, not after a mouse pick (focus stays on the select)
+
    Looks live in base.css and packages/ui/components.css; this file only sets attributes and text. */
 (function () {
   'use strict';
@@ -1598,6 +1601,27 @@
     window.addEventListener('popstate', function () { navigate(location.href, false); });
   }
 
+  /* ---------------------------------------------------------------- 8. select button focus (decision 0081) */
+
+  // Browsers count a native <select> as a "keyboard input" control, so it matches :focus-visible even when it was
+  // opened with the mouse: the ring stayed after picking an option or clicking away. Focus itself stays on the select
+  // (no blur: keyboard and screen-reader users keep their place); only the ring is hidden, via data-focus-source on
+  // the SelectButton, while the last input was a pointer. Any key press brings the ring back (components.css).
+  function initSelectFocus() {
+    document.addEventListener('pointerdown', function (e) {
+      var box = e.target.closest && e.target.closest('.zz-select-button');
+      if (box) box.setAttribute('data-focus-source', 'pointer');
+    }, true);
+    document.addEventListener('keydown', function (e) {
+      var box = e.target.closest && e.target.closest('.zz-select-button');
+      if (box) box.removeAttribute('data-focus-source');
+    }, true);
+    document.addEventListener('focusout', function (e) {
+      var box = e.target.closest && e.target.closest('.zz-select-button');
+      if (box) box.removeAttribute('data-focus-source');
+    }, true);
+  }
+
   initHeader();
   initMenu();
   initGallery();
@@ -1606,4 +1630,5 @@
   initStatus();
   initBag();
   initOffer();
+  initSelectFocus();
 })();

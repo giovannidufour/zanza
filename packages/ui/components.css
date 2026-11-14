@@ -1277,6 +1277,9 @@ a.zz-product-card__image { display: block; color: inherit; }
   appearance: none; -webkit-appearance: none;
 }
 .zz-select-button:has(.zz-select-button__control:focus-visible) { outline: auto; }   /* no border/focus token yet */
+/* 0081: a select matches :focus-visible after a mouse pick too; the page marks a pointer focus and the ring hides
+   until a key is pressed. Focus stays on the select. */
+.zz-select-button[data-focus-source="pointer"]:has(.zz-select-button__control:focus-visible) { outline: none; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    Toast + ToastRegion (Figma: page `toast` → `toast` 2177:439; decision 0049)
