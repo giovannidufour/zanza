@@ -87,11 +87,11 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - `_input-master`: compact + filled has gap 2, every other variant 4 (code: 4) · `_input-master-support text` uses body/extra small (12/14) but its instances inside the master render body/small (14/16) (code: body-small) · error colour `#ff5d16` unbound (see Pending).
 - `_input chips`: holds 2 visible + 2 hidden chips (instances can show up to 4); Figma has no slot API from plugins, so more chips = detach or add to the building block.
 - BACKEND → Create: SKU `input` instance (2095:19818) has an unbound white fill. (Frames named, rows and × fixed when componentized, 2026-11-10.)
-- Descriptions copied from another project: `button`, `_button-states`, `_button-sizes` ("Codice: .cw-button · ui_button()", `text/faint`, `icon/delicate`, sizes 40/32/22/18 that are not Zanza's) · icons `icon-x-ultra` and `hamburger-menu-ultra` described as "play audio campione…".
+- Descriptions copied from another project: `button`, `_button-states`, `_button-sizes` ("Codice: .cw-button · ui_button()", `text/faint`, `icon/delicate`, sizes 40/32/22/18 that are not Zanza's).
 - `checkbox`: label text fill unbound `#000000` → `text/strong`; icons `icon-square` / `icon-square-tick` fill unbound black; component has no description.
 - `player`: native-player placeholder fill unbound (placeholder only, fine).
 - `buttons` page: loose component `Frame 1` (2191:27533) with no name or use → delete or name it.
-- Icons: hamburger lines have a white stroke · `icon-pencil` uses unbound `#212121`.
+- Icons: `icon-bars-two` (hamburger) lines have a white stroke · `icon-pencil` uses unbound `#212121`.
 
 ## Code to do
 

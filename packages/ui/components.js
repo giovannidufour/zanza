@@ -122,7 +122,7 @@
   /* ── Header ─────────────────────────────────────────────────────────────
      Figma: `header` (device=desktop | mobile). Composition: logo + store name, Tabs (desktop), actions, menu (mobile), 1px rule.
      `device` omitted → responsive: both the menu button and the tabs are rendered and CSS shows one of them (see components.css). */
-  function HamburgerIcon() {
+  function HamburgerIcon() {   // Figma: icon/icon-bars-two
     return strokeIcon(24, 24, '<path d="M0 8H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M0 12H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M0 16H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>');
   }
 
@@ -216,10 +216,10 @@
 
   /* ── PlayerButton ───────────────────────────────────────────────────────
      Figma: `player button` (state default | playing). icon 24 + label body/medium, gap 0. */
-  function PlayIcon() {   // Figma: icon/icon-play-ultra
+  function PlayIcon() {   // Figma: icon/icon-play
     return strokeIcon(24, 24, '<path d="M 0 24 L 24 12 L 0 0 Z" fill="currentColor"/>');
   }
-  function PauseIcon() {  // Figma: icon/pause-ultra
+  function PauseIcon() {  // Figma: icon/icon-pause
     return strokeIcon(24, 24, '<path d="M8.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M15.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>');
   }
   /* Figma: `_player button-icon` (building block, state default | playing): the 24px play/pause icon.
@@ -276,13 +276,13 @@
      native audio element; the site owns playback, the queue, docking and the slide in/out (apps/storefront).
      Desktop row: actions · now playing (fill) · _player controls · native player (326) · close.
      Mobile column: now playing + close / actions · _player controls / native player. */
-  function PreviousIcon() {   // Figma: icon/play-previous-ultra
+  function PreviousIcon() {   // Figma: icon/icon-skip-back
     return strokeIcon(24, 24, '<defs><clipPath id="zz-icon-prev-clip"><path transform="translate(0 0)" d="M 24 24 L 0 12 L 24 0 Z"/></clipPath></defs><path transform="translate(0 0)" d="M 24 24 L 0 12 L 24 0 Z" clip-path="url(#zz-icon-prev-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M0.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>');
   }
-  function NextIcon() {       // Figma: icon/play-next-ultra
+  function NextIcon() {       // Figma: icon/icon-skip-forward
     return strokeIcon(24, 24, '<defs><clipPath id="zz-icon-next-clip"><path transform="translate(0 0)" d="M 0 24 L 24 12 L 0 0 Z"/></clipPath></defs><path transform="translate(0 0)" d="M 0 24 L 24 12 L 0 0 Z" clip-path="url(#zz-icon-next-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M23.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>');
   }
-  function CloseIcon() {      // Figma: icon/icon-x-ultra
+  function CloseIcon() {      // Figma: icon/icon-x
     return strokeIcon(24, 24, '<path transform="matrix(0.707 0.707 -0.707 0.707 0.023 0.977)" d="M0 0L32.52 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path transform="matrix(-0.707 0.707 -0.707 -0.707 23.014 0.023)" d="M0 0L32.52 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>');
   }
   /* Figma: `_player controls` (state default | playing): position "n of total" + previous · play/pause · next.
@@ -544,7 +544,7 @@
   function ChevronDownIcon() {   // Figma: icon/icon-chevron-down-small-thin
     return strokeIcon(24, 24, '<path transform="matrix(0 -1 1 0 6 15.5)" d="M 6 0 L 0 6 L 6 12" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
   }
-  function DragHandleIcon() {    // Figma: icon/hamburger-menu-ultra at 24 (the `drag handle` instance)
+  function DragHandleIcon() {    // Figma: icon/icon-bars-two at 24 (the `drag handle` instance)
     return strokeIcon(24, 24, '<path d="M0 8H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M0 12H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M0 16H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>');
   }
 
