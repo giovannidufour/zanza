@@ -34,7 +34,7 @@ export interface HeaderProps extends HTMLAttributes<HTMLElement> {
   device?: "desktop" | "mobile";
   /** Logo image (<img> or <svg>). 64×64 on desktop, 48×48 on mobile. Figma: `image 2`. */
   logo?: ReactNode;
-  /** Store name shown in the bordered label box. Figma: `Store-name`. */
+  /** Store name shown in the bordered label box (from `site.json` → storeName). Figma: text layer `store name`. */
   storeName?: ReactNode;
   /** When set, the store name becomes a link to this URL. */
   homeHref?: string;

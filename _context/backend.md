@@ -1,4 +1,4 @@
-# Zanza — Backend (bozza v0, 2026-11-09)
+# rythem-trax — Backend (bozza v0, 2026-11-09)
 
 Stack: `stack.md`. Questa è la **bozza** dello schema e dei flussi, da rivedere prima della prima migrazione. Nomi DB in inglese.
 

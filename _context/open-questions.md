@@ -1,4 +1,4 @@
-# Zanza — Decisioni aperte
+# rythem-trax — Decisioni aperte
 
 > Da chiudere **prima** di scrivere codice. Quando una decisione è presa: aggiorna `product-brief.md`/`stack.md` e sposta la voce in "Chiuse".
 
@@ -9,7 +9,7 @@ Sede in Germania, vendita in tutto il mondo (Q5 chiusa). Da verificare con uno S
 MVP (2026-11-12): tutto fuori app, nella conversazione; nell'admin il listing passa a Reserved e poi Traded. Da decidere dopo: salvare le offerte in una tabella (lista nell'admin) e se un accordo diventa un ordine.
 
 ## Q7 — Nome
-"Zanza" è provvisorio. Verificare dominio e marchio prima di investire in brand/DS. Collegata al cambio di dominio (vedi `stack.md` → Portabilità).
+**Nome scelto (Gio, 2026-11-14): `rythem-trax`** (grafia voluta: *rythem*, non *rhythm*), al posto del provvisorio "Zanza". Resta aperto: verificare dominio e marchio prima di investire in brand/DS; Gio l'ha introdotto con "forse ho trovato un nome", quindi non ancora definitivo. Collegata al cambio di dominio (vedi `stack.md` → Portabilità).
 
 ## Chiuse
 - **Q2 — Trade** (2026-11-12): utente ↔ negozio (Gio), dischi solo trade per ora (sale+trade forse dopo). Scambi pochi e one-shot: "non è in vendita, convincimi". Niente regola di spedizione sul sito: l'accordo si trova parlando. Fiducia presa in prestito da Discogs/Instagram (dell'utente e di Gio), niente identità reale. MVP: form → email a Gio (decisione 0068).

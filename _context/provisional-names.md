@@ -1,10 +1,32 @@
 # Nomi ed email provvisori — registro
 
-> "Zanza" è un nome provvisorio (Q7) e gli account usano l'email personale di Gio.
-> Quando arrivano il nome definitivo e l'email del negozio, questa è la lista di **tutto** quello da aggiornare.
+> Il nome provvisorio era "Zanza". **Dal 2026-11-14 lo store si chiama `rythem-trax`** (grafia di Gio: *rythem*, non *rhythm*; minuscolo, col trattino; ancora "forse", dominio e marchio da verificare, Q7). Gli account usano ancora l'email personale di Gio.
+> Questa è la lista di **tutto** quello che porta il nome o l'email: la sezione sotto dice cosa è già passato a rythem-trax e cosa no.
 > **Regola:** ogni volta che un thread usa il nome, l'email o un identificativo legato a loro (account, username, URL, chiave localStorage…), aggiunge una riga qui nello stesso commit.
 
 Legenda colonna *Cambio*: 🟢 facile (testo/config) · 🟡 da pianificare (URL pubblici, dati utente, redirect) · 🔴 difficile o impossibile (identificativo fisso: si crea un nuovo account/progetto).
+
+## Rinomina Zanza → rythem-trax (2026-11-14)
+
+**Fatto**
+- Codice: `site.json` → `storeName` = "rythem-trax" (header del negozio, `<title>` delle pagine) · nome del DS in `tokens.json`, commenti di `components.css`/`components.js`, titolo dell'artifact in `build-artifact.js`, cover e preview Header · titoli di `CLAUDE.md`, `_context/*`, `design/README.md`, `packages/ui/README.md` · description di `package.json`.
+- Figma: testo dello store name nel component `header` (desktop + mobile, tutte le istanze lo ereditano) e nei 2 header sciolti della pagina PDP; layer testo rinominato `store name`. Lo stile Label lo mostra in maiuscolo (RYTHEM-TRAX), come prima.
+
+**Volutamente NON cambiato** (identificatori interni: rinominarli rompe qualcosa o non si vede; si fa solo se Gio lo chiede)
+- Repo GitHub `giovannidufour/zanza`, cartella sul Mac, `package.json` → `"name": "zanza"`.
+- Namespace JS `window.Zanza`, `ZanzaToast`, `ZanzaShipping` (admin, negozio, preview).
+- Chiavi localStorage `zanza-bag`, `zanza-ship-to`: rinominarle svuota il bag ai visitatori (serve una migrazione della chiave).
+- `site.json` `outputDir`/`basePath` `zanza` e `deploy.json` (staging GoDaddy legacy, URL gio-d.xyz/zanza).
+- Decisioni in `design/decisions/` (append-only: restano col nome dell'epoca).
+- Supabase `store-staging`, Pages `store-front`/`store-admin`, bucket `store-media`: nomi già neutri.
+
+**Da fare fuori dal repo** (servono le mani o l'ok di Gio)
+- Figma: rinominare il file "Zanza - Record Store" (l'API non può; la key non cambia).
+- claude.ai: progetto "Zanza" e artifact "Zanza Design System" (va rigenerato con `npm run build:artifact` per avere il titolo nuovo).
+- Supabase → Edge Functions → Secrets: `STORE_NAME` = rythem-trax e `MAIL_FROM` col nuovo nome (oggi "Zanza", lo vedono i clienti nelle email Notify me e nelle email di offerta).
+- Buttondown: newsletter name e sender "Zanza" → rythem-trax; username `dufour` resta finché non c'è un account del negozio.
+- Dominio + email del negozio (es. rythem-trax.*): da comprare/verificare; poi Resend, Cloudflare Pages custom domain, `SHOP_URL`, Stripe public details. Ordine in fondo a questo file.
+- Logo (`apps/storefront/public/logo.png`, illustrazione): non contiene il nome, non toccato.
 
 ## Account di servizi (email personale di Gio)
 
@@ -44,4 +66,4 @@ Legenda colonna *Cambio*: 🟢 facile (testo/config) · 🟡 da pianificare (URL
 ## Al cambio nome: ordine consigliato
 1. Dominio + email del negozio → 2. login dei servizi sulla nuova email → 3. username Buttondown + endpoint nel codice → 4. config (`site.json`, `admin.json`, URL Supabase/Stripe/R2) → 5. ricerca `zanza` / `Zanza` nel repo → 6. GitHub, Figma, claude.ai.
 
-_Last updated: 2026-11-12_
+_Last updated: 2026-11-14_

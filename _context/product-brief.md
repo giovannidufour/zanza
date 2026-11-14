@@ -1,4 +1,4 @@
-# Zanza — Product Brief (v0, 2026-10-31)
+# rythem-trax — Product Brief (v0, 2026-10-31)
 
 ## Cos'è
 Negozio online di vinili con due sezioni: **For Sale** (vendita) e **For Trade** (scambio con il negozio).

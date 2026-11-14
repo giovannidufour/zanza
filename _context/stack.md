@@ -1,4 +1,4 @@
-# Zanza — Stack (decisione 2026-11-09)
+# rythem-trax — Stack (decisione 2026-11-09)
 
 Vincoli dati da Gio: **headless**, appoggiarsi a **servizi terzi**, codice in **inglese**, **costo fisso il più vicino possibile a 0**.
 

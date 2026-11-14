@@ -1,7 +1,7 @@
 {
   "name": "zanza",
   "private": true,
-  "description": "Zanza — vinyl record store. packages/ui = design system (tokens + components), apps/storefront = the site.",
+  "description": "rythem-trax — vinyl record store. packages/ui = design system (tokens + components), apps/storefront = the site.",
   "scripts": {
     "build:tokens": "node packages/ui/build-tokens.js",
     "build": "node packages/ui/build-tokens.js && node packages/ui/build-docs.js && node apps/storefront/build.js",
