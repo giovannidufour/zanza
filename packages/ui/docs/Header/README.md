@@ -10,7 +10,7 @@ The site header: logo and store name on the left, section tabs in the middle (de
 | --- | --- | --- | --- |
 | `device` | `"desktop" \| "mobile"` |  | Which Figma variant to render. Omitted → responsive: one markup, CSS switches menu/tabs/logo size (breakpoint `--mobile` from tokens.json, &lt;768px placeholder). |
 | `logo` | `ReactNode` |  | Logo image (&lt;img> or &lt;svg>). 64×64 on desktop, 48×48 on mobile. Figma: `image 2`. |
-| `storeName` | `ReactNode` |  | Store name shown in the bordered label box. Figma: `Store-name`. |
+| `storeName` | `ReactNode` |  | Store name shown in the bordered label box (from `site.json` → storeName). Figma: text layer `store name`. |
 | `homeHref` | `string` |  | When set, the store name becomes a link to this URL. |
 | `tabs` | `ReactNode` |  | A &lt;Tabs> element. Rendered on desktop only (Figma: no tabs in the mobile variant). |
 | `actions` | `ReactNode` |  | Trailing actions, usually secondary &lt;Button>s (Figma: `trailing actions`, gap 8). |

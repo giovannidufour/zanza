@@ -1,6 +1,6 @@
 # Email transazionali (Resend) — runbook
 
-Come sono configurate le email del negozio e **come rifare tutto da zero** con nome, dominio o email nuovi (il nome "Zanza" e il dominio sono provvisori). Seconda: **offerte di scambio** (decisione 0068, funzione `trade-offer`: email a Gio con Reply-To del trader; secret in più `OFFER_TO` = indirizzo di Gio, Verify JWT **off**, chiamata dal browser, origini ammesse = `SHOP_URL` + anteprime Pages + `ALLOWED_ORIGINS`). Prima email in uso: **Notify me** (decisione 0059, migrazione 0016, funzione `notify-back-in-stock`). Le prossime (conferma ordine) useranno lo stesso account e dominio.
+Come sono configurate le email del negozio e **come rifare tutto da zero** con nome, dominio o email nuovi (il nome "Zanza" è stato sostituito da **rythem-trax** il 2026-11-14 ma i secrets non sono ancora aggiornati; il dominio è provvisorio). Seconda: **offerte di scambio** (decisione 0068, funzione `trade-offer`: email a Gio con Reply-To del trader; secret in più `OFFER_TO` = indirizzo di Gio, Verify JWT **off**, chiamata dal browser, origini ammesse = `SHOP_URL` + anteprime Pages + `ALLOWED_ORIGINS`). Prima email in uso: **Notify me** (decisione 0059, migrazione 0016, funzione `notify-back-in-stock`). Le prossime (conferma ordine) useranno lo stesso account e dominio.
 
 ## Stato attuale (2026-11-12)
 
@@ -8,8 +8,8 @@ Come sono configurate le email del negozio e **come rifare tutto da zero** con n
 |---|---|---|
 | Account Resend | login Google con l'email personale di Gio | sì (email) |
 | Dominio di invio | `gio-d.xyz` (DNS su Cloudflare, regione Resend **eu-west-1**) | sì |
-| Mittente (`MAIL_FROM`) | `Zanza <shop@gio-d.xyz>` | sì (nome + indirizzo) |
-| Nome nel testo (`STORE_NAME`) | `Zanza` | sì |
+| Mittente (`MAIL_FROM`) | `Zanza <shop@gio-d.xyz>` | sì: nome → rythem-trax (da aggiornare), indirizzo provvisorio |
+| Nome nel testo (`STORE_NAME`) | `Zanza` | da aggiornare → `rythem-trax` |
 | Link nel testo (`SHOP_URL`) | `https://store-front-6fx.pages.dev` | sì (dominio Pages) |
 | Tracking aperture/click | spento (privacy) | — |
 | Ricezione email | spenta | — |

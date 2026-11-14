@@ -1,13 +1,13 @@
-# Zanza — Project Summary
+# rythem-trax (ex Zanza) — Project Summary
 
-> Leggi questo file all'inizio di ogni sessione su Zanza.
+> Leggi questo file all'inizio di ogni sessione su rythem-trax (ex Zanza: repo, cartelle e identificatori interni si chiamano ancora `zanza`).
 > Poi leggi i file in `_context/` prima di rispondere. Non proporre feature senza aver letto `open-questions.md`.
 
 ---
 
 ## What It Is
 
-**Zanza** (nome provvisorio) — e-commerce headless di dischi in vinile con due sezioni:
+**rythem-trax** (nome scelto da Gio il 2026-11-14, ex "Zanza"; si scrive così, *rythem* e non *rhythm*, minuscolo col trattino; dominio e marchio da verificare, Q7) — e-commerce headless di dischi in vinile con due sezioni:
 
 - **For Sale** — e-commerce classico: PLP, PDP, carrello, checkout, account, preferiti
 - **For Trade** — PDP di dischi NON in vendita, con CTA **Trade** che apre un form di proposta di scambio
@@ -47,6 +47,7 @@ Architettura: **headless**, frontend custom, servizi terzi per commerce/pagament
 | `_context/backend.md` | Schema DB, chiavi di storage, flussi (upload, hold/checkout, pubblicazione) |
 | `_context/email-setup.md` | Email transazionali (Resend): config attuale e runbook per rifarla con nome/dominio/email nuovi |
 | `_context/open-questions.md` | Decisioni aperte — da chiudere prima del codice |
+| `_context/provisional-names.md` | **Registro di dove si usano il nome dello store (ex provvisorio "Zanza", ora rythem-trax) e l'email personale, con lo stato della rinomina** (account, username, URL, codice). Ogni thread che ne aggiunge uno aggiunge la riga qui |
 | `design/README.md` | Mappa della documentazione DS + flusso Figma → codice + checklist di porting di un componente |
 | `design/decisions/` | **Il perché**: una decisione di design per file (inglese, append-only, con la *Rule* da applicare). Leggere prima di portare o modificare un componente |
 | `design/open.md` | **L'unico backlog** di gap, parcheggi e fix Figma. Una voce chiusa diventa una decisione |
@@ -63,7 +64,7 @@ Componenti portati: tabella in `packages/ui/README.md`. Aperti: `design/open.md`
 
 ## Regole del codice
 
-- `packages/ui` è l'unica implementazione dei componenti: l'artifact "Zanza Design System" (claude.ai) va rigenerato da qui, non scritto a parte
+- `packages/ui` è l'unica implementazione dei componenti: l'artifact "rythem-trax Design System" (ex "Zanza Design System") (claude.ai) va rigenerato da qui, non scritto a parte
 - Nessun valore visivo inventato: colori solo via token; dimensioni = quelle in Figma; se manca (focus, breakpoint) resta un TODO dichiarato
 - Figma: segnalare sempre refusi e residui di altri file; rinominare i layer anonimi dei componenti su cui si lavora
 - Dati finti in `content/` con già la forma del modello dati, così il backend sostituisce la sorgente e non le pagine

@@ -1,6 +1,6 @@
-# Zanza
+# rythem-trax
 
-Design system for Zanza, a headless vinyl record store (For Sale first, For Trade later). This is the **code-side mirror of the Figma file** `Zanza - Record Store`: every token here is a Figma variable, every component a Figma component. Figma is the source of design decisions; this system is where they become CSS variables and React components.
+Design system for rythem-trax (formerly Zanza), a headless vinyl record store (For Sale first, For Trade later). This is the **code-side mirror of the Figma file** `Zanza - Record Store`: every token here is a Figma variable, every component a Figma component. Figma is the source of design decisions; this system is where they become CSS variables and React components.
 
 The source lives in the repo at `packages/ui/` (tokens.json, components.js, components.css, docs/). This artifact is **generated from it** by `npm run build:artifact` — edit the repo, not this page.
 
