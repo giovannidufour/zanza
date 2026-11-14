@@ -57,7 +57,7 @@ function Bag({ products, site, url, shipping, countries }) {
   return h('div', { className: 'zz-page' },
     h(SiteHeader, { site, url, current: 'bag' }),
     h('main', { className: 'bag-content', 'data-bag-page': '' },
-      h('h1', { className: 'bag-content__title body-large' }, 'Bag'),
+      h('h1', { className: 'bag-content__title body-large' }, 'Your bag'),
       h('ul', { className: 'bag-list', 'data-bag-list': '', hidden: true },
         products.map((p) => h(BagLine, { key: p.listing.id, product: p, url }))),
       h(Z.BagSummary, {
@@ -94,4 +94,4 @@ function Bag({ products, site, url, shipping, countries }) {
   );
 }
 
-module.exports = { Bag, title: 'Bag' };
+module.exports = { Bag, title: 'Your bag' };
