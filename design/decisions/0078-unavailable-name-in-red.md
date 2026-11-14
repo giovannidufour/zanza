@@ -1,11 +1,13 @@
-# 0078 — Unavailable records in the bag: name in red (`text/unavailable`), no longer struck through
+# 0078 — Unavailable records in the bag: SOLD OUT / RESERVED in a red box, name plain (no strikethrough)
 
-`2026-11-14` · accepted (Gio: "i dischi non disponibili nel bag, anziché avere il titolo crossato, usino quel colore rosso") · Figma: `_primitives/red-dark`, `color/text/unavailable`; page Bag → `bag item` status=sold | reserved, `product name`
+`2026-11-14` · accepted (Gio: "riportameli neri, non crossati, però fammi un riquadro rosso attorno alle informazioni, alla scritta sold out ... o reserved") · Figma: page Bag → `alert` is now a set, `layout` = block | inline; `bag item` status=sold | reserved → `price row` → exposed `alert` layout=inline `status label`
 
-**Context.** In the bag, sold and reserved lines struck the record name through (0064, 0065). Gio wants the red of the alert (0077) instead. `red` #e0201b is only 3.7:1 on acid green: fine for the alert box (white text on it), not for 14–16px text on the page.
+**Context.** Sold and reserved lines struck the record name through (0064, 0065). A first try the same day (PR #91) coloured the name and the word red (`text/unavailable` → primitive `red-dark`): Gio found it not visible enough.
 **Decision.**
-- New primitive `red-dark` = `#c11c17`, the same hue darkened until it passes AA as text: 4.7:1 on acid green (`surface-accent`), 6.1:1 on white.
-- New semantic `text/unavailable` → `red-dark` (both modes, scope text fill). Named for its role, not `text/alert`, because code already has a PROVISIONAL `text-alert` (the orange of the input error, still an open question in `design/open.md`).
-- Bag item status=sold | reserved: `product name` and the `status label` ("SOLD OUT" / "RESERVED", Gio: "anche quelle scritte fai le rosse") in `text/unavailable`; no strikethrough on the name. The price stays black and struck. The price stays struck and "SOLD OUT" / "RESERVED" stays beside it, so colour is never the only cue (WCAG 1.4.1); the screen reader text ", not in your order," is unchanged.
-**Rule.** An unavailable item's name and the word that says why are shown in `text/unavailable`; the word is always there; strikethrough stays only on prices and on disabled actions.
+- The record name goes back to `text/strong`, **not** struck through.
+- "SOLD OUT" / "RESERVED" sits in the same red box as the bag's alerts (0077): `alert` gets a variant `layout` = block (the existing one: padding small, fills) | inline (padding 2/4 as Tag extra-small, hugs). Same tokens (`surface/alert` + `text/strong-invert`, 4.8:1) and body/small.
+- The price stays black and struck through beside the box: it is the amount you are not charged.
+- `text/unavailable` and `red-dark` (from PR #91) are removed from Figma and code: nothing uses them.
+- Colour is not the only cue (WCAG 1.4.1): the box holds the word; the screen reader text ", not in your order," is unchanged.
+**Rule.** A status that takes an item out of the order is a word in an inline `alert` next to its price; the item's name stays plain.
 **Supersedes.** The "name struck through" part of 0064 / 0065 (bag only).
