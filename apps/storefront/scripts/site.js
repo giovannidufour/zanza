@@ -485,21 +485,24 @@
       return out;
     }
     var LINK_LABEL = { genre: 'Genre', tag: 'Tag' };
-    // the row's chips: the hidden-facet chips, else the linked genre / tag while still ticked
+    // the row's chips: the hidden-facet chips, else the linked genre / tag while still ticked. A genre / tag chip shows
+    // only the value ("Street Soul", Gio 2026-11-14, decision 0073); the type stays in the remove button's name.
     function rowChipsOf(s) {
       var out = chipsOf(s);
       if (linked && s[linked.key] && s[linked.key].indexOf(linked.value) !== -1) {
         var b = boxes.filter(function (x) { return x.name === linked.key && x.value === linked.value; })[0];
-        out.push({ key: linked.key, value: linked.value, box: b,
-          text: (LINK_LABEL[linked.key] || linked.key) + ': ' + ((b && b.getAttribute('data-facet-label')) || linked.value) });
+        var shown = (b && b.getAttribute('data-facet-label')) || linked.value;
+        out.push({ key: linked.key, value: linked.value, box: b, text: shown,
+          name: (LINK_LABEL[linked.key] || linked.key) + ': ' + shown });
       }
       return out;
     }
-    function makeChip(template, text, onRemove) {
+    // name: the accessible name when the visible text drops the filter type (genre / tag chips)
+    function makeChip(template, text, onRemove, name) {
       var chip = template.content.firstElementChild.cloneNode(true);
       chip.querySelector('.zz-entity-chip__label').textContent = text;
       var btn = chip.querySelector('.zz-entity-chip__remove');
-      btn.setAttribute('aria-label', 'Remove filter ' + text);
+      btn.setAttribute('aria-label', 'Remove filter ' + (name || text));
       btn.removeAttribute('tabindex');
       btn.addEventListener('click', onRemove);
       return chip;
@@ -518,7 +521,7 @@
           apply(true);
           var next = root.querySelector('input');
           if (next) next.focus();   // the removed button is gone: keep keyboard focus on the page
-        }));
+        }, c.name));
       });
       return frag;
     }
