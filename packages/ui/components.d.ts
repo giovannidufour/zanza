@@ -269,7 +269,7 @@ export declare function ProductCard(props: ProductCardProps): JSX.Element;
 export interface BagItemProps extends HTMLAttributes<HTMLElement> {
   /** Omitted → responsive (breakpoint `--mobile` from tokens.json): desktop type = ProductCard desktop, mobile = ProductCard mobile. */
   device?: "desktop" | "mobile";
-  /** Figma `status`. sold: name plain, "SOLD OUT" in an inline Alert (red box, decision 0078) beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). Samples stay. `unavailable` is the pre-0064 name of reserved. @default "available" */
+  /** Figma `status`. sold: name plain, "SOLD OUT" in an inline Alert (alert box, decision 0078) beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). Samples stay. `unavailable` is the pre-0064 name of reserved. @default "available" */
   status?: "available" | "sold" | "reserved" | "unavailable";
   /** The word beside the struck price of a sold / reserved line. @default "SOLD OUT" / "RESERVED" */
   notice?: ReactNode;
@@ -326,11 +326,11 @@ export interface BagSummaryProps extends HTMLAttributes<HTMLElement> {
   checkoutProps?: Record<string, unknown>;
   /** Figma `note`, body/small, below the button. */
   note?: ReactNode;
-  /** Figma `sold out` + `sold out note`, an `Alert` (red box, decision 0077) above Checkout: says that sold lines are not in the order ("1 record sold out, not included.", decision 0064). Omit when the bag has no sold lines. */
+  /** Figma `sold out` + `sold out note`, an `Alert` (alert box, decision 0077) above Checkout: says that sold lines are not in the order ("1 record sold out, not included.", decision 0064). Omit when the bag has no sold lines. */
   soldOutNote?: ReactNode;
   /** Extra attributes for the sold out note (data-*, hidden), so a script can fill it; rendered even without `soldOutNote`. */
   soldOutNoteProps?: Record<string, unknown>;
-  /** Figma `minimum note` (variant minimum=below), an `Alert` (red box, decision 0077) above Checkout: the minimum order and what is missing ("Minimum order 20€. Add 8€ more to check out.", decision 0072). Pass it with `checkoutDisabled` and point Checkout's aria-describedby (via `checkoutProps`) at the note, so the disabled button is never unexplained. */
+  /** Figma `minimum note` (variant minimum=below), an `Alert` (alert box, decision 0077) above Checkout: the minimum order and what is missing ("Minimum order 20€. Add 8€ more to check out.", decision 0072). Pass it with `checkoutDisabled` and point Checkout's aria-describedby (via `checkoutProps`) at the note, so the disabled button is never unexplained. */
   minimumNote?: ReactNode;
   /** Extra attributes for the minimum note (id, data-*, hidden), so a script can fill it; rendered even without `minimumNote`. */
   minimumNoteProps?: Record<string, unknown>;
@@ -464,8 +464,8 @@ export interface FileItemProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function FileItem(props: FileItemProps): JSX.Element;
 
-/** Mirrors the Figma component `alert` (page `Bag`, decision 0077): a message that blocks an action, in a red box
- *  (surface-alert, text-strong-invert, body/small, padding small), full width. Renders <p>; add aria-live / id as needed. */
+/** Mirrors the Figma component `alert` (page `Bag`, decision 0077): a message that blocks an action, in an alert box (surface-alert)
+ *  (surface-alert, text-on-alert, body/small, padding small), full width. Renders <p>; add aria-live / id as needed. */
 export interface AlertProps extends HTMLAttributes<HTMLElement> {
   /** Figma `layout`. block: a <p>, padding small, fills its container. inline: a <span>, padding 2/4, hugs (bag item SOLD OUT / RESERVED, decision 0078). @default "block" */
   layout?: "block" | "inline";
