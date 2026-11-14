@@ -251,7 +251,8 @@ write('robots.txt', Seo.robots(site, { abs }));
 if (SITE_URL) write('sitemap.xml', Seo.sitemap(indexable, { abs }));
 if (targetArg === 'pages') {
   write('_headers', Seo.PAGES_HEADERS);
-  write('_redirects', Seo.pagesRedirects(url));
+  // the root 301 only while index.html is still the redirect stub: a real home page at / turns it off by itself
+  if (/http-equiv="refresh"/.test(fs.readFileSync(path.join(DIST, 'index.html'), 'utf8'))) write('_redirects', Seo.pagesRedirects(url));
 }
 console.log(SITE_URL ? `seo: ${indexable.length} page(s) in sitemap.xml, canonical on ${SITE_URL}` : 'seo: site.json → siteUrl is empty: every page is noindex (not launched)');
 console.log(`done: ${products.length} product page(s), ${forSale.length} for sale, ${forTrade.length} for trade`);
