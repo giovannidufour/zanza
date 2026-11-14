@@ -22,6 +22,10 @@ const site = Object.assign({}, siteFile, targetArg ? siteFile.targets[targetArg]
 const BASE = (site.basePath || '').replace(/\/$/, '');
 const DIST = path.join(APP, 'dist', site.outputDir || '');
 const url = (p) => (/^https?:\/\//.test(p) ? p : BASE + p);   // absolute URLs pass through
+// the public address of a site path (canonical, sitemap, og:url, decision 0084): site.json → siteUrl, the domain with no
+// trailing slash. Empty = not launched: null, and every page is noindex
+const SITE_URL = (site.siteUrl || '').replace(/\/$/, '');
+const abs = (p) => (!p ? null : /^https?:\/\//.test(p) ? p : SITE_URL ? SITE_URL + url(p) : null);
 // cache-busting: a short content hash on every stylesheet link, so a redeploy never serves a stale CSS
 const hashOf = (buf) => crypto.createHash('sha1').update(buf).digest('hex').slice(0, 8);
 // custom media (`@media (--mobile)`) are expanded from tokens.json → breakpoint: one value, one place
@@ -56,8 +60,10 @@ const Plp = require('./pages/plp.js');
 const Bag = require('./pages/bag.js');
 const Trade = require('./pages/trade.js');
 const Legal = require('./pages/legal.js');
+const Seo = require('./pages/seo.js');
 const Home = require('./pages/home.js');
 const Z = require(path.join(UI, 'components.js'));
+const { NotFound } = require('./pages/not-found.js');
 
 // the site player: one per page, outside .zz-page, so the soft navigation in site.js keeps it (and the audio) alive.
 // Empty and closed at load; site.js fills it when a sample is played.
@@ -96,13 +102,16 @@ let liveMeta = '';
 const footerHtml = renderToStaticMarkup(React.createElement(require('./pages/shell.js').SiteFooter, { site, url }));
 const withFooter = (body) => (body.startsWith('<div class="zz-page"') && body.endsWith('</div>') ? body.slice(0, -6) + footerHtml + '</div>' : body);
 
-function page({ title: t, body }) {
+// meta = the SEO of the page (pages/seo.js → headTags): description, path, index, image, jsonLd
+function page({ title: t, body, meta = {} }) {
+  const fullTitle = `${t} · ${site.storeName}`;
   return `<!doctype html>
 <html lang="${site.lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escape(t)} · ${escape(site.storeName)}</title>
+<title>${escape(fullTitle)}</title>
+${Seo.headTags(meta, { site, title: fullTitle, abs })}<link rel="icon" href="${url('/assets/logo.png')}" type="image/png">
 <link rel="stylesheet" href="${cssHref('fonts')}">
 <link rel="stylesheet" href="${cssHref('tokens')}">
 <link rel="stylesheet" href="${cssHref('components')}">
@@ -172,6 +181,8 @@ write('js/toast.js', toastJs);
 write('js/shipping.js', shippingJs);
 for (const f of fs.readdirSync(path.join(APP, 'public'))) write('assets/' + f, fs.readFileSync(path.join(APP, 'public', f)));
 
+// the pages that go in sitemap.xml (decision 0084): the PLPs, every product page, the info pages
+const indexable = [];
 const order = new Map(products.map((p, i) => [p, i]));
 // "More for sale" (PDP): up to 3 other available products of the same section, most shared genres first, then
 // listing order. Placeholder logic until the backend provides recommendations.
@@ -186,49 +197,70 @@ function relatedTo(product) {
 }
 for (const product of products) {
   const body = renderToStaticMarkup(React.createElement(Pdp, { product, related: relatedTo(product), site, url }));
-  write(`products/${product.listing.slug}/index.html`, page({ title: title(product), body }));
+  const { listing, release } = product;
+  write(`products/${listing.slug}/index.html`, page({ title: title(product), body, meta: {
+    description: Seo.productDescription(product), path: `/products/${listing.slug}/`,
+    image: release.cover, imageAlt: title(product), jsonLd: Seo.productJsonLd(product, { abs }) } }));
+  indexable.push(`/products/${listing.slug}/`);
 }
 
 // PLP: the listing of the "For sale" section (Figma: PLP - desktop); "For trade" has no products yet.
 // A reserved copy stays in the list with its "Reserved" button: it is paused, not gone (Gio 2026-11-12)
 // Sold copies stay too, behind the "Show sold out" filter, ticked by default (Gio 2026-11-12, Figma page `Search`)
 const forSale = products.filter(p => p.listing.section === 'sale' && ['available', 'reserved', 'sold'].includes(p.listing.status));
-write('sale/index.html', page({ title: Plp.title('sale'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, allProducts: products, site, url })) }));
+write('sale/index.html', page({ title: Plp.title('sale'), meta: { description: Seo.sectionDescription('sale'), path: '/sale/' }, body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, allProducts: products, site, url })) }));
 
 // For trade (Figma page `Trade`, decision 0068): the trade PLP, one offer page per trade listing, How trading works, About.
 // Traded copies stay on the list like sold ones (behind "Show sold out").
 const forTrade = products.filter(p => p.listing.section === 'trade' && ['available', 'reserved', 'traded'].includes(p.listing.status));
-write('trade/index.html', page({ title: Plp.title('trade'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'trade', products: forTrade, allProducts: products, site, url })) }));
+indexable.push('/sale/', '/trade/', '/catalog/');
+write('trade/index.html', page({ title: Plp.title('trade'), meta: { description: Seo.sectionDescription('trade'), path: '/trade/' }, body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'trade', products: forTrade, allProducts: products, site, url })) }));
 // Catalog (decision 0085, Gio 2026-11-15): every record of both sections mixed, newest first, with the PLP filters.
 // Linked only from the home's "See all" under Just in (no tab, no menu item).
 const catalog = products.filter(p => forSale.includes(p) || forTrade.includes(p));
-write('catalog/index.html', page({ title: Plp.title('catalog'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'catalog', products: catalog, allProducts: products, site, url })) }));
+write('catalog/index.html', page({ title: Plp.title('catalog'), meta: { description: Seo.sectionDescription('catalog'), path: '/catalog/' }, body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'catalog', products: catalog, allProducts: products, site, url })) }));
 for (const product of forTrade.filter(p => p.listing.status === 'available')) {
-  write(`products/${product.listing.slug}/offer/index.html`, page({ title: `Make an offer · ${title(product)}`, body: renderToStaticMarkup(React.createElement(Trade.Offer, { product, site, url })) }));
+  write(`products/${product.listing.slug}/offer/index.html`, page({ title: `Make an offer · ${title(product)}`, meta: { index: false }, body: renderToStaticMarkup(React.createElement(Trade.Offer, { product, site, url })) }));
 }
-write('how-trading-works/index.html', page({ title: 'How trading works', body: renderToStaticMarkup(React.createElement(Trade.HowTrading, { site, url })) }));
-write('about/index.html', page({ title: 'About', body: renderToStaticMarkup(React.createElement(Trade.About, { site, url })) }));
+write('how-trading-works/index.html', page({ title: 'How trading works', meta: { path: '/how-trading-works/',
+  description: 'Trade a record of yours for one of mine: how an offer works, step by step, and who you are trading with.' }, body: renderToStaticMarkup(React.createElement(Trade.HowTrading, { site, url })) }));
+write('about/index.html', page({ title: 'About', meta: { path: '/about/', description: (site.owner || {}).bio }, body: renderToStaticMarkup(React.createElement(Trade.About, { site, url })) }));
 
 // Search results (Figma page `Search`, 2026-11-12): /search/?q=… is a PLP of the same copies, matched in the browser
 // (scripts/site.js) against each card's data-search text. Static and client-side: fine at hundreds of copies
 // (_context/stack.md: a search service only past ~2k).
-write('search/index.html', page({ title: 'Search', body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, allProducts: products, site, url, search: true })) }));
+indexable.push('/how-trading-works/', '/about/');
+// search results and the bag: noindex (decision 0084), the links on them are still followed
+write('search/index.html', page({ title: 'Search', meta: { index: false }, body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, allProducts: products, site, url, search: true })) }));
 
 // Bag (decision 0044): one hidden line per listing of the sale section, whatever its status (a copy sold after it was
 // added still shows, as unavailable); scripts/site.js shows the visitor's own lines from localStorage
 const bagProducts = products.filter(p => p.listing.section === 'sale');
-write('bag/index.html', page({ title: Bag.title, body: renderToStaticMarkup(React.createElement(Bag.Bag, { products: bagProducts, site, url, shipping, countries: shippingData.countries(shipping) })) }));
+write('bag/index.html', page({ title: Bag.title, meta: { index: false }, body: renderToStaticMarkup(React.createElement(Bag.Bag, { products: bagProducts, site, url, shipping, countries: shippingData.countries(shipping) })) }));
 
 // Legal pages (decision 0079, Figma page `Legal`): content/legal/<page>.md → /<page>/. What Gio still has to fill
 // (site.json → legal, [[TO FILL]] in the text) is listed here, so a build never hides a placeholder.
 for (const p of Legal.PAGES) {
   const { title: t, body, missing } = Legal.legalPage(p, { site, url, shipping, countries: shippingData.countries(shipping) });
-  write(`${p}/index.html`, page({ title: t, body: renderToStaticMarkup(body) }));
+  // Shipping is shop information worth finding; Impressum, Privacy, Terms, Withdrawal are noindex (decision 0084)
+  const indexed = p === 'shipping';
+  write(`${p}/index.html`, page({ title: t, meta: { path: `/${p}/`, index: indexed }, body: renderToStaticMarkup(body) }));
+  if (indexed) indexable.push(`/${p}/`);
   if (missing.length) console.log(`    to fill: ${missing.join(' · ')}`);
 }
 
 // Home (Figma page `Home`, decision 0085): Just in, For trade, Genres, About
-write('index.html', page({ title: Home.title, body: renderToStaticMarkup(React.createElement(Home.Home, { products, site, url })) }));
+write('index.html', page({ title: Home.title, meta: { path: '/', description: Seo.sectionDescription('home') },
+  body: renderToStaticMarkup(React.createElement(Home.Home, { products, site, url })) }));
+indexable.unshift('/');
+// 404 (decision 0084): served with status 404 by Cloudflare Pages for any unknown path, instead of the home page with 200
+write('404.html', page({ title: 'Page not found', meta: { index: false }, body: renderToStaticMarkup(React.createElement(NotFound, { site, url })) }));
+
+// robots.txt, sitemap.xml (only once launched: siteUrl), and on Cloudflare Pages the noindex of *.pages.dev
+write('robots.txt', Seo.robots(site, { abs }));
+if (SITE_URL) write('sitemap.xml', Seo.sitemap(indexable, { abs }));
+if (targetArg === 'pages') write('_headers', Seo.PAGES_HEADERS);
+console.log(SITE_URL ? `seo: ${indexable.length} page(s) in sitemap.xml, canonical on ${SITE_URL}` : 'seo: site.json → siteUrl is empty: every page is noindex (not launched)');
 console.log(`done: ${products.length} product page(s), ${forSale.length} for sale, ${forTrade.length} for trade`);
 }
 main().catch((err) => { console.error(err.message || err); process.exit(1); });

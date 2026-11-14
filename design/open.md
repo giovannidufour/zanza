@@ -95,5 +95,11 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 
 ## Code to do
 
+- **SEO at launch (0084).** Set `site.json` → `targets.pages.siteUrl` to the bought domain (turns on indexing, canonical, sitemap), add the domain to the Pages project, register it in Google Search Console and submit `/sitemap.xml`.
+- **SEO: product images.** R2 photos are served at full size and the card/gallery `<img>` have no `width`/`height` (layout shift). Resize (Cloudflare Images or variants at upload) + explicit dimensions. Heaviest performance item.
+- **SEO: links to missing pages.** Header/footer/menu link `/grading/`, `/contact/`, `/account/`, which don't exist: since 0084 they return a real 404. Build the pages or hide the links before launch.
+- **SEO: PDP title and description in capitals.** "GEORGE NOOKS - HERO" comes as typed in the data. Normalise case for `<title>`/description, or leave it as the shop's style? (Gio to decide.)
+- **SEO: JSON-LD extras.** Google warns without `shippingDetails` and `hasMerchantReturnPolicy` on the Offer: add them from the shipping tables (0057) and the Withdrawal page once checkout exists. Optional: `MusicRelease` linked to the Product when Discogs ids are filled.
+- **SEO: section descriptions.** The meta descriptions of the home, `/catalog/`, `/sale/`, `/trade/` and How trading works are Claude's draft (`pages/seo.js`, `build.js`); About uses the placeholder bio. Gio to rewrite.
 - DS artifact (https://claude.ai/artifact/9Q7SAYDqDnBAj4MEKLnphz) not republished since the `--mobile` type variants: needs `npm run build:artifact` + publish.
 - Component token tables in `docs/*/README.md` are still hand-written (API tables are generated).
