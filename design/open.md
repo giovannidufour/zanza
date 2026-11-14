@@ -91,7 +91,7 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - `checkbox`: label text fill unbound `#000000` → `text/strong`; icons `icon-square` / `icon-square-tick` fill unbound black; component has no description.
 - `player`: native-player placeholder fill unbound (placeholder only, fine).
 - `buttons` page: loose component `Frame 1` (2191:27533) with no name or use → delete or name it.
-- Icons: `icon-bars-two` (hamburger) lines have a white stroke · `icon-pencil` uses unbound `#212121`.
+- Icons: `icon-bars-three` (hamburger) lines have a white stroke · `icon-pencil` uses unbound `#212121`.
 
 ## Code to do
 
