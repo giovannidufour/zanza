@@ -116,6 +116,10 @@
   function current() { return queue[index] || null; }
 
   function sampleFrom(btn) {
+    // the copy's status at build time travels with the sample (decision 0086): the player keeps playing across pages,
+    // where that copy may not be on the page, and its "Add to bag" must still read "Sold out" for a sold copy
+    var id = btn.getAttribute('data-listing-id');
+    if (id && btn.getAttribute('data-listing-status')) heard[id] = btn.getAttribute('data-listing-status');
     return {
       src: btn.getAttribute('data-sample-src'),
       title: btn.getAttribute('data-sample-title') || '',
@@ -1050,10 +1054,11 @@
 
   var seeded = {};      // listing id -> status written in this page at build time
   var live = {};        // listing id -> status read from Supabase (fresher: wins over the page)
+  var heard = {};       // listing id -> build-time status of a copy queued in the player (kept across pages)
   var holdKind = {};    // listing id -> 'checkout' | 'manual' (reserved copies only)
   var lastLiveRead = 0;
   var LIVE_MIN_GAP = 30000;   // ms between two reads (page load, soft navigation, tab back in view)
-  function statusFor(id) { return live[id] || seeded[id] || 'available'; }
+  function statusFor(id) { return live[id] || seeded[id] || heard[id] || 'available'; }
   function listingIdOf(el) {
     return el.getAttribute('data-listing-id') || el.getAttribute('data-add-to-bag') || el.getAttribute('data-bag-line');
   }

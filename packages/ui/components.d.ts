@@ -233,7 +233,7 @@ export interface ProductCardProps extends HTMLAttributes<HTMLElement> {
   device?: "desktop" | "mobile";
   /** Figma `product image`: the cover, square. */
   image?: ProductCardImage;
-  /** Figma `product image` boolean `sold out`: a 1px X in surface/alert (alert pink) from corner to corner over the cover (decision 0086). Decorative: the card says "Sold out" on its button. */
+  /** Figma `product image` boolean `sold out`: a 1px white X (icon/strong-invert), image desaturated and multiplied on the background, from corner to corner over the cover (decision 0086). Decorative: the card says "Sold out" on its button. */
   soldOut?: boolean;
   /** Product page URL: the cover becomes a link to it (no visual change; a designed link style is in open.md). */
   href?: string;
@@ -364,7 +364,7 @@ export interface GalleryProps extends HTMLAttributes<HTMLDivElement> {
   device?: "desktop" | "mobile";
   /** In order; the first is the main image. */
   images: GalleryImage[];
-  /** Figma `product image` boolean `sold out` on every image: a 1px X in surface/alert (alert pink) from corner to corner (decision 0086). */
+  /** Figma `product image` boolean `sold out` on every image: a 1px white X (icon/strong-invert), image desaturated and multiplied on the background, from corner to corner (decision 0086). */
   soldOut?: boolean;
 }
 export declare function Gallery(props: GalleryProps): JSX.Element;

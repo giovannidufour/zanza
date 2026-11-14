@@ -179,7 +179,8 @@ function sampleAttrs(product, s, url) {
     'data-product-image': release.cover ? url(release.cover) : undefined,
     'data-product-href': productHref(product, url),
     'data-listing-id': product.listing.id,   // the player's "Add to bag" adds the playing product
-    'data-listing-section': product.listing.section   // trade listings: no Add to bag in the player
+    'data-listing-section': product.listing.section,   // trade listings: no Add to bag in the player
+    'data-listing-status': product.listing.status   // sold / traded: the player's button reads "Sold out", disabled (0086)
   };
 }
 
