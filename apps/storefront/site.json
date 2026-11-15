@@ -74,5 +74,9 @@
     "title": "Opening soon",
     "text": "Reggae and dancehall records from my crates, for sale and for trade. The shop opens soon: leave your email and you’ll hear first.",
     "email": "gio@rythem-works.com"
+  },
+  "checkout": {
+    "note": "Stripe Checkout (migration 0021, _context/backend.md → Checkout con hold). endpoint = URL of the Supabase function create-checkout; empty = Checkout in the Bag says checkout is not open yet.",
+    "endpoint": "https://hhpknvyfypqipxufmbys.supabase.co/functions/v1/create-checkout"
   }
 }

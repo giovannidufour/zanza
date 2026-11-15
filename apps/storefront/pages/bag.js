@@ -70,8 +70,9 @@ function Bag({ products, site, url, shipping, countries }) {
         'data-min-order-cents': minimum || undefined,
         subtotalLabel: h('span', { 'data-bag-subtotal-label': '' }, 'Subtotal (0 records)'),
         subtotal: h('span', { 'data-bag-subtotal': '' }, formatPrice({ amount: 0 })),
-        // TODO checkout: create-checkout (hold + Stripe Checkout session) is not built yet (_context/backend.md)
-        checkoutProps: { 'data-bag-checkout': '' },
+        // Checkout → create-checkout (hold + Stripe Checkout session, migration 0021): site.js posts the available ids
+        // and the country, then goes to Stripe. Empty endpoint = not switched on yet
+        checkoutProps: { 'data-bag-checkout': '', 'data-endpoint': (site.checkout || {}).endpoint || '' },
         // sold lines are not in the order (decision 0064): site.js fills and shows it
         soldOutNoteProps: { 'data-bag-sold-out': '', hidden: true },
         // minimum order (decision 0072, Figma `bag summary` minimum=below): site.js fills it, disables Checkout and
