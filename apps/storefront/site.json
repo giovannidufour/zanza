@@ -40,8 +40,8 @@
     }
   },
   "newsletter": {
-    "note": "Footer newsletter signup (decision 0076). action = the Buttondown subscribe URL (https://buttondown.com/api/emails/embed-subscribe/dufour). Empty = the footer shows no signup. Switched on 2026-11-14: the Privacy page names Buttondown (decision 0079).",
-    "action": "https://buttondown.com/api/emails/embed-subscribe/dufour"
+    "note": "Footer newsletter signup (decision 0076). action = the Buttondown subscribe URL (https://buttondown.com/api/emails/embed-subscribe/rythem-works). Empty = the footer shows no signup. Switched on 2026-11-14: the Privacy page names Buttondown (decision 0079).",
+    "action": "https://buttondown.com/api/emails/embed-subscribe/rythem-works"
   },
   "legal": {
     "note": "Legal pages (decision 0079): content/legal/*.md, {{legal.x}} is filled from here. EMPTY = the page shows the bracketed placeholder and the build lists it: Gio fills these himself (his legal name and a postal address where he can be served, required by § 5 DDG; no P.O. box). email = the shop contact address (provisional: see _context/provisional-names.md). vat = the VAT line of the Impressum, decided with the tax advisor (Q5b). updated = date of the last change to Privacy and Terms.",
