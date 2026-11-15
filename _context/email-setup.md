@@ -1,34 +1,50 @@
 # Email transazionali (Resend) — runbook
 
-Come sono configurate le email del negozio e **come rifare tutto da zero** con nome, dominio o email nuovi (il nome "Zanza" è stato sostituito da **rythem-works** il 2026-11-15 (dopo un giorno come rythem-trax) ma i secrets non sono ancora aggiornati; il dominio è provvisorio). Seconda: **offerte di scambio** (decisione 0068, funzione `trade-offer`: email a Gio con Reply-To del trader; secret in più `OFFER_TO` = indirizzo di Gio, Verify JWT **off**, chiamata dal browser, origini ammesse = `SHOP_URL` + anteprime Pages + `ALLOWED_ORIGINS`). Prima email in uso: **Notify me** (decisione 0059, migrazione 0016, funzione `notify-back-in-stock`). Le prossime (conferma ordine) useranno lo stesso account e dominio.
+Come sono configurate le email del negozio e **come rifare tutto da zero** con nome, dominio o email nuovi (nome **rythem-works** e dominio **rythem-works.com** dal 2026-11-15; prima "Zanza" su `gio-d.xyz`). Seconda: **offerte di scambio** (decisione 0068, funzione `trade-offer`: email a Gio con Reply-To del trader; secret in più `OFFER_TO` = indirizzo di Gio, Verify JWT **off**, chiamata dal browser, origini ammesse = `SHOP_URL` + anteprime Pages + `ALLOWED_ORIGINS`). Prima email in uso: **Notify me** (decisione 0059, migrazione 0016, funzione `notify-back-in-stock`). Le prossime (conferma ordine) useranno lo stesso account e dominio.
 
-## Stato attuale (2026-11-12)
+## Caselle (Gio, 2026-11-15)
 
-| Cosa | Valore oggi | Provvisorio? |
-|---|---|---|
-| Account Resend | login Google con l'email personale di Gio | sì (email) |
-| Dominio di invio | `gio-d.xyz` (DNS su Cloudflare, regione Resend **eu-west-1**) | sì |
-| Mittente (`MAIL_FROM`) | `Zanza <shop@gio-d.xyz>` | sì: nome → rythem-works (da aggiornare), indirizzo provvisorio |
-| Nome nel testo (`STORE_NAME`) | `Zanza` | da aggiornare → `rythem-works` |
-| Link nel testo (`SHOP_URL`) | `https://store-front-6fx.pages.dev` | sì (dominio Pages) |
-| Tracking aperture/click | spento (privacy) | — |
-| Ricezione email | spenta | — |
+| Casella | A cosa serve |
+|---|---|
+| `gio@rythem-works.com` | **l'unico indirizzo pubblico**: sito, Privacy, mittente delle email, "Rispondi a" della newsletter. Non è una casella: Cloudflare Email Routing la inoltra |
+| `gio.rythem.works@gmail.com` | **casella del negozio**: vendite, scambi, offerte, contatti. Invia come `gio@rythem-works.com` (Gmail → Impostazioni → Account → "Invia messaggio come", SMTP `smtp.resend.com:465` SSL, utente `resend`, password = chiave Resend `gmail-smtp-2`). Non va mai mostrata in pubblico |
+| Gmail personale di Gio | **solo login e gestione degli account** dei servizi (Cloudflare, Supabase, GitHub, Resend, Stripe, Figma). Non deve mai comparire a clienti o iscritti |
+
+Eccezione voluta: l'account **Buttondown** ha come email `gio@rythem-works.com`, perché Buttondown usa l'email dell'account come "Rispondi a" (senza dominio di invio a pagamento non si separano). Il login resta con Google sul Gmail personale.
+
+**Inoltro:** la regola `gio@rythem-works.com` → `gio.rythem.works@gmail.com` è **da fare**: la destinazione su Cloudflare (Email Routing → Destination addresses) è ancora *Pending* perché la mail di verifica di Cloudflare non arriva (2026-11-15). Finché non è verificata, la regola punta ancora al Gmail personale.
+
+## Stato attuale (2026-11-15)
+
+| Cosa | Valore |
+|---|---|
+| Account Resend | login Google con il Gmail personale |
+| Dominio di invio | `rythem-works.com` (DNS su Cloudflare, regione Resend **eu-west-1**) · `gio-d.xyz` ancora presente in Resend: da rimuovere (vedi sotto) |
+| Chiavi API | `rythem-works-site` (Sending access, solo rythem-works.com) = secret `RESEND_API_KEY` · `gmail-smtp-2` (Sending access) = password SMTP del "Invia come" nella casella del negozio · `zanza-notify` (vecchia, gio-d.xyz): da cancellare |
+| Mittente (`MAIL_FROM`) | `rythem-works <gio@rythem-works.com>` |
+| Nome nel testo (`STORE_NAME`) | `rythem-works` |
+| Link nel testo (`SHOP_URL`) | `https://rythem-works.com` (oggi è la pagina coming soon: va bene finché il negozio non è aperto) |
+| Destinatario offerte (`OFFER_TO`) | `gio.rythem.works@gmail.com` |
+| Tracking aperture/click | spento (privacy) |
+| Ricezione email | spenta |
+
+I secret sono stati verificati confrontando lo SHA256 mostrato da Supabase con quello dei valori attesi.
 
 Nessun nome, dominio o indirizzo è scritto nel codice: stanno tutti nei secrets della funzione. Il codice va toccato solo se cambia il testo dell'email.
 
-**Stato:** attivo e provato il 2026-11-12 (email consegnata a `delivered@resend.dev`, l'inbox di test di Resend).
+**Stato:** attivo e provato il 2026-11-12 su gio-d.xyz e di nuovo il 2026-11-15 su rythem-works.com (email consegnata a `delivered@resend.dev`, l'inbox di test di Resend).
 
 ## Pezzi e dove stanno
 
-1. **Resend** → Domains: il dominio con 3 record DNS (sotto). → API keys: una chiave `zanza-notify`, *Sending access*, solo sul dominio.
+1. **Resend** → Domains: il dominio con 3 record DNS (sotto). → API keys: `rythem-works-site` (funzioni) e `gmail-smtp-2` (Gmail), *Sending access*, solo sul dominio.
 2. **Cloudflare** → DNS del dominio: i 3 record di Resend (*DNS only*, non proxied).
 3. **Supabase** (`store-staging`) → Edge Functions → `notify-back-in-stock`: *Verify JWT* **off** (la chiama un job senza login; il controllo è `NOTIFY_SECRET`).
-4. **Supabase** → Edge Functions → Secrets: `RESEND_API_KEY`, `NOTIFY_SECRET`, `MAIL_FROM`, `SHOP_URL`, `STORE_NAME`.
+4. **Supabase** → Edge Functions → Secrets: `RESEND_API_KEY`, `NOTIFY_SECRET`, `MAIL_FROM`, `SHOP_URL`, `STORE_NAME`, `OFFER_TO` (offerte di scambio).
 5. **Supabase** → Integrations → Vault → *Add new secret* (form, più semplice dell'SQL): `notify_back_in_stock_url` (URL della funzione) e `notify_back_in_stock_secret` (= `NOTIFY_SECRET`).
 6. **pg_cron** job `back-in-stock` (migrazione 0016): ogni minuto, chiama la funzione solo se c'è una richiesta dovuta.
 7. **Permessi** (migrazione 0017): questo progetto non dà permessi sulle tabelle a `service_role` di default; la funzione ha bisogno di select/update/delete su `back_in_stock` e select su `listings`, `releases`, `release_lines`. Senza: `permission denied for table back_in_stock`.
 
-### Record DNS (gio-d.xyz, regione eu-west-1)
+### Record DNS (rythem-works.com, regione eu-west-1; erano uguali su gio-d.xyz)
 | Tipo | Nome | Contenuto |
 |---|---|---|
 | TXT | `resend._domainkey` | chiave DKIM data da Resend (`p=MIGf…`; cambia per ogni dominio) |

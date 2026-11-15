@@ -1,6 +1,6 @@
 # Nomi ed email provvisori — registro
 
-> Il nome provvisorio era "Zanza". **Dal 2026-11-15 lo store si chiama `rythem-works`** (grafia di Gio: *rythem*, non *rhythm*; minuscolo, col trattino). Dal 14 al 15/11 era `rythem-trax`: abbandonato perché il dominio rythem-tracks.com non era disponibile. Dominio e marchio di rythem-works da verificare (Q7). Gli account usano ancora l'email personale di Gio.
+> Il nome provvisorio era "Zanza". **Dal 2026-11-15 lo store si chiama `rythem-works`** (grafia di Gio: *rythem*, non *rhythm*; minuscolo, col trattino). Dal 14 al 15/11 era `rythem-trax`: abbandonato perché il dominio rythem-tracks.com non era disponibile. Dominio e marchio di rythem-works da verificare (Q7). Gli account usano l'email personale di Gio **per scelta** (solo login e gestione); tutto ciò che vedono clienti e iscritti usa `gio@rythem-works.com` (`email-setup.md` → Caselle).
 > Questa è la lista di **tutto** quello che porta il nome o l'email: la sezione sotto dice cosa è già passato a rythem-works e cosa no.
 > **Regola:** ogni volta che un thread usa il nome, l'email o un identificativo legato a loro (account, username, URL, chiave localStorage…), aggiunge una riga qui nello stesso commit.
 
@@ -12,7 +12,7 @@ Il 2026-11-15 tutto quello che nel repo e in Figma diceva rythem-trax è passato
 
 **Fatto**
 - Codice: `site.json` → `storeName` = "rythem-works" (header del negozio, `<title>` delle pagine) · nome del DS in `tokens.json`, commenti di `components.css`/`components.js`, titolo dell'artifact in `build-artifact.js`, cover e preview Header · titoli di `CLAUDE.md`, `_context/*`, `design/README.md`, `packages/ui/README.md` · description di `package.json`.
-- Buttondown (2026-11-14): newsletter name e sender (From) = **rythem-trax**: da aggiornare a rythem-works (Settings → General / Email). Username `dufour` resta finché non c'è un account del negozio.
+- Buttondown: newsletter name e sender = **rythem-works**, username `rythem-works` (2026-11-15, PR #132).
 - Figma: testo dello store name nel component `header` (desktop + mobile, tutte le istanze lo ereditano) e nei 2 header sciolti della pagina PDP; layer testo rinominato `store name`. Lo stile Label lo mostra in maiuscolo (RYTHEM-WORKS).
 
 **Volutamente NON cambiato** (identificatori interni: rinominarli rompe qualcosa o non si vede; si fa solo se Gio lo chiede)
@@ -23,13 +23,12 @@ Il 2026-11-15 tutto quello che nel repo e in Figma diceva rythem-trax è passato
 - Decisioni in `design/decisions/` (append-only: restano col nome dell'epoca).
 - Supabase `store-staging`, Pages `store-front`/`store-admin`, bucket `store-media`: nomi già neutri.
 
-**Dominio definitivo (2026-11-15):** Gio ha comprato **`rythem-works.com`** (Cloudflare Registrar). Email del negozio: **`gio@rythem-works.com`** (Email Routing → Gmail). Collegati: negozio (apex, `www` → apex), `admin.`, `media.` (R2), CORS R2, DMARC, dominio su Resend (in verifica). Mappa in `_context/stack.md` → Dominio. Ancora da fare: Supabase (Auth URL, secret `SHOP_URL`/`ALLOWED_ORIGINS`/`ADMIN_ORIGINS`/`MAIL_FROM`/`STORE_NAME`), nuova API key Resend, Gmail "Invia come", Buttondown, `siteUrl` (PR #106 SEO non ancora unita), poi le righe sotto.
+**Dominio definitivo (2026-11-15):** Gio ha comprato **`rythem-works.com`** (Cloudflare Registrar). Email del negozio: **`gio@rythem-works.com`** (Email Routing → Gmail). Collegati: apex + `www` = pagina coming soon (PR #131), negozio su `staging.` dietro Cloudflare Access, `admin.`, `media.` (R2), CORS R2, DMARC, Resend verificato, secret Supabase aggiornati, chiave Resend nuova, "Invia come" nella casella del negozio, Buttondown (username + endpoint, PR #132). Mappa in `_context/stack.md` → Dominio. Ancora da fare: inoltro email verso la casella del negozio (Cloudflare non manda la verifica), `siteUrl` (PR #106 SEO non ancora unita), poi le righe sotto.
 
 **Da fare fuori dal repo** (servono le mani o l'ok di Gio)
 - Figma: rinominare il file "Zanza - Record Store" (l'API non può; la key non cambia).
 - claude.ai: progetto "Zanza" e artifact "Zanza Design System" (va rigenerato con `npm run build:artifact` per avere il titolo nuovo).
-- Supabase → Edge Functions → Secrets: `STORE_NAME` = rythem-works e `MAIL_FROM` col nuovo nome (oggi "Zanza", lo vedono i clienti nelle email Notify me e nelle email di offerta).
-- Dominio + email del negozio (es. rythem-works.*): da comprare/verificare; poi Resend, Cloudflare Pages custom domain, `SHOP_URL`, Stripe public details. Ordine in fondo a questo file.
+- Stripe public details (nome e email pubblica = rythem-works, gio@rythem-works.com) prima del live.
 - Logo (`apps/storefront/public/logo.png`, illustrazione): non contiene il nome, non toccato.
 
 ## Pagine legali: segnaposto (2026-11-14, decisione 0079)
@@ -50,11 +49,11 @@ Gio (2026-11-14): "fai tutto tu per ora, metti dei placeholder". Online ci sono 
 
 | Servizio | Cosa usa nome/email | Dove si cambia | Cambio |
 |---|---|---|---|
-| Buttondown (newsletter, 2026-11-12) | login = email personale · **username `rythem-works`** (era `dufour`, cambiato da Gio il 2026-11-15) → pagina pubblica `buttondown.com/rythem-works` ed endpoint del form `https://buttondown.com/api/emails/embed-subscribe/rythem-works` · newsletter name e sender (From) "rythem-works" (sender corretto il 2026-11-15, prima era rimasto rythem-trax) · l'endpoint è in `site.json` → `newsletter.action` (form del footer, attivo dal 2026-11-14) · Mailing address (indirizzo di Gio) ancora vuoto | Settings → General (username, nome) · Settings → Email (sender, mailing address) · Account (email login) | 🟡 username: cambia l'URL pubblico e l'endpoint del form nel codice |
-| Resend (email transazionali, 2026-11-12) | login con l'email Google personale · dominio di invio **`gio-d.xyz`** (regione eu-west-1) con 3 record DNS su Cloudflare: `resend._domainkey` TXT, CNAME `rsend` e `send` | Dashboard Resend → Domains (nuovo dominio + DNS); runbook completo in `_context/email-setup.md` | 🟡 nuovo dominio = nuovi record DNS e verifica |
-| Supabase Edge Function `notify-back-in-stock` (secrets) | `MAIL_FROM` "Zanza <shop@gio-d.xyz>" (proposto, non ancora confermato da Gio) · `STORE_NAME` "Zanza" · `SHOP_URL` https://store-front-6fx.pages.dev — nulla hard-coded nel repo | Dashboard → Edge Functions → Secrets (vedi `_context/email-setup.md`) | 🟢 |
+| Buttondown (newsletter, 2026-11-12) | login con Google (Gmail personale) · **email dell'account = `gio@rythem-works.com`** (2026-11-15: Buttondown la usa come "Rispondi a", prima mostrava il Gmail personale agli iscritti) · **username `rythem-works`** (era `dufour`, cambiato da Gio il 2026-11-15) → pagina pubblica `buttondown.com/rythem-works` ed endpoint del form `https://buttondown.com/api/emails/embed-subscribe/rythem-works` · newsletter name e sender (From) "rythem-works" (sender corretto il 2026-11-15, prima era rimasto rythem-trax) · l'endpoint è in `site.json` → `newsletter.action` (form del footer, attivo dal 2026-11-14) · Mailing address = indirizzo di casa di Gio: **non deve mai comparire nelle mail** (compare solo se il footer contiene `{{ newsletter.address }}`; prova di invio a sé prima del primo numero) | Settings → General (username, nome) · Settings → Email (sender, mailing address) · Account (email login) | 🟡 username: cambia l'URL pubblico e l'endpoint del form nel codice |
+| Resend (email transazionali, 2026-11-12) | login con l'email Google personale · dominio di invio **`rythem-works.com`** (eu-west-1; `gio-d.xyz` e chiave `zanza-notify` da rimuovere) · chiavi `rythem-works-site`, `gmail-smtp-2` | Dashboard Resend → Domains (nuovo dominio + DNS); runbook completo in `_context/email-setup.md` | 🟡 nuovo dominio = nuovi record DNS e verifica |
+| Supabase Edge Functions (secrets) | `MAIL_FROM` "rythem-works <gio@rythem-works.com>" · `STORE_NAME` "rythem-works" · `SHOP_URL` https://rythem-works.com · `OFFER_TO` gio.rythem.works@gmail.com (2026-11-15) — nulla hard-coded nel repo | Dashboard → Edge Functions → Secrets (vedi `_context/email-setup.md`) | 🟢 |
 | Supabase | org "Gios", progetto `store-staging` (nome neutro), login con email personale · Auth Site URL / redirect = URL admin | Dashboard → Organization / Auth → URL configuration | 🟢 nomi · 🟡 email di login |
-| Cloudflare (R2 + Pages) | account di gio-d.xyz (email personale) · bucket `store-media`, Pages `store-front` / `store-admin` (nomi neutri) · URL `*.pages.dev`, `pub-…r2.dev` | Dashboard; dominio custom al posto dei `*.pages.dev` / `r2.dev` | 🟡 al cambio dominio (vedi `stack.md` → Portabilità) |
+| Cloudflare (R2 + Pages + Access + Email Routing) | account di gio-d.xyz e rythem-works.com (email personale) · Pages `coming-soon` (apex + www fino al lancio) · Zero Trust team `rythem-works`, app Access `staging` · Email Routing `gio@` → casella del negozio · bucket `store-media`, Pages `store-front` / `store-admin` (nomi neutri) · URL `*.pages.dev`, `pub-…r2.dev` | Dashboard; dominio custom al posto dei `*.pages.dev` / `r2.dev` | 🟡 al cambio dominio (vedi `stack.md` → Portabilità) |
 | Stripe | account `acct_1RGEAj2LZr7JToM4`, email personale, nome pubblico del business da impostare | Settings → Business / Public details | 🟢 prima di attivare il live |
 | GitHub | repo `giovannidufour/zanza` | Settings → Rename (GitHub reindirizza il vecchio URL) | 🟡 aggiornare remote sul Mac e i link nei docs |
 | Figma | file "Zanza - Record Store" (key `X9aI5cZ8UF3T2fskPdUChY`, la key non cambia) | Rinomina file | 🟢 |
