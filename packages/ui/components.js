@@ -999,6 +999,15 @@
       props.status ? h('div', { className: 'zz-action-bar__status' }, props.status) : null,
       h('div', { className: 'zz-action-bar__actions' }, props.children));
   }
+  /* ── OrderBlock (Figma page `Orders` (BACKEND) → `order block`, decision 0100) ──
+     One block of the admin order page: title (label/medium) · body (body/small, line breaks kept: an address, the
+     totals) · an optional action (a Button, hug). Vertical, gap 8. Booleans: `action` (on). */
+  function OrderBlock(props) {
+    return h('section', Object.assign({}, omit(props, ['title', 'children', 'action', 'className']), { className: cx('zz-order-block', props.className) }),
+      h('h2', { className: 'zz-order-block__title label-medium' }, props.title),
+      h('p', { className: 'zz-order-block__body body-small' }, props.children),
+      props.action ? h('div', { className: 'zz-order-block__action' }, props.action) : null);
+  }
   function TradeStep(props) {
     return h('li', Object.assign({}, omit(props, ['number', 'title', 'className', 'children']), { className: cx('zz-trade-step', props.className) }),
       h('span', { className: 'zz-trade-step__number label-large', 'aria-hidden': 'true' }, props.number),
@@ -1476,6 +1485,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, ProgressBar: ProgressBar, AdminBar: AdminBar, ListingRow: ListingRow, ActionBar: ActionBar,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, ProgressBar: ProgressBar, AdminBar: AdminBar, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock,
            SectionHead: SectionHead, GenreLinks: GenreLinks, HomeAbout: HomeAbout };
 });
