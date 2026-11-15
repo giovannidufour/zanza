@@ -618,9 +618,10 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
   color: var(--text-strong);   /* Figma: text fills unbound #000 → text/strong (open.md) */
 }
 /* Hover (Figma `product card` state=hover, decision 0087): the whole card takes surface/hover. Pointer devices only,
-   so a tap on touch does not leave the card tinted. Coexists with the sold-out image (0086): that image multiplies on
-   what is behind it (now the tint) and goes back to normal when the pointer is on the image. */
+   so a tap on touch does not leave the card tinted. No padding change: the tint is the card box as it is.
+   A sold-out cover (0086) goes back to normal on the same card hover (rule in the Sold out block above). */
 .zz-product-card[data-state="hover"] { background: var(--surface-hover); }
+.zz-product-card[data-state="hover"] > .zz-product-card__image:has(> .zz-sold-out-label) > img { filter: none; mix-blend-mode: normal; }
 @media (hover: hover) {
   .zz-product-card:hover { background: var(--surface-hover); }
 }
@@ -633,7 +634,9 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
   mix-blend-mode: multiply;
 }
 @media (hover: hover) {
-  :is(.zz-product-card__image, .zz-bag-item__image, .zz-gallery__item):has(> .zz-sold-out-label):hover > img { filter: none; mix-blend-mode: normal; }
+  :is(.zz-bag-item__image, .zz-gallery__item):has(> .zz-sold-out-label):hover > img { filter: none; mix-blend-mode: normal; }
+  /* ProductCard: the image comes back when the pointer is anywhere on the card, together with the card hover (0087) */
+  .zz-product-card:hover > .zz-product-card__image:has(> .zz-sold-out-label) > img { filter: none; mix-blend-mode: normal; }
 }
 /* "SOLD OUT" centred over the image: body/small in text/strong-invert, no box (Figma `product image` → `sold out label`) */
 .zz-sold-out-label {
