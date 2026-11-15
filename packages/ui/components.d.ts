@@ -231,6 +231,8 @@ export interface ProductCardImage {
 export interface ProductCardProps extends HTMLAttributes<HTMLElement> {
   /** Omitted → responsive (breakpoint `--mobile` from tokens.json, <768px placeholder). */
   device?: "desktop" | "mobile";
+  /** Figma `state`. Pins the hover look in docs/previews only; on the site `:hover` drives it (decisions 0009, 0087). @default "default" */
+  state?: "default" | "hover";
   /** Figma `product image`: the cover, square. */
   image?: ProductCardImage;
   /** Figma `product image` boolean `sold out`: the cover desaturated and multiplied on the background (normal on hover), "SOLD OUT" in white text centred over it (decision 0086). Decorative: the card says "Sold out" on its button. */

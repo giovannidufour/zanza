@@ -617,6 +617,13 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
   align-items: start;
   color: var(--text-strong);   /* Figma: text fills unbound #000 → text/strong (open.md) */
 }
+/* Hover (Figma `product card` state=hover, decision 0087): the whole card takes surface/hover. Pointer devices only,
+   so a tap on touch does not leave the card tinted. Coexists with the sold-out image (0086): that image multiplies on
+   what is behind it (now the tint) and goes back to normal when the pointer is on the image. */
+.zz-product-card[data-state="hover"] { background: var(--surface-hover); }
+@media (hover: hover) {
+  .zz-product-card:hover { background: var(--surface-hover); }
+}
 /* ── Sold out (Figma: `product image` boolean `sold out`, decision 0086) ─────────────────────────────────
    The image of a sold copy (ProductCard, BagItem, Gallery item): no saturation, multiplied on the page background
    (the box drops its own fill so the image multiplies with what is behind the component); normal on hover. */

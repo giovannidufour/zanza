@@ -420,8 +420,9 @@
     return h('article', Object.assign({
       className: cx('zz-product-card', props.className),
       'data-device': device,
+      'data-state': props.state && props.state !== 'default' ? props.state : undefined,   // doc-only pin (0009)
       'aria-labelledby': titleId
-    }, omit(props, ['device', 'image', 'soldOut', 'href', 'title', 'releaseInfo', 'price', 'description', 'grading', 'cover', 'conditions', 'tags', 'samples',
+    }, omit(props, ['device', 'state', 'image', 'soldOut', 'href', 'title', 'releaseInfo', 'price', 'description', 'grading', 'cover', 'conditions', 'tags', 'samples',
                     'onAdd', 'addHref', 'addLabel', 'addLabelShort', 'headingLevel', 'className', 'children'])),
       // href: the cover becomes the link to the product page (no visual change; the link style is not designed yet)
       h(props.href ? 'a' : 'div', props.href ? { className: 'zz-product-card__image', href: props.href, 'aria-labelledby': titleId } : { className: 'zz-product-card__image' },
