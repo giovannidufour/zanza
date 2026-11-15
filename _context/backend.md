@@ -35,7 +35,7 @@ Rimandato (con il Trade, Q2): `proposals`, `proposal_messages`. Preferiti: non n
 - **Pubblico (anon):** lettura di `releases`, `samples` e dei `listings` con `status <> 'draft'`.
 - **Admin:** un solo utente Supabase Auth (Gio), presente in `admins`; `is_admin()` nelle policy. Niente ruoli.
 - Nel progetto le tabelle nuove **non** sono esposte in automatico: ogni migrazione dichiara i suoi `grant`. Neanche `service_role` ha grant sulle tabelle: le Edge Functions leggono le tabelle pubbliche con la chiave anon (es. `create-checkout`).
-- Una release (pressatura, `discogs_release_id` unico) può avere più listing (copie): creare un listing con una release Discogs già presente la condivide (migrazione 0023, applicata 2026-11-15); se la nuova copia non manda sample, restano quelli della release. "Sell again" in admin crea una copia gemella dello stesso disco (decisione 0100).
+- Una release (pressatura, `discogs_release_id` unico) può avere più listing (copie): creare un listing con una release Discogs già presente la condivide (migrazione 0024 `20261115050000_reuse_release.sql`, applicata 2026-11-15); se la nuova copia non manda sample, restano quelli della release. "Sell again" in admin crea una copia gemella dello stesso disco (decisione 0100).
 - **Ordini:** nessun accesso pubblico; li scrivono solo le Edge Functions (service role).
 
 ## Storage (R2)

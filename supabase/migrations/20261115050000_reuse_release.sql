@@ -1,4 +1,4 @@
--- 0023 Second copy of a release (2026-11-15, decision 0100): creating a listing whose Discogs release is already in
+-- 0024 Second copy of a release (2026-11-15, decision 0100): creating a listing whose Discogs release is already in
 -- the database failed (releases.discogs_release_id is unique). Now the new listing shares that release: one release =
 -- one pressing, one listing = one physical copy (CLAUDE.md → Naming). The form's release fields, lines, genres and
 -- tags update the shared release, as an edit does. Samples: when the new copy sends none, the release keeps its own.
@@ -33,7 +33,7 @@ declare
   v_genres jsonb;
   v_pos text;
   v_ord int := 0;
-  v_reused boolean := false;   -- a new copy of a release already in the database (0023)
+  v_reused boolean := false;   -- a new copy of a release already in the database (0024)
 begin
   if not public.is_admin() then
     raise exception 'not allowed' using errcode = '42501';
@@ -53,7 +53,7 @@ begin
     select release_id into v_release_id from public.listings where id = v_listing_id;
     if v_release_id is null then raise exception 'listing not found' using errcode = 'P0002'; end if;
   elsif nullif(r->>'discogs_release_id', '') is not null then
-    -- 0023: a second copy of the same pressing shares its release (releases.discogs_release_id is unique)
+    -- 0024: a second copy of the same pressing shares its release (releases.discogs_release_id is unique)
     select id into v_release_id from public.releases where discogs_release_id = (r->>'discogs_release_id')::int;
     v_reused := v_release_id is not null;
   end if;
@@ -140,7 +140,7 @@ begin
   end if;
 
   -- samples: replaced as a whole (keys stay in storage), positions A, B… per line, X1, X2… for additional
-  -- 0023: a new copy of a release already in the database without samples of its own keeps the release's samples
+  -- 0024: a new copy of a release already in the database without samples of its own keeps the release's samples
   v_ord := 0;
   if not (v_reused and jsonb_array_length(coalesce(payload->'samples', '[]')) = 0) then
   delete from public.samples where release_id = v_release_id;
