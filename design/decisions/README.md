@@ -116,3 +116,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0091](0091-progress-bar.md) | ProgressBar (4px, black on surface/subtle); Memo photo shows an estimated progress that eases and never claims 100 % early | accepted |
 | [0092](0092-photo-in-create.md) | Create listing: Photo of the label beside Fetch Discogs; a release picked from the photo goes into Discogs match and is fetched | accepted |
 | [0094](0094-header-logo-only-when-it-fits.md) | Header: the logo shows only when menu + logo + store name + actions fit in the row (measured, Figma boolean `logo`); the store name always stays | accepted |
+| [0095](0095-mobile-breakpoint-960.md) | Mobile layout below 960px (was 768): the desktop header needs ~910px even without the logo, so 768–910px scrolled sideways | proposed |

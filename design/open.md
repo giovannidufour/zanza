@@ -8,7 +8,7 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - **Interaction overlay for all clickables.** Reuse `action/floating/background/*` as the hover/pressed tint everywhere, links included? Proposal: rename to `interaction/overlay/*`, add an inverse pair (`white-a4/a8`) for dark surfaces, keep the underline on links (WCAG 1.4.1), implement as a `::before` overlay. See [0007](decisions/0007-floating-actions-foreground-background.md).
 - **Focus state.** None designed, none shipped. Needs a `border/focus` token before launch (WCAG 2.4.7). *Parked.*
 - **Motion tokens.** 150ms ease-out (dashed border, FileList reorder slide) and 200ms (header reveal) are placeholders. *Parked.*
-- **Breakpoint value.** `<768px` is a placeholder in `tokens.json`. See [0004](decisions/0004-one-breakpoint-in-tokens.md).
+- **Breakpoint value.** `<960px` since [0095](decisions/0095-mobile-breakpoint-960.md) (set by the desktop header width); not drawn in Figma. See [0004](decisions/0004-one-breakpoint-in-tokens.md).
 - **Spacing scale / dimension tokens.** Paddings are hardcoded as in Figma; only `page-margin-*`, `gutter-small`, `small` exist. *Parked.*
 - **Type size tokens.** Coming later; until then the classes carry the sizes ([0003](decisions/0003-type-styles-are-classes.md)).
 - **PlayerButton disabled.** No strikethrough, unlike Button: intentional?
