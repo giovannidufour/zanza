@@ -54,10 +54,11 @@ Tutto ciò che dipende dal dominio vive in configurazione, mai nel DB o nel codi
 
 | Host | Cosa | Note |
 |---|---|---|
-| `rythem-works.com` | Pages `store-front` (negozio) | `www.` → redirect 301 all'apex (Rules → Redirect Rules, query string conservata) |
+| `rythem-works.com` + `www.` | **fino al lancio:** Pages `coming-soon` (pagina "coming soon" + iscrizione newsletter, decisione 0096; deploy da GitHub Actions `deploy-coming-soon.yml`) | Al lancio tornano su `store-front`: `www.` → redirect 301 all'apex (Rules → Redirect Rules, query string conservata) |
+| `staging.rythem-works.com` | Pages `store-front` (negozio vero) | **dietro Cloudflare Access** (Zero Trust, team `rythem-works`, app `staging`, policy "Gio only", login con codice via email al Gmail personale, sessione 24 h). Protetto anche `store-front-6fx.pages.dev`. Al lancio: togliere l'app Access |
 | `admin.rythem-works.com` | Pages `store-admin` | il vecchio `store-admin-3k1.pages.dev` resta valido finché Supabase Auth, i secret `ADMIN_ORIGINS` e il CORS di R2 li hanno entrambi |
 | `media.rythem-works.com` | R2 `store-media` (custom domain) | = `mediaBaseUrl` in `site.json` e `admin.json`. L'URL `r2.dev` è ancora attivo: da spegnere quando nessuna pagina pubblicata lo usa più |
-| email `gio@rythem-works.com` | Cloudflare Email Routing → Gmail di Gio | record MX/SPF/DKIM di Cloudflare; DMARC `p=none` con report a Cloudflare (DMARC Management), da stringere dopo l'invio via Resend |
+| email `gio@rythem-works.com` | Cloudflare Email Routing → casella del negozio (vedi `email-setup.md` → Caselle) | record MX/SPF/DKIM di Cloudflare; DMARC `p=none` con report a Cloudflare (DMARC Management), da stringere dopo l'invio via Resend |
 | invio email | Resend, dominio `rythem-works.com` (eu-west-1) | `resend._domainkey` TXT, CNAME `rsend` e `send` (DNS only); runbook in `email-setup.md` |
 
 I `*.pages.dev` restano raggiungibili (Cloudflare non li spegne): il canonical punta al dominio quando `siteUrl` è impostato.
