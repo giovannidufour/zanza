@@ -1532,6 +1532,7 @@
       var el = document.getElementById('memo-record'); if (el) el.focus();
     }
     async function remove(row) {
+      setMessage(null);   // the last "Added:" line would outlive its row
       setRows(function (cur) { return cur.filter(function (r) { return r.id !== row.id; }); });
       var res = await sb.from('memos').delete().eq('id', row.id);
       if (res.error) { setMessage({ error: true, text: 'Not removed: ' + res.error.message }); load(); return; }
