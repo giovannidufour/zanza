@@ -1,5 +1,5 @@
 /* apps/storefront/pages/legal.js — the legal pages (decision 0079, Figma page `Legal`): Impressum, Privacy, Terms,
-   Withdrawal, and Shipping (the footer's Info link). The text lives in content/legal/<page>.md, so it can be edited (or
+   and Shipping (Withdrawal dropped: Gio sells privately, decision 0093) (the footer's Info link). The text lives in content/legal/<page>.md, so it can be edited (or
    replaced by a lawyer's / a generator's text) without touching code. Pure functions: data in, React tree out.
    The Markdown is a small, closed subset (no HTML passes through):
    - `# Title` (first line, the page h1) · `## Heading` · blank line = new block
@@ -19,11 +19,10 @@ const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 const { SiteHeader } = require('./shell.js');
 
-const PAGES = ['impressum', 'privacy', 'terms', 'withdrawal', 'shipping'];
+const PAGES = ['impressum', 'privacy', 'terms', 'shipping'];
 const PLACEHOLDERS = {
-  'legal.name': '[Your full name]', 'legal.street': '[Street and number]', 'legal.postcode': '[Postcode]',
-  'legal.city': '[City]', 'legal.country': '[Country]', 'legal.email': '[Contact email]', 'legal.phone': '[Phone number]',
-  'legal.vat': '[VAT line: your VAT ID, or the small business note (§ 19 UStG)]', 'legal.updated': '[Date]'
+  'legal.name': '[Your full name]', 'legal.street': '[c/o address: street]', 'legal.postcode': '[Postcode]',
+  'legal.city': '[City]', 'legal.country': '[Country]', 'legal.email': '[Contact email]', 'legal.updated': '[Date]'
 };
 
 const read = (page) => fs.readFileSync(path.join(__dirname, '../content/legal', `${page}.md`), 'utf8');

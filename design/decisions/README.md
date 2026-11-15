@@ -115,3 +115,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0090](0090-photo-of-the-label.md) | Memo: "Photo of the label" reads the label with a free vision model (Cloudflare Workers AI), the text lands in Record and searches Discogs by barcode, cat. no., then artist + title; the photo is never stored | accepted |
 | [0091](0091-progress-bar.md) | ProgressBar (4px, black on surface/subtle); Memo photo shows an estimated progress that eases and never claims 100 % early | accepted |
 | [0092](0092-photo-in-create.md) | Create listing: Photo of the label beside Fetch Discogs; a release picked from the photo goes into Discogs match and is fetched | accepted |
+| [0093](0093-private-seller-slim-legal.md) | Private seller: Impressum with a c/o address and no phone, one-screen Privacy, Terms = a few lines on private sale, no Withdrawal page | proposed |
