@@ -1,6 +1,6 @@
 /* apps/storefront/build-coming-soon.js — the temporary page of rythem-works.com while the shop is on staging
    (Figma page `Coming soon`, component `coming soon`; decision 0096). Output: apps/storefront/dist-coming-soon/ =
-   index.html (store name, title, text, newsletter signup), /privacy/ and /terms/ (the shop's legal texts), css, fonts,
+   index.html (store name, title, text, newsletter signup), /privacy/ (a short privacy text, linked from the newsletter note), css, fonts,
    logo, and a _headers file with noindex. Published to the Cloudflare Pages project `coming-soon` by
    .github/workflows/deploy-coming-soon.yml. No products, no Supabase: it builds anywhere.
    Run: npm run build:coming-soon */
@@ -48,14 +48,10 @@ const header = h(Z.Header, {
   homeHref: '/'
 });
 
-// Figma `coming soon` → bottom: copyright, then Contact (mailto: the contact form lives on the shop), Privacy, Terms
-const email = cs.email || '';
+// Figma `coming soon` → bottom: copyright only. Gio 2026-11-15: no Contact / Privacy / Terms links until launch; Privacy
+// stays reachable from the newsletter note, the only place the page collects data (GDPR art. 13)
 const bottom = h('footer', { className: 'coming-soon__bottom body-small' },
-  h('p', { className: 'coming-soon__copyright' }, `© ${new Date().getFullYear()} ${site.storeName}`),
-  h('div', { className: 'coming-soon__links', role: 'group', 'aria-label': 'Legal' },
-    email ? h('a', { href: `mailto:${email}` }, 'Contact') : null,
-    h('a', { href: '/privacy/' }, 'Privacy'),
-    h('a', { href: '/terms/' }, 'Terms')));
+  h('p', { className: 'coming-soon__copyright' }, `© ${new Date().getFullYear()} ${site.storeName}`));
 
 function page({ title, body, description }) {
   const links = Object.keys(css).map((n) => `<link rel="stylesheet" href="/css/${n}.css?v=${hashOf(css[n])}">`).join('\n');
@@ -102,11 +98,12 @@ const home = h('div', { className: 'zz-page coming-soon' },
   bottom);
 write('index.html', page({ title: site.storeName, description: cs.text, body: renderToStaticMarkup(home) }));
 
-// Privacy and Terms: the shop's texts (content/legal), with the coming-soon header and bottom row
-for (const p of ['privacy', 'terms']) {
-  const { title, body, missing } = Legal.legalPage(p, { site, url, shipping: null, countries: [], header });
+// Privacy: a short text for this page only (content/legal/privacy-coming-soon.md, Gio 2026-11-15: no personal data on
+// it), with the coming-soon header and bottom row. The shop keeps its full privacy.md
+{
+  const { title, body, missing } = Legal.legalPage('privacy-coming-soon', { site, url, shipping: null, countries: [], header });
   const withBottom = h('div', { className: 'zz-page coming-soon' }, ...React.Children.toArray(body.props.children), bottom);
-  write(`${p}/index.html`, page({ title: `${title} · ${site.storeName}`, body: renderToStaticMarkup(withBottom) }));
+  write('privacy/index.html', page({ title: `${title} · ${site.storeName}`, body: renderToStaticMarkup(withBottom) }));
   if (missing.length) console.log(`    to fill: ${missing.join(' · ')}`);
 }
 console.log('done: dist-coming-soon/');
