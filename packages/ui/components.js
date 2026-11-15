@@ -938,6 +938,25 @@
           props.linkLabel || 'On Discogs', h('span', { 'aria-hidden': 'true' }, ' ↗'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')) : null),
       h('button', { type: 'button', className: 'zz-chosen-release__change body-small', onClick: props.onChange }, props.changeLabel || 'Change'));
   }
+  /* ── Memo item (Figma BACKEND → Memo › `memo item`, decision 0087) ──
+     One record on the admin Memo list. Text column: title body/medium text/strong, meta body/small text/moderate,
+     note body/small, "On Discogs ↗" body/small underlined; actions = two secondary small Buttons (Create listing, Remove).
+     Row: padding 16 top/bottom, gap 8, 1px border-divider/strong at the bottom. device=mobile stacks the actions under
+     the text; desktop puts them on the right, centred (CSS @media, one markup). */
+  function MemoItem(props) {
+    var name = typeof props.title === 'string' ? props.title : 'record';
+    return h('li', Object.assign({}, omit(props, ['title', 'meta', 'note', 'href', 'onCreate', 'onRemove', 'createLabel', 'removeLabel', 'className']),
+      { className: cx('zz-memo-item', props.className) }),
+      h('div', { className: 'zz-memo-item__text' },
+        h('p', { className: 'zz-memo-item__title body-medium' }, props.title),
+        props.meta ? h('p', { className: 'zz-memo-item__meta body-small' }, props.meta) : null,
+        props.note ? h('p', { className: 'zz-memo-item__note body-small' }, props.note) : null,
+        props.href ? h('a', { className: 'zz-memo-item__link body-small', href: props.href, target: '_blank', rel: 'noopener' },
+          'On Discogs', h('span', { 'aria-hidden': 'true' }, ' ↗'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')) : null),
+      h('div', { className: 'zz-memo-item__actions' },
+        props.onCreate ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onCreate, 'aria-label': (props.createLabel || 'Create listing') + ': ' + name }, props.createLabel || 'Create listing') : null,
+        props.onRemove ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onRemove, 'aria-label': (props.removeLabel || 'Remove') + ': ' + name }, props.removeLabel || 'Remove') : null));
+  }
   function TradeStep(props) {
     return h('li', Object.assign({}, omit(props, ['number', 'title', 'className', 'children']), { className: cx('zz-trade-step', props.className) }),
       h('span', { className: 'zz-trade-step__number label-large', 'aria-hidden': 'true' }, props.number),
@@ -1414,6 +1433,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem,
            SectionHead: SectionHead, GenreLinks: GenreLinks, HomeAbout: HomeAbout };
 });
