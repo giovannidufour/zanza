@@ -98,6 +98,13 @@ Regola (Gio 2026-11-12): **il bag non blocca mai niente**. Un disco è bloccato 
 5. Webhook `checkout.session.expired` → listing di nuovo `available`.
 6. Ritorno sulla `cancel_url` di Stripe (l'utente torna indietro senza pagare) → `create-checkout` (o una funzione gemella) chiama `checkout.sessions.expire` sulla sessione: il disco torna libero subito, non dopo 30 min.
 
+**Implementazione (2026-11-15, branch `claude/project-thread-3ixxqo`, migrazione 0021 e funzioni NON ancora applicate/deployate):**
+- Migrazione `20261115020000_checkout.sql`: `checkout_hold(ids, token, minuti)` (tutto o niente, 33 min, il token `hold:<uuid>` sta in `stripe_session_id` finché la sessione non esiste), `checkout_attach`, `checkout_release(token o session)`, `checkout_complete(session, order)` (idempotente; una copia che la sessione non tiene più finisce comunque nell'ordine con `orders.attention` → rimborso a mano). Nuove colonne `orders`: `customer_name`, `subtotal_cents`, `payment_intent`, `attention`. Eseguibili solo dal service role.
+- Edge Function `create-checkout` (Verify JWT off, origini come `trade-offer`): `{ ids, country }` → `{ url }`; `{ action: "cancel", session }` dal ritorno al Bag. Sessione Stripe 31 min < hold 33 min: una copia non si può pagare dopo che l'hold è scaduto. `shipping.js` è una **copia** di `packages/shipping/shipping.js` (`npm run sync:functions`; `npm run build` fallisce se è vecchia).
+- Edge Function `stripe-webhook` (Verify JWT off, firma Stripe): `completed` (pagato) / `async_payment_succeeded` → ordine + `sold` + email al compratore e a Gio; `expired` → rilascio. Gli id dei listing tornano dalle line items (metadata `listing_id` del prodotto). Sta su Supabase perché il negozio è dietro Cloudflare Access.
+- Secret nuovi: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `ORDERS_TO` (casella del negozio; senza, usa `OFFER_TO`), opzionale `MEDIA_BASE_URL`.
+- Eventi del webhook da attivare su Stripe: `checkout.session.completed`, `checkout.session.expired`, `checkout.session.async_payment_succeeded`.
+
 ### Notify me (0016, 2026-11-12, migrazione da applicare)
 - Su un disco Reserved il visitatore lascia l'email (`request_back_in_stock`, anon; solo mentre è reserved, max 100 per copia). Tabella `back_in_stock`, leggibile solo dall'admin.
 - Ogni minuto `pg_cron` chiama l'Edge Function `notify-back-in-stock` **solo** se qualche richiesta è dovuta (la copia conta come available, anche per hold scaduto). La funzione manda **una** email (Resend) e cancella l'indirizzo.
