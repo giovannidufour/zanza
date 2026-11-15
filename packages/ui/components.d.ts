@@ -929,6 +929,27 @@ export interface ChosenReleaseProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function ChosenRelease(props: ChosenReleaseProps): JSX.Element;
 
+/** Figma `memo item` (page Memo, BACKEND, decision 0087): one record on the admin Memo list. An <li>: wrap in a <ul>. */
+export interface MemoItemProps extends HTMLAttributes<HTMLLIElement> {
+  /** free text, or "Artist – Title" of the picked Discogs release */
+  title: ReactNode;
+  /** Figma boolean `discogs release`: label · cat no · year · country · format. Omit → no meta */
+  meta?: ReactNode;
+  /** Figma boolean `has note`: Gio's own note. Omit → no note */
+  note?: ReactNode;
+  /** the release on discogs.com (Figma: shown with `discogs release`). Omit → no link */
+  href?: string;
+  /** Create listing. Omit → no button */
+  onCreate?: () => void;
+  /** Remove. Omit → no button */
+  onRemove?: () => void;
+  /** Default "Create listing" */
+  createLabel?: string;
+  /** Default "Remove" */
+  removeLabel?: string;
+}
+export declare function MemoItem(props: MemoItemProps): JSX.Element;
+
 /** Figma `section head` (page Home): heading of a home section. Divider on top, title, actions on the right. */
 export interface SectionHeadProps extends HTMLAttributes<HTMLDivElement> {
   /** Figma `title`. */

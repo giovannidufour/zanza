@@ -1380,6 +1380,14 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-chosen-release { border: 1px solid var(--border-divider-strong); }
 .zz-chosen-release__link { color: inherit; text-decoration: underline; align-self: flex-start; }
 .zz-chosen-release__change { flex: none; background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
+/* Memo item (Figma BACKEND → Memo › `memo item`, decision 0087) */
+.zz-memo-item { display: flex; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
+.zz-memo-item__text { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
+.zz-memo-item__text > p { margin: 0; overflow-wrap: anywhere; }
+.zz-memo-item__meta { color: var(--text-moderate); }
+.zz-memo-item__link { color: inherit; text-decoration: underline; align-self: flex-start; }
+.zz-memo-item__actions { flex: none; display: flex; flex-wrap: wrap; gap: 8px; }
+@media (--mobile) { .zz-memo-item { flex-direction: column; align-items: stretch; gap: 8px; } }
 
 /* ═══════════════════════════════════════════════════════════════════════
    Home (Figma page `Home`, 2026-11-14): section head, genre links, home about
