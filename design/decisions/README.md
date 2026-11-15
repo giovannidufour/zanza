@@ -90,9 +90,7 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0064](0064-sold-line-in-the-bag.md) | A sold copy in the bag: name struck through, "SOLD OUT" beside the struck price, a note above Checkout | accepted |
 | [0065](0065-reserved-button-notify-me.md) | Reserved: Add button "(Reserved) Notify me" with an envelope; the bag line looks like a sold one | accepted |
 | [0066](0066-icons-are-non-scaling-strokes.md) | Icons are 1px strokes that keep their thickness at any size | accepted |
-<<<<<<< HEAD
 | [0067](0067-text-moderate-meets-aa.md) | `text/moderate` is black at 56%: 4.5:1 or more on every ground it sits on | accepted |
-=======
 | [0068](0068-trade-is-a-conversation.md) | Trade: "not for sale, convince me"; the offer page asks for an introduction and starts a conversation, no shipping rule | accepted |
 | [0070](0070-traders-prove-their-profiles.md) | Traders give Discogs + Instagram or Facebook and prove them by sending Gio a two-word password from each; the conversation stays by email | accepted |
 | [0069](0069-which-record-searches-discogs.md) | "Which record" in the offer form searches Discogs releases while typing and accepts release links; plain text stays possible | accepted |
@@ -113,4 +111,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0086](0086-sold-out-cross.md) | Sold-out images: tried cross / label / greyscale, rolled back: a sold copy's images look like an available one's (text says sold). Player Add to bag reads "Sold out" for a sold copy | accepted |
 | [0087](0087-admin-memo.md) | Admin Memo: Gio's list of records to sell later (free text or a Discogs release), mobile-first rows; Create listing from a memo fetches the release and takes it off the list | accepted |
 | [0088](0088-product-card-hover.md) | Product card hover: the whole card takes the new `surface/hover` (= black-a4); Figma `product card` state=default/hover | accepted |
->>>>>>> origin/main
+| [0090](0090-photo-of-the-label.md) | Memo: "Photo of the label" reads the label with a free vision model (Cloudflare Workers AI), the text lands in Record and searches Discogs by barcode, cat. no., then artist + title; the photo is never stored | accepted |
