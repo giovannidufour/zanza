@@ -175,7 +175,11 @@
         h('div', { className: 'zz-header__leading' },
           showMenu ? h(Button, Object.assign({ className: 'zz-header__menu', hierarchy: 'secondary', leadingIcon: h(HamburgerIcon), 'aria-label': props.menuLabel || 'Menu', onClick: props.onMenuClick }, props.menuProps)) : null,
           props.logo ? h('div', { className: 'zz-header__logo' }, props.logo) : null,
-          props.storeName ? h(nameTag, nameAttrs, props.storeName) : null),
+          // Figma `store name` logo=true (2026-11-15, decision 0094): when the header has no room for the big logo
+          // (data-logo="hidden"), the same logo shows 36px inside the store name; CSS switches between the two.
+          props.storeName ? h(nameTag, nameAttrs,
+            props.logo ? h('span', { className: 'zz-header__name-logo', 'aria-hidden': 'true' }, props.logo) : null,
+            props.storeName) : null),
         showTabs ? h('div', { className: 'zz-header__tabs' }, props.tabs) : null,
         (props.actions || hasSearch) ? h('div', { className: 'zz-header__trailing' },
           // Figma boolean `search` (2026-11-12): desktop = the search field (input type=search, 280 wide) before the
@@ -995,6 +999,15 @@
       props.status ? h('div', { className: 'zz-action-bar__status' }, props.status) : null,
       h('div', { className: 'zz-action-bar__actions' }, props.children));
   }
+  /* ── OrderBlock (Figma page `Orders` (BACKEND) → `order block`, decision 0100) ──
+     One block of the admin order page: title (label/medium) · body (body/small, line breaks kept: an address, the
+     totals) · an optional action (a Button, hug). Vertical, gap 8. Booleans: `action` (on). */
+  function OrderBlock(props) {
+    return h('section', Object.assign({}, omit(props, ['title', 'children', 'action', 'className']), { className: cx('zz-order-block', props.className) }),
+      h('h2', { className: 'zz-order-block__title label-medium' }, props.title),
+      h('p', { className: 'zz-order-block__body body-small' }, props.children),
+      props.action ? h('div', { className: 'zz-order-block__action' }, props.action) : null);
+  }
   function TradeStep(props) {
     return h('li', Object.assign({}, omit(props, ['number', 'title', 'className', 'children']), { className: cx('zz-trade-step', props.className) }),
       h('span', { className: 'zz-trade-step__number label-large', 'aria-hidden': 'true' }, props.number),
@@ -1472,6 +1485,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, ProgressBar: ProgressBar, AdminBar: AdminBar, ListingRow: ListingRow, ActionBar: ActionBar,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, ProgressBar: ProgressBar, AdminBar: AdminBar, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock,
            SectionHead: SectionHead, GenreLinks: GenreLinks, HomeAbout: HomeAbout };
 });

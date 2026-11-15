@@ -1,5 +1,5 @@
-/* apps/storefront/pages/legal.js — the legal pages (decision 0079, Figma page `Legal`): Impressum, Privacy, Terms,
-   and Shipping (Withdrawal dropped: Gio sells privately, decision 0093) (the footer's Info link). The text lives in content/legal/<page>.md, so it can be edited (or
+/* apps/storefront/pages/legal.js — the legal pages (decisions 0079, 0093, Figma page `Legal`): Privacy, Terms
+   and Shipping (the footer's Info link; no Impressum or Withdrawal: Gio sells privately, decision 0093). The text lives in content/legal/<page>.md, so it can be edited (or
    replaced by a lawyer's / a generator's text) without touching code. Pure functions: data in, React tree out.
    The Markdown is a small, closed subset (no HTML passes through):
    - `# Title` (first line, the page h1) · `## Heading` · blank line = new block
@@ -95,11 +95,12 @@ function block(b, key, { url, shipping, countries }) {
 }
 
 // Figma `legal section`: heading (label-small) + text; Figma `legal content`: title, divider, sections
-function legalPage(page, { site, url, shipping, countries }) {
+// `header` replaces the shop header (the coming-soon site has no shop to navigate to: build-coming-soon.js)
+function legalPage(page, { site, url, shipping, countries, header }) {
   const missing = new Set();
   const { title, sections } = parse(fill(read(page), site, missing));
   const body = h('div', { className: 'zz-page' },
-    h(SiteHeader, { site, url, current: page }),
+    header || h(SiteHeader, { site, url, current: page }),
     h('main', { className: 'legal-content' },
       h('h1', { className: 'legal-content__title body-large' }, title),
       h('div', { className: 'legal-text' }, h(Z.Divider),

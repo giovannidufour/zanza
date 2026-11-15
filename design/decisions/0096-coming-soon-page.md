@@ -1,0 +1,10 @@
+# 0096 — Coming-soon page on rythem-works.com while the shop is on staging
+
+`2026-11-15` · accepted · Figma: page `Coming soon`, component `coming soon` (desktop 1024 + mobile 390 frames)
+
+**Context.** Gio bought rythem-works.com on 2026-11-15 and wants a simple public page that collects emails while he keeps working on the shop, which moves to staging.rythem-works.com behind Cloudflare Access (login by email code). The legal pages still hold placeholders, so nothing may be indexed yet.
+**Decision.** A separate static site (`apps/storefront/build-coming-soon.js`, Cloudflare Pages project `coming-soon`) with one page built only from existing components: store name with the logo inside (Header with no tabs, actions or rule), page title "Opening soon", Divider, one line of text, FooterNewsletter (the same Buttondown form, double opt-in), and a bottom row: copyright, Contact (mailto, the contact form lives on the shop), Privacy, Terms (the shop's own texts, rendered with the same header). Every page answers `X-Robots-Tag: noindex`; the shop build adds the same header while `site.json → targets.pages.noindex` is true. Spacing uses existing tokens only (small, medium-small, gutter-small).
+**Rule.** Until launch, rythem-works.com serves only the coming-soon site and the shop is reached through staging. At launch: move the apex and www from `coming-soon` back to `store-front`, set `noindex` to false and `siteUrl` (PR #106), and remove Access from staging.
+**Where.** `apps/storefront/build-coming-soon.js`, `coming-soon.css`, `site.json → comingSoon`, `.github/workflows/deploy-coming-soon.yml`; `_context/stack.md` → Dominio.
+
+**Amendment 2026-11-15 (Gio).** The bottom row keeps only the copyright: no Contact, Privacy or Terms links until launch, and no /terms/ page. Privacy stays reachable from the link in the newsletter note, because the page collects email addresses (GDPR art. 13 asks for the information at the point of collection). *Rule:* a page that collects personal data always links Privacy next to the form, even when the footer has no legal links.

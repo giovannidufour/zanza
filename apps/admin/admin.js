@@ -665,6 +665,15 @@
           })));
     }
 
+    function again() {
+      if (saving) return;
+      setSaving(true); setMessage(null);
+      sellAgain(f.listingId).then(function (twin) {
+        setSaving(false);
+        location.hash = '#edit-' + twin.id;
+        toast('New listing, SKU ' + twin.sku + ': a draft of the same record. Check condition, price and photos, then publish.');
+      }, function (err) { setSaving(false); setMessage({ error: true, text: 'Not created: ' + err.message }); });
+    }
     function statusPanel() {
       var closing = f.section === 'sale' ? 'sold' : 'traded';
       var actions = {
@@ -683,7 +692,10 @@
           supportText: 'Kept in the history, e.g. "sold at the fair".', onChange: function (e) { setStatusNote(e.target.value); } }) : null,
         actions.map(function (a) {
           return h(Z.Button, { key: a[0], hierarchy: 'secondary', disabled: saving || !!f.checkoutUntil, onClick: function () { a[0] === 'restore' ? restore() : setStatus(a[0]); } }, a[1]);
-        }));
+        }),
+        // decision 0100: a twin of a sold copy (new SKU, same record), as a draft
+        f.status === 'sold' || f.status === 'traded' ? h(Z.Button, { key: 'again', hierarchy: 'secondary', disabled: saving, onClick: again }, 'Sell again') : null,
+        f.status === 'sold' || f.status === 'traded' ? h('p', { className: 'body-small' }, 'Sell again: a new draft listing of the same record (new SKU, same details, photos and samples). This one stays ' + f.status + '.') : null);
     }
 
     return h('div', { className: 'admin-page admin-page--edit' }, main, side,
@@ -909,6 +921,164 @@
     if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not open this listing: ' + error);
     if (!initial) return h('p', { className: 'body-medium' }, 'Loading…');
     return h(ListingForm, { initial: initial });
+  }
+
+  // ── Orders ────────────────────────────────────────────────────────────────
+  /* Figma BACKEND → Orders (2322:5367, decision 0100): orders are written by Stripe (stripe-webhook, migration 0021);
+     the admin reads them and moves paid → shipped with the tracking number (RLS orders_admin / orders_admin_update).
+     Tabs To ship · Shipped · All, newest first. "Check" = orders.attention (a copy not held any more: refund by hand).
+     Routes: #orders · #orders/<id> */
+  var ORDER_TABS = [
+    ['toship', 'To ship', function (o) { return o.status === 'paid'; }],
+    ['shipped', 'Shipped', function (o) { return o.status === 'shipped'; }],
+    ['all', 'All', function () { return true; }]
+  ];
+  var ORDER_STATUS = { paid: 'To ship', shipped: 'Shipped', refunded: 'Refunded', cancelled: 'Cancelled' };
+  function orderRef(o) { return String(o.id).slice(0, 8).toUpperCase(); }
+  function orderStatus(o) { return o.attention && o.status === 'paid' ? 'Check' : ORDER_STATUS[o.status] || o.status; }
+  function euro(c) { return c === null || c === undefined ? '' : centsToText(c) + ' €'; }   // as the Listings prices
+  function shortDate(t) { return new Date(t).toLocaleDateString([], { day: 'numeric', month: 'short' }); }
+  function buyerOf(o) { return o.customer_name || (o.shipping_address && o.shipping_address.name) || o.email; }
+
+  function Orders() {
+    var mobile = useIsMobile();
+    var st = useState(null), rows = st[0], setRows = st[1];
+    var er = useState(null), error = er[0], setError = er[1];
+    var tb = useState('toship'), tab = tb[0], setTab = tb[1];
+    useEffect(function () {
+      sb.from('orders').select('id,created_at,email,customer_name,shipping_address,total_cents,status,attention')
+        .order('created_at', { ascending: false })
+        .then(function (res) { if (res.error) setError(res.error.message); else setRows(res.data); });
+    }, []);
+    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not load the orders: ' + error);
+    if (!rows) return h('p', { className: 'body-medium' }, 'Loading…');
+    var counts = {}; ORDER_TABS.forEach(function (t) { counts[t[0]] = rows.filter(t[2]).length; });
+    var filter = ORDER_TABS.filter(function (t) { return t[0] === tab; })[0][2];
+    var visible = rows.filter(filter);
+    var empty = rows.length ? 'No orders here.' : 'No orders yet. They arrive here when someone pays on Stripe.';
+    return h('div', { className: 'admin-section admin-listings' },
+      h('h1', { className: 'label-extra-large' }, 'Orders'),
+      h(Z.Tabs, { value: tab, onValueChange: setTab, 'aria-label': 'Filter by status' },
+        ORDER_TABS.map(function (t) { return h(Z.Tab, { key: t[0], value: t[0], suffix: String(counts[t[0]]), 'aria-controls': 'orders-table' }, t[1]); })),
+      mobile ? h('ul', { id: 'orders-table', className: 'admin-rows' }, visible.length ? visible.map(function (o) {
+        return h(Z.ListingRow, { key: o.id, href: '#orders/' + o.id, title: buyerOf(o),
+          meta: [orderRef(o), shortDate(o.created_at), orderStatus(o)].join(' · '), price: euro(o.total_cents) });
+      }) : h('li', { className: 'body-small admin-rows__empty' }, empty))
+      : h('div', { className: 'admin-table-wrap' },
+          h('table', { id: 'orders-table', className: 'admin-table body-small' },
+            h('thead', null, h('tr', null,
+              ['Order', 'Buyer', 'Status', 'Date', 'Total'].map(function (t) { return h('th', { key: t, className: t === 'Order' ? 'num' : t === 'Total' ? 'num price' : '' }, t); }))),
+            h('tbody', null, visible.length ? visible.map(function (o) {
+              return h('tr', { key: o.id },
+                h('td', { className: 'num' }, orderRef(o)),
+                h('td', null, h('a', { href: '#orders/' + o.id }, buyerOf(o))),
+                h('td', null, orderStatus(o)),
+                h('td', null, shortDate(o.created_at)),
+                h('td', { className: 'num price' }, euro(o.total_cents)));
+            }) : h('tr', null, h('td', { colSpan: 5 }, empty))))));
+  }
+
+  function OrderDetail(props) {
+    var mobile = useIsMobile();
+    var st = useState(null), o = st[0], setO = st[1];
+    var er = useState(null), error = er[0], setError = er[1];
+    var tr = useState(''), tracking = tr[0], setTracking = tr[1];
+    var sv = useState(false), saving = sv[0], setSaving = sv[1];
+    var ms = useState(null), message = ms[0], setMessage = ms[1];
+    useEffect(function () {
+      sb.from('orders').select('*,items:order_items(price_cents,listing:listings(id,sku,slug,status,custom_title,release:releases(format,lines:release_lines(position,artist,title))))')
+        .eq('id', props.id).single()
+        .then(function (res) { if (res.error) setError(res.error.message); else { setO(res.data); setTracking(res.data.tracking_number || ''); } });
+    }, [props.id]);
+    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not open this order: ' + error);
+    if (!o) return h('p', { className: 'body-medium' }, 'Loading…');
+
+    var ref = orderRef(o), a = o.shipping_address || {};
+    var address = [a.name || o.customer_name, a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state, a.country].filter(Boolean).join('\n');
+    var records = (o.subtotal_cents === null || o.subtotal_cents === undefined) ? o.total_cents - o.shipping_cents : o.subtotal_cents;
+    var test = /^cs_test_/.test(o.stripe_session_id);
+    var stripeUrl = o.payment_intent ? 'https://dashboard.stripe.com/' + (test ? 'test/' : '') + 'payments/' + o.payment_intent : null;
+    var when = new Date(o.created_at).toLocaleString([], { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    async function setShipped(shipped) {
+      if (saving) return;
+      setSaving(true); setMessage(null);
+      var patch = shipped ? { status: 'shipped', tracking_number: tracking.trim() || null } : { status: 'paid' };
+      var res = await sb.from('orders').update(patch).eq('id', o.id).select().single();
+      setSaving(false);
+      if (res.error) { setMessage({ error: true, text: 'Not saved: ' + res.error.message }); return; }
+      setO(Object.assign({}, o, res.data));
+      setMessage({ error: false, text: shipped ? 'Marked as shipped.' : 'Back to To ship.' });
+    }
+    async function saveTracking() {
+      if (saving) return;
+      setSaving(true); setMessage(null);
+      var res = await sb.from('orders').update({ tracking_number: tracking.trim() || null }).eq('id', o.id).select().single();
+      setSaving(false);
+      if (res.error) { setMessage({ error: true, text: 'Not saved: ' + res.error.message }); return; }
+      setO(Object.assign({}, o, res.data)); setMessage({ error: false, text: 'Tracking number saved.' });
+    }
+    function copyAddress() {
+      (navigator.clipboard ? navigator.clipboard.writeText(address) : Promise.reject())
+        .then(function () { toast('Address copied.'); }, function () { setMessage({ error: true, text: 'Could not copy: select the address and copy it.' }); });
+    }
+
+    var shipped = o.status === 'shipped', open = o.status === 'paid';
+    var primary = shipped
+      ? h(Z.Button, { key: 'ship', hierarchy: 'primary', 'aria-busy': saving || undefined, onClick: saveTracking }, 'Save tracking')
+      : h(Z.Button, { key: 'ship', hierarchy: 'primary', disabled: !open, 'aria-busy': saving || undefined, onClick: function () { setShipped(true); } }, 'Mark as shipped');
+    var secondary = stripeUrl ? h(Z.Button, { key: 'stripe', hierarchy: 'secondary', href: stripeUrl, target: '_blank', rel: 'noopener' }, 'Open in Stripe') : null;
+    var undo = shipped ? h(Z.Button, { key: 'undo', hierarchy: 'secondary', 'aria-busy': saving || undefined, onClick: function () { setShipped(false); } }, 'Mark as not shipped') : null;
+    var statusLine = h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '');
+
+    var main = h('div', { className: 'admin-main' },
+      h('h1', { className: 'label-extra-large' }, 'Order ' + ref),
+      h('p', { className: 'body-small' }, [when, 'Paid', orderStatus(o)].filter(function (x, i, all) { return all.indexOf(x) === i; }).join(' · ')),
+      o.attention ? h(Z.Alert, null, o.attention) : null,
+      h('section', { className: 'admin-order__records', 'aria-labelledby': 'order-records' },
+        h('h2', { id: 'order-records', className: 'label-medium' }, 'Records'),
+        h('ul', { className: 'admin-rows' }, (o.items || []).map(function (it) {
+          var l = it.listing || {};
+          return h(Z.ListingRow, { key: l.id, href: '#edit-' + l.id, title: nameOf(l),
+            meta: [l.sku, l.release && l.release.format, STATUS_LABEL[l.status] || l.status].filter(Boolean).join(' · '),
+            price: euro(it.price_cents) });
+        }))),
+      h('div', { className: 'admin-order__details' },
+        h(Z.OrderBlock, { title: 'Ship to', action: h(Z.Button, { hierarchy: 'secondary', onClick: copyAddress }, 'Copy address') }, address),
+        h(Z.OrderBlock, { title: 'Total' }, ['Records: ' + euro(records), 'Shipping: ' + euro(o.shipping_cents), 'Total paid: ' + euro(o.total_cents)].join('\n')),
+        h(Z.OrderBlock, { title: 'Buyer', action: h(Z.Button, { hierarchy: 'secondary', href: 'mailto:' + o.email + '?subject=' + encodeURIComponent('Your order ' + ref) }, 'Write to buyer') }, o.email),
+        h(Z.OrderBlock, { title: 'Payment' }, ['Stripe' + (test ? ' test mode' : ''), o.status === 'refunded' ? 'Refunded' : null].filter(Boolean).join('\n'))));
+
+    var trackingField = h(Z.Input, { id: 'tracking', label: 'Tracking number', optional: true, value: tracking,
+      supportText: 'Saved with the order.', onChange: function (e) { setTracking(e.target.value); } });
+    var side = h('aside', { className: 'admin-side' },
+      trackingField,
+      mobile ? null : h(Z.ActionPanel, null, primary, undo, secondary),
+      mobile ? null : statusLine);
+    return h('div', { className: 'admin-page admin-page--edit' }, main, side,
+      mobile ? h(Z.ActionBar, { status: statusLine }, primary, undo || secondary) : null);
+  }
+
+  // ── Sell again ────────────────────────────────────────────────────────────
+  /* Figma BACKEND → Create › "Edit listing · sold · side" (decision 0100, Gio 2026-11-15): a sold copy can be put on
+     sale again as a twin: a NEW listing (new SKU from the trigger of 0020, its own slug) of the same release (same
+     pressing: lines, samples, label), with the sold copy's price, conditions, notes and photos, as a draft. The sold
+     listing stays sold (its order keeps pointing at it). Then the form opens on the twin to adjust and publish. */
+  async function sellAgain(id) {
+    var src = await sb.from('listings').select('*').eq('id', id).single();
+    if (src.error) throw new Error(src.error.message);
+    var l = src.data, base = (l.slug || 'record').replace(/-\d+$/, '');
+    var taken = await sb.from('listings').select('slug').like('slug', base + '%');
+    if (taken.error) throw new Error(taken.error.message);
+    var used = {}; (taken.data || []).forEach(function (r) { used[r.slug] = true; });
+    var n = 2; while (used[base + '-' + n]) n++;
+    var row = { slug: base + '-' + n, release_id: l.release_id, section: l.section, status: 'draft', price_cents: l.price_cents,
+      currency: l.currency, condition_media: l.condition_media, condition_media_b: l.condition_media_b, sleeve_type: l.sleeve_type,
+      condition_sleeve: l.condition_sleeve, condition_notes: l.condition_notes, notes: l.notes, photo_keys: l.photo_keys,
+      weight_g: l.weight_g, custom_title: l.custom_title };
+    var res = await sb.from('listings').insert(row).select('id,sku').single();
+    if (res.error) throw new Error(res.error.message);
+    return res.data;
   }
 
   // ── Attributes ────────────────────────────────────────────────────────────
@@ -1755,6 +1925,8 @@
     else if (/^#attributes\/[a-z]+\/[^/]+$/.test(hash)) body = h(AttributeForm, { key: hash + route.visit, kind: hash.split('/')[1], id: hash.split('/')[2] });
     else if (/^#attributes/.test(hash)) body = h(Attributes, { key: 'attributes', kind: hash.split('/')[1] || 'artist' });
     else if (hash === '#shipping') body = h(Shipping, { key: 'shipping-' + route.visit });
+    else if (hash === '#orders') body = h(Orders, { key: 'orders-' + route.visit });
+    else if (/^#orders\/[^/]+$/.test(hash)) body = h(OrderDetail, { key: hash + route.visit, id: hash.split('/')[1] });
     else if (hash === '#memo') body = h(Memo, { key: 'memo-' + route.visit });
     else if (/^#new\/memo\/[^/]+$/.test(hash)) body = h(FromMemoLoader, { key: hash + route.visit, id: hash.split('/')[2] });
     else body = h(Listings, { key: 'list-' + route.visit });
@@ -1767,8 +1939,9 @@
   /* Admin navigation (Figma page `admin`, decision 0089): AdminBar (desktop buttons / mobile Menu · title · Create)
      + the mobile menu, a full-screen native modal <dialog> with a MenuLayer, like the shop's (0060): Esc, × or
      following a link closes it, focus goes back to the Menu button. */
-  var SECTIONS = [['listings', 'Listings', '#'], ['memo', 'Memo', '#memo'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping']];
+  var SECTIONS = [['listings', 'Listings', '#'], ['orders', 'Orders', '#orders'], ['memo', 'Memo', '#memo'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping']];
   function sectionOf(hash) {
+    if (/^#orders/.test(hash)) return 'orders';
     if (/^#memo/.test(hash)) return 'memo';
     if (/^#attributes/.test(hash)) return 'attributes';
     if (hash === '#shipping') return 'shipping';

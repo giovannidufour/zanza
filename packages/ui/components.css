@@ -305,12 +305,24 @@ a.zz-tab {
   flex-direction: row;
   gap: 8px;
 }
-.zz-header__leading { align-items: flex-start; }
+.zz-header__leading { align-items: flex-start; min-height: 46px; }   /* Figma: min height = store name 38 + 8, so without the logo (0094) the name keeps 8px above the bottom rule (Gio, 2026-11-15) */
 .zz-header__trailing { align-items: center; }
 .zz-header__tabs { display: flex; }
 
 .zz-header__logo { flex: none; width: 64px; height: 64px; overflow: hidden; }
 .zz-header[data-device="mobile"] .zz-header__logo { width: 48px; height: 48px; }
+/* Figma `header` boolean `logo` (default on). The storefront turns it off when the row cannot hold everything
+   (apps/storefront/scripts/site.js → fitHeaderLogo): the store name always stays. */
+.zz-header[data-logo="inside"] .zz-header__logo,
+.zz-header[data-logo="hidden"] .zz-header__logo { display: none; }
+/* …and it moves inside the store name (Figma `store name` logo=true): logo 36x36 against the left border,
+   padding 0 8 0 0, gap 8 → still 38px tall like the plain name. */
+.zz-header__name-logo { display: none; flex: none; width: 36px; height: 36px; overflow: hidden; }
+.zz-header__name-logo > img,
+.zz-header__name-logo > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
+.zz-header[data-logo="inside"] .zz-header__name-logo { display: block; }
+.zz-header[data-logo="inside"] .zz-header__name { padding: 0 8px 0 0; }
+/* data-logo="hidden": not even the small one fits (e.g. 320px): only the name */
 .zz-header__logo > img,
 .zz-header__logo > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
 
@@ -1395,6 +1407,9 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 }
 
 /* ── ListingRow (Figma page `admin` → `listing row`, decision 0089): an admin list row on mobile, MemoItem grammar ── */
+.zz-order-block { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; color: var(--text-strong); }
+.zz-order-block__title, .zz-order-block__body { margin: 0; }
+.zz-order-block__body { white-space: pre-line; overflow-wrap: anywhere; }
 .zz-listing-row { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
 .zz-listing-row__select { flex: none; display: flex; }
 .zz-listing-row__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }

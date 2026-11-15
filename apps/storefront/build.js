@@ -1,6 +1,6 @@
 /* apps/storefront/build.js — static build.
    products (Supabase, or content/products/*.json: see data/products.js) → dist/products/<slug>/index.html,
-   dist/index.html (home), dist/sale/index.html (PLP), dist/search/index.html (search results), dist/bag/index.html (bag), dist/<legal page>/index.html (content/legal/*.md) (+ css, fonts, assets). `--source=json` forces the local JSON.
+   dist/index.html (home), dist/sale/index.html (PLP), dist/search/index.html (search results), dist/bag/index.html (bag), dist/checkout/thanks/index.html (after Stripe Checkout), dist/<legal page>/index.html (content/legal/*.md) (+ css, fonts, assets). `--source=json` forces the local JSON.
    Upload the whole `dist/` folder to the web root. Run: npm run build
    Cloudflare Pages: `npm run build:pages` (= --target=pages --source=supabase: root basePath, never the local JSON). */
 'use strict';
@@ -54,6 +54,7 @@ const shippingJsHref = url(`/js/shipping.js?v=${hashOf(shippingJs)}`);
 const { Pdp, title } = require('./pages/pdp.js');
 const Plp = require('./pages/plp.js');
 const Bag = require('./pages/bag.js');
+const Checkout = require('./pages/checkout.js');
 const Trade = require('./pages/trade.js');
 const Legal = require('./pages/legal.js');
 const ContactPage = require('./pages/contact.js');
@@ -97,6 +98,13 @@ let liveMeta = '';
 const footerHtml = renderToStaticMarkup(React.createElement(require('./pages/shell.js').SiteFooter, { site, url }));
 const withFooter = (body) => (body.startsWith('<div class="zz-page"') && body.endsWith('</div>') ? body.slice(0, -6) + footerHtml + '</div>' : body);
 
+// Favicon = the logo illustration (Gio 2026-11-15, decision 0097): files in public/, served from /assets/
+const faviconLinks = [
+  `<link rel="icon" href="${url('/assets/favicon.svg')}" type="image/svg+xml">`,
+  `<link rel="icon" href="${url('/assets/favicon-32.png')}" type="image/png" sizes="32x32">`,
+  `<link rel="apple-touch-icon" href="${url('/assets/apple-touch-icon.png')}">`
+].join('\n');
+
 function page({ title: t, body }) {
   return `<!doctype html>
 <html lang="${site.lang}">
@@ -104,6 +112,7 @@ function page({ title: t, body }) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escape(t)} · ${escape(site.storeName)}</title>
+${faviconLinks}
 <link rel="stylesheet" href="${cssHref('fonts')}">
 <link rel="stylesheet" href="${cssHref('tokens')}">
 <link rel="stylesheet" href="${cssHref('components')}">
@@ -219,6 +228,8 @@ write('search/index.html', page({ title: 'Search', body: renderToStaticMarkup(Re
 // added still shows, as unavailable); scripts/site.js shows the visitor's own lines from localStorage
 const bagProducts = products.filter(p => p.listing.section === 'sale');
 write('bag/index.html', page({ title: Bag.title, body: renderToStaticMarkup(React.createElement(Bag.Bag, { products: bagProducts, site, url, shipping, countries: shippingData.countries(shipping) })) }));
+// after a paid Stripe Checkout (migration 0021, Figma page `Checkout`): site.js takes the paid records out of the bag
+write('checkout/thanks/index.html', page({ title: Checkout.title, body: renderToStaticMarkup(React.createElement(Checkout.Thanks, { site, url })) }));
 
 // Legal pages (decision 0079, Figma page `Legal`): content/legal/<page>.md → /<page>/. What Gio still has to fill
 // (site.json → legal, [[TO FILL]] in the text) is listed here, so a build never hides a placeholder.
@@ -232,6 +243,9 @@ write('contact/index.html', page({ title: 'Contact', body: renderToStaticMarkup(
 
 // Home (Figma page `Home`, decision 0085): Just in, For trade, Genres, About
 write('index.html', page({ title: Home.title, body: renderToStaticMarkup(React.createElement(Home.Home, { products, site, url })) }));
+// Cloudflare Pages response headers (target pages only). Until launch the shop lives on staging.rythem-works.com
+// (behind Cloudflare Access) and store-front-6fx.pages.dev: neither may be indexed (site.json → noindex).
+if (targetArg === 'pages' && site.noindex) write('_headers', '/*\n  X-Robots-Tag: noindex\n');
 console.log(`done: ${products.length} product page(s), ${forSale.length} for sale, ${forTrade.length} for trade`);
 }
 main().catch((err) => { console.error(err.message || err); process.exit(1); });

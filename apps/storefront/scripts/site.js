@@ -27,7 +27,7 @@
         and opens the bag (decision 0058); taking a copy out happens only on /bag/; the header Bag shows the count in brackets on every page
       - /bag/ (pages/bag.js) shows the lines of the bag, the subtotal of the available ones, or the empty state;
         with shipping set up: "Ship to" country (remembered), shipping estimate and total (decision 0057);
-        Remove takes a line out and shows a toast with Undo (packages/ui/toast.js, decision 0049). Checkout is not wired yet (create-checkout + Stripe, _context/backend.md)
+        Remove takes a line out and shows a toast with Undo (packages/ui/toast.js, decision 0049). Checkout posts to create-checkout and goes to Stripe (migration 0021, startCheckout)
    7. Live status (_context/backend.md -> Stato dal vivo)
       - the pages are static: each listing carries its status at build time (data-listing-status); with Supabase meta
         tags on the page, one read of listing_availability per page (and when the tab comes back) brings it up to date
@@ -99,7 +99,35 @@
     window.addEventListener('resize', apply);
     header.addEventListener('focusin', reveal);   // keyboard: tabbing into a hidden header brings it back
     header.addEventListener('transitionend', onTransitionEnd);
-    headerCleanup = function () { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', apply); };
+    var stopLogoFit = fitHeaderLogo(header);
+    headerCleanup = function () { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', apply); stopLogoFit(); };
+  }
+
+  // Logo only when everything fits (Gio, 2026-11-15; Figma `header` boolean `logo`): on screens too narrow for
+  // menu + logo + store name + Bag in one row (desktop: + tabs + search + Account) (e.g. 375px with "rythem-works"), the logo goes and the name stays.
+  // Measured, not a breakpoint: the room depends on the store name and on the Bag count. Min gap = the row's 8px gap.
+  function fitHeaderLogo(header) {
+    var bar = header.classList.contains('zz-header') ? header : header.querySelector('.zz-header');
+    var row = bar && bar.querySelector('.zz-header__row');
+    var leading = row && row.querySelector('.zz-header__leading');
+    var trailing = row && row.querySelector('.zz-header__trailing');
+    if (!leading || !trailing || !bar.querySelector('.zz-header__logo')) return function () {};
+    function overflows() {
+      var parts = Array.prototype.filter.call(row.children, function (el) { return el.offsetWidth > 0; });
+      return parts.reduce(function (sum, el) { return sum + el.getBoundingClientRect().width; }, 0) + 8 * (parts.length - 1) > row.clientWidth;
+    }
+    // big logo → logo inside the store name ("inside") → no logo at all ("hidden", only if even that does not fit)
+    function fit() {
+      bar.removeAttribute('data-logo');                     // measure with the big logo shown
+      if (!overflows()) return;
+      bar.setAttribute('data-logo', 'inside');
+      if (overflows()) bar.setAttribute('data-logo', 'hidden');
+    }
+    fit();
+    var ro = window.ResizeObserver ? new ResizeObserver(function () { window.requestAnimationFrame(fit); }) : null;
+    if (ro) { ro.observe(row); ro.observe(trailing); } else window.addEventListener('resize', fit);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);   // the web font changes the name's width
+    return function () { if (ro) ro.disconnect(); else window.removeEventListener('resize', fit); };
   }
 
   /* ---------------------------------------------------------------- 2. player */
@@ -942,7 +970,78 @@
     syncAddButtons(ids);
   }
 
-  function initBag() { renderBag(); }
+  function initBag() { renderBag(); checkoutReturn(); }
+
+  /* checkout (migration 0021, _context/backend.md → Checkout con hold): Checkout posts the AVAILABLE ids of the bag and
+     the country to create-checkout, which holds the copies for 33 min and answers the Stripe Checkout URL. The session
+     and its ids are remembered ('zanza-checkout'): back on /bag/?checkout=cancelled the session is expired at once (the
+     copies are free again for others); on the thanks page ([data-checkout-thanks]) the bought ids leave the bag.
+     TODO Figma: Button has no loading state; while the request runs Checkout is aria-disabled and ignores clicks,
+     with no visual change (a disabled Button is struck through = unavailable, decision 0058). */
+  var CHECKOUT_KEY = 'zanza-checkout';
+  var checkoutBusy = false;
+  function checkoutMessage(text) { if (window.ZanzaToast) window.ZanzaToast.show({ message: text }); else announce(text); }
+  function startCheckout(btn) {
+    if (checkoutBusy) return;
+    var endpoint = btn.getAttribute('data-endpoint');
+    if (!endpoint || !window.fetch) { checkoutMessage('Checkout isn\u2019t open yet.'); return; }
+    var root = document.querySelector('[data-bag-page]');
+    var ids = Array.prototype.filter.call(root.querySelectorAll('[data-bag-line]'), function (li) {
+      return !li.hidden && li.getAttribute('data-available') === 'true';
+    }).map(function (li) { return li.getAttribute('data-bag-line'); });
+    var select = root.querySelector('[data-bag-ship-to]');
+    if (!ids.length) return;
+    checkoutBusy = true;
+    btn.setAttribute('aria-disabled', 'true');
+    announce('Starting checkout\u2026');
+    function done() { checkoutBusy = false; btn.removeAttribute('aria-disabled'); }
+    fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: ids, country: select ? select.value : '' }) })
+      .then(function (res) { return res.json().catch(function () { return {}; }).then(function (b) { return { status: res.status, body: b }; }); })
+      .then(function (r) {
+        var b = r.body || {};
+        if (r.status === 200 && b.url) {
+          try { window.localStorage.setItem(CHECKOUT_KEY, JSON.stringify({ session: b.session, ids: ids })); } catch (e) { /* ignore */ }
+          window.location.href = b.url;   // keeps aria-disabled: the page is leaving
+          return;
+        }
+        done();
+        if (b.error === 'unavailable') {
+          readLive(true);   // the lines that were just taken turn Sold out / Reserved
+          checkoutMessage('Some records were just taken. Your bag is updated: check it and try again.');
+        } else if (b.error === 'below_minimum') {
+          readLive(true);
+          checkoutMessage('Your order is under the minimum of ' + formatPrice(b.min_cents || 0) + '.');
+        } else if (b.error === 'shipping') {
+          checkoutMessage(b.status === 'not-served' ? 'We don\u2019t ship to this country yet.' : 'Shipping for this bag can\u2019t be calculated. Remove a few records and try again.');
+        } else checkoutMessage('Checkout couldn\u2019t start. Please try again in a moment.');
+      })
+      .catch(function () { done(); checkoutMessage('Checkout couldn\u2019t start. Check your connection and try again.'); });
+  }
+  function readCheckout() {
+    try { var v = JSON.parse(window.localStorage.getItem(CHECKOUT_KEY) || 'null'); return v && typeof v === 'object' ? v : null; } catch (e) { return null; }
+  }
+  function forgetCheckout() { try { window.localStorage.removeItem(CHECKOUT_KEY); } catch (e) { /* ignore */ } }
+  function checkoutReturn() {
+    var pending = readCheckout();
+    // thanks page: the paid records leave the bag
+    if (document.querySelector('[data-checkout-thanks]')) {
+      if (pending && Array.isArray(pending.ids)) writeBag(readBag().filter(function (id) { return pending.ids.indexOf(id) === -1; }));
+      forgetCheckout();
+      return;
+    }
+    if (!document.querySelector('[data-bag-page]') || !/[?&]checkout=cancelled\b/.test(window.location.search)) return;
+    try { window.history.replaceState(window.history.state, '', window.location.pathname); } catch (e) { /* ignore */ }
+    var btn = document.querySelector('[data-bag-checkout]');
+    var endpoint = btn && btn.getAttribute('data-endpoint');
+    forgetCheckout();
+    if (pending && pending.session && endpoint && window.fetch) {
+      fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel', session: pending.session }) })
+        .then(function () { readLive(true); }).catch(function () { /* the hold ends by itself within 33 min */ });
+    }
+    checkoutMessage('Checkout cancelled. Your records are still in your bag.');
+  }
 
   // a copy already in the bag: its Add buttons become "In bag" (Gio 2026-11-12, decision 0058, replaces "Remove" of
   // 0054). Same Button: hierarchy secondary (the PDP CTA drops from primary), leading icon = tick (Figma `leading icon`
@@ -1255,6 +1354,8 @@
     if (cta) { addOrOpen(cta.getAttribute('data-add-to-bag')); return; }
     var padd = t.closest('.site-player__add');
     if (padd) { var cur = typeof current === 'function' ? current() : null; if (cur && cur.section !== 'trade') addOrOpen(cur.listing); return; }
+    var checkoutBtn = t.closest('[data-bag-checkout]');
+    if (checkoutBtn) { if (!checkoutBtn.disabled) startCheckout(checkoutBtn); return; }
     var remove = t.closest('.zz-bag-item__remove');
     if (remove) {
       var li = remove.closest('[data-bag-line]');

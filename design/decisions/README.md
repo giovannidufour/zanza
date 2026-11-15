@@ -115,4 +115,11 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0090](0090-photo-of-the-label.md) | Memo: "Photo of the label" reads the label with a free vision model (Cloudflare Workers AI), the text lands in Record and searches Discogs by barcode, cat. no., then artist + title; the photo is never stored | accepted |
 | [0091](0091-progress-bar.md) | ProgressBar (4px, black on surface/subtle); Memo photo shows an estimated progress that eases and never claims 100 % early | accepted |
 | [0092](0092-photo-in-create.md) | Create listing: Photo of the label beside Fetch Discogs; a release picked from the photo goes into Discogs match and is fetched | accepted |
-| [0093](0093-private-seller-slim-legal.md) | Private seller: no Impressum or Withdrawal, /contact/ = email + form, one-screen Privacy, Terms = a few lines on private sale | proposed |
+| [0093](0093-private-seller-slim-legal.md) | Private seller: no Impressum or Withdrawal, /contact/ = email + form, one-screen Privacy, Terms = a few lines on private sale | accepted |
+| [0094](0094-header-logo-only-when-it-fits.md) | Header: the logo shows only when menu + logo + store name + actions fit in the row (measured, Figma boolean `logo`); the store name always stays | accepted |
+| [0095](0095-mobile-breakpoint-960.md) | Mobile layout below 960px (was 768): the desktop header needs ~910px even without the logo, so 768–910px scrolled sideways | proposed |
+| [0096](0096-coming-soon-page.md) | Coming-soon page on rythem-works.com (store name, Opening soon, text, newsletter, Contact/Privacy/Terms) while the shop is on staging behind a login; noindex everywhere until launch | accepted |
+| [0097](0097-favicon-logo.md) | Favicon = the logo illustration on shop, admin and coming-soon; SVG inverts in dark mode, white square only for the iOS icon | accepted |
+| [0098](0098-checkout-thanks-and-returns.md) | Checkout: /checkout/thanks/ (layout of the empty bag, Figma `order thanks`, no order details: they are in the email); cancel and failures are toasts in the Bag | accepted |
+| [0099](0099-admin-page-ground-cream.md) | Every admin page on cream: primitive `scotch-mist` #fdfbdd, semantic `surface/page` (frontend accent, backend scotch-mist) on html / screen frames | accepted |
+| [0100](0100-admin-orders-and-sell-again.md) | Admin Orders (#orders: To ship / Shipped / All; order page with Ship to, Total, Buyer, Payment; Mark as shipped + tracking) and Sell again (twin draft listing of a sold copy, same release, new SKU) | accepted |

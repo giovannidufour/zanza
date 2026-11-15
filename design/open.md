@@ -8,13 +8,14 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - **Interaction overlay for all clickables.** Reuse `action/floating/background/*` as the hover/pressed tint everywhere, links included? Proposal: rename to `interaction/overlay/*`, add an inverse pair (`white-a4/a8`) for dark surfaces, keep the underline on links (WCAG 1.4.1), implement as a `::before` overlay. See [0007](decisions/0007-floating-actions-foreground-background.md).
 - **Focus state.** None designed, none shipped. Needs a `border/focus` token before launch (WCAG 2.4.7). *Parked.*
 - **Motion tokens.** 150ms ease-out (dashed border, FileList reorder slide) and 200ms (header reveal) are placeholders. *Parked.*
-- **Breakpoint value.** `<768px` is a placeholder in `tokens.json`. See [0004](decisions/0004-one-breakpoint-in-tokens.md).
+- **Breakpoint value.** `<960px` since [0095](decisions/0095-mobile-breakpoint-960.md) (set by the desktop header width); not drawn in Figma. See [0004](decisions/0004-one-breakpoint-in-tokens.md).
 - **Spacing scale / dimension tokens.** Paddings are hardcoded as in Figma; only `page-margin-*`, `gutter-small`, `small` exist. *Parked.*
 - **Type size tokens.** Coming later; until then the classes carry the sizes ([0003](decisions/0003-type-styles-are-classes.md)).
 - **PlayerButton disabled.** No strikethrough, unlike Button: intentional?
 - **Gallery.** Figma component not designed yet; image placeholder fill `#f2f4f7` has no token. *Parked.*
 - **PDP gallery scroll ([0033](decisions/0033-pdp-gallery-scrolls-on-its-own.md), [0036](decisions/0036-pdp-gallery-moves-with-the-page.md)).** Code choices not drawn in Figma: no scrollbar (nothing hints that image 2 continues when the window is shorter than the column); the gallery moves with the page (0036). In Figma row 1 is FIXED 330.67, valid only at 1024: a taller info block would overflow it there (code grows the row). To confirm or design.
 
+- **Button loading state ([0098](decisions/0098-checkout-thanks-and-returns.md)).** Checkout waits ~1 s for create-checkout: today aria-disabled with no visual change (disabled = struck through = unavailable, 0058). Options: a `loading` variant (label "Checkout…", no strike), or keep as is.
 - **Player track number.** Figma shows "1" next to the title and "1 of 3" in the controls; code maps the first to the track position on the record (A, B) — to confirm.
 - **ProductCard link style.** Cover and record title link to the product page ([0040](decisions/0040-card-title-links-to-pdp.md)); not drawn in Figma: hover / focus of the cover and of inline links (today: underline on hover, code only) to design.
 - **ProductCard hover ([0088](decisions/0088-product-card-hover.md)).** Padding stays as it is (Gio): the tint is flush with the text and the Add button. Not drawn in Figma: the sold-out cover back to normal on card hover (blend/saturation can't follow a variant). The whole card darkens but only cover, title, tags and buttons are clickable.

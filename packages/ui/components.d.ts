@@ -32,7 +32,7 @@ export declare function Button(props: ButtonProps): JSX.Element;
 export interface HeaderProps extends HTMLAttributes<HTMLElement> {
   /** Which Figma variant to render. Omitted → responsive: one markup, CSS switches menu/tabs/logo size (breakpoint `--mobile` from tokens.json, <768px placeholder). */
   device?: "desktop" | "mobile";
-  /** Logo image (<img> or <svg>). 64×64 on desktop, 48×48 on mobile. Figma: `image 2`. */
+  /** Logo image (<img> or <svg>). 64×64 on desktop, 48×48 on mobile. Figma: `logo` (boolean). Also rendered 36×36 inside the store name, shown only when the header sets `data-logo="inside"` (no room for the big one, decision 0094). */
   logo?: ReactNode;
   /** Store name shown in the bordered label box (from `site.json` → storeName). Figma: text layer `store name`. */
   storeName?: ReactNode;
@@ -999,6 +999,17 @@ export interface ListingRowProps extends HTMLAttributes<HTMLLIElement> {
   price?: ReactNode;
 }
 export declare function ListingRow(props: ListingRowProps): JSX.Element;
+
+/** Mirrors the Figma component `order block` (page `Orders`, BACKEND, decision 0100): one block of the admin order page. */
+export interface OrderBlockProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
+  /** Figma `title`, e.g. "Ship to". Rendered as <h2>. */
+  title: ReactNode;
+  /** Figma `body`: plain text, line breaks kept (an address, the totals). */
+  children?: ReactNode;
+  /** Figma `action` (boolean, on): a Button (hug), e.g. "Copy address". Omit → no action. */
+  action?: ReactNode;
+}
+export declare function OrderBlock(props: OrderBlockProps): JSX.Element;
 
 /** Mirrors the Figma component `action bar` (page `admin`, decision 0089): form actions sticky at the bottom of the viewport on mobile. */
 export interface ActionBarProps extends HTMLAttributes<HTMLDivElement> {

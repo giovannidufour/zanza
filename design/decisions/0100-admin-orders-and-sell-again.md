@@ -1,0 +1,12 @@
+# 0100 — Admin Orders, and Sell again for a sold copy
+
+`2026-11-15` · accepted · Figma: page `Orders` (BACKEND, after Memo): component `order block`, screens Orders - desktop / mobile, Order - desktop / mobile, note "orders behaviour"; `admin bar` and `admin menu` gain Orders; page `Create` → "Edit listing · sold · side"
+
+**Context.** Stripe Checkout (0098, migration 0021) writes orders, but Gio could only see them in Stripe and by email. Gio (2026-11-15): orders in the admin; and a sold record can go on sale again as a twin listing with a new SKU.
+**Decision.**
+- `#orders`: the Listings grammar without selection: tabs To ship (paid) · Shipped · All, newest first; desktop table Order (ref = first 8 characters of the id, uppercase, as in the emails) · Buyer · Status · Date · Total; mobile `listing row` with `select` off (new boolean, on by default). "Check" = the order has `attention`.
+- `#orders/<id>`: the Create layout. Main: title "Order <REF>", date · status, the `alert` (existing component) when `attention` is set, Records (`listing row`, linked to the listing), then `order block`s: Ship to (Copy address), Total, Buyer (Write to buyer = mailto), Payment. Side: Tracking number + action panel: Mark as shipped / Open in Stripe. A shipped order shows Save tracking and Mark as not shipped. On mobile the actions go in the `action bar`.
+- Sell again (sold or traded listing, status panel): inserts a new draft listing of the same release (same pressing: lines, samples, label), with the price, conditions, notes and photos of the sold copy, its own slug (`<slug>-2`, `-3` …) and a new SKU (trigger 0020), then opens it. The sold listing stays sold.
+**Rule.** Orders are written only by Stripe (stripe-webhook). The admin changes nothing else than status (paid ↔ shipped) and tracking number. A twin of a copy shares its release, never copies it (`releases.discogs_release_id` is unique).
+**Where.** `apps/admin/admin.js` (Orders, OrderDetail, sellAgain), `admin.css`, `packages/ui` OrderBlock; ListingRow without `select`.
+**Open.** No shipping email to the buyer yet (Gio writes the tracking himself). No refund in the admin (refund in Stripe, then the order stays paid: later a webhook for charge.refunded). `shipped_at` and a carrier / tracking URL would need a migration (also wanted by the customer account work).
