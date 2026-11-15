@@ -138,7 +138,9 @@
     }
     function send(email) {
       busy = true;
-      return call('/auth/v1/otp', { body: { email: email, create_user: true } }).then(function (r) {
+      // redirect_to: the link in the email lands back on /account/ (without it Auth uses the Site URL = the admin)
+      var back = location.origin + base() + '/account/';
+      return call('/auth/v1/otp?redirect_to=' + encodeURIComponent(back), { body: { email: email, create_user: true } }).then(function (r) {
         busy = false;
         // 403 = the Auth hook: no orders for this email. Same answer as a sent code (see the header comment)
         if (r.status === 429) return 'Too many codes asked. Wait a minute and try again.';
