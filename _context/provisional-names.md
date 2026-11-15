@@ -23,6 +23,8 @@ Il 2026-11-15 tutto quello che nel repo e in Figma diceva rythem-trax è passato
 - Decisioni in `design/decisions/` (append-only: restano col nome dell'epoca).
 - Supabase `store-staging`, Pages `store-front`/`store-admin`, bucket `store-media`: nomi già neutri.
 
+**Dominio definitivo (2026-11-15):** Gio ha comprato **`rythem-works.com`** (Cloudflare Registrar). Email del negozio: **`gio@rythem-works.com`** (Email Routing → Gmail). Collegati: negozio (apex, `www` → apex), `admin.`, `media.` (R2), CORS R2, DMARC, dominio su Resend (in verifica). Mappa in `_context/stack.md` → Dominio. Ancora da fare: Supabase (Auth URL, secret `SHOP_URL`/`ALLOWED_ORIGINS`/`ADMIN_ORIGINS`/`MAIL_FROM`/`STORE_NAME`), nuova API key Resend, Gmail "Invia come", Buttondown, `siteUrl` (PR #106 SEO non ancora unita), poi le righe sotto.
+
 **Da fare fuori dal repo** (servono le mani o l'ok di Gio)
 - Figma: rinominare il file "Zanza - Record Store" (l'API non può; la key non cambia).
 - claude.ai: progetto "Zanza" e artifact "Zanza Design System" (va rigenerato con `npm run build:artifact` per avere il titolo nuovo).
