@@ -375,16 +375,6 @@
       props.samples ? h('div', { className: 'zz-product-info__samples' }, props.samples) : null);
   }
 
-  /* ── Sold-out label ─────────────────────────────────────────────────────
-     Figma: `product image` boolean `sold out` (ON in the component, OFF in instances) → layer `sold out label`,
-     decision 0086. "SOLD OUT" centred over the image, body/small in text/strong-invert (white), no box; CSS
-     desaturates the image and multiplies it on the background (normal on hover). aria-hidden: the sold state is said
-     in text by the component that shows it ("Sold out" button, "SOLD OUT" alert). scripts/site.js builds the same
-     markup when a copy is sold while the page is open. Internal (decision 0008). */
-  function SoldOutLabel() {
-    return h('span', { className: 'zz-sold-out-label body-small', 'aria-hidden': 'true' }, 'SOLD OUT');
-  }
-
   /* ── ProductCard ────────────────────────────────────────────────────────
      Figma: `product card` (device=desktop | mobile), page PDP. One markup for both variants; CSS grid places the blocks:
        desktop: 9-col grid · image 2 cols · info 3 cols (title block, tags, samples; gap 16) ·
@@ -422,12 +412,11 @@
       'data-device': device,
       'data-state': props.state && props.state !== 'default' ? props.state : undefined,   // doc-only pin (0009)
       'aria-labelledby': titleId
-    }, omit(props, ['device', 'state', 'image', 'soldOut', 'href', 'title', 'releaseInfo', 'price', 'description', 'grading', 'cover', 'conditions', 'tags', 'samples',
+    }, omit(props, ['device', 'state', 'image', 'href', 'title', 'releaseInfo', 'price', 'description', 'grading', 'cover', 'conditions', 'tags', 'samples',
                     'onAdd', 'addHref', 'addLabel', 'addLabelShort', 'headingLevel', 'className', 'children'])),
       // href: the cover becomes the link to the product page (no visual change; the link style is not designed yet)
       h(props.href ? 'a' : 'div', props.href ? { className: 'zz-product-card__image', href: props.href, 'aria-labelledby': titleId } : { className: 'zz-product-card__image' },
-        img && img.src ? h('img', { src: img.src, alt: img.alt || '', loading: 'lazy' }) : null,
-        props.soldOut ? h(SoldOutLabel) : null),
+        img && img.src ? h('img', { src: img.src, alt: img.alt || '', loading: 'lazy' }) : null),
       h('div', { className: 'zz-product-card__info' },
         h('div', { className: 'zz-product-card__title-block' },
           h('h' + (props.headingLevel || 2), { id: titleId, className: cx('zz-product-card__name', t.head) }, props.title),
@@ -473,8 +462,7 @@
     }, omit(props, ['device', 'status', 'notice', 'image', 'href', 'title', 'releaseInfo', 'price', 'grading', 'cover', 'conditions',
                     'samples', 'onRemove', 'removeLabel', 'headingLevel', 'className', 'children'])),
       h(props.href ? 'a' : 'div', props.href ? { className: 'zz-bag-item__image', href: props.href, tabIndex: -1, 'aria-hidden': 'true' } : { className: 'zz-bag-item__image' },
-        img && img.src ? h('img', { src: img.src, alt: img.alt || '', loading: 'lazy' }) : null,
-        status === 'sold' ? h(SoldOutLabel) : null),   // Figma: bag item status=sold → product image sold out ON (0086)
+        img && img.src ? h('img', { src: img.src, alt: img.alt || '', loading: 'lazy' }) : null),
       h('div', { className: 'zz-bag-item__info' },
         h('div', { className: 'zz-bag-item__title-block' },
           h('h' + (props.headingLevel || 2), { id: titleId, className: cx('zz-bag-item__name', t.head) },
@@ -553,7 +541,7 @@
   /* ── Gallery ────────────────────────────────────────────────────────────
      Figma: PDP - desktop `gallery` (images stacked, gap 1, scrolls vertically) / PDP - mobile `mobile gallery`
      (horizontal swipe). Not a Figma component yet: this mirrors the PDP frames. Focusable (tabIndex 0): it is a
-     scroll container, so keyboard users can scroll it. `soldOut`: the sold-out look (greyscale, "SOLD OUT") on every image (decision 0086). */
+     scroll container, so keyboard users can scroll it. */
   function Gallery(props) {
     var images = props.images || [];
     var device = props.device || 'responsive';
@@ -563,11 +551,10 @@
       role: 'group',
       tabIndex: 0,
       'aria-label': props['aria-label'] || 'Product images'
-    }, omit(props, ['images', 'device', 'soldOut', 'className', 'aria-label'])),
+    }, omit(props, ['images', 'device', 'className', 'aria-label'])),
       images.map(function (img, i) {
         return h('div', { key: i, className: 'zz-gallery__item' },
-          img && img.src ? h('img', { src: img.src, alt: img.alt || '', loading: i === 0 ? 'eager' : 'lazy' }) : null,
-          props.soldOut ? h(SoldOutLabel) : null);   // every image of a sold copy (0086)
+          img && img.src ? h('img', { src: img.src, alt: img.alt || '', loading: i === 0 ? 'eager' : 'lazy' }) : null);
       }));
   }
 

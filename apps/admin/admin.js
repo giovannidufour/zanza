@@ -733,7 +733,7 @@
 
     function load() {
       return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_cents,custom_title,created_at,orders:order_items(count),release:releases(lines:release_lines(position,artist,title))')
-        .order('sku', { ascending: false })
+        .order('created_at', { ascending: false })
         .then(function (res) { if (res.error) setError(res.error.message); else setRows(res.data); });
     }
     useEffect(function () {
@@ -1090,7 +1090,7 @@
         setCount(e.listing_ids.length);
         if (e.listing_ids.length) {
           sb.from('listings').select('id,sku,slug,status,reserved_until,custom_title,release:releases(lines:release_lines(position,artist,title))')
-            .in('id', e.listing_ids).order('sku', { ascending: false })
+            .in('id', e.listing_ids).order('created_at', { ascending: false })
             .then(function (r2) { if (!r2.error) setRecords(r2.data); });
         }
       });
@@ -1170,7 +1170,7 @@
       isNew ? null : h('section', { className: 'admin-section', 'aria-labelledby': 'records-title' },
         h('h2', { id: 'records-title', className: 'label-medium' }, 'Records ' + n),   // Figma: one text "Records 2"
         n ? h('ul', { className: 'admin-links body-small' }, records.map(function (r) {
-          return h('li', { key: r.id }, h('a', { href: '#edit-' + r.id }, [String(r.sku).padStart(4, '0'), nameOf(r), STATUS_LABEL[effectiveStatus(r)] || r.status].join(' · ')));
+          return h('li', { key: r.id }, h('a', { href: '#edit-' + r.id }, [String(r.sku), nameOf(r), STATUS_LABEL[effectiveStatus(r)] || r.status].join(' · ')));
         })) : h('p', { className: 'body-small' }, 'Not on any record.')),
       isNew || !n ? null : h(Z.Divider),
       isNew || !n ? null : h('section', { className: 'admin-section', 'aria-labelledby': 'replace-title' },

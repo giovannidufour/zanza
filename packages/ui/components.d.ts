@@ -235,8 +235,6 @@ export interface ProductCardProps extends HTMLAttributes<HTMLElement> {
   state?: "default" | "hover";
   /** Figma `product image`: the cover, square. */
   image?: ProductCardImage;
-  /** Figma `product image` boolean `sold out`: the cover desaturated and multiplied on the background (normal on hover), "SOLD OUT" in white text centred over it (decision 0086). Decorative: the card says "Sold out" on its button. */
-  soldOut?: boolean;
   /** Product page URL: the cover becomes a link to it (no visual change; a designed link style is in open.md). */
   href?: string;
   /** Figma `product name`. Rendered as a heading; it also names the card and its button. */
@@ -275,7 +273,7 @@ export declare function ProductCard(props: ProductCardProps): JSX.Element;
 export interface BagItemProps extends HTMLAttributes<HTMLElement> {
   /** Omitted → responsive (breakpoint `--mobile` from tokens.json): desktop type = ProductCard desktop, mobile = ProductCard mobile. */
   device?: "desktop" | "mobile";
-  /** Figma `status`. sold: name plain, "SOLD OUT" in an inline Alert (alert box, decision 0078) beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). Samples stay. sold also shows the cover greyscale with "SOLD OUT" over it (decision 0086). `unavailable` is the pre-0064 name of reserved. @default "available" */
+  /** Figma `status`. sold: name plain, "SOLD OUT" in an inline Alert (alert box, decision 0078) beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). Samples stay. `unavailable` is the pre-0064 name of reserved. @default "available" */
   status?: "available" | "sold" | "reserved" | "unavailable";
   /** The word beside the struck price of a sold / reserved line. @default "SOLD OUT" / "RESERVED" */
   notice?: ReactNode;
@@ -366,8 +364,6 @@ export interface GalleryProps extends HTMLAttributes<HTMLDivElement> {
   device?: "desktop" | "mobile";
   /** In order; the first is the main image. */
   images: GalleryImage[];
-  /** Figma `product image` boolean `sold out` on every image: image desaturated and multiplied on the background (normal on hover), "SOLD OUT" in white text centred (decision 0086). */
-  soldOut?: boolean;
 }
 export declare function Gallery(props: GalleryProps): JSX.Element;
 
