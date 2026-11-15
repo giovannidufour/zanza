@@ -13,6 +13,8 @@ on:
       - 'apps/storefront/site.json'
       - 'apps/storefront/content/legal/**'
       - 'apps/storefront/pages/legal.js'
+      - 'apps/storefront/pages/newsletter.js'
+      - 'apps/storefront/scripts/newsletter.js'
       - 'apps/storefront/base.css'
       - 'apps/storefront/legal.css'
       - 'packages/ui/**'

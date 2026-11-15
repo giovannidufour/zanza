@@ -1276,8 +1276,9 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-footer-links__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--small); }
 .zz-footer-newsletter { display: flex; flex-direction: column; gap: var(--small); margin: 0; }
 .zz-footer-newsletter__row { display: flex; align-items: flex-end; gap: var(--small); }
+.zz-footer-newsletter__row[hidden] { display: none; }   /* after a signup the answer takes its place (decision 0103) */
 .zz-footer-newsletter__input { flex: 1 1 auto; min-width: 0; }
-.zz-footer-newsletter__note { margin: 0; }
+.zz-footer-newsletter__note, .zz-footer-newsletter__status { margin: 0; }
 /* a link inside the note is told apart from the text by the underline, not by colour only (WCAG 1.4.1) */
 .zz-footer .zz-footer-newsletter__note a { text-decoration: underline; }
 @media (--mobile) {

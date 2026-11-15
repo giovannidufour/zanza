@@ -22,6 +22,8 @@ const url = (p) => p;   // served from the web root
 const h = React.createElement;
 const Z = require(path.join(UI, 'components.js'));
 const Legal = require('./pages/legal.js');
+const Newsletter = require('./pages/newsletter.js');
+const newsletterJs = fs.readFileSync(path.join(APP, 'scripts/newsletter.js'));
 
 const { expandMedia } = require(path.join(UI, 'media.js'));
 const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\n\s*\n+/g, '\n').trim() + '\n';
@@ -66,6 +68,7 @@ function page({ title, body, description }) {
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 ${description ? `<meta name="description" content="${escape(description)}">\n` : ''}<meta name="robots" content="noindex">
 ${links}
+<script src="/js/newsletter.js?v=${hashOf(newsletterJs)}" defer></script>
 </head>
 <body>
 ${body}
@@ -82,6 +85,7 @@ function write(rel, content) {
 
 fs.rmSync(DIST, { recursive: true, force: true });
 for (const [n, c] of Object.entries(css)) write(`css/${n}.css`, c);
+write('js/newsletter.js', newsletterJs);   // signup in place + the confirm page (decision 0103)
 for (const f of fs.readdirSync(path.join(APP, 'public'))) {
   if (/\.(woff2|png|svg|txt)$/.test(f)) write('assets/' + f, fs.readFileSync(path.join(APP, 'public', f)));
 }
@@ -96,10 +100,22 @@ const home = h('div', { className: 'zz-page coming-soon' },
     h('h1', { className: 'coming-soon__title body-large' }, cs.title || 'Opening soon'),
     h(Z.Divider),
     h('p', { className: 'coming-soon__text body-medium' }, cs.text || ''),
-    nl.action ? h(Z.FooterNewsletter, { action: nl.action, id: 'coming-soon-newsletter',
-      note: ['New records in your inbox. You confirm by email and can leave anytime. ', h('a', { key: 'p', href: '/privacy/' }, 'Privacy')] }) : null),
+    nl.action ? h(Z.FooterNewsletter, { action: nl.action, endpoint: nl.endpoint || undefined, id: 'coming-soon-newsletter',
+      note: [`New records in your inbox. You confirm ${nl.endpoint && nl.autoConfirm !== false ? 'with one click in an email' : 'by email'} and can leave anytime. `, h('a', { key: 'p', href: '/privacy/' }, 'Privacy')] }) : null),
   bottom);
 write('index.html', page({ title: site.storeName, description: cs.text, body: renderToStaticMarkup(home) }));
+
+// the link in the newsletter confirmation email lands here (decision 0103): the page's own layout, title + divider + states
+{
+  const confirm = h('div', { className: 'zz-page coming-soon' },
+    header,
+    h('main', { className: 'coming-soon__intro' },
+      h('h1', { className: 'coming-soon__title body-large', 'data-newsletter-title': '' }, Newsletter.title),
+      h(Z.Divider),
+      h(Newsletter.ConfirmStates, { site, signup: h('a', { key: 's', href: '/' }, 'Sign up again') })),
+    bottom);
+  write('newsletter/confirm/index.html', page({ title: `${Newsletter.title} · ${site.storeName}`, body: renderToStaticMarkup(confirm) }));
+}
 
 // Privacy: a short text for this page only (content/legal/privacy-coming-soon.md, Gio 2026-11-15: no personal data on
 // it), with the coming-soon header and bottom row. The shop keeps its full privacy.md

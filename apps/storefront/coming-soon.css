@@ -31,6 +31,10 @@
 }
 .coming-soon__copyright { margin: 0; }
 
+/* /newsletter/confirm/ (decision 0103, base rules in legal.css): spaced like the intro */
+.coming-soon .newsletter-confirm__state { gap: var(--medium-small); }
+.coming-soon .newsletter-confirm p { margin: 0; }
+
 @media (--mobile) {
   .coming-soon__intro { width: auto; }
 }
