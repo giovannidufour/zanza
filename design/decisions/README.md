@@ -109,3 +109,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0085](0085-home-page.md) | Home page: Just in (8 newest, sale and trade mixed, Play all), Genres, About; PLP grid on desktop, Genres on top on mobile; store name lit as the current page (amended 2026-11-15) | accepted |
 | [0086](0086-sold-out-cross.md) | Sold-out look: every image of a sold or traded copy greyscale + multiplied (normal on hover) with "SOLD OUT" in white text centred (cards, PDP gallery, bag); Figma `product image` boolean `sold out`. Earlier X versions dropped | accepted |
 | [0087](0087-admin-memo.md) | Admin Memo: Gio's list of records to sell later (free text or a Discogs release), mobile-first rows; Create listing from a memo fetches the release and takes it off the list | accepted |
+| [0088](0088-product-card-hover.md) | Product card hover: the whole card takes the new `surface/hover` (= black-a4); Figma `product card` state=default/hover | accepted |
