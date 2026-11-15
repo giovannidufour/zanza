@@ -5,7 +5,7 @@
    Listings: Figma BACKEND → Listings (2026-11-10). Sign-in has no Figma frame (design/open.md). */
 
 * { box-sizing: border-box; }
-/* every admin page sits on surface-page (backend: scotch-mist, the cream; decision 0099, replaces the per-page grounds of 0023 / 0032 / 0057).
+/* every admin page sits on surface-page (backend: scotch-mist, the cream; decision 0100, replaces the per-page grounds of 0023 / 0032 / 0057).
    On html only, so nothing stacks; fields keep surface-accent (black-a4) over it. */
 html { background: var(--surface-page); min-height: 100%; }
 body { margin: 0; color: var(--text-strong); font-family: var(--font-sans); }
@@ -186,3 +186,10 @@ h1, h2, p { margin: 0; }
   .admin-shipping__minimum { flex-direction: column; align-items: stretch; gap: 4px; }
   .admin-shipping__minimum > label, .admin-shipping__minimum > .zz-input, .admin-shipping__check > :first-child { width: auto; }
 }
+
+/* Orders (Figma BACKEND → Orders, decision 0100): order page = the Create layout (main + side); details in two
+   columns (Figma `details`: gap 16 × 32), one column on mobile */
+.admin-order__records { display: flex; flex-direction: column; gap: 8px; }
+.admin-order__records h2 { margin: 0; }
+.admin-order__details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 16px; }
+@media (--mobile) { .admin-order__details { grid-template-columns: minmax(0, 1fr); gap: 24px; } }

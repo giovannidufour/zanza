@@ -1407,6 +1407,9 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 }
 
 /* ── ListingRow (Figma page `admin` → `listing row`, decision 0089): an admin list row on mobile, MemoItem grammar ── */
+.zz-order-block { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; color: var(--text-strong); }
+.zz-order-block__title, .zz-order-block__body { margin: 0; }
+.zz-order-block__body { white-space: pre-line; overflow-wrap: anywhere; }
 .zz-listing-row { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
 .zz-listing-row__select { flex: none; display: flex; }
 .zz-listing-row__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }

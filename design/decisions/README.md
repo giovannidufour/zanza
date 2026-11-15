@@ -121,3 +121,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0097](0097-favicon-logo.md) | Favicon = the logo illustration on shop, admin and coming-soon; SVG inverts in dark mode, white square only for the iOS icon | accepted |
 | [0098](0098-checkout-thanks-and-returns.md) | Checkout: /checkout/thanks/ (layout of the empty bag, Figma `order thanks`, no order details: they are in the email); cancel and failures are toasts in the Bag | accepted |
 | [0099](0099-admin-page-ground-cream.md) | Every admin page on cream: primitive `scotch-mist` #fdfbdd, semantic `surface/page` (frontend accent, backend scotch-mist) on html / screen frames | accepted |
+| [0100](0100-admin-orders-and-sell-again.md) | Admin Orders (#orders: To ship / Shipped / All; order page with Ship to, Total, Buyer, Payment; Mark as shipped + tracking) and Sell again (twin draft listing of a sold copy, same release, new SKU) | accepted |
