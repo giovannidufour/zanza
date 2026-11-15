@@ -1,4 +1,4 @@
-# 0086 — Sold-out look on every image of a sold copy (was: sold-out cross)
+# 0086 — Sold-out images (rolled back: a sold copy's images look like an available one's)
 
 `2026-11-15` · accepted (Gio: "una X bianca dello spessore di un pixel… da angolo ad angolo… applica e fai merge"; "ovviamente anche in Figma") · Figma: page `media` → `product image` (3:1006), boolean `sold out` + layer `sold out cross`
 
@@ -20,3 +20,6 @@
 **Amended a sixth time 2026-11-15 (Gio: "togli la X bianca, basta la scritta sold out in bianco").** No cross any more. **Current state, which replaces everything above about the look:** every image of a sold or traded copy is desaturated (`grayscale(1)`) and multiplied on the page background (the box drops its fill), back to normal on hover; "SOLD OUT" is centred over it, body/small, `text/strong-invert`, no box, aria-hidden. Figma: `product image` boolean `sold out` drives only the `sold out label` text layer (the vector is deleted). Code: internal `SoldOutLabel`, `.zz-sold-out-label`, site.js `syncSoldLabels`. The Rule above holds with "the cross" read as "the sold-out look".
 
 **Amended a seventh time 2026-11-15 (Gio, with 0088).** On a ProductCard the sold-out cover comes back to normal on the hover of the whole card, not only of the image. Bag item and PDP gallery: unchanged (image hover).
+
+**Rolled back 2026-11-15 (Gio: "le immagini sold out devono essere identiche a quelle available, quindi rollback… solo gli interventi sull'immagine").** **Current state:** a sold or traded copy's images look exactly like an available one's: no cross, no label, no greyscale or multiply, on cards, PDP gallery and bag. The sold state is said only by text (the "Sold out" button, the bag's SOLD OUT alert). Figma: the `sold out` boolean and its layers are removed from `product image`; the `PDP · sold out` frames stay (sold CTA). Kept from this thread: the player's "Add to bag" reads "Sold out", disabled, for a sold copy, also on pages where that copy is not listed (the status travels on the sample button).
+**Rule (replaces the one above).** Never mark a sold copy on its image; sold out is said in text by the component's own controls.

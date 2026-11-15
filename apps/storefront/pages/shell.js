@@ -180,7 +180,7 @@ function sampleAttrs(product, s, url) {
     'data-product-href': productHref(product, url),
     'data-listing-id': product.listing.id,   // the player's "Add to bag" adds the playing product
     'data-listing-section': product.listing.section,   // trade listings: no Add to bag in the player
-    'data-listing-status': product.listing.status   // sold / traded: the player's button reads "Sold out", disabled (0086)
+    'data-listing-status': product.listing.status   // sold / traded: the player's button reads "Sold out", disabled
   };
 }
 
@@ -201,8 +201,6 @@ function tagLinksOf(release, url) {
   }));
   return out;
 }
-// sold out = sold (sale) or traded (trade): the copy is gone for good (decision 0058; the sold-out look of 0086)
-const isSoldOut = (listing) => listing.status === 'sold' || listing.status === 'traded';
 const TRADE_CARD_LABEL = { available: 'Make an offer', reserved: 'Reserved', traded: 'Traded' };
 // Figma labels the card samples 1, 2…; the accessible name keeps the product and the sample title.
 function ProductCardFor({ product, url, headingLevel }) {
@@ -213,7 +211,6 @@ function ProductCardFor({ product, url, headingLevel }) {
     'data-listing-section': listing.section,
     href: productHref(product, url),
     image: release.cover ? { src: url(release.cover), alt: '' } : null,
-    soldOut: isSoldOut(listing),   // greyscale cover + "SOLD OUT" over it (decision 0086); site.js keeps it live
     title: productNameLinked(product, url, productHref(product, url)),
     headingLevel,
     releaseInfo: releaseInfoLinked(release, url),
@@ -233,4 +230,4 @@ function ProductCardFor({ product, url, headingLevel }) {
   });
 }
 
-module.exports = { SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor, isSoldOut };
+module.exports = { SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor };
