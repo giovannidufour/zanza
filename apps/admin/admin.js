@@ -1494,6 +1494,14 @@
     var ac = useState(-1), active = ac[0], setActive = ac[1];
     var timer = useRef(null), seq = useRef(0);
     useEffect(function () { return function () { clearTimeout(timer.current); }; }, []);
+    // releases found from a photo of the label (0090): shown as if typed; a newer photo or keystroke wins
+    useEffect(function () {
+      var f = props.found;
+      if (!f) return;
+      clearTimeout(timer.current); seq.current++;
+      setBox(f.results.length ? { results: f.results } : { message: 'No match on Discogs for what the photo shows. Fix the text, or keep it as it is.' });
+      setActive(-1);
+    }, [props.found]);
     function close() { clearTimeout(timer.current); seq.current++; setBox(null); setActive(-1); }
     function show(next) { setBox(next); setActive(-1); }
     function onText(e) {
@@ -1544,6 +1552,61 @@
       h('p', { className: 'zz-visually-hidden', 'aria-live': 'polite' },
         box ? (box.message || results.length + (results.length === 1 ? ' release' : ' releases') + ' found. Use the arrow keys to choose.') : ''));
   }
+  /* Photo of the label (Figma BACKEND → Memo → `memo photo`, state default | reading | read | not read; decision 0090).
+     Opens the phone's back camera (a file picker on desktop). The photo is shrunk here (longest side 1280 px, JPEG),
+     read by read-label (free vision model on Cloudflare Workers AI, nothing stored), then the fields go to
+     discogs-lookup { fields }: barcode, then catalogue number, then artist + title. The words read land in Record. */
+  var PHOTO_SIDE = 1280;
+  function shrinkPhoto(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var k = Math.min(1, PHOTO_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+        var c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL('image/jpeg', 0.85).split(',')[1]);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('this file is not a photo the browser can open')); };
+      img.src = url;
+    });
+  }
+  function PhotoField(props) {
+    var ss = useState({ state: 'default', text: '' }), st = ss[0], setSt = ss[1];
+    var input = useRef(null), seq = useRef(0);
+    async function onFile(e) {
+      var file = e.target.files && e.target.files[0];
+      e.target.value = '';                       // the same photo can be taken again
+      if (!file) return;
+      var n = ++seq.current;
+      setSt({ state: 'reading', text: 'Reading the label…' });
+      try {
+        var image = await shrinkPhoto(file);
+        var got = await invoke('read-label', { image: image });
+        if (n !== seq.current) return;
+        if (!got.read) { setSt({ state: 'not read', text: 'Couldn’t read the label. Try closer, flat and with more light, or type it.' }); return; }
+        var r = got.read;
+        var said = [r.artist, r.title, [r.label, r.catno].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
+        props.onText(got.query);
+        var found = await invoke('discogs-lookup', { fields: r });
+        if (n !== seq.current) return;
+        props.onFound({ results: found.results || [] });
+        setSt({ state: 'read', text: 'Read from the photo: ' + said + '. Pick your pressing in the list, or fix the text.' });
+      } catch (err) {
+        if (n !== seq.current) return;
+        setSt({ state: 'not read', text: 'Not read: ' + err.message });
+      }
+    }
+    var reading = st.state === 'reading';
+    return h('div', { className: 'admin-memo__photo' },
+      h('input', { ref: input, type: 'file', accept: 'image/*', capture: 'environment', className: 'zz-visually-hidden',
+        tabIndex: -1, 'aria-hidden': 'true', onChange: onFile }),
+      h(Z.Button, { type: 'button', hierarchy: 'secondary', className: 'admin-memo__photo-button', 'aria-busy': reading || undefined,
+        onClick: function () { if (!reading) input.current.click(); } },
+        st.state === 'read' || st.state === 'not read' ? 'Another photo' : 'Photo of the label'),
+      h('p', { className: 'body-small admin-memo__photo-status', role: 'status' }, st.text));
+  }
   function Memo() {
     var ls = useState(null), rows = ls[0], setRows = ls[1];
     var es = useState(null), loadError = es[0], setLoadError = es[1];
@@ -1553,6 +1616,8 @@
     var er = useState(null), error = er[0], setError = er[1];
     var sv = useState(false), saving = sv[0], setSaving = sv[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
+    var fs = useState(null), found = fs[0], setFound = fs[1];       // releases from the last photo (0090)
+    var pk = useState(0), photoKey = pk[0], setPhotoKey = pk[1];   // a new PhotoField after each add
     function load() {
       return sb.from('memos').select('*').order('created_at', { ascending: false }).then(function (res) {
         if (res.error) setLoadError(res.error.message); else { setLoadError(null); setRows(res.data); }
@@ -1571,7 +1636,7 @@
       setSaving(false);
       if (res.error) { setMessage({ error: true, text: 'Not added: ' + res.error.message }); return; }
       setRows(function (cur) { return [res.data].concat(cur || []); });
-      setText(''); setRelease(null); setNote('');
+      setText(''); setRelease(null); setNote(''); setFound(null); setPhotoKey(photoKey + 1);
       setMessage({ error: false, text: 'Added: ' + res.data.title + '.' });
       var el = document.getElementById('memo-record'); if (el) el.focus();
     }
@@ -1589,7 +1654,9 @@
       h('h1', { className: 'label-extra-large' }, 'Memo'),
       h('form', { className: 'admin-memo__add', onSubmit: add, noValidate: true },
         h(RecordField, { value: text, release: release, error: error,
-          onText: function (v) { setText(v); if (error) setError(null); }, onRelease: function (r) { setRelease(r); if (r) setError(null); } }),
+          found: found, onText: function (v) { setText(v); if (error) setError(null); }, onRelease: function (r) { setRelease(r); if (r) setError(null); } }),
+        h(PhotoField, { key: 'photo-' + photoKey,
+          onText: function (v) { setRelease(null); setText(v); if (error) setError(null); }, onFound: setFound }),
         h(Z.Input, { id: 'memo-note', label: 'Note', optional: true, placeholder: 'Sleeve, condition, where it is…',
           value: note, onChange: function (e) { setNote(e.target.value); } }),
         h(Z.Button, { type: 'submit', className: 'admin-memo__submit', 'aria-busy': saving || undefined }, 'Add to list'),

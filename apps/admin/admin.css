@@ -163,6 +163,10 @@ html:has(.admin-shipping) { background: var(--surface-base); }
 .admin-memo__add { display: flex; flex-direction: column; gap: 16px; width: 480px; max-width: 100%; }
 .admin-memo__add .admin-status:empty { display: none; }
 .admin-memo__submit { width: 100%; }
+.admin-memo__photo { display: flex; flex-direction: column; gap: 8px; }
+.admin-memo__photo-button { width: 100%; }
+.admin-memo__photo-status { margin: 0; color: var(--text-moderate); }
+.admin-memo__photo-status:empty { display: none; }
 .admin-memo__list { display: flex; flex-direction: column; gap: 24px; }
 .admin-memo__count { color: var(--text-moderate); }
 .admin-memo__items { list-style: none; margin: 0; padding: 0; }
