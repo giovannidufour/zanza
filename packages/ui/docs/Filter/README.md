@@ -36,7 +36,7 @@ The shop filter column (PLP). Figma: page `filters` (Gio's sketch, cleaned 2026-
 - **FilterBlock**: `<fieldset>` + `<legend>` (`label-extra-small`), gap 16, options gap 8.
 - **Filters**: blocks gap 24, padding 0 8.
 - Shop: every option is `content="label"` (Gio, decision [0028](../../../../design/decisions/0028-plp-filters.md)). The logic is the page's (apps/storefront/scripts/site.js).
-- Count in `text-moderate`: below 4.5:1, worse on the acid green page (design/open.md). Gio will change the value of `text/moderate`.
+- Count in `text-moderate`: 4.6:1 on the acid green page since [0067](../../../../design/decisions/0067-text-moderate-meets-aa.md).
 
 ## Tokens
 

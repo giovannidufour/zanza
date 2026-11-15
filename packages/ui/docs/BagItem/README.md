@@ -9,7 +9,7 @@ One line of the bag: one copy (copies are unique, so there is no quantity: Remov
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `device` | `"desktop" \| "mobile"` |  | Omitted → responsive (breakpoint `--mobile` from tokens.json): desktop type = ProductCard desktop, mobile = ProductCard mobile. |
-| `status` | `"available" \| "sold" \| "reserved" \| "unavailable"` | `available` | Figma `status`. sold: name struck through, "SOLD OUT" beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). Samples stay. `unavailable` is the pre-0064 name of reserved. |
+| `status` | `"available" \| "sold" \| "reserved" \| "unavailable"` | `available` | Figma `status`. sold: name plain, "SOLD OUT" in an inline Alert (alert box, decision 0078) beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). Samples stay. `unavailable` is the pre-0064 name of reserved. |
 | `notice` | `ReactNode` |  | The word beside the struck price of a sold / reserved line. @default "SOLD OUT" / "RESERVED" |
 | `image` | `ProductCardImage` |  | Figma `cover`: the cover image, 96 × 96. |
 | `href` | `string` |  | Product page URL: the title and the cover link to it. |
@@ -29,12 +29,12 @@ One line of the bag: one copy (copies are unique, so there is no quantity: Remov
 
 ## Anatomy (Figma)
 
-Row, gap `medium-small` (16): cover 96 × 96 · info (gap `small`: notice when sold or reserved, title block, grade lines with gap 4, samples) · purchase (right-aligned, gap `small`: price (struck through when sold, none when reserved), Remove = Button secondary small).
+Row, gap `gutter/small` (8, as ProductCard, [0074](../../../../design/decisions/0074-bag-item-gap-matches-product-card.md)): cover 96 × 96 · info (gap `small`: notice when sold or reserved, title block, grade lines with gap 4, samples) · purchase (right-aligned, gap `small`: price (struck through when sold, none when reserved), Remove = Button secondary small).
 Type: desktop as ProductCard desktop (body/large, body/medium), mobile as ProductCard mobile (body/medium, body/small). Notice: label/small.
 
 ## Tokens
 
-Text `text-strong`. Remove: Button secondary tokens.
+Text `text-strong`; SOLD OUT / RESERVED in an inline `Alert` (`surface-alert` + `text-on-alert`, [0078](../../../../design/decisions/0078-unavailable-name-in-red.md)). Remove: Button secondary tokens.
 
 ## Accessibility
 

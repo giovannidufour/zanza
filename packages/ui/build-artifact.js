@@ -1,5 +1,5 @@
 /* packages/ui/build-artifact.js
-   Assembles the "Zanza Design System" artifact (claude.ai Design System type) from this package.
+   Assembles the "rythem-trax Design System" artifact (claude.ai Design System type) from this package.
    The artifact is DERIVED: never edit it by hand. Output: packages/ui/artifact/project/ */
 'use strict';
 const fs = require('fs');

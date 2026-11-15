@@ -91,6 +91,7 @@ function toProduct(row, mediaUrl) {
       pre_release: !!r.pre_release,
       cat_no: r.cat_no,
       year: r.year,
+      year_precision: r.year_precision || 'year',   // 'decade' = year is the first year of a decade, "1990s" (0082)
       country: r.country,
       format: r.format,
       macro_genre: r.macro_genre,   // Discogs genre (Reggae), not shown as a filter (0048)

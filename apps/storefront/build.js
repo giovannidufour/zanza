@@ -1,6 +1,6 @@
 /* apps/storefront/build.js — static build.
    products (Supabase, or content/products/*.json: see data/products.js) → dist/products/<slug>/index.html,
-   dist/sale/index.html (PLP), dist/search/index.html (search results), dist/bag/index.html (bag) (+ css, assets). `--source=json` forces the local JSON.
+   dist/index.html (home), dist/sale/index.html (PLP), dist/search/index.html (search results), dist/bag/index.html (bag), dist/<legal page>/index.html (content/legal/*.md) (+ css, fonts, assets). `--source=json` forces the local JSON.
    Upload the whole `dist/` folder to the web root. Run: npm run build
    Cloudflare Pages: `npm run build:pages` (= --target=pages --source=supabase: root basePath, never the local JSON). */
 'use strict';
@@ -31,13 +31,16 @@ const { expandMedia } = require(path.join(UI, 'media.js'));
 const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\n\s*\n+/g, '\n').trim() + '\n';
 const readCss = (f) => stripComments(expandMedia(fs.readFileSync(f, 'utf8')));
 const css = {
+  fonts: readCss(path.join(APP, 'fonts.css')),
   tokens: readCss(path.join(UI, 'tokens.css')),
   components: readCss(path.join(UI, 'components.css')),
   base: readCss(path.join(APP, 'base.css')),
   pdp: readCss(path.join(APP, 'pdp.css')),
   plp: readCss(path.join(APP, 'plp.css')),
   bag: readCss(path.join(APP, 'bag.css')),
-  trade: readCss(path.join(APP, 'trade.css'))
+  trade: readCss(path.join(APP, 'trade.css')),
+  legal: readCss(path.join(APP, 'legal.css')),
+  home: readCss(path.join(APP, 'home.css'))
 };
 const cssHref = (name) => url(`/css/${name}.css?v=${hashOf(css[name])}`);
 const siteJs = fs.readFileSync(path.join(APP, 'scripts/site.js'));
@@ -52,6 +55,8 @@ const { Pdp, title } = require('./pages/pdp.js');
 const Plp = require('./pages/plp.js');
 const Bag = require('./pages/bag.js');
 const Trade = require('./pages/trade.js');
+const Legal = require('./pages/legal.js');
+const Home = require('./pages/home.js');
 const Z = require(path.join(UI, 'components.js'));
 
 // the site player: one per page, outside .zz-page, so the soft navigation in site.js keeps it (and the audio) alive.
@@ -86,6 +91,11 @@ const envelopeTemplate = `<template id="zz-icon-envelope">${renderToStaticMarkup
 let liveMeta = '';
 
 
+// the site footer (decision 0076): the same on every shop page, the last child of .zz-page (after <main>), so the soft
+// navigation in site.js swaps it with the page. Rendered once here instead of in every page module.
+const footerHtml = renderToStaticMarkup(React.createElement(require('./pages/shell.js').SiteFooter, { site, url }));
+const withFooter = (body) => (body.startsWith('<div class="zz-page"') && body.endsWith('</div>') ? body.slice(0, -6) + footerHtml + '</div>' : body);
+
 function page({ title: t, body }) {
   return `<!doctype html>
 <html lang="${site.lang}">
@@ -93,9 +103,7 @@ function page({ title: t, body }) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escape(t)} · ${escape(site.storeName)}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="${cssHref('fonts')}">
 <link rel="stylesheet" href="${cssHref('tokens')}">
 <link rel="stylesheet" href="${cssHref('components')}">
 <link rel="stylesheet" href="${cssHref('base')}">
@@ -103,12 +111,14 @@ function page({ title: t, body }) {
 <link rel="stylesheet" href="${cssHref('plp')}">
 <link rel="stylesheet" href="${cssHref('bag')}">
 <link rel="stylesheet" href="${cssHref('trade')}">
+<link rel="stylesheet" href="${cssHref('legal')}">
+<link rel="stylesheet" href="${cssHref('home')}">
 <script src="${toastJsHref}" defer></script>
 <script src="${shippingJsHref}" defer></script>
 <script src="${siteJsHref}" defer></script>
 ${liveMeta}</head>
 <body>
-${body}
+${withFooter(body)}
 ${playerHtml}
 ${toastRegionHtml}
 ${notifyDialogHtml}
@@ -147,6 +157,7 @@ fs.rmSync(path.join(APP, 'dist'), { recursive: true, force: true });
 console.log(`dist/${site.outputDir || ''}  (basePath: '${BASE || '/'}')`);
 
 // static assets
+write('css/fonts.css', css.fonts);
 write('css/tokens.css', css.tokens);
 write('css/components.css', css.components);
 write('css/base.css', css.base);
@@ -154,6 +165,8 @@ write('css/pdp.css', css.pdp);
 write('css/plp.css', css.plp);
 write('css/bag.css', css.bag);
 write('css/trade.css', css.trade);
+write('css/legal.css', css.legal);
+write('css/home.css', css.home);
 write('js/site.js', siteJs);
 write('js/toast.js', toastJs);
 write('js/shipping.js', shippingJs);
@@ -186,6 +199,10 @@ write('sale/index.html', page({ title: Plp.title('sale'), body: renderToStaticMa
 // Traded copies stay on the list like sold ones (behind "Show sold out").
 const forTrade = products.filter(p => p.listing.section === 'trade' && ['available', 'reserved', 'traded'].includes(p.listing.status));
 write('trade/index.html', page({ title: Plp.title('trade'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'trade', products: forTrade, allProducts: products, site, url })) }));
+// Catalog (decision 0085, Gio 2026-11-15): every record of both sections mixed, newest first, with the PLP filters.
+// Linked only from the home's "See all" under Just in (no tab, no menu item).
+const catalog = products.filter(p => forSale.includes(p) || forTrade.includes(p));
+write('catalog/index.html', page({ title: Plp.title('catalog'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'catalog', products: catalog, allProducts: products, site, url })) }));
 for (const product of forTrade.filter(p => p.listing.status === 'available')) {
   write(`products/${product.listing.slug}/offer/index.html`, page({ title: `Make an offer · ${title(product)}`, body: renderToStaticMarkup(React.createElement(Trade.Offer, { product, site, url })) }));
 }
@@ -200,10 +217,18 @@ write('search/index.html', page({ title: 'Search', body: renderToStaticMarkup(Re
 // Bag (decision 0044): one hidden line per listing of the sale section, whatever its status (a copy sold after it was
 // added still shows, as unavailable); scripts/site.js shows the visitor's own lines from localStorage
 const bagProducts = products.filter(p => p.listing.section === 'sale');
-write('bag/index.html', page({ title: Bag.title, body: renderToStaticMarkup(React.createElement(Bag.Bag, { products: bagProducts, site, url, shipping, countries: shippingData.countries() })) }));
+write('bag/index.html', page({ title: Bag.title, body: renderToStaticMarkup(React.createElement(Bag.Bag, { products: bagProducts, site, url, shipping, countries: shippingData.countries(shipping) })) }));
 
-// root: redirect to the PLP while there is no home page
-write('index.html', `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=${url('/sale/')}"><title>${escape(site.storeName)}</title>`);
+// Legal pages (decision 0079, Figma page `Legal`): content/legal/<page>.md → /<page>/. What Gio still has to fill
+// (site.json → legal, [[TO FILL]] in the text) is listed here, so a build never hides a placeholder.
+for (const p of Legal.PAGES) {
+  const { title: t, body, missing } = Legal.legalPage(p, { site, url, shipping, countries: shippingData.countries(shipping) });
+  write(`${p}/index.html`, page({ title: t, body: renderToStaticMarkup(body) }));
+  if (missing.length) console.log(`    to fill: ${missing.join(' · ')}`);
+}
+
+// Home (Figma page `Home`, decision 0085): Just in, For trade, Genres, About
+write('index.html', page({ title: Home.title, body: renderToStaticMarkup(React.createElement(Home.Home, { products, site, url })) }));
 console.log(`done: ${products.length} product page(s), ${forSale.length} for sale, ${forTrade.length} for trade`);
 }
 main().catch((err) => { console.error(err.message || err); process.exit(1); });

@@ -72,13 +72,13 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0046](0046-added-to-bag-label.md) | A copy in the bag: its Add buttons read "Added to bag" and open the bag | superseded by 0054 |
 | [0047](0047-added-to-bag-tick.md) | "Added to bag" carries a tick as its trailing icon | superseded by 0054 |
 | [0048](0048-macro-genre-and-genre.md) | Genre = the Discogs style (was "subgenre"); the Discogs genre is the macro genre, not shown | accepted |
-| [0049](0049-toast-feedback.md) | Toasts carry Undo and off-screen news; everything else stays inline | accepted, amended by 0050, 0052, 0053 |
+| [0049](0049-toast-feedback.md) | Toasts carry Undo and off-screen news; everything else stays inline | accepted, amended by 0050, 0052, 0053, 0071 (top) |
 | [0050](0050-added-to-bag-toast.md) | Add to bag shows a toast too; an action that is also on the page lets the toast time out | accepted |
 | [0051](0051-toast-dashed-border.md) | The toast border is dotted: dashed [1,1] | superseded by 0053 |
 | [0052](0052-toast-clear-of-rounded-corners.md) | On mobile the toast sits 2 × medium-small above the bottom, plus the safe area | superseded by 0055 |
 | [0053](0053-toast-border-dash-16.md) | The toast border is dashed [16,16], like the drop zone | accepted |
 | [0054](0054-in-bag-add-becomes-remove.md) | A copy in the bag: its Add buttons read "Remove" and take it out | superseded by 0058 |
-| [0055](0055-toast-mobile-gap-16.md) | On mobile the toast sits medium-small above the bottom, or the safe area if larger | accepted |
+| [0055](0055-toast-mobile-gap-16.md) | On mobile the toast sits medium-small above the bottom, or the safe area if larger | superseded by 0071 |
 | [0056](0056-player-sample-number-is-queue-position.md) | The player's sample number is the sample's position in the queue | accepted |
 | [0057](0057-shipping-estimate.md) | Shipping: rate tables, max records per package, an estimate in the bag by country | accepted |
 | [0058](0058-in-bag-opens-the-bag.md) | A copy in the bag: its Add buttons become "In bag" (secondary + tick) and open the bag | accepted |
@@ -90,6 +90,27 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0064](0064-sold-line-in-the-bag.md) | A sold copy in the bag: name struck through, "SOLD OUT" beside the struck price, a note above Checkout | accepted |
 | [0065](0065-reserved-button-notify-me.md) | Reserved: Add button "(Reserved) Notify me" with an envelope; the bag line looks like a sold one | accepted |
 | [0066](0066-icons-are-non-scaling-strokes.md) | Icons are 1px strokes that keep their thickness at any size | accepted |
+<<<<<<< HEAD
+| [0067](0067-text-moderate-meets-aa.md) | `text/moderate` is black at 56%: 4.5:1 or more on every ground it sits on | accepted |
+=======
 | [0068](0068-trade-is-a-conversation.md) | Trade: "not for sale, convince me"; the offer page asks for an introduction and starts a conversation, no shipping rule | accepted |
 | [0070](0070-traders-prove-their-profiles.md) | Traders give Discogs + Instagram or Facebook and prove them by sending Gio a two-word password from each; the conversation stays by email | accepted |
 | [0069](0069-which-record-searches-discogs.md) | "Which record" in the offer form searches Discogs releases while typing and accepts release links; plain text stays possible | accepted |
+| [0071](0071-toasts-at-the-top.md) | Toasts sit at the top: below the visible sticky header, top-right on desktop, full width on mobile | accepted |
+| [0072](0072-minimum-order.md) | Minimum order: records only (shipping excluded), set in admin Shipping; the bag says what is missing and Checkout waits, described by the note | accepted |
+| [0073](0073-genre-tag-chip-shows-the-value.md) | PLP genre / tag chip shows only the value; the type stays in the remove button's accessible name | accepted |
+| [0074](0074-bag-item-gap-matches-product-card.md) | Bag item row gap = ProductCard column gap (`gutter/small`), in Figma and code | accepted |
+| [0075](0075-ship-to-lists-served-countries.md) | Bag "Ship to" lists only the countries in a zone with rates, derived from the shipping config | accepted |
+| [0076](0076-footer.md) | Site footer: newsletter slot (off until Privacy names Buttondown), the mobile menu's links, Instagram/Discogs, legal + copyright; same tokens as the header | accepted |
+| [0077](0077-blocking-message-in-a-red-box.md) | A message that blocks an action or changes the order (minimum, sold out lines) sits in a red box (`alert`); new tokens `red` + `surface/alert` | accepted |
+| [0078](0078-unavailable-name-in-red.md) | Bag: SOLD OUT / RESERVED in an inline red `alert`; record name plain, no strikethrough | accepted |
+| [0079](0079-legal-pages.md) | Legal pages (Impressum, Privacy, Terms, Withdrawal, Shipping): one text template, text in `content/legal/*.md`, Gio's data in `site.json` → legal; Inter self-hosted | accepted |
+| [0080](0080-one-icon-per-name.md) | One icon per name: the "-ultra" drawings replaced the originals and took their names; no suffixed copies (amended: icon-bars-three, code re-aligned with Figma icons) | accepted |
+| [0081](0081-select-ring-for-keyboard-only.md) | SelectButton (Sort): the focus ring shows for keyboard focus only; after a mouse pick focus stays, the ring hides | accepted |
+| [0082](0082-year-or-decade.md) | Year field takes an exact year or a decade ("1990s"): `year` stays a number, `year_precision` = year / decade | accepted |
+| [0083](0083-view-in-store-button.md) | Admin action panel: the button that opens the live shop page reads "View in store"; "Preview" names only the in-admin shop preview | accepted |
+| [0085](0085-home-page.md) | Home page: Just in (8 newest, sale and trade mixed, Play all), Genres, About; PLP grid on desktop, Genres on top on mobile; store name lit as the current page (amended 2026-11-15) | accepted |
+| [0086](0086-sold-out-cross.md) | Sold-out images: tried cross / label / greyscale, rolled back: a sold copy's images look like an available one's (text says sold). Player Add to bag reads "Sold out" for a sold copy | accepted |
+| [0087](0087-admin-memo.md) | Admin Memo: Gio's list of records to sell later (free text or a Discogs release), mobile-first rows; Create listing from a memo fetches the release and takes it off the list | accepted |
+| [0088](0088-product-card-hover.md) | Product card hover: the whole card takes the new `surface/hover` (= black-a4); Figma `product card` state=default/hover | accepted |
+>>>>>>> origin/main

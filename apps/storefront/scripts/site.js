@@ -5,6 +5,7 @@
       - scroll up: it comes back sticky at the top (animated reveal, see base.css [data-revealing])
    2. Player (packages/ui Player, rendered once per page outside .zz-page)
       - a PlayerButton with data-sample-src plays its sample; the PlayerButtons of the same product are the queue
+      - a [data-play-all] button (home) queues every sample of its [data-play-scope] section
       - previous / play-pause / next, the native audio controls and the Media Session (lock screen) stay in sync
       - opens by sliding up from the bottom of the viewport; the close button stops playback and slides it away
    3. Soft navigation
@@ -33,7 +34,10 @@
       - reserved (someone is in Stripe Checkout, max 30 min, or held by hand): the Add buttons read "(Reserved) Notify me"
         (secondary + envelope, decision 0065) and stay active: pressing one opens the "Reserved" dialog, which explains the hold and offers "Notify me"
         (email, migration 0016). The bag line shows the notice "Reserved".
-        sold: the Add buttons read "Sold out", disabled (decision 0061); the bag line: name struck, "SOLD OUT" + struck price (0064)
+        sold: the Add buttons read "Sold out", disabled (decision 0061); the bag line: "SOLD OUT" in a red box + struck price (0064, 0078)
+
+   8. SelectButton focus (decision 0081)
+      - the ring of a native select shows for keyboard focus only, not after a mouse pick (focus stays on the select)
 
    Looks live in base.css and packages/ui/components.css; this file only sets attributes and text. */
 (function () {
@@ -112,6 +116,10 @@
   function current() { return queue[index] || null; }
 
   function sampleFrom(btn) {
+    // the copy's status at build time travels with the sample (Gio 2026-11-15): the player keeps playing across pages,
+    // where that copy may not be on the page, and its "Add to bag" must still read "Sold out" for a sold copy
+    var id = btn.getAttribute('data-listing-id');
+    if (id && btn.getAttribute('data-listing-status')) heard[id] = btn.getAttribute('data-listing-status');
     return {
       src: btn.getAttribute('data-sample-src'),
       title: btn.getAttribute('data-sample-title') || '',
@@ -238,8 +246,22 @@
     load(i, true);
   }
 
+  // "Play all" (home, decision 0085): every playable sample of its section ([data-play-scope]) becomes the queue,
+  // in page order, from the first one
+  function onPlayAll(btn) {
+    var scope = btn.closest('[data-play-scope]') || document;
+    var items = Array.prototype.slice.call(scope.querySelectorAll('[data-sample-src]'))
+      .filter(function (b) { return !b.disabled; }).map(sampleFrom);
+    if (!items.length) return;
+    lastTrigger = btn;
+    queue = items;
+    load(0, true);
+  }
+
   if (player && audio) {
     document.addEventListener('click', function (e) {
+      var all = e.target.closest && e.target.closest('[data-play-all]');
+      if (all) { onPlayAll(all); return; }
       var btn = e.target.closest && e.target.closest('[data-sample-src]');
       if (btn && !btn.disabled) onSampleClick(btn);
     });
@@ -485,21 +507,24 @@
       return out;
     }
     var LINK_LABEL = { genre: 'Genre', tag: 'Tag' };
-    // the row's chips: the hidden-facet chips, else the linked genre / tag while still ticked
+    // the row's chips: the hidden-facet chips, else the linked genre / tag while still ticked. A genre / tag chip shows
+    // only the value ("Street Soul", Gio 2026-11-14, decision 0073); the type stays in the remove button's name.
     function rowChipsOf(s) {
       var out = chipsOf(s);
       if (linked && s[linked.key] && s[linked.key].indexOf(linked.value) !== -1) {
         var b = boxes.filter(function (x) { return x.name === linked.key && x.value === linked.value; })[0];
-        out.push({ key: linked.key, value: linked.value, box: b,
-          text: (LINK_LABEL[linked.key] || linked.key) + ': ' + ((b && b.getAttribute('data-facet-label')) || linked.value) });
+        var shown = (b && b.getAttribute('data-facet-label')) || linked.value;
+        out.push({ key: linked.key, value: linked.value, box: b, text: shown,
+          name: (LINK_LABEL[linked.key] || linked.key) + ': ' + shown });
       }
       return out;
     }
-    function makeChip(template, text, onRemove) {
+    // name: the accessible name when the visible text drops the filter type (genre / tag chips)
+    function makeChip(template, text, onRemove, name) {
       var chip = template.content.firstElementChild.cloneNode(true);
       chip.querySelector('.zz-entity-chip__label').textContent = text;
       var btn = chip.querySelector('.zz-entity-chip__remove');
-      btn.setAttribute('aria-label', 'Remove filter ' + text);
+      btn.setAttribute('aria-label', 'Remove filter ' + (name || text));
       btn.removeAttribute('tabindex');
       btn.addEventListener('click', onRemove);
       return chip;
@@ -518,7 +543,7 @@
           apply(true);
           var next = root.querySelector('input');
           if (next) next.focus();   // the removed button is gone: keep keyboard focus on the page
-        }));
+        }, c.name));
       });
       return frag;
     }
@@ -825,9 +850,37 @@
     root.querySelector('[data-bag-subtotal]').textContent = formatPrice(cents);
     var served = renderShipping(root, known.filter(function (id) { return lines[id].getAttribute('data-available') === 'true'; })
       .map(function (id) { return lines[id]; }), cents);
+    var below = renderMinimum(root, count, cents);
     var checkout = root.querySelector('[data-bag-checkout]');
-    if (checkout) checkout.disabled = count === 0 || !served;
+    if (checkout) checkout.disabled = count === 0 || !served || below;
     return known;
+  }
+
+  // minimum order (decision 0072, Figma `bag summary` minimum=below): the available records' subtotal, shipping
+  // excluded, must reach the minimum set on the admin page Shipping. Under it: the note says the minimum and what is
+  // missing, Checkout is disabled and described by the note (never an unexplained disabled button); the note is a
+  // live region and reaching the minimum is announced. create-checkout checks again on the server (shipping.js minimumOrder).
+  // Returns true while the bag is under the minimum.
+  var minimumWasBelow = null;
+  function renderMinimum(root, count, cents) {
+    var summary = root.querySelector('[data-bag-summary]');
+    var note = root.querySelector('[data-bag-minimum]');
+    var checkout = root.querySelector('[data-bag-checkout]');
+    var min = summary ? parseInt(summary.getAttribute('data-min-order-cents'), 10) || 0 : 0;
+    var below = min > 0 && count > 0 && cents < min;
+    if (note) {
+      note.hidden = !below;
+      note.textContent = below ? 'Minimum order ' + formatPrice(min) + '. Add ' + formatPrice(min - cents) + ' more to check out.' : '';
+    }
+    if (checkout && note) {
+      if (below) checkout.setAttribute('aria-describedby', note.id);
+      else if (checkout.getAttribute('aria-describedby') === note.id) checkout.removeAttribute('aria-describedby');
+    }
+    // the note is its own polite live region (bag.js), so "Add 3€ more" is heard when it appears or changes, next to
+    // the bag's own "Removed from bag." Reaching the minimum hides it: say that in the bag's status instead.
+    if (minimumWasBelow === true && !below && min > 0 && count > 0) announce('Minimum order reached. You can check out.');
+    minimumWasBelow = below;
+    return below;
   }
 
   // shipping estimate (decision 0057, Figma `bag summary` destination=served | not served): the page carries the
@@ -1001,10 +1054,11 @@
 
   var seeded = {};      // listing id -> status written in this page at build time
   var live = {};        // listing id -> status read from Supabase (fresher: wins over the page)
+  var heard = {};       // listing id -> build-time status of a copy queued in the player (kept across pages)
   var holdKind = {};    // listing id -> 'checkout' | 'manual' (reserved copies only)
   var lastLiveRead = 0;
   var LIVE_MIN_GAP = 30000;   // ms between two reads (page load, soft navigation, tab back in view)
-  function statusFor(id) { return live[id] || seeded[id] || 'available'; }
+  function statusFor(id) { return live[id] || seeded[id] || heard[id] || 'available'; }
   function listingIdOf(el) {
     return el.getAttribute('data-listing-id') || el.getAttribute('data-add-to-bag') || el.getAttribute('data-bag-line');
   }
@@ -1111,8 +1165,8 @@
   document.addEventListener('cancel', function (e) {
     if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-notify-dialog')) { e.preventDefault(); closeNotify(); }
   }, true);
-  // a bag line follows the live status, as pages/bag.js renders it: available (price), sold / reserved (name struck
-  // through, "SOLD OUT" / "RESERVED" beside the struck price, decisions 0064, 0065)
+  // a bag line follows the live status, as pages/bag.js renders it: available (price), sold / reserved (name plain,
+  // "SOLD OUT" / "RESERVED" in a red inline Alert beside the struck price, decisions 0064, 0065, 0078)
   var BAG_STATUS = { available: 'available', sold: 'sold', traded: 'sold' };
   function syncBagLine(li) {
     var id = li.getAttribute('data-bag-line');
@@ -1139,7 +1193,9 @@
       price.textContent = '';
       if (!available) {
         // as BagItem: "SOLD OUT" / "RESERVED" + (screen readers) "not in your order" + the struck price
+        // the word in an inline Alert (red box, decision 0078): same classes as Alert layout=inline
         var label = document.createElement('span'); label.textContent = line === 'sold' ? 'SOLD OUT' : 'RESERVED';
+        label.className = 'zz-alert body-small zz-bag-item__status'; label.setAttribute('data-layout', 'inline');
         var sr = document.createElement('span'); sr.className = 'zz-visually-hidden'; sr.textContent = ', not in your order, ';
         var s = document.createElement('s'); s.textContent = text;
         price.appendChild(label); price.appendChild(sr); price.appendChild(s);
@@ -1565,6 +1621,27 @@
     window.addEventListener('popstate', function () { navigate(location.href, false); });
   }
 
+  /* ---------------------------------------------------------------- 8. select button focus (decision 0081) */
+
+  // Browsers count a native <select> as a "keyboard input" control, so it matches :focus-visible even when it was
+  // opened with the mouse: the ring stayed after picking an option or clicking away. Focus itself stays on the select
+  // (no blur: keyboard and screen-reader users keep their place); only the ring is hidden, via data-focus-source on
+  // the SelectButton, while the last input was a pointer. Any key press brings the ring back (components.css).
+  function initSelectFocus() {
+    document.addEventListener('pointerdown', function (e) {
+      var box = e.target.closest && e.target.closest('.zz-select-button');
+      if (box) box.setAttribute('data-focus-source', 'pointer');
+    }, true);
+    document.addEventListener('keydown', function (e) {
+      var box = e.target.closest && e.target.closest('.zz-select-button');
+      if (box) box.removeAttribute('data-focus-source');
+    }, true);
+    document.addEventListener('focusout', function (e) {
+      var box = e.target.closest && e.target.closest('.zz-select-button');
+      if (box) box.removeAttribute('data-focus-source');
+    }, true);
+  }
+
   initHeader();
   initMenu();
   initGallery();
@@ -1573,4 +1650,5 @@
   initStatus();
   initBag();
   initOffer();
+  initSelectFocus();
 })();
