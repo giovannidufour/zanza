@@ -31,19 +31,16 @@ Il 2026-11-15 tutto quello che nel repo e in Figma diceva rythem-trax è passato
 - Stripe public details (nome e email pubblica = rythem-works, gio@rythem-works.com) prima del live.
 - Logo (`apps/storefront/public/logo.png`, illustrazione): non contiene il nome, non toccato.
 
-## Pagine legali: segnaposto (2026-11-14, decisione 0079)
+## Pagine legali: segnaposto (2026-11-14, ridotte il 2026-11-15, decisioni 0079 e 0093)
 
-Gio (2026-11-14): "fai tutto tu per ora, metti dei placeholder". Online ci sono questi valori **provvisori**: vanno confermati o sostituiti da Gio, e i testi rivisti da un avvocato o un generatore (eRecht24, IT-Recht Kanzlei). La build li elenca tutti (`to fill:` per ogni pagina).
+Gio vende da privato (2026-11-15): niente Impressum, niente indirizzo, niente telefono, niente riga IVA; contatto = email + form (`/contact/`, funzione Supabase `contact`, che scrive a CONTACT_TO o OFFER_TO = email personale di Gio). La build elenca tutto quello che manca.
 
 | Dove | Segnaposto | Stato |
 |---|---|---|
-| `site.json` → legal: name, street, postcode, city, email, phone | mostrati tra parentesi quadre ("[Your full name]"…): dati personali, Claude non li inventa | 🔴 servono a Gio prima di vendere (Impressum obbligatorio, § 5 DDG) |
-| `site.json` → legal.vat + `terms.md` § 3 | "[VAT line…]", "[TO FILL: VAT note…]" | 🔴 dipende da Q5b (commercialista) |
-| `privacy.md` → Trade offers | offerte senza scambio cancellate dopo "6 months" | 🟡 proposta di Claude |
-| `privacy.md` → Orders | corriere "Deutsche Post / DHL" | 🟡 da confermare |
-| `privacy.md` → Your rights | autorità di controllo "Berliner Beauftragte für Datenschutz und Informationsfreiheit" (vale se Gio risiede a Berlino) | 🟡 |
-| `shipping.md` → When it arrives | spedizione entro "3 working days", consegna "Germany 1–3 working days, EU 3–7, rest of the world 7–21" | 🟡 |
-| Scelta di fondo | testi scritti come venditore Unternehmer (recesso 14 giorni, garanzia legale): scelta di Claude, card chiusa così su "fai tutto tu" | 🟡 |
+| `site.json` → legal: name, email | tra parentesi quadre ("[Your full name]", "[Contact email]"); l'email si vede su /contact/ e in Privacy | 🔴 da Gio prima di vendere |
+| `site.json` → contact.endpoint | vuoto finché la funzione `contact` non è deployata: il form rimanda all'email | 🟡 |
+| `shipping.md` → When it arrives | spedizione entro "3 working days", consegna "Germany 1–3 working days, EU 3–7, rest of the world 7–21" | 🟡 proposta di Claude |
+| Scelta di fondo | venditore privato (0093): niente recesso né garanzia oltre la descrizione | 🟡 da confermare con commercialista o avvocato |
 
 ## Account di servizi (email personale di Gio)
 

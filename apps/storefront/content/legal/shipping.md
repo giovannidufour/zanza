@@ -26,4 +26,4 @@ You pay at checkout with one of the methods offered there (handled by Stripe).
 
 ## Returns and damage
 
-You can return records within 14 days: see [Withdrawal](/withdrawal/). If a parcel arrives damaged, keep the packaging and write to me with photos.
+These are private sales, without returns: see [Terms](/terms/). If a parcel arrives damaged or a record is not as described, keep the packaging and write to me with photos.

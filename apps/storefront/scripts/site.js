@@ -1674,6 +1674,53 @@
     records().forEach(function (r) { initReleasePicker(r, searchEndpoint); });
   }
 
+  // /contact/ (decision 0093): checks Email and Message, posts JSON to the Supabase function `contact`
+  // (site.json → contact.endpoint), then shows the thanks line in place of the form. Nothing is stored.
+  function initContact() {
+    var form = document.querySelector('[data-contact-form]');
+    if (!form || form.hasAttribute('data-ready')) return;
+    form.setAttribute('data-ready', '');
+    var errorEl = form.querySelector('[data-contact-error]');
+    var sendBtn = form.querySelector('[data-contact-send]');
+    function field(name) { return form.querySelector('[name="' + name + '"]'); }
+    function val(name) { var el = field(name); return el ? String(el.value || '').trim() : ''; }
+    function mark(el, bad) {
+      el.setAttribute('aria-invalid', bad ? 'true' : 'false');
+      var box = el.closest('.zz-input');
+      if (box) box.setAttribute('data-invalid', bad ? 'true' : 'false');
+    }
+    function fail(text, el) { errorEl.textContent = text; errorEl.hidden = false; if (el) el.focus(); }
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      errorEl.hidden = true;
+      var email = field('email'), message = field('message');
+      var badEmail = !val('email') || !email.checkValidity(), badMessage = !val('message');
+      mark(email, badEmail); mark(message, badMessage);
+      if (badEmail || badMessage) { fail('Fill in your email and your message.', badEmail ? email : message); return; }
+      var endpoint = form.getAttribute('data-endpoint');
+      if (!endpoint) { fail('The form isn\u2019t switched on yet: please write to the email above.'); return; }
+      var label = sendBtn.querySelector('.zz-button__label');
+      var idle = label ? label.textContent : '';
+      sendBtn.disabled = true;
+      if (label) label.textContent = 'Sending\u2026';
+      fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: val('name'), email: val('email'), message: val('message'), website: val('website') }) })
+        .then(function (res) { if (!res.ok) throw new Error('HTTP ' + res.status); })
+        .then(function () {
+          form.hidden = true;
+          var sent = document.querySelector('[data-contact-sent]');
+          if (sent) sent.hidden = false;
+          var title = document.querySelector('[data-contact-title]');
+          if (title) { title.textContent = 'Message sent'; title.setAttribute('tabindex', '-1'); title.focus(); }
+        })
+        .catch(function () {
+          sendBtn.disabled = false;
+          if (label) label.textContent = idle;
+          fail('Your message didn\u2019t go through. Try again, or write to the email above.');
+        });
+    });
+  }
+
   var navToken = 0;
   function navigate(href, push) {
     var token = ++navToken;
@@ -1701,6 +1748,7 @@
       initStatus();
       initBag();
       initOffer();
+      initContact();
       if (player && audio) render();
       // screen readers and keyboard: start from the new page's main heading, like a full load would
       var focusEl = document.querySelector('main h1') || document.querySelector('.zz-page h1:not([hidden])') || document.querySelector('main');
@@ -1751,5 +1799,6 @@
   initStatus();
   initBag();
   initOffer();
+  initContact();
   initSelectFocus();
 })();
