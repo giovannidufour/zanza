@@ -1240,6 +1240,7 @@ a.zz-product-card__image { display: block; color: inherit; }
   color: var(--text-strong); text-decoration: none;
 }
 .zz-menu-item[data-state="current"] { background-color: var(--tab-background-active); }
+button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-style: solid; border-color: var(--border-divider-strong); background: none; font: inherit; text-align: left; cursor: pointer; }   /* an action row (0089) */
 .zz-menu-item__label { flex: 1 1 auto; min-width: 0; text-transform: uppercase; }
 .zz-menu-item__detail { flex: 0 1 auto; min-width: 0; color: var(--text-moderate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .zz-menu-layer__legal { display: flex; flex-wrap: wrap; gap: var(--small) var(--medium-small); padding: 0 var(--small); }
@@ -1373,6 +1374,51 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-memo-item__link { color: inherit; text-decoration: underline; align-self: flex-start; }
 .zz-memo-item__actions { flex: none; display: flex; flex-wrap: wrap; gap: 8px; }
 @media (--mobile) { .zz-memo-item { flex-direction: column; align-items: stretch; gap: 8px; } }
+
+/* ── AdminBar (Figma page `admin` → `admin bar`, decision 0089): desktop = section buttons + account, mobile = menu · title · create ── */
+.zz-admin-bar__desktop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.zz-admin-bar__nav, .zz-admin-bar__account { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.zz-admin-bar__email { color: var(--text-moderate); }
+.zz-admin-bar__mobile { display: none; }
+@media (--mobile) {
+  .zz-admin-bar__desktop { display: none; }
+  .zz-admin-bar__mobile {
+    display: flex; align-items: center; gap: var(--small);
+    padding: var(--small) var(--page-margin-mobile);   /* Figma: 8 all round, like the shop mobile header */
+    background: var(--surface-accent); border-bottom: 1px solid var(--border-divider-strong);
+  }
+  .zz-admin-bar__title { flex: 1 1 auto; min-width: 0; margin: 0; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* ── ListingRow (Figma page `admin` → `listing row`, decision 0089): an admin list row on mobile, MemoItem grammar ── */
+.zz-listing-row { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
+.zz-listing-row__select { flex: none; display: flex; }
+.zz-listing-row__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.zz-listing-row__title { color: inherit; overflow-wrap: anywhere; }
+.zz-listing-row__meta, .zz-listing-row__price { margin: 0; }
+.zz-listing-row__meta { color: var(--text-moderate); }
+.zz-listing-row__price { flex: none; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ── ActionBar (Figma page `admin` → `action bar`, decision 0089): form actions stuck to the bottom of the viewport ──
+   surface/base, not the ActionPanel's surface/subtle: that one is translucent in the backend mode and the form
+   scrolls under the bar (Gio 2026-11-15). */
+.zz-action-bar {
+  position: sticky; bottom: 0; z-index: 2;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: var(--medium-small);
+  background: var(--surface-base); border-top: 1px solid var(--border-divider-strong);
+}
+.zz-action-bar__actions { display: flex; gap: 8px; }
+.zz-action-bar__actions > .zz-button { flex: 1 1 0; min-width: 0; }
+.zz-action-bar__status:empty { display: none; }
+
+/* Touch targets (decision 0089, WCAG 2.5.5): on a coarse pointer, small Buttons (32) and checkboxes (24) get an
+   invisible tap area of 44, without changing how they look. */
+@media (pointer: coarse) {
+  .zz-button[data-size="small"] { position: relative; }
+  .zz-button[data-size="small"]::after { content: ""; position: absolute; inset: -6px 0; }
+  .zz-checkbox::after { content: ""; position: absolute; inset: -10px; }
+}
 
 /* ═══════════════════════════════════════════════════════════════════════
    Home (Figma page `Home`, 2026-11-14): section head, genre links, home about
