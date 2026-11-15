@@ -97,11 +97,12 @@ function block(b, key, { url, shipping, countries }) {
 }
 
 // Figma `legal section`: heading (label-small) + text; Figma `legal content`: title, divider, sections
-function legalPage(page, { site, url, shipping, countries }) {
+// `header` replaces the shop header (the coming-soon site has no shop to navigate to: build-coming-soon.js)
+function legalPage(page, { site, url, shipping, countries, header }) {
   const missing = new Set();
   const { title, sections } = parse(fill(read(page), site, missing));
   const body = h('div', { className: 'zz-page' },
-    h(SiteHeader, { site, url, current: page }),
+    header || h(SiteHeader, { site, url, current: page }),
     h('main', { className: 'legal-content' },
       h('h1', { className: 'legal-content__title body-large' }, title),
       h('div', { className: 'legal-text' }, h(Z.Divider),

@@ -1,0 +1,44 @@
+# Deploys the temporary page of rythem-works.com (apps/storefront/build-coming-soon.js, decision 0096) to the
+# Cloudflare Pages project `coming-soon` on every push to main that touches it. No Supabase: the page has no products.
+# Repository secret (already used by deploy-admin.yml):
+#   CLOUDFLARE_API_TOKEN  Cloudflare token with "Cloudflare Pages: Edit" on the account
+name: Deploy coming soon
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/storefront/build-coming-soon.js'
+      - 'apps/storefront/coming-soon.css'
+      - 'apps/storefront/site.json'
+      - 'apps/storefront/content/legal/**'
+      - 'apps/storefront/pages/legal.js'
+      - 'apps/storefront/base.css'
+      - 'apps/storefront/legal.css'
+      - 'packages/ui/**'
+      - '.github/workflows/deploy-coming-soon.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-coming-soon
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - run: npm run build:coming-soon
+      - name: Deploy to Cloudflare Pages
+        run: |
+          export CLOUDFLARE_API_TOKEN="$(printf %s "$TOKEN" | tr -d '[:space:]')"
+          # first run: create the project (an existing one makes this fail, which is fine)
+          npx --yes wrangler@3.80.0 pages project create coming-soon --production-branch main || true
+          npx --yes wrangler@3.80.0 pages deploy apps/storefront/dist-coming-soon --project-name coming-soon --branch main --commit-dirty=true
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: f0c03882d690b44b376036c924b69bc7
