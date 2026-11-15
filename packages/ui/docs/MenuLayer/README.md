@@ -31,7 +31,7 @@ The mobile menu, opened by the header hamburger ([0060](../../../../design/decis
 <!-- generated from components.d.ts by build-docs.js: edit the .d.ts, not this table -->
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `href` * | `string` |  |  |
+| `href` | `string` |  | The page the row leads to. Omit (and give onClick) for an action row: rendered as a &lt;button>, e.g. the admin's Sign out (0089). |
 | `label` * | `ReactNode` |  | Figma: `label`. Uppercase via CSS. |
 | `detail` | `ReactNode` |  | Secondary text at the end of the row (Account: "Sign in to see your orders" or the email). Figma: `detail` + `detail text`. |
 | `current` | `boolean` |  | The page you are on: aria-current="page", fill tab-background-active. Figma: state=current. |

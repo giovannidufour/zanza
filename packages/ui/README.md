@@ -66,13 +66,16 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | ReleaseList | page `Trade` → `release list` | ported (0069) |
 | ChosenRelease | page `Trade` → `chosen release` | ported (0069) |
 | MemoItem | page `Memo` (BACKEND) → `memo item` | ported (0087): device mobile / desktop (responsive), meta + link, note, Create listing / Remove |
+| AdminBar | page `admin` → `admin bar` | ported (0089): device desktop / mobile (responsive); mobile opens a MenuLayer dialog |
+| ListingRow | page `admin` → `listing row` | ported (0089): admin list row on mobile (Listings, Attributes), select, meta, price |
+| ActionBar | page `admin` → `action bar` | ported (0089): form actions sticky at the bottom on mobile, optional status line |
 | Checkbox | page `controls` → `checkbox` | ported: state default / active (= checked) / indeterminate, `label` boolean (hideLabel), native input |
 | Dialog | page `dialog` → `dialog` | ported: native `<dialog>` + showModal, surface-base, backdrop surface-scrim, `choices` (radio group) |
 | Toast | page `toast` → `toast` | ported: `message`, `action` (Undo), `dismiss`; ToastRegion + `toast.js` (one at a time, 6 s without action, live region), decision 0049 |
 | Radio · RadioGroup | page `controls` → `radio` | ported: state default / active, `label` boolean (hideLabel), native radio in a fieldset |
 | Filter · FilterBlock · Filters | page `filters` → `filter`, `filter block`, `filters` | ported: content label / tag × state × device (responsive), count; shop PLP (0028) |
 | FiltersLayer · FilterFacet · PlpHeader · SelectButton | page `filters` → `filters layer`, `filter facet`, `PLP header` | ported: mobile filters, level main / facet, sticky actions; sort = native select as a button (0038) |
-| MenuLayer · MenuGroup · MenuItem | page `menu` → `menu layer`, `menu item` | ported: mobile menu opened by the header hamburger (0060) |
+| MenuLayer · MenuGroup · MenuItem | page `menu` → `menu layer`, `menu item` | ported: mobile menu opened by the header hamburger (0060); also the admin mobile menu, MenuItem without href = action button (0089) |
 | Footer · FooterLinks · FooterNewsletter | page `footer` → `footer`, `footer link list`, `footer newsletter`, `footer legal` | ported (0077): `<footer>` landmark, newsletter slot, link columns, legal + copyright; desktop / mobile responsive |
 | SectionHead · GenreLinks · HomeAbout | page `Home` → `section head`, `genre links`, `home about` | ported (0085): home blocks; Header `homeCurrent` = `store name` state=active |
 | EntityField · EntityChip | `input` › `chips` + `_input chips`, `entity chip` (tags), `entity option` (input › building blocks) | ported: chips, menu (entity / alias / create), keyboard; Label = one chip; chip size medium / large |

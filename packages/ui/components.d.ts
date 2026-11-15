@@ -754,8 +754,9 @@ export interface PlpHeaderProps extends HTMLAttributes<HTMLDivElement> {
 export declare function PlpHeader(props: PlpHeaderProps): JSX.Element;
 
 /** Mirrors the Figma component `menu item` (state default | current): a link row of the mobile menu. */
-export interface MenuItemProps extends HTMLAttributes<HTMLAnchorElement> {
-  href: string;
+export interface MenuItemProps extends HTMLAttributes<HTMLAnchorElement | HTMLButtonElement> {
+  /** The page the row leads to. Omit (and give onClick) for an action row: rendered as a <button>, e.g. the admin's Sign out (0089). */
+  href?: string;
   /** Figma: `label`. Uppercase via CSS. */
   label: ReactNode;
   /** Secondary text at the end of the row (Account: "Sign in to see your orders" or the email). Figma: `detail` + `detail text`. */
@@ -951,6 +952,58 @@ export interface MemoItemProps extends HTMLAttributes<HTMLLIElement> {
   removeLabel?: string;
 }
 export declare function MemoItem(props: MemoItemProps): JSX.Element;
+
+/** Mirrors the Figma component `admin bar` (page `admin`, device=desktop | mobile, one responsive markup, decision 0089). */
+export interface AdminBarProps extends HTMLAttributes<HTMLElement> {
+  /** Desktop section buttons, in order. `current` = the section you are on (Button state=active, aria-current). */
+  items?: { href: string; label: ReactNode; current?: boolean }[];
+  /** Mobile title (Figma `title`). @default "Store admin" */
+  title?: ReactNode;
+  /** Create listing link (primary). Omit → no button. */
+  createHref?: string;
+  /** Desktop label and mobile accessible name. @default "Create listing" */
+  createLabel?: string;
+  /** Mobile visible label. @default "Create" */
+  createShortLabel?: ReactNode;
+  /** Desktop: the signed-in email (body/small, text/moderate). */
+  email?: ReactNode;
+  /** Desktop Sign out. Omit → no button (on mobile Sign out is in the menu). */
+  onSignOut?: () => void;
+  /** @default "Sign out" */
+  signOutLabel?: string;
+  /** Mobile Menu button: opens the page's menu dialog (a MenuLayer). */
+  onMenuClick?: () => void;
+  /** @default "Menu" */
+  menuLabel?: string;
+  /** Extra attributes for the Menu button (aria-expanded, aria-controls). */
+  menuProps?: object;
+  /** Accessible name of the desktop <nav>. @default "Admin" */
+  navLabel?: string;
+}
+export declare function AdminBar(props: AdminBarProps): JSX.Element;
+
+/** Mirrors the Figma component `listing row` (page `admin`, decision 0089): a row of an admin list on mobile, in a <ul>. */
+export interface ListingRowProps extends HTMLAttributes<HTMLLIElement> {
+  /** A Checkbox with hideLabel (accessible name "Select <record>"). Omit → no select column. */
+  select?: ReactNode;
+  /** The record (Figma `record`): a link to its edit page. */
+  title: ReactNode;
+  href: string;
+  /** Figma `meta`, e.g. "0048 · Draft · sale". */
+  meta?: ReactNode;
+  /** Figma `price` + boolean `show price`. Omit → no price. */
+  price?: ReactNode;
+}
+export declare function ListingRow(props: ListingRowProps): JSX.Element;
+
+/** Mirrors the Figma component `action bar` (page `admin`, decision 0089): form actions sticky at the bottom of the viewport on mobile. */
+export interface ActionBarProps extends HTMLAttributes<HTMLDivElement> {
+  /** The Buttons, primary first, side by side. Figma: `primary`, `secondary` (boolean, on). */
+  children?: ReactNode;
+  /** A line above the buttons (e.g. the save result, role=status). */
+  status?: ReactNode;
+}
+export declare function ActionBar(props: ActionBarProps): JSX.Element;
 
 /** Figma `section head` (page Home): heading of a home section. Divider on top, title, actions on the right. */
 export interface SectionHeadProps extends HTMLAttributes<HTMLDivElement> {
