@@ -19,8 +19,8 @@ Eccezione voluta: l'account **Buttondown** ha come email `gio@rythem-works.com`,
 | Cosa | Valore |
 |---|---|
 | Account Resend | login Google con il Gmail personale |
-| Dominio di invio | `rythem-works.com` (DNS su Cloudflare, regione Resend **eu-west-1**) · `gio-d.xyz` ancora presente in Resend: da rimuovere (vedi sotto) |
-| Chiavi API | `rythem-works-site` (Sending access, solo rythem-works.com) = secret `RESEND_API_KEY` · `gmail-smtp-2` (Sending access) = password SMTP del "Invia come" nella casella del negozio · `zanza-notify` (vecchia, gio-d.xyz): da cancellare |
+| Dominio di invio | `rythem-works.com` (DNS su Cloudflare, regione Resend **eu-west-1**) · `gio-d.xyz` rimosso da Resend e dal DNS il 2026-11-15 |
+| Chiavi API | `rythem-works-site` (Sending access, solo rythem-works.com) = secret `RESEND_API_KEY` · `gmail-smtp-2` (Sending access) = password SMTP del "Invia come" nella casella del negozio · `zanza-notify` (vecchia) cancellata il 2026-11-15 |
 | Mittente (`MAIL_FROM`) | `rythem-works <gio@rythem-works.com>` |
 | Nome nel testo (`STORE_NAME`) | `rythem-works` |
 | Link nel testo (`SHOP_URL`) | `https://rythem-works.com` (oggi è la pagina coming soon: va bene finché il negozio non è aperto) |
