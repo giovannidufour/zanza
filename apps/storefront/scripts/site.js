@@ -116,7 +116,7 @@
   function current() { return queue[index] || null; }
 
   function sampleFrom(btn) {
-    // the copy's status at build time travels with the sample (decision 0086): the player keeps playing across pages,
+    // the copy's status at build time travels with the sample (Gio 2026-11-15): the player keeps playing across pages,
     // where that copy may not be on the page, and its "Add to bag" must still read "Sold out" for a sold copy
     var id = btn.getAttribute('data-listing-id');
     if (id && btn.getAttribute('data-listing-status')) heard[id] = btn.getAttribute('data-listing-status');
@@ -1202,23 +1202,6 @@
       } else price.textContent = text;
     }
   }
-  // sold out (decision 0086): the same markup as SoldOutLabel in packages/ui/components.js, added to or removed from
-  // each image box of a copy when its live status says sold / traded (or back); CSS does the rest (greyscale, multiply)
-  function syncSoldLabel(box, sold) {
-    var label = box.querySelector(':scope > .zz-sold-out-label');
-    if (!sold) { if (label) box.removeChild(label); return; }
-    if (label) return;
-    label = document.createElement('span');
-    label.className = 'zz-sold-out-label body-small';
-    label.setAttribute('aria-hidden', 'true');
-    label.textContent = 'SOLD OUT';
-    box.appendChild(label);
-  }
-  var SOLD_IMAGE_BOXES = '.zz-product-card__image, .zz-bag-item__image, .zz-gallery__item';
-  function syncSoldLabels(el, status) {
-    var sold = status === 'sold' || status === 'traded';
-    Array.prototype.forEach.call(el.querySelectorAll(SOLD_IMAGE_BOXES), function (box) { syncSoldLabel(box, sold); });
-  }
   function applyStatus() {
     Array.prototype.forEach.call(document.querySelectorAll('[data-bag-line]'), syncBagLine);
     Array.prototype.forEach.call(document.querySelectorAll('[data-reserved-note]'), function (p) {
@@ -1229,7 +1212,6 @@
     Array.prototype.forEach.call(document.querySelectorAll('[data-listing-status]'), function (el) {
       var id = listingIdOf(el);
       if (id && !el.hasAttribute('data-bag-line')) el.setAttribute('data-listing-status', statusFor(id));
-      if (id) syncSoldLabels(el, statusFor(id));   // cards, PDP gallery, bag lines (0086)
     });
   }
   function readLive(force) {

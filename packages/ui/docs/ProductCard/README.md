@@ -18,7 +18,6 @@ One markup for both variants; CSS grid places the blocks ([0016](../../../../des
 | `device` | `"desktop" \| "mobile"` |  | Omitted → responsive (breakpoint `--mobile` from tokens.json, &lt;768px placeholder). |
 | `state` | `"default" \| "hover"` | `default` | Figma `state`. Pins the hover look in docs/previews only; on the site `:hover` drives it (decisions 0009, 0088). |
 | `image` | `ProductCardImage` |  | Figma `product image`: the cover, square. |
-| `soldOut` | `boolean` |  | Figma `product image` boolean `sold out`: the cover desaturated and multiplied on the background (normal on hover), "SOLD OUT" in white text centred over it (decision 0086). Decorative: the card says "Sold out" on its button. |
 | `href` | `string` |  | Product page URL: the cover becomes a link to it (no visual change; a designed link style is in open.md). |
 | `title` * | `ReactNode` |  | Figma `product name`. Rendered as a heading; it also names the card and its button. |
 | `headingLevel` | `2 \| 3 \| 4` | `2` | Heading level of the title, to fit the page outline. |

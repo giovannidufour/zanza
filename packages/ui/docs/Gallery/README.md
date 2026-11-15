@@ -15,7 +15,6 @@ The product images, two per product. Mirrors the PDP frames in Figma (`gallery` 
 | --- | --- | --- | --- |
 | `device` | `"desktop" \| "mobile"` |  | Omitted → responsive (breakpoint `--mobile` from tokens.json, &lt;768px placeholder). |
 | `images` * | `GalleryImage[]` |  | In order; the first is the main image. |
-| `soldOut` | `boolean` |  | Figma `product image` boolean `sold out` on every image: image desaturated and multiplied on the background (normal on hover), "SOLD OUT" in white text centred (decision 0086). |
 
 ### GalleryImage
 
