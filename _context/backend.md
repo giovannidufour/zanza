@@ -122,13 +122,13 @@ Requisito di Gio: il cliente entra e vede i suoi ordini e il loro stato.
 - Sito: `pages/account.js` + `account.css` (3 pagine statiche, nessun dato personale nell'HTML), `scripts/account.js` (Auth via fetch: `/auth/v1/otp` → `/auth/v1/verify` type `email`, refresh, logout; sessione in localStorage `zanza-session`). Serve il build da Supabase (meta `zz-supabase-url`/`key`); col build JSON la pagina dice che gli account non sono attivi.
 - Riferimento ordine = i primi 8 caratteri dell'id, maiuscoli (come email e admin, decisione 0100).
 
-**Impostazioni Supabase Auth da fare (progetto `store-staging`, con l'ok di Gio):**
+**Impostazioni Supabase Auth (progetto `store-staging`): FATTE il 2026-11-15 con l'ok di Gio** (hook acceso prima dei signup; hook verificato: email senza ordini → 403 "No orders for this email."; oggetto email "Your rythem-works sign-in code: {{ .Token }}"; la scadenza di 600 s vale anche per il magic link dell'admin). Da rifare uguale sul progetto di produzione:
 1. SQL editor: applicare la migrazione 0022.
 2. Authentication → Sign In / Providers → Email: *Allow new users to sign up* ON (l'hook limita a chi ha ordini); *Email OTP expiration* 600 s; *Email OTP length* 6.
 3. Authentication → Hooks → *Before User Created* → Postgres function `public.hook_before_user_created`. Per creare un nuovo admin: spegnerlo un momento.
 4. Authentication → Emails → SMTP: `smtp.resend.com`, porta 465, utente `resend`, password = una chiave Resend *Sending access* solo rythem-works.com, mittente `gio@rythem-works.com`, nome `rythem-works`. Senza SMTP proprio Supabase manda solo ~2 email l'ora e solo agli indirizzi del team.
 5. Authentication → Emails → Templates *Magic Link* e *Confirm signup*: il codice `{{ .Token }}` in evidenza, poi il link `{{ .ConfirmationURL }}` (l'admin entra col link, il cliente col codice o col link).
-6. Authentication → URL Configuration → Redirect URLs: aggiungere `https://staging.rythem-works.com/account/**` e `https://store-front-6fx.pages.dev/account/**` (il link dell'email porta a /account/).
+6. Authentication → URL Configuration → Redirect URLs: aggiungere `https://staging.rythem-works.com/account/**` e `https://store-front-6fx.pages.dev/account/**` (il link dell'email porta a /account/: `scripts/account.js` passa `redirect_to`, altrimenti Auth userebbe il Site URL = l'admin). Aggiunto anche `https://rythem-works.com/account/**`.
 7. Dopo: Turnstile (captcha) e la sezione Account della Privacy.
 
 ### Notify me (0016, 2026-11-12, migrazione da applicare)
