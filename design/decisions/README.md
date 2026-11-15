@@ -123,3 +123,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0098](0098-checkout-thanks-and-returns.md) | Checkout: /checkout/thanks/ (layout of the empty bag, Figma `order thanks`, no order details: they are in the email); cancel and failures are toasts in the Bag | accepted |
 | [0099](0099-admin-page-ground-cream.md) | Every admin page on cream: primitive `scotch-mist` #fdfbdd, semantic `surface/page` (frontend accent, backend scotch-mist) on html / screen frames | accepted |
 | [0100](0100-admin-orders-and-sell-again.md) | Admin Orders (#orders: To ship / Shipped / All; order page with Ship to, Total, Buyer, Payment; Mark as shipped + tracking) and Sell again (twin draft listing of a sold copy, same release, new SKU) | accepted |
+| [0102](0102-trade-switch.md) | Trade switch (admin → Settings, `shop_settings.trade_enabled`): off = no trade page, link, record, legal passage or mention; the server refuses offers | accepted |

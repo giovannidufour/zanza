@@ -87,6 +87,9 @@ function gradingProps(c) {
   return { grading: record, cover, conditions: note };
 }
 const productHref = (product, url) => url(`/products/${product.listing.slug}/`);
+// the trade switch (admin → Settings, migration 0023, decision 0102), set by build.js from the database. Off = no
+// trade link, tab, menu item or mention on any page. Undefined (a page rendered outside build.js) = on, as before.
+const tradeOn = (site) => !site || site.tradeEnabled !== false;
 
 // Figma: `header` (device=desktop | mobile), the same on every page.
 // `section` = the active tab (none on /bag/). `current = 'home'` → the store name is lit (decision 0085). `current = 'bag'` → the Bag button is the current page (state active,
@@ -104,15 +107,16 @@ function SiteHeader({ site, url, section, current }) {
       menuProps: { 'aria-haspopup': 'dialog', 'aria-controls': 'site-menu', 'aria-expanded': 'false', 'data-menu-open': '' },
       // Figma `header` boolean `search` (2026-11-12): the field on desktop; on mobile it lives in the menu (Gio 2026-11-12)
       search: h(SearchForm, { url, id: 'site-search-header' }),
+      // trade off (admin → Settings, decision 0102): only "For sale", still the desktop way to /sale/
       tabs: h(Z.Tabs, { as: 'nav', value: section, 'aria-label': 'Section' },
         h(Z.Tab, { value: 'sale', href: url('/sale/') }, 'For sale'),
-        h(Z.Tab, { value: 'trade', href: url('/trade/') }, 'For trade')),
+        tradeOn(site) ? h(Z.Tab, { value: 'trade', href: url('/trade/') }, 'For trade') : null),
       actions: h(React.Fragment, null,
         h(Z.Button, { hierarchy: 'secondary', className: 'zz-header__account' }, 'Account'),
         h(Z.Button, { hierarchy: 'secondary', href: url('/bag/'), state: current === 'bag' ? 'active' : undefined,
           suffix: '(0)', 'data-bag-count': '' }, 'Bag'))
     }),
-    h(SiteMenu, { url, current: current || section }));
+    h(SiteMenu, { site, url, current: current || section }));
 }
 
 // the search field (Figma `input` type=search): a GET form to /search/?q=…, so it works without JS; scripts/site.js
@@ -130,7 +134,8 @@ const cx = (...c) => c.filter(Boolean).join(' ');
 // Figma page `menu` (proposal 2026-11-12, search field on top since 2026-11-12): the mobile menu, a full-screen native modal dialog (focus trapped, Esc
 // closes, the page behind is inert). Account is the entry point to /account/ on mobile; the Bag stays in the header.
 // The Account detail is "Sign in to see your orders" until accounts exist (then: the signed-in email).
-function SiteMenu({ url, current }) {
+function SiteMenu({ site, url, current }) {
+  const trade = tradeOn(site);
   const item = (key, label, href, detail) => h(Z.MenuItem, { key, label, href: url(href), detail, current: key === current });
   const legal = LEGAL_LINKS
     .map(([text, href]) => h('a', { key: href, href: url(href) }, text));
@@ -138,9 +143,9 @@ function SiteMenu({ url, current }) {
     h(Z.MenuLayer, { title: 'Menu', closeLabel: 'Close menu', legal },
       // Figma `menu layer`: the search field on top of the body (Gio 2026-11-12: mobile search in the menu, not the header)
       h(SearchForm, { url, id: 'site-search-menu', className: 'site-menu__search' }),
-      h(Z.MenuGroup, null, item('sale', 'For sale', '/sale/'), item('trade', 'For trade', '/trade/')),
+      h(Z.MenuGroup, null, item('sale', 'For sale', '/sale/'), trade ? item('trade', 'For trade', '/trade/') : null),
       h(Z.MenuGroup, null, item('account', 'Account', '/account/', 'Sign in to see your orders')),
-      h(Z.MenuGroup, null, item('about', 'About', '/about/'), item('how-trading-works', 'How trading works', '/how-trading-works/'),
+      h(Z.MenuGroup, null, item('about', 'About', '/about/'), trade ? item('how-trading-works', 'How trading works', '/how-trading-works/') : null,
         item('grading', 'Grading', '/grading/'), item('shipping', 'Shipping', '/shipping/'), item('contact', 'Contact', '/contact/'))));
 }
 
@@ -162,9 +167,9 @@ function SiteFooter({ site, url }) {
     legal: LEGAL_LINKS.map(([text, href]) => h('a', { key: href, href: url(href) }, text)),
     copyright: `\u00a9 ${new Date().getFullYear()} ${site.storeName}`
   },
-  h(Z.FooterLinks, { label: 'Shop', links: [link('For sale', '/sale/'), link('For trade', '/trade/')] }),
-  h(Z.FooterLinks, { label: 'Info', links: [link('About', '/about/'), link('How trading works', '/how-trading-works/'),
-    link('Grading', '/grading/'), link('Shipping', '/shipping/'), link('Contact', '/contact/')] }),
+  h(Z.FooterLinks, { label: 'Shop', links: [link('For sale', '/sale/'), tradeOn(site) && link('For trade', '/trade/')].filter(Boolean) }),
+  h(Z.FooterLinks, { label: 'Info', links: [link('About', '/about/'), tradeOn(site) && link('How trading works', '/how-trading-works/'),
+    link('Grading', '/grading/'), link('Shipping', '/shipping/'), link('Contact', '/contact/')].filter(Boolean) }),
   social.length ? h(Z.FooterLinks, { label: 'Follow', links: social }) : null);
 }
 
@@ -230,4 +235,4 @@ function ProductCardFor({ product, url, headingLevel }) {
   });
 }
 
-module.exports = { SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor };
+module.exports = { tradeOn, SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor };

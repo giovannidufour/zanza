@@ -8,6 +8,8 @@
    - inline: **bold**, [text](/path or https://…)
    - `{{legal.x}}` / `{{storeName}}` = a value from site.json; empty → its bracketed placeholder (PLACEHOLDERS below)
    - `{{shipping.countries}}` (alone in a block) = the served countries by zone, from the shipping config (decision 0075)
+   - `{{#trade}}…{{/trade}}` = text about trade, inline or across blocks: dropped while trade is switched off (admin →
+     Settings, decision 0102; site.tradeEnabled from build.js). Numbered headings (`## 10. …`) are renumbered after it
    - `[[TO FILL: …]]` = text Gio still has to write: shown as "[TO FILL: …]"
    - `[[p:value]]` = a PLACEHOLDER value chosen by Claude (Gio 2026-11-14: "metti dei placeholder"): shown as plain text,
      listed by the build and in _context/provisional-names.md → Pagine legali, to be confirmed or replaced by Gio */
@@ -27,9 +29,21 @@ const PLACEHOLDERS = {
 const read = (page) => fs.readFileSync(path.join(__dirname, '../content/legal', `${page}.md`), 'utf8');
 const get = (obj, key) => key.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
 
+// {{#flag}}…{{/flag}}: kept (markers removed) while the flag is on, dropped while it is off. One flag for now: trade.
+const FLAGS = { trade: (site) => site.tradeEnabled !== false };
+function sections(text, site) {
+  const kept = text.replace(/\{\{#(\w+)\}\}([\s\S]*?)\{\{\/\1\}\}/g, (m, flag, inner) => {
+    if (!FLAGS[flag]) throw new Error(`legal: unknown flag {{#${flag}}}`);
+    return FLAGS[flag](site) ? inner : '';
+  }).replace(/\n{3,}/g, '\n\n');
+  // a dropped numbered section leaves no gap: "## 1. …", "## 2. …" in order (only where the text numbers them)
+  let n = 0;
+  return kept.replace(/^## \d+\. /gm, () => `## ${++n}. `);
+}
+
 // {{key}} → site.json value or placeholder; collects what is still missing (the build prints it)
 function fill(text, site, missing) {
-  return text.replace(/\{\{([\w.]+)\}\}/g, (m, key) => {
+  return sections(text, site).replace(/\{\{([\w.]+)\}\}/g, (m, key) => {
     if (key === 'shipping.countries') return m;   // a block, rendered by legalBody
     const v = get(site, key);
     if (v != null && String(v).trim() !== '') return String(v);

@@ -6,7 +6,7 @@
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
-const { SiteHeader } = require('./shell.js');
+const { SiteHeader, tradeOn } = require('./shell.js');
 
 function Contact({ site, url }) {
   const email = (site.legal || {}).email || '';
@@ -17,7 +17,7 @@ function Contact({ site, url }) {
       h('h1', { className: 'legal-content__title body-large', 'data-contact-title': '' }, 'Contact'),
       h('div', { className: 'legal-text' }, h(Z.Divider),
         h('section', { className: 'legal-text__section' },
-          h('p', { className: 'body-medium' }, 'Questions about a record, an order or a trade? Write to me by email or with the form, and I answer by email.'),
+          h('p', { className: 'body-medium' }, `Questions about a record, an order${tradeOn(site) ? ' or a trade' : ''}? Write to me by email or with the form, and I answer by email.`),
           h('p', { className: 'body-medium' }, 'Email: ', email ? h('a', { href: `mailto:${email}` }, email) : '[Contact email]')),
         // Figma `contact form`: Name (optional), Email, Message, Send; error line above the button
         h('form', { className: 'contact-form', noValidate: true, 'data-contact-form': '', 'data-endpoint': endpoint },
