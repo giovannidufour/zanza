@@ -112,11 +112,16 @@
     var leading = row && row.querySelector('.zz-header__leading');
     var trailing = row && row.querySelector('.zz-header__trailing');
     if (!leading || !trailing || !bar.querySelector('.zz-header__logo')) return function () {};
-    function fit() {
-      bar.removeAttribute('data-logo');                     // measure with the logo shown
+    function overflows() {
       var parts = Array.prototype.filter.call(row.children, function (el) { return el.offsetWidth > 0; });
-      var needed = parts.reduce(function (sum, el) { return sum + el.getBoundingClientRect().width; }, 0) + 8 * (parts.length - 1);
-      if (needed > row.clientWidth) bar.setAttribute('data-logo', 'hidden');
+      return parts.reduce(function (sum, el) { return sum + el.getBoundingClientRect().width; }, 0) + 8 * (parts.length - 1) > row.clientWidth;
+    }
+    // big logo → logo inside the store name ("inside") → no logo at all ("hidden", only if even that does not fit)
+    function fit() {
+      bar.removeAttribute('data-logo');                     // measure with the big logo shown
+      if (!overflows()) return;
+      bar.setAttribute('data-logo', 'inside');
+      if (overflows()) bar.setAttribute('data-logo', 'hidden');
     }
     fit();
     var ro = window.ResizeObserver ? new ResizeObserver(function () { window.requestAnimationFrame(fit); }) : null;

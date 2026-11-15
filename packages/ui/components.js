@@ -175,7 +175,11 @@
         h('div', { className: 'zz-header__leading' },
           showMenu ? h(Button, Object.assign({ className: 'zz-header__menu', hierarchy: 'secondary', leadingIcon: h(HamburgerIcon), 'aria-label': props.menuLabel || 'Menu', onClick: props.onMenuClick }, props.menuProps)) : null,
           props.logo ? h('div', { className: 'zz-header__logo' }, props.logo) : null,
-          props.storeName ? h(nameTag, nameAttrs, props.storeName) : null),
+          // Figma `store name` logo=true (2026-11-15, decision 0094): when the header has no room for the big logo
+          // (data-logo="hidden"), the same logo shows 36px inside the store name; CSS switches between the two.
+          props.storeName ? h(nameTag, nameAttrs,
+            props.logo ? h('span', { className: 'zz-header__name-logo', 'aria-hidden': 'true' }, props.logo) : null,
+            props.storeName) : null),
         showTabs ? h('div', { className: 'zz-header__tabs' }, props.tabs) : null,
         (props.actions || hasSearch) ? h('div', { className: 'zz-header__trailing' },
           // Figma boolean `search` (2026-11-12): desktop = the search field (input type=search, 280 wide) before the
