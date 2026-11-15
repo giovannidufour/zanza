@@ -32,11 +32,12 @@ Il 2026-11-15 tutto quello che nel repo e in Figma diceva rythem-trax è passato
 
 ## Pagine legali: segnaposto (2026-11-14, ridotte il 2026-11-15, decisioni 0079 e 0093)
 
-Gio vende da privato (2026-11-15): niente telefono, niente riga IVA, niente indirizzo di casa. La build elenca tutto quello che manca.
+Gio vende da privato (2026-11-15): niente Impressum, niente indirizzo, niente telefono, niente riga IVA; contatto = email + form (`/contact/`, funzione Supabase `contact`, che scrive a CONTACT_TO o OFFER_TO = email personale di Gio). La build elenca tutto quello che manca.
 
 | Dove | Segnaposto | Stato |
 |---|---|---|
-| `site.json` → legal: name, street, postcode, city, email | tra parentesi quadre ("[Your full name]", "[c/o address: street]"…); street/postcode/city = un servizio di indirizzo c/o, non casa sua | 🔴 da Gio prima di vendere |
+| `site.json` → legal: name, email | tra parentesi quadre ("[Your full name]", "[Contact email]"); l'email si vede su /contact/ e in Privacy | 🔴 da Gio prima di vendere |
+| `site.json` → contact.endpoint | vuoto finché la funzione `contact` non è deployata: il form rimanda all'email | 🟡 |
 | `shipping.md` → When it arrives | spedizione entro "3 working days", consegna "Germany 1–3 working days, EU 3–7, rest of the world 7–21" | 🟡 proposta di Claude |
 | Scelta di fondo | venditore privato (0093): niente recesso né garanzia oltre la descrizione | 🟡 da confermare con commercialista o avvocato |
 

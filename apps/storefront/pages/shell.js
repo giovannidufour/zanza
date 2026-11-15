@@ -148,7 +148,7 @@ function SiteMenu({ url, current }) {
 // (SiteMenu), so both lead to the same places; social = Gio's Instagram and Discogs (site.json → owner, his personal
 // identity). The newsletter slot shows only when site.json → newsletter.action is set (Buttondown subscribe URL):
 // it stays off until the Privacy page names Buttondown (German law, design/open.md).
-const LEGAL_LINKS = [['Impressum', '/impressum/'], ['Privacy', '/privacy/'], ['Terms', '/terms/']]   // private seller (decision 0093): no withdrawal page;
+const LEGAL_LINKS = [['Privacy', '/privacy/'], ['Terms', '/terms/']];   // private seller (decision 0093): no Impressum, no Withdrawal; contact = /contact/;
 function SiteFooter({ site, url }) {
   const owner = site.owner || {};
   const nl = site.newsletter || {};

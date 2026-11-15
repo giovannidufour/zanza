@@ -56,6 +56,7 @@ const Plp = require('./pages/plp.js');
 const Bag = require('./pages/bag.js');
 const Trade = require('./pages/trade.js');
 const Legal = require('./pages/legal.js');
+const ContactPage = require('./pages/contact.js');
 const Home = require('./pages/home.js');
 const Z = require(path.join(UI, 'components.js'));
 
@@ -226,6 +227,8 @@ for (const p of Legal.PAGES) {
   write(`${p}/index.html`, page({ title: t, body: renderToStaticMarkup(body) }));
   if (missing.length) console.log(`    to fill: ${missing.join(' · ')}`);
 }
+// Contact (decision 0093): email + form, in place of an Impressum (Gio sells privately)
+write('contact/index.html', page({ title: 'Contact', body: renderToStaticMarkup(React.createElement(ContactPage.Contact, { site, url })) }));
 
 // Home (Figma page `Home`, decision 0085): Just in, For trade, Genres, About
 write('index.html', page({ title: Home.title, body: renderToStaticMarkup(React.createElement(Home.Home, { products, site, url })) }));

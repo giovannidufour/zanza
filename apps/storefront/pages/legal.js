@@ -19,10 +19,9 @@ const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 const { SiteHeader } = require('./shell.js');
 
-const PAGES = ['impressum', 'privacy', 'terms', 'shipping'];
+const PAGES = ['privacy', 'terms', 'shipping'];   // no Impressum: private seller, contact = /contact/ (decision 0093)
 const PLACEHOLDERS = {
-  'legal.name': '[Your full name]', 'legal.street': '[c/o address: street]', 'legal.postcode': '[Postcode]',
-  'legal.city': '[City]', 'legal.country': '[Country]', 'legal.email': '[Contact email]', 'legal.updated': '[Date]'
+  'legal.name': '[Your full name]', 'legal.email': '[Contact email]', 'legal.updated': '[Date]'
 };
 
 const read = (page) => fs.readFileSync(path.join(__dirname, '../content/legal', `${page}.md`), 'utf8');

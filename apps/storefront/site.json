@@ -44,14 +44,14 @@
     "action": "https://buttondown.com/api/emails/embed-subscribe/dufour"
   },
   "legal": {
-    "note": "Legal pages (decisions 0079, 0093): content/legal/*.md, {{legal.x}} is filled from here; empty = a bracketed placeholder on the page, listed by the build. Gio sells privately (2026-11-15): no phone, no VAT line. street/postcode/city = a c/o address service, NOT Gio's home (Gio fills them). email = the shop contact address (provisional: see _context/provisional-names.md). updated = date of the last change to Privacy.",
+    "note": "Legal pages (decisions 0079, 0093): content/legal/*.md, {{legal.x}} is filled from here; empty = a bracketed placeholder on the page, listed by the build. Gio sells privately (2026-11-15): no address, no phone, no VAT line, no Impressum: name + email, and the contact form (site.json → contact). email = the shop contact address, also shown on /contact/ (provisional: see _context/provisional-names.md). updated = date of the last change to Privacy.",
     "name": "",
-    "street": "",
-    "postcode": "",
-    "city": "",
-    "country": "Germany",
     "email": "",
     "updated": "2026-11-15"
+  },
+  "contact": {
+    "note": "Contact form on /contact/ (decision 0093). endpoint = URL of the Supabase function contact (supabase/functions/contact, deploy with Verify JWT OFF, secret CONTACT_TO or OFFER_TO); empty = the form says it is not switched on yet and points to the email.",
+    "endpoint": ""
   },
   "trade": {
     "note": "Trade offers (Figma page Trade). offerEndpoint = URL of the Supabase function trade-offer; empty = the form shows that offers are not switched on yet. searchEndpoint = URL of the Supabase function discogs-search (decision 0069); empty = \"Which record\" is a plain text field.",

@@ -27,3 +27,11 @@
   .legal-content { grid-template-columns: minmax(0, 1fr); row-gap: var(--medium-small); }
   .legal-content__title, .legal-text { grid-column: 1; }
 }
+
+/* Figma `contact form` (decision 0093): the legal text column's fields, gap medium-small as the trade form; Send full width */
+.contact-form { display: flex; flex-direction: column; gap: var(--medium-small); margin: 0; }
+.contact-form[hidden], .legal-text__section[hidden] { display: none; }
+.contact-form > p { margin: 0; }
+.contact-form__send { width: 100%; }
+.contact-form__error { color: var(--text-alert); }
+.contact-form a { color: inherit; text-decoration: underline; }
