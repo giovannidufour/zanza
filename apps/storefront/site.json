@@ -50,7 +50,7 @@
     "postcode": "",
     "city": "",
     "country": "Germany",
-    "email": "",
+    "email": "gio@rythem-works.com",
     "phone": "",
     "vat": "",
     "updated": "2026-11-14"
@@ -65,7 +65,14 @@
     "pages": {
       "basePath": "",
       "outputDir": "",
-      "note": "Cloudflare Pages (npm run build:pages): served from the web root. The top-level values are the GoDaddy staging (gio-d.xyz/zanza)."
+      "noindex": true,
+      "note": "noindex = every page answers X-Robots-Tag: noindex (_headers), while the shop is on staging and rythem-works.com shows the coming-soon page (build-coming-soon.js). Set to false at launch. Cloudflare Pages (npm run build:pages): served from the web root. The top-level values are the GoDaddy staging (gio-d.xyz/zanza)."
     }
+  },
+  "comingSoon": {
+    "note": "Temporary page of rythem-works.com while the shop is on staging (build-coming-soon.js, Figma page Coming soon, decision 0096). text = Figma `coming soon` text property. email = the Contact link (mailto).",
+    "title": "Opening soon",
+    "text": "Reggae and dancehall records from my crates, for sale and for trade. The shop opens soon: leave your email and you’ll hear first.",
+    "email": "gio@rythem-works.com"
   }
 }

@@ -229,6 +229,9 @@ for (const p of Legal.PAGES) {
 
 // Home (Figma page `Home`, decision 0085): Just in, For trade, Genres, About
 write('index.html', page({ title: Home.title, body: renderToStaticMarkup(React.createElement(Home.Home, { products, site, url })) }));
+// Cloudflare Pages response headers (target pages only). Until launch the shop lives on staging.rythem-works.com
+// (behind Cloudflare Access) and store-front-6fx.pages.dev: neither may be indexed (site.json → noindex).
+if (targetArg === 'pages' && site.noindex) write('_headers', '/*\n  X-Robots-Tag: noindex\n');
 console.log(`done: ${products.length} product page(s), ${forSale.length} for sale, ${forTrade.length} for trade`);
 }
 main().catch((err) => { console.error(err.message || err); process.exit(1); });
