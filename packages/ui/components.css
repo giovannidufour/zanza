@@ -305,7 +305,7 @@ a.zz-tab {
   flex-direction: row;
   gap: 8px;
 }
-.zz-header__leading { align-items: flex-start; }
+.zz-header__leading { align-items: flex-start; min-height: 46px; }   /* Figma: min height = store name 38 + 8, so without the logo (0094) the name keeps 8px above the bottom rule (Gio, 2026-11-15) */
 .zz-header__trailing { align-items: center; }
 .zz-header__tabs { display: flex; }
 
