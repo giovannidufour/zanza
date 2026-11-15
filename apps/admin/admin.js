@@ -1,6 +1,7 @@
 /* apps/admin/admin.js — the admin single-page app (React via createElement, no build step).
    Screens: sign-in (email link) · listings (Figma BACKEND → Listings: bulk actions, archive, delete) · create / edit listing (Figma BACKEND → Create)
-   · attributes: artists, labels, genres, tags (Figma BACKEND → Attributes) · shipping (Figma BACKEND → Shipping).
+   · attributes: artists, labels, genres, tags (Figma BACKEND → Attributes) · shipping (Figma BACKEND → Shipping)
+   · memo: Gio's reminder list of records to sell later (Figma BACKEND → Memo, decision 0087).
    Data: Supabase with the signed-in user's session (RLS: only public.admins can write).
    Save = one call to public.admin_save_listing (one transaction). Files go straight to R2 through
    short-lived upload URLs from the Edge Function sign-upload; the database keeps only the keys. */
@@ -312,6 +313,17 @@
     useEffect(function () {
       loadEntities().then(setEntities).catch(function (err) { setMessage({ error: true, text: 'Suggestions not loaded: ' + err.message }); });
     }, []);
+    // opened from the Memo list (0087): the release is fetched once the suggestions are in (chips bind to entities);
+    // a free-text item only names the record in the status line. The first save takes the item off the list.
+    var fromMemo = props.fromMemo || null;
+    var tookOff = useRef(false), autoFetched = useRef(false);
+    useEffect(function () {
+      if (!fromMemo) return;
+      if (!fromMemo.discogs) { setMessage({ error: false, text: 'From Memo: ' + fromMemo.title + (fromMemo.note ? ' (' + fromMemo.note + ')' : '') + '. No Discogs release: fill in the record.' }); return; }
+      if (autoFetched.current || entities === null) return;
+      autoFetched.current = true;
+      fetchDiscogs();
+    }, [entities]);
 
     function set(patch) { setF(function (cur) { return Object.assign({}, cur, typeof patch === 'function' ? patch(cur) : patch); }); }
     function bind(name) {
@@ -404,6 +416,12 @@
       if (res.error) { setMessage({ error: true, text: 'Not saved: ' + res.error.message }); return; }
       var d = res.data;
       set({ listingId: d.listing_id, sku: d.sku, status: d.status, slug: d.slug });
+      if (fromMemo && !tookOff.current) {
+        tookOff.current = true;
+        sb.from('memos').delete().eq('id', fromMemo.id).then(function (r) {
+          toast(r.error ? 'Still on Memo: ' + r.error.message : 'Taken off Memo.');
+        });
+      }
       setMessage({ error: false, text: d.status === 'available'
         ? 'Published · SKU ' + d.sku + '. The shop updates in about 2 minutes.'
         : 'Saved as draft · SKU ' + d.sku + '.' });
@@ -1411,6 +1429,153 @@
           h('p', { className: 'body-medium admin-shipping__result', role: 'status' }, result))));
   }
 
+  // ── Memo ──────────────────────────────────────────────────────────────────
+  /* Figma BACKEND → Memo (2296:9962, decision 0087): Gio's list of records to sell later, made for the phone.
+     Add = Record (free text, or a Discogs release picked while typing) + optional Note. The list is public.memos
+     (migration 0019, admin only), newest first. Create listing opens #new/memo/<id> (release fetched; the first
+     save takes the item off the list). Remove deletes at once, toast with Undo (0049). */
+  // a release as the picker shows it, from the discogs-lookup release answer (a pasted link)
+  function releaseFromLookup(d) {
+    var fmt = d.format || {}, desc = (fmt.descriptions || []).slice(0, 2).join(', ') || fmt.name || '';
+    return { id: d.releaseId, title: (d.artist || 'Unknown') + ' – ' + (d.title || ''), thumb: '',
+             meta: [d.label, d.catNo, d.year, d.country, desc].filter(function (x) { return x && String(x) !== '0'; }).join(' · '),
+             uri: 'https://www.discogs.com/release/' + d.releaseId };
+  }
+  /* Record: the offer form's "Which record" (Figma `which record`, 0069) for the admin. ARIA 1.2 combobox: focus stays
+     in the input, arrows move aria-activedescendant, Enter picks (or submits when nothing is highlighted), Escape
+     closes. 3+ letters ask discogs-lookup { query } (debounced; a newer request wins); a pasted release link resolves. */
+  function RecordField(props) {
+    var id = 'memo-record';
+    var rs = useState(null), box = rs[0], setBox = rs[1];          // null | { results: [] } | { message: '' }
+    var ac = useState(-1), active = ac[0], setActive = ac[1];
+    var timer = useRef(null), seq = useRef(0);
+    useEffect(function () { return function () { clearTimeout(timer.current); }; }, []);
+    function close() { clearTimeout(timer.current); seq.current++; setBox(null); setActive(-1); }
+    function show(next) { setBox(next); setActive(-1); }
+    function onText(e) {
+      var q = e.target.value;
+      props.onText(q);
+      clearTimeout(timer.current);
+      var n = ++seq.current, t = q.trim();
+      var link = t.match(/discogs\.com\/(?:[a-z-]+\/)?(release|master)\/(\d+)/i);
+      if (link && link[1].toLowerCase() === 'master') { show({ message: 'That link is the master (every pressing). Search the title and pick your pressing, or paste its release link.' }); return; }
+      if (!link && t.length < 3) { setBox(null); return; }
+      timer.current = setTimeout(function () {
+        var ask = link ? invoke('discogs-lookup', { releaseId: parseInt(link[2], 10) }).then(function (d) { return [releaseFromLookup(d)]; })
+                       : invoke('discogs-lookup', { query: t }).then(function (d) { return d.results || []; });
+        ask.then(function (list) {
+          if (n !== seq.current) return;
+          show(list.length ? { results: list } : { message: 'No match on Discogs. Keep it as you wrote it.' });
+        }).catch(function (err) {
+          if (n !== seq.current) return;
+          show({ message: 'Discogs isn’t answering (' + err.message + '). Keep it as you wrote it.' });
+        });
+      }, link ? 0 : 350);
+    }
+    function pick(r) { close(); props.onRelease(r); }
+    var results = box && box.results || [];
+    function onKey(e) {
+      if (e.key === 'ArrowDown' && results.length) { e.preventDefault(); setActive((active + 1) % results.length); }
+      else if (e.key === 'ArrowUp' && results.length) { e.preventDefault(); setActive((active - 1 + results.length) % results.length); }
+      else if (e.key === 'Enter' && active >= 0 && results[active]) { e.preventDefault(); pick(results[active]); }
+      else if (e.key === 'Escape' && box) { e.preventDefault(); close(); }
+    }
+    if (props.release) {
+      var r = props.release;
+      return h('div', { className: 'admin-picker' },
+        h('p', { className: 'body-small' }, 'Record'),
+        h(Z.ChosenRelease, { title: r.title, meta: r.meta, thumb: r.thumb, href: r.uri, 'aria-live': 'polite',
+          changeLabel: 'Change', onChange: function () { props.onRelease(null); setTimeout(function () { var el = document.getElementById(id); if (el) el.focus(); }, 0); } }));
+    }
+    return h('div', { className: 'admin-picker' },
+      h(Z.Input, { id: id, label: 'Record', value: props.value, error: props.error, placeholder: 'Artist – title, or search Discogs',
+        autoComplete: 'off', role: 'combobox', 'aria-autocomplete': 'list', 'aria-expanded': results.length ? 'true' : 'false',
+        'aria-controls': id + '-list', 'aria-activedescendant': active >= 0 ? id + '-opt-' + active : undefined,
+        onChange: onText, onKeyDown: onKey, onBlur: function () { setTimeout(close, 150); } }),
+      box ? h(Z.ReleaseList, { className: 'admin-picker__list', listId: id + '-list', label: 'Releases on Discogs', message: box.message },
+        results.map(function (r, i) {
+          return h(Z.ReleaseOption, { key: r.id, id: id + '-opt-' + i, title: r.title, meta: r.meta, thumb: r.thumb, highlighted: i === active,
+            onMouseDown: function (e) { e.preventDefault(); }, onClick: function () { pick(r); } });
+        })) : null,
+      h('p', { className: 'zz-visually-hidden', 'aria-live': 'polite' },
+        box ? (box.message || results.length + (results.length === 1 ? ' release' : ' releases') + ' found. Use the arrow keys to choose.') : ''));
+  }
+  function Memo() {
+    var ls = useState(null), rows = ls[0], setRows = ls[1];
+    var es = useState(null), loadError = es[0], setLoadError = es[1];
+    var ts = useState(''), text = ts[0], setText = ts[1];
+    var rl = useState(null), release = rl[0], setRelease = rl[1];
+    var ns = useState(''), note = ns[0], setNote = ns[1];
+    var er = useState(null), error = er[0], setError = er[1];
+    var sv = useState(false), saving = sv[0], setSaving = sv[1];
+    var ms = useState(null), message = ms[0], setMessage = ms[1];
+    function load() {
+      return sb.from('memos').select('*').order('created_at', { ascending: false }).then(function (res) {
+        if (res.error) setLoadError(res.error.message); else { setLoadError(null); setRows(res.data); }
+      });
+    }
+    useEffect(function () { load(); }, []);
+    async function add(e) {
+      e.preventDefault();
+      if (saving) return;
+      var title = release ? release.title : text.trim();
+      if (!title) { setError('Write the record, or pick it on Discogs.'); return; }
+      setError(null); setSaving(true); setMessage(null);
+      var row = { title: title.slice(0, 300), note: note.trim() ? note.trim().slice(0, 1000) : null,
+                  discogs_release_id: release ? release.id : null, discogs_meta: release && release.meta ? release.meta.slice(0, 300) : null };
+      var res = await sb.from('memos').insert(row).select().single();
+      setSaving(false);
+      if (res.error) { setMessage({ error: true, text: 'Not added: ' + res.error.message }); return; }
+      setRows(function (cur) { return [res.data].concat(cur || []); });
+      setText(''); setRelease(null); setNote('');
+      setMessage({ error: false, text: 'Added: ' + res.data.title + '.' });
+      var el = document.getElementById('memo-record'); if (el) el.focus();
+    }
+    async function remove(row) {
+      setMessage(null);   // the last "Added:" line would outlive its row
+      setRows(function (cur) { return cur.filter(function (r) { return r.id !== row.id; }); });
+      var res = await sb.from('memos').delete().eq('id', row.id);
+      if (res.error) { setMessage({ error: true, text: 'Not removed: ' + res.error.message }); load(); return; }
+      toast('Removed: ' + row.title + '.', function () {
+        sb.from('memos').insert(row).then(function (r) { if (r.error) setMessage({ error: true, text: 'Not restored: ' + r.error.message }); load(); });
+      });
+    }
+    var count = rows ? rows.length : 0;
+    return h('div', { className: 'admin-memo' },
+      h('h1', { className: 'label-extra-large' }, 'Memo'),
+      h('form', { className: 'admin-memo__add', onSubmit: add, noValidate: true },
+        h(RecordField, { value: text, release: release, error: error,
+          onText: function (v) { setText(v); if (error) setError(null); }, onRelease: function (r) { setRelease(r); if (r) setError(null); } }),
+        h(Z.Input, { id: 'memo-note', label: 'Note', optional: true, placeholder: 'Sleeve, condition, where it is…',
+          value: note, onChange: function (e) { setNote(e.target.value); } }),
+        h(Z.Button, { type: 'submit', className: 'admin-memo__submit', 'aria-busy': saving || undefined }, 'Add to list'),
+        h('p', { className: 'body-small admin-status' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '')),
+      loadError ? h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'List not loaded: ' + loadError)
+        : !rows ? h('p', { className: 'body-small' }, 'Loading…')
+        : h('div', { className: 'admin-memo__list' },
+            h('p', { className: 'body-small admin-memo__count' }, count ? count + (count === 1 ? ' record' : ' records') : 'Nothing here yet. Add the records you want to sell later.'),
+            count ? h('ul', { className: 'admin-memo__items', 'aria-label': 'Memo list' }, rows.map(function (r) {
+              return h(Z.MemoItem, { key: r.id, title: r.title, meta: r.discogs_meta || undefined, note: r.note || undefined,
+                href: r.discogs_release_id ? 'https://www.discogs.com/release/' + r.discogs_release_id : undefined,
+                onCreate: function () { location.hash = '#new/memo/' + r.id; },
+                onRemove: function () { remove(r); } });
+            })) : null));
+  }
+  // #new/memo/<id>: the listing form, started from a memo
+  function FromMemoLoader(props) {
+    var st = useState(null), item = st[0], setItem = st[1];
+    var er = useState(null), error = er[0], setError = er[1];
+    useEffect(function () {
+      sb.from('memos').select('*').eq('id', props.id).single()
+        .then(function (res) { if (res.error) setError(res.error.message); else setItem(res.data); });
+    }, [props.id]);
+    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not open this memo: ' + error);
+    if (!item) return h('p', { className: 'body-medium' }, 'Loading…');
+    var initial = emptyForm();
+    if (item.discogs_release_id) initial.discogs = String(item.discogs_release_id);
+    return h(ListingForm, { initial: initial, fromMemo: { id: item.id, title: item.title, note: item.note, discogs: item.discogs_release_id } });
+  }
+
   // ── App ───────────────────────────────────────────────────────────────────
   // [hash, visit]: visit changes on every navigation, so "Create listing" always opens an empty form
   function useHash() {
@@ -1447,12 +1612,15 @@
     else if (/^#attributes\/[a-z]+\/[^/]+$/.test(hash)) body = h(AttributeForm, { key: hash + route.visit, kind: hash.split('/')[1], id: hash.split('/')[2] });
     else if (/^#attributes/.test(hash)) body = h(Attributes, { key: 'attributes', kind: hash.split('/')[1] || 'artist' });
     else if (hash === '#shipping') body = h(Shipping, { key: 'shipping-' + route.visit });
+    else if (hash === '#memo') body = h(Memo, { key: 'memo-' + route.visit });
+    else if (/^#new\/memo\/[^/]+$/.test(hash)) body = h(FromMemoLoader, { key: hash + route.visit, id: hash.split('/')[2] });
     else body = h(Listings, { key: 'list-' + route.visit });
 
     return h('div', { className: 'admin' },
       session ? h('header', { className: 'admin-bar' },
         h('nav', { className: 'admin-bar__nav', 'aria-label': 'Admin' },
           h(Z.Button, { hierarchy: 'secondary', size: 'small', href: '#' }, 'Listings'),
+          h(Z.Button, { hierarchy: 'secondary', size: 'small', href: '#memo' }, 'Memo'),
           h(Z.Button, { hierarchy: 'secondary', size: 'small', href: '#attributes' }, 'Attributes'),
           h(Z.Button, { hierarchy: 'secondary', size: 'small', href: '#shipping' }, 'Shipping'),
           h(Z.Button, { hierarchy: 'primary', size: 'small', href: '#new' }, 'Create listing')),

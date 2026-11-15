@@ -129,3 +129,18 @@ html:has(.admin-shipping) { background: var(--surface-base); }
 .admin-shipping__check > :last-child { width: 400px; max-width: 100%; }
 .admin-shipping p.admin-shipping__result { margin-top: 16px; white-space: pre-line; }
 #shipping-zones td { vertical-align: top; }   /* Figma zones rows: top left (Gio 2026-11-12), the countries cell grows with its names */
+
+/* Figma BACKEND → Memo (2296:9962, decision 0087): Gio's list of records to sell later, mobile first. Frame on
+   surface-accent like Listings; stack gap 24; add form 480 wide on desktop (fill on mobile), fields gap 16;
+   list = MemoItem rows (packages/ui). Record = the offer form's release picker: the suggestions overlay what follows. */
+.admin-memo { display: flex; flex-direction: column; gap: 24px; }
+.admin-memo__add { display: flex; flex-direction: column; gap: 16px; width: 480px; max-width: 100%; }
+.admin-memo__add .admin-status:empty { display: none; }
+.admin-memo__submit { width: 100%; }
+.admin-memo__list { display: flex; flex-direction: column; gap: 24px; }
+.admin-memo__count { color: var(--text-moderate); }
+.admin-memo__items { list-style: none; margin: 0; padding: 0; }
+.admin-picker { position: relative; display: flex; flex-direction: column; gap: 4px; }
+.admin-picker > p { margin: 0; }
+.admin-picker__list { position: absolute; top: 100%; left: 0; right: 0; z-index: 5; max-height: 360px; overflow-y: auto; }
+@media (--mobile) { .admin-memo__add { width: auto; } }

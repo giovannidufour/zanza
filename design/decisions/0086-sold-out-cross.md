@@ -19,4 +19,4 @@
 
 **Amended a sixth time 2026-11-15 (Gio: "togli la X bianca, basta la scritta sold out in bianco").** No cross any more. **Current state, which replaces everything above about the look:** every image of a sold or traded copy is desaturated (`grayscale(1)`) and multiplied on the page background (the box drops its fill), back to normal on hover; "SOLD OUT" is centred over it, body/small, `text/strong-invert`, no box, aria-hidden. Figma: `product image` boolean `sold out` drives only the `sold out label` text layer (the vector is deleted). Code: internal `SoldOutLabel`, `.zz-sold-out-label`, site.js `syncSoldLabels`. The Rule above holds with "the cross" read as "the sold-out look".
 
-**Amended a seventh time 2026-11-15 (Gio, with 0087).** On a ProductCard the sold-out cover comes back to normal on the hover of the whole card, not only of the image. Bag item and PDP gallery: unchanged (image hover).
+**Amended a seventh time 2026-11-15 (Gio, with 0088).** On a ProductCard the sold-out cover comes back to normal on the hover of the whole card, not only of the image. Bag item and PDP gallery: unchanged (image hover).

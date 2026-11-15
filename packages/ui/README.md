@@ -65,6 +65,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | ReleaseOption | page `Trade` → `release option` | ported (0069) |
 | ReleaseList | page `Trade` → `release list` | ported (0069) |
 | ChosenRelease | page `Trade` → `chosen release` | ported (0069) |
+| MemoItem | page `Memo` (BACKEND) → `memo item` | ported (0087): device mobile / desktop (responsive), meta + link, note, Create listing / Remove |
 | Checkbox | page `controls` → `checkbox` | ported: state default / active (= checked) / indeterminate, `label` boolean (hideLabel), native input |
 | Dialog | page `dialog` → `dialog` | ported: native `<dialog>` + showModal, surface-base, backdrop surface-scrim, `choices` (radio group) |
 | Toast | page `toast` → `toast` | ported: `message`, `action` (Undo), `dismiss`; ToastRegion + `toast.js` (one at a time, 6 s without action, live region), decision 0049 |

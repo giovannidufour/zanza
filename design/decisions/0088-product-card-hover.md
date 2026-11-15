@@ -1,4 +1,4 @@
-# 0087 — Product card hover: the whole card takes surface/hover
+# 0088 — Product card hover: the whole card takes surface/hover
 
 `2026-11-15` · accepted (Gio: "tutte le card sul sito… ad hover… lo sfondo di tutta la card diventa leggermente più scuro… black A04… crea la variabile semantica se necessario") · Figma: page `PDP` → `product card` (2050:12869), new variant property `state` = default | hover; variable `color` → `surface/hover` (VariableID:2298:16442)
 
