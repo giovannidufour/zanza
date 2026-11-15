@@ -272,6 +272,10 @@ a.zz-tab {
   cursor: default;
 }
 
+/* Figma `_tab-sizes` size=extra small (account nav, decision 0101): padding 4, gap 2; label/extra small (12/14) → 24px tall */
+.zz-tab[data-size="extra-small"] { padding: 4px; gap: 2px; }
+.zz-tab[data-size="extra-small"] .zz-tab__label { gap: 2px; }
+
 /* focus: not yet defined in Figma — no style (TODO: border/focus token) */
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -715,6 +719,27 @@ a.zz-product-card__image { display: block; color: inherit; }
 /* mobile: samples padding-top 8 (Figma: copied from the mobile product card) */
 .zz-bag-item[data-device="mobile"] .zz-bag-item__samples { padding-top: 8px; }
 @media (--mobile) { .zz-bag-item[data-device="responsive"] .zz-bag-item__samples { padding-top: 8px; } }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   OrderItem = BagItem without Remove (Figma: page Account → `order item`, decision 0101): same classes, nothing to add.
+   OrderRow (Figma: page Account → `order row`, decision 0101): BagItem anatomy, the whole row is one link.
+   Hover = the ProductCard hover (surface/hover on the whole row, padding unchanged, decision 0088): Claude's choice, not drawn.
+   ═══════════════════════════════════════════════════════════════════════ */
+.zz-order-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gutter-small);
+  color: var(--text-strong);
+  font-family: var(--font-sans);
+  text-decoration: none;
+}
+.zz-order-row > span, .zz-order-row .zz-bag-item__title-block > span, .zz-order-row .zz-bag-item__description > span { display: block; }
+.zz-order-row .zz-bag-item__info, .zz-order-row .zz-bag-item__title-block, .zz-order-row .zz-bag-item__description { display: flex; }
+.zz-order-row .zz-bag-item__purchase { display: flex; }
+.zz-order-row__total { white-space: nowrap; }
+.zz-order-row__view { pointer-events: none; }
+.zz-order-row[data-state="hover"] { background: var(--surface-hover); }
+@media (hover: hover) { .zz-order-row:hover { background: var(--surface-hover); } }
 
 /* ═══════════════════════════════════════════════════════════════════════
    BagSummary (Figma: page Bag → `bag summary`; decision 0044)

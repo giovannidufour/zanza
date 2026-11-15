@@ -27,7 +27,7 @@ Stack: `stack.md`. Questa è la **bozza** dello schema e dei flussi, da rivedere
 | `orders`, `order_items` | ordini Stripe | li scrivono solo le Edge Functions; prezzo copiato al momento dell'acquisto |
 | `admins` | l'operatore (Gio) | riga aggiunta a mano dopo la registrazione all'admin |
 
-Rimandato (con il Trade, Q2): `proposals`, `proposal_messages`. Preferiti/account: non nell'MVP.
+Rimandato (con il Trade, Q2): `proposals`, `proposal_messages`. Preferiti: non nell'MVP. Account cliente: vedi sotto "Account cliente".
 
 **Dati di prova:** `supabase/scripts/build-seed.js` genera `supabase/seed.sql` (upsert, id derivati dallo slug) dai 21 JSON di `content/products/`. Le immagini e i sample di prova restano URL assoluti verso il negozio di origine: è l'unica eccezione alla regola "solo chiavi".
 
@@ -105,6 +105,31 @@ Regola (Gio 2026-11-12): **il bag non blocca mai niente**. Un disco è bloccato 
 - Edge Function `stripe-webhook` (Verify JWT off, firma Stripe): `completed` (pagato) / `async_payment_succeeded` → ordine + `sold` + email al compratore e a Gio; `expired` → rilascio. Gli id dei listing tornano dalle line items (metadata `listing_id` del prodotto). Sta su Supabase perché il negozio è dietro Cloudflare Access.
 - Secret nuovi: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `ORDERS_TO` (casella del negozio; senza, usa `OFFER_TO`), opzionale `MEDIA_BASE_URL`.
 - Eventi del webhook da attivare su Stripe: `checkout.session.completed`, `checkout.session.expired`, `checkout.session.async_payment_succeeded`.
+
+### Account cliente (Gio 2026-11-15: "account light con codice OTP", decisione 0101; codice sul branch `claude/project-thread-c9cxpv`)
+Requisito di Gio: il cliente entra e vede i suoi ordini e il loro stato.
+- Checkout da ospite sempre; l'account non è mai obbligatorio. Nessuna password, nessun profilo, nessuna rubrica indirizzi: l'account è l'email verificata.
+- Login: Supabase Auth email OTP (codice a 6 cifre, non link), Turnstile, SMTP di Supabase su Resend. Pagina Figma `Account` (2198:2395).
+- Si entra solo se esiste un ordine con quell'email (hook *before user created*): niente account vuoti.
+- Ordini collegati da soli: `lower(orders.email) = lower(email verificata)`, sola lettura (RLS o vista), senza `attention`, `payment_intent`, `stripe_session_id`.
+- Stati mostrati: `paid` → "Paid, preparing" · `shipped` → "Shipped" + data (`shipped_at`) + link di tracking · `refunded` · `cancelled`. Niente "Delivered".
+- Dettagli = email + "Delete account" (cancella il login, non gli ordini). L'email di conferma porta al login con l'email già compilata.
+- Admin e clienti condividono Supabase Auth: tutto ciò che è concesso ad `authenticated` passa da `is_admin()` (verificato 2026-11-15); l'admin deve rifiutare al login chi non è admin.
+- Privacy: sezione Account (art. 6(1)(b), token di sessione necessario, Turnstile); la durata di conservazione degli ordini va rivista per il venditore privato. Newsletter separata (Buttondown), nessuna iscrizione dall'account.
+
+**Implementazione (2026-11-15):**
+- Migrazione `20261115030000_customer_account.sql` (0022): `order_items.snapshot` (trigger BEFORE INSERT `order_items_snapshot` + backfill: nome, slug, label, formato, paese, gradi, `cover_key`, sample), `orders.shipped_at` (trigger: `shipped` → now(), di nuovo `paid` → null), `customer_orders()` (solo `authenticated`, email confermata; mai `attention`, `payment_intent`, `stripe_session_id`), `delete_my_account()` (non per un admin), `hook_before_user_created(event)` (per `supabase_auth_admin`). Testata su Postgres 16 locale con tutte le migrazioni.
+- Sito: `pages/account.js` + `account.css` (3 pagine statiche, nessun dato personale nell'HTML), `scripts/account.js` (Auth via fetch: `/auth/v1/otp` → `/auth/v1/verify` type `email`, refresh, logout; sessione in localStorage `zanza-session`). Serve il build da Supabase (meta `zz-supabase-url`/`key`); col build JSON la pagina dice che gli account non sono attivi.
+- Riferimento ordine = i primi 8 caratteri dell'id, maiuscoli (come email e admin, decisione 0100).
+
+**Impostazioni Supabase Auth da fare (progetto `store-staging`, con l'ok di Gio):**
+1. SQL editor: applicare la migrazione 0022.
+2. Authentication → Sign In / Providers → Email: *Allow new users to sign up* ON (l'hook limita a chi ha ordini); *Email OTP expiration* 600 s; *Email OTP length* 6.
+3. Authentication → Hooks → *Before User Created* → Postgres function `public.hook_before_user_created`. Per creare un nuovo admin: spegnerlo un momento.
+4. Authentication → Emails → SMTP: `smtp.resend.com`, porta 465, utente `resend`, password = una chiave Resend *Sending access* solo rythem-works.com, mittente `gio@rythem-works.com`, nome `rythem-works`. Senza SMTP proprio Supabase manda solo ~2 email l'ora e solo agli indirizzi del team.
+5. Authentication → Emails → Templates *Magic Link* e *Confirm signup*: il codice `{{ .Token }}` in evidenza, poi il link `{{ .ConfirmationURL }}` (l'admin entra col link, il cliente col codice o col link).
+6. Authentication → URL Configuration → Redirect URLs: aggiungere `https://staging.rythem-works.com/account/**` e `https://store-front-6fx.pages.dev/account/**` (il link dell'email porta a /account/).
+7. Dopo: Turnstile (captcha) e la sezione Account della Privacy.
 
 ### Notify me (0016, 2026-11-12, migrazione da applicare)
 - Su un disco Reserved il visitatore lascia l'email (`request_back_in_stock`, anon; solo mentre è reserved, max 100 per copia). Tabella `back_in_stock`, leggibile solo dall'admin.

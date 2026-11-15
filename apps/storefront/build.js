@@ -1,6 +1,6 @@
 /* apps/storefront/build.js — static build.
    products (Supabase, or content/products/*.json: see data/products.js) → dist/products/<slug>/index.html,
-   dist/index.html (home), dist/sale/index.html (PLP), dist/search/index.html (search results), dist/bag/index.html (bag), dist/checkout/thanks/index.html (after Stripe Checkout), dist/<legal page>/index.html (content/legal/*.md) (+ css, fonts, assets). `--source=json` forces the local JSON.
+   dist/index.html (home), dist/sale/index.html (PLP), dist/search/index.html (search results), dist/bag/index.html (bag), dist/checkout/thanks/index.html (after Stripe Checkout), dist/account/{,order/,details/}index.html (customer account), dist/<legal page>/index.html (content/legal/*.md) (+ css, fonts, assets). `--source=json` forces the local JSON.
    Upload the whole `dist/` folder to the web root. Run: npm run build
    Cloudflare Pages: `npm run build:pages` (= --target=pages --source=supabase: root basePath, never the local JSON). */
 'use strict';
@@ -40,11 +40,15 @@ const css = {
   bag: readCss(path.join(APP, 'bag.css')),
   trade: readCss(path.join(APP, 'trade.css')),
   legal: readCss(path.join(APP, 'legal.css')),
-  home: readCss(path.join(APP, 'home.css'))
+  home: readCss(path.join(APP, 'home.css')),
+  account: readCss(path.join(APP, 'account.css'))
 };
 const cssHref = (name) => url(`/css/${name}.css?v=${hashOf(css[name])}`);
 const siteJs = fs.readFileSync(path.join(APP, 'scripts/site.js'));
 const siteJsHref = url(`/js/site.js?v=${hashOf(siteJs)}`);
+// customer account (decision 0101): sign-in and orders, on every page (the menu shows the signed-in email)
+const accountJs = fs.readFileSync(path.join(APP, 'scripts/account.js'));
+const accountJsHref = url(`/js/account.js?v=${hashOf(accountJs)}`);
 // toast behaviour (decision 0049): the same file as the admin, straight from packages/ui
 const toastJs = fs.readFileSync(path.join(UI, 'toast.js'));
 const toastJsHref = url(`/js/toast.js?v=${hashOf(toastJs)}`);
@@ -63,6 +67,7 @@ const Legal = require('./pages/legal.js');
 const ContactPage = require('./pages/contact.js');
 const Newsletter = require('./pages/newsletter.js');
 const Home = require('./pages/home.js');
+const Account = require('./pages/account.js');
 const Z = require(path.join(UI, 'components.js'));
 
 // the site player: one per page, outside .zz-page, so the soft navigation in site.js keeps it (and the audio) alive.
@@ -129,8 +134,10 @@ ${faviconLinks}
 <link rel="stylesheet" href="${cssHref('trade')}">
 <link rel="stylesheet" href="${cssHref('legal')}">
 <link rel="stylesheet" href="${cssHref('home')}">
+<link rel="stylesheet" href="${cssHref('account')}">
 <script src="${toastJsHref}" defer></script>
 <script src="${shippingJsHref}" defer></script>
+<script src="${accountJsHref}" defer></script>
 <script src="${siteJsHref}" defer></script>
 <script src="${newsletterJsHref}" defer></script>
 ${liveMeta}</head>
@@ -191,7 +198,9 @@ write('css/bag.css', css.bag);
 write('css/trade.css', css.trade);
 write('css/legal.css', css.legal);
 write('css/home.css', css.home);
+write('css/account.css', css.account);
 write('js/site.js', siteJs);
+write('js/account.js', accountJs);
 write('js/toast.js', toastJs);
 write('js/shipping.js', shippingJs);
 write('js/newsletter.js', newsletterJs);
@@ -247,6 +256,12 @@ const bagProducts = products.filter(p => p.listing.section === 'sale');
 write('bag/index.html', page({ title: Bag.title, body: renderToStaticMarkup(React.createElement(Bag.Bag, { products: bagProducts, site, url, shipping, countries: shippingData.countries(shipping) })) }));
 // after a paid Stripe Checkout (migration 0021, Figma page `Checkout`): site.js takes the paid records out of the bag
 write('checkout/thanks/index.html', page({ title: Checkout.title, body: renderToStaticMarkup(React.createElement(Checkout.Thanks, { site, url })) }));
+
+// Customer account (decision 0101, Figma page `Account`): sign in with an email code, then the orders bought with that
+// email (scripts/account.js reads them from Supabase). Static shells: nothing personal is in the HTML.
+write('account/index.html', page({ title: Account.TITLE.orders, body: renderToStaticMarkup(React.createElement(Account.Account, { site, url, view: 'orders' })) }));
+write('account/order/index.html', page({ title: Account.TITLE.order, body: renderToStaticMarkup(React.createElement(Account.Account, { site, url, view: 'order' })) }));
+write('account/details/index.html', page({ title: Account.TITLE.details, body: renderToStaticMarkup(React.createElement(Account.Account, { site, url, view: 'details' })) }));
 
 // Legal pages (decision 0079, Figma page `Legal`): content/legal/<page>.md → /<page>/. What Gio still has to fill
 // (site.json → legal, [[TO FILL]] in the text) is listed here, so a build never hides a placeholder.

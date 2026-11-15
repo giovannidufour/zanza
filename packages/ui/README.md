@@ -38,7 +38,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | Component | Figma | Status |
 | --- | --- | --- |
 | Button | page `buttons` → section `button` | ported: hierarchy × size × state (incl. `active` = current page, aria-current), `suffix` |
-| Tabs / Tab | page `tabs` → `tab group`, `tab` | ported: controlled selection, 4 states, `suffix` (counts, 0029) |
+| Tabs / Tab | page `tabs` → `tab group`, `tab` | ported: controlled selection, 4 states, `suffix` (counts, 0029), size extra-small (account nav, 0101) |
 | Header | page `header` → `header` | ported: device desktop/mobile or responsive, composition of Button + Tabs |
 | Breadcrumbs | page `breadcrumbs` → `breadcrumbs` | ported (PDP; PLP uses ActiveFilter, 0041) |
 | ActiveFilter | page `active filter` → `active filter` | ported: device = chip size, set by the consumer |
@@ -49,6 +49,8 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | ProductInfo | page `PDP` → `product info` | ported: desktop / mobile / responsive |
 | ProductCard | page `PDP` → `product card` | ported: desktop / mobile / responsive |
 | BagItem | page `Bag` → `bag item` | ported: desktop / mobile / responsive × status available / unavailable (`notice`) |
+| OrderItem | page `Account` → `order item` | ported (0101): BagItem without Remove |
+| OrderRow | page `Account` → `order row` | ported (0101): one link per order, View not a tab stop |
 | BagSummary | page `Bag` → `bag summary` | ported: subtotal, shipping "Calculated at checkout", Checkout, note |
 | RelatedProducts | page `PDP` → `you may also like` | ported: one layout, cards carry the device |
 | Gallery | page `PDP` → `product image` ×2, `mobile gallery` | ported from page placement; Figma component pending |

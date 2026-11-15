@@ -1749,6 +1749,7 @@
       initBag();
       initOffer();
       initContact();
+      if (window.ZanzaAccount) window.ZanzaAccount.init();   // customer account (scripts/account.js, decision 0101)
       if (player && audio) render();
       // screen readers and keyboard: start from the new page's main heading, like a full load would
       var focusEl = document.querySelector('main h1') || document.querySelector('.zz-page h1:not([hidden])') || document.querySelector('main');
@@ -1800,5 +1801,6 @@
   initBag();
   initOffer();
   initContact();
+  if (window.ZanzaAccount) window.ZanzaAccount.init();
   initSelectFocus();
 })();

@@ -112,7 +112,9 @@ function SiteHeader({ site, url, section, current }) {
         h(Z.Tab, { value: 'sale', href: url('/sale/') }, 'For sale'),
         tradeOn(site) ? h(Z.Tab, { value: 'trade', href: url('/trade/') }, 'For trade') : null),
       actions: h(React.Fragment, null,
-        h(Z.Button, { hierarchy: 'secondary', className: 'zz-header__account' }, 'Account'),
+        // Account (decision 0101): the customer's orders; state active on /account/ pages, as Bag on /bag/ (0045)
+        h(Z.Button, { hierarchy: 'secondary', className: 'zz-header__account', href: url('/account/'),
+          state: current === 'account' ? 'active' : undefined }, 'Account'),
         h(Z.Button, { hierarchy: 'secondary', href: url('/bag/'), state: current === 'bag' ? 'active' : undefined,
           suffix: '(0)', 'data-bag-count': '' }, 'Bag'))
     }),
@@ -144,7 +146,8 @@ function SiteMenu({ site, url, current }) {
       // Figma `menu layer`: the search field on top of the body (Gio 2026-11-12: mobile search in the menu, not the header)
       h(SearchForm, { url, id: 'site-search-menu', className: 'site-menu__search' }),
       h(Z.MenuGroup, null, item('sale', 'For sale', '/sale/'), trade ? item('trade', 'For trade', '/trade/') : null),
-      h(Z.MenuGroup, null, item('account', 'Account', '/account/', 'Sign in to see your orders')),
+      // the detail becomes the signed-in email (scripts/account.js, [data-account-email]); decision 0101
+      h(Z.MenuGroup, null, item('account', 'Account', '/account/', h('span', { 'data-account-email': '' }, 'Sign in to see your orders'))),
       h(Z.MenuGroup, null, item('about', 'About', '/about/'), trade ? item('how-trading-works', 'How trading works', '/how-trading-works/') : null,
         item('grading', 'Grading', '/grading/'), item('shipping', 'Shipping', '/shipping/'), item('contact', 'Contact', '/contact/'))));
 }

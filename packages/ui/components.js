@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"OrderItem"},{"name":"OrderRow"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"}]} */
 /* packages/ui/components.js — the ONE implementation of the rythem-works components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
@@ -132,7 +132,10 @@
         if (ctx.onValueChange) ctx.onValueChange(props.value);
         if (props.onClick) props.onClick(e);
       }
-    }, omit(props, ['value', 'children', 'leadingIcon', 'trailingIcon', 'suffix', 'state', 'className', 'onClick']));
+    }, omit(props, ['value', 'children', 'leadingIcon', 'trailingIcon', 'suffix', 'state', 'size', 'className', 'onClick']));
+    // Figma `_tab-sizes` size=extra small (account nav, 2026-11-12): padding 4, gap 2, label/extra small (decision 0101)
+    var xs = props.size === 'extra-small';
+    if (xs) attrs['data-size'] = 'extra-small';
     if (tag === 'a') {
       if (selected) attrs['aria-current'] = 'page';
       attrs['data-selected'] = selected ? 'true' : 'false';
@@ -146,7 +149,7 @@
     return h(tag, attrs,
       props.leadingIcon ? h('span', { className: 'zz-tab__icon', 'aria-hidden': 'true' }, props.leadingIcon) : null,
       // Figma `_tab-sizes` label container: label + `suffix` (e.g. a count, "Artists 64"), gap 4, same text style
-      h('span', { className: 'zz-tab__label label-medium' }, h('span', null, props.children),
+      h('span', { className: cx('zz-tab__label', xs ? 'label-extra-small' : 'label-medium') }, h('span', null, props.children),
         props.suffix !== undefined && props.suffix !== null && props.suffix !== false ? h('span', { className: 'zz-tab__suffix' }, props.suffix) : null),
       props.trailingIcon ? h('span', { className: 'zz-tab__icon', 'aria-hidden': 'true' }, props.trailingIcon) : null);
   }
@@ -451,7 +454,17 @@
      unavailable for good, as the disabled Button); no notice. reserved (held by someone else's checkout or by hand):
      the same line with "RESERVED" (Gio 2026-11-12, decision 0065). `notice` overrides the word. `unavailable` (before 0064) = reserved. Samples stay (Gio 2026-11-10). Desktop type = ProductCard desktop,
      mobile = ProductCard mobile. Decision 0044. */
-  function BagItem(props) {
+  function BagItem(props) { return bagLine(props, true); }
+
+  /* ── OrderItem ──────────────────────────────────────────────────────────
+     Figma: page `Account` → `order item` (device=desktop | mobile; 2198:2462). One record of a past order (account › order
+     detail): the BagItem anatomy without Remove (Figma description: "bag item without the remove action"); the price is
+     what was paid. Always available-looking: an order line has no sold / reserved state. Decision 0101. */
+  function OrderItem(props) {
+    return bagLine(Object.assign({}, omit(props, ['status', 'notice', 'onRemove', 'removeLabel']), { status: 'available' }), false);
+  }
+
+  function bagLine(props, removable) {
     var device = props.device || 'responsive';
     var t = CARD_TYPE[device];
     var titleId = useId();
@@ -486,8 +499,39 @@
               h('span', { className: 'zz-visually-hidden' }, ', not in your order, '),
               props.price != null ? h('s', null, props.price) : null)
           : status === 'available' && props.price != null ? h('p', { className: cx('zz-bag-item__price', t.head) }, props.price) : null,
-        h(Button, { hierarchy: 'secondary', size: 'small', className: 'zz-bag-item__remove', onClick: props.onRemove, 'aria-describedby': titleId },
-          props.removeLabel || 'Remove')));
+        removable ? h(Button, { hierarchy: 'secondary', size: 'small', className: 'zz-bag-item__remove', onClick: props.onRemove, 'aria-describedby': titleId },
+          props.removeLabel || 'Remove') : null));
+  }
+
+  /* ── OrderRow ───────────────────────────────────────────────────────────
+     Figma: page `Account` → `order row` (device=desktop | mobile; 2198:2509). One order in account › orders: the BagItem
+     anatomy (cover 96 of the first record · info: heading = "Order <ref>" + date, details = "<n> records" + "Status: …" ·
+     right column: total + View). The whole row is ONE link (Figma note: "View" is not a second tab stop): View is drawn
+     as a secondary small Button but is a span inside the link, aria-hidden; the link's accessible name is `label`
+     ("Order 1A2B3C4D, 9 Nov 2026, shipped, 39€"). Type classes as BagItem / ProductCard. Decision 0101. */
+  function OrderRow(props) {
+    var device = props.device || 'responsive';
+    var t = CARD_TYPE[device];
+    var img = props.image;
+    return h('a', Object.assign({
+      className: cx('zz-order-row', props.className),
+      'data-device': device,
+      href: props.href,
+      'aria-label': props.label
+    }, omit(props, ['device', 'image', 'href', 'label', 'title', 'date', 'count', 'status', 'total', 'viewLabel', 'className', 'children'])),
+      h('span', { className: 'zz-bag-item__image zz-order-row__image' },
+        img && img.src ? h('img', { src: img.src, alt: '', loading: 'lazy' }) : null),
+      h('span', { className: 'zz-bag-item__info' },
+        h('span', { className: 'zz-bag-item__title-block' },
+          h('span', { className: cx('zz-order-row__title', t.head) }, props.title),
+          props.date ? h('span', { className: cx('zz-order-row__date', t.head) }, props.date) : null),
+        h('span', { className: 'zz-bag-item__description' },
+          props.count ? h('span', { className: cx('zz-order-row__count', t.meta) }, props.count) : null,
+          props.status ? h('span', { className: cx('zz-order-row__status', t.meta) }, props.status) : null)),
+      h('span', { className: 'zz-bag-item__purchase' },
+        h('span', { className: cx('zz-order-row__total', t.head) }, props.total),
+        h('span', { className: 'zz-button zz-order-row__view', 'data-hierarchy': 'secondary', 'data-size': 'small', 'aria-hidden': 'true' },
+          h('span', { className: 'zz-button__label label-extra-small' }, props.viewLabel || 'View'))));
   }
 
   /* ── BagSummary ─────────────────────────────────────────────────────────
@@ -1486,7 +1530,7 @@
   }
 
   return { Button: Button, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, ActiveFilter: ActiveFilter, Tag: Tag, TagGroup: TagGroup,
-           PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, BagItem: BagItem, BagSummary: BagSummary, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
+           PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, BagItem: BagItem, OrderItem: OrderItem, OrderRow: OrderRow, BagSummary: BagSummary, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
            Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, ChevronDownLargeIcon: ChevronDownLargeIcon, DragHandleIcon: DragHandleIcon,
            Checkbox: Checkbox, Alert: Alert, Divider: Divider, ActionPanel: ActionPanel, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog, Toast: Toast, ToastRegion: ToastRegion,
            EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon, TickLargeThinIcon: TickLargeThinIcon, ClockCounterClockwiseIcon: ClockCounterClockwiseIcon, EnvelopeIcon: EnvelopeIcon,

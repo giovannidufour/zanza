@@ -24,6 +24,7 @@ A horizontal tablist (`Tabs`, Figma `tab group`) of `Tab` items (Figma `tab`). `
 | `children` * | `ReactNode` |  | Label text. Rendered uppercase by the label text style. |
 | `leadingIcon` | `ReactNode` |  | Icon slot before the label (20px). Figma: `leading icon`. |
 | `trailingIcon` | `ReactNode` |  | Icon slot after the label (20px). Figma: `trailing icon`. |
+| `size` | `"medium" \| "extra-small"` | `medium` | Figma `_tab-sizes` size. extra-small = padding 4, label/extra small, 24px (account nav, decision 0101). |
 | `suffix` | `ReactNode` |  | Text after the label, same style, gap 4: a count ("Artists" + 64). Figma: `suffix` + `suffix text`. |
 | `state` | `"default" \| "hover" \| "pressed" \| "active"` |  | Documentation only: pins a visual state regardless of pointer/selection. |
 
