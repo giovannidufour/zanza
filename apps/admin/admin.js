@@ -323,6 +323,7 @@
     var pl = useState(null), playing = pl[0], setPlaying = pl[1];
     var fRef = useRef(f); fRef.current = f;
     var fd = useState(false), fetching = fd[0], setFetching = fd[1];
+    var pf = useState(null), photoFound = pf[0], setPhotoFound = pf[1];   // releases from a photo of the label (0092)
     var en = useState(null), entities = en[0], setEntities = en[1];
     useEffect(function () {
       loadEntities().then(setEntities).catch(function (err) { setMessage({ error: true, text: 'Suggestions not loaded: ' + err.message }); });
@@ -443,9 +444,9 @@
     }
 
     // Fetch Discogs: reads the release in "Discogs match" and fills the release fields
-    async function fetchDiscogs() {
+    async function fetchDiscogs(picked) {
       if (fetching) return;
-      var id = discogsId(fRef.current.discogs);
+      var id = typeof picked === 'number' ? picked : discogsId(fRef.current.discogs);
       if (id === null) {
         setErrors(function (cur) { return Object.assign({}, cur, { discogs: 'Paste a Discogs release URL or its number.' }); });
         return;
@@ -522,7 +523,17 @@
         h(Z.Input, Object.assign({ id: 'discogs', label: 'Discogs match', optional: true, variant: 'search',
           placeholder: 'Release URL or number', supportText: errors.discogs ? undefined : 'Paste the release link, then Fetch Discogs.' }, bind('discogs'))),
         // Figma 2104:20728: secondary button right under Discogs match (gap 16)
-        h('div', null, h(Z.Button, { hierarchy: 'secondary', disabled: locked, 'aria-busy': fetching || undefined, onClick: fetchDiscogs }, 'Fetch Discogs'))),
+        // Figma Create → `discogs actions` (0092): Fetch Discogs + Photo of the label; picking a release found from
+        // the photo puts its link in Discogs match and fetches it
+        h(PhotoField, { disabled: locked, pickHint: 'Pick the pressing to fetch it.', onFound: setPhotoFound,
+          actions: h(Z.Button, { hierarchy: 'secondary', disabled: locked, 'aria-busy': fetching || undefined, onClick: function () { fetchDiscogs(); } }, 'Fetch Discogs') }),
+        photoFound ? h(Z.ReleaseList, { listId: 'photo-releases', label: 'Releases on Discogs',
+            message: photoFound.results.length ? undefined : 'No match on Discogs for what the photo shows. Paste the release link instead.' },
+          photoFound.results.map(function (r, i) {
+            function pick() { setPhotoFound(null); set({ discogs: 'https://www.discogs.com/release/' + r.id }); fetchDiscogs(r.id); }
+            return h(Z.ReleaseOption, { key: r.id, id: 'photo-release-' + i, title: r.title, meta: r.meta, thumb: r.thumb, tabIndex: 0,
+              onClick: pick, onKeyDown: function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } } });
+          })) : null),
       h(Z.Divider),
 
       h('section', { className: 'admin-section' },
@@ -1602,14 +1613,14 @@
         if (!got.read) { stopAt(0); setSt({ state: 'not read', text: 'Couldn’t read the label. Try closer, flat and with more light, or type it.' }); return; }
         var r = got.read;
         var said = [r.artist, r.title, [r.label, r.catno].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
-        props.onText(got.query);
+        if (props.onText) props.onText(got.query);
         setSt({ state: 'reading', text: 'Looking for it on Discogs…' });
         creep(97, 3);
         var found = await invoke('discogs-lookup', { fields: r });
         if (n !== seq.current) return;
         stopAt(100);
         props.onFound({ results: found.results || [] });
-        setSt({ state: 'read', text: 'Read from the photo: ' + said + '. Pick your pressing in the list, or fix the text.' });
+        setSt({ state: 'read', text: 'Read from the photo: ' + said + '. ' + (props.pickHint || 'Pick your pressing in the list, or fix the text.') });
       } catch (err) {
         if (n !== seq.current) return;
         stopAt(0);
@@ -1617,12 +1628,14 @@
       }
     }
     var reading = st.state === 'reading';
+    // full: one full-width button (Memo); otherwise the button sits in a row after props.actions (Create, 0092)
+    var button = h(Z.Button, { type: 'button', hierarchy: 'secondary', disabled: props.disabled, className: props.full ? 'admin-memo__photo-button' : undefined,
+        'aria-busy': reading || undefined, onClick: function () { if (!reading) input.current.click(); } },
+        st.state === 'read' || st.state === 'not read' ? 'Another photo' : 'Photo of the label');
     return h('div', { className: 'admin-memo__photo' },
       h('input', { ref: input, type: 'file', accept: 'image/*', capture: 'environment', className: 'zz-visually-hidden',
         tabIndex: -1, 'aria-hidden': 'true', onChange: onFile }),
-      h(Z.Button, { type: 'button', hierarchy: 'secondary', className: 'admin-memo__photo-button', 'aria-busy': reading || undefined,
-        onClick: function () { if (!reading) input.current.click(); } },
-        st.state === 'read' || st.state === 'not read' ? 'Another photo' : 'Photo of the label'),
+      props.full ? button : h('div', { className: 'admin-photo-actions' }, props.actions, button),
       reading ? h(Z.ProgressBar, { value: progress, 'aria-label': 'Reading the photo' }) : null,
       h('p', { className: 'body-small admin-memo__photo-status', role: 'status' }, st.text));
   }
@@ -1674,7 +1687,7 @@
       h('form', { className: 'admin-memo__add', onSubmit: add, noValidate: true },
         h(RecordField, { value: text, release: release, error: error,
           found: found, onText: function (v) { setText(v); if (error) setError(null); }, onRelease: function (r) { setRelease(r); if (r) setError(null); } }),
-        h(PhotoField, { key: 'photo-' + photoKey,
+        h(PhotoField, { key: 'photo-' + photoKey, full: true,
           onText: function (v) { setRelease(null); setText(v); if (error) setError(null); }, onFound: setFound }),
         h(Z.Input, { id: 'memo-note', label: 'Note', optional: true, placeholder: 'Sleeve, condition, where it is…',
           value: note, onChange: function (e) { setNote(e.target.value); } }),

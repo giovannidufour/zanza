@@ -165,6 +165,7 @@ html:has(.admin-shipping) { background: var(--surface-base); }
 .admin-memo__submit { width: 100%; }
 .admin-memo__photo { display: flex; flex-direction: column; gap: 8px; }
 .admin-memo__photo-button { width: 100%; }
+.admin-photo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .admin-memo__photo-status { margin: 0; color: var(--text-moderate); }
 .admin-memo__photo-status:empty { display: none; }
 .admin-memo__list { display: flex; flex-direction: column; gap: 24px; }
