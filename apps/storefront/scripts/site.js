@@ -1202,37 +1202,22 @@
       } else price.textContent = text;
     }
   }
-  // the sold-out cross (decision 0086): the same markup as SoldOutCross in packages/ui/components.js, added to or
-  // removed from each image box of a copy when its live status says sold / traded (or back)
-  var SVG_NS = 'http://www.w3.org/2000/svg';
-  function syncSoldCross(box, sold) {
-    var cross = box.querySelector(':scope > .zz-sold-out');
+  // sold out (decision 0086): the same markup as SoldOutLabel in packages/ui/components.js, added to or removed from
+  // each image box of a copy when its live status says sold / traded (or back); CSS does the rest (greyscale, multiply)
+  function syncSoldLabel(box, sold) {
     var label = box.querySelector(':scope > .zz-sold-out-label');
-    if (!sold) { if (cross) box.removeChild(cross); if (label) box.removeChild(label); return; }
-    if (cross) return;
-    cross = document.createElementNS(SVG_NS, 'svg');
-    cross.setAttribute('class', 'zz-sold-out');
-    cross.setAttribute('viewBox', '0 0 100 100');
-    cross.setAttribute('preserveAspectRatio', 'none');
-    cross.setAttribute('aria-hidden', 'true');
-    cross.setAttribute('focusable', 'false');
-    var path = document.createElementNS(SVG_NS, 'path');
-    path.setAttribute('d', 'M0 0L100 100M100 0L0 100');
-    path.setAttribute('vector-effect', 'non-scaling-stroke');
-    cross.appendChild(path);
-    box.appendChild(cross);
-    // "SOLD OUT" over the cross: the classes of Alert layout=inline + .zz-sold-out-label
+    if (!sold) { if (label) box.removeChild(label); return; }
+    if (label) return;
     label = document.createElement('span');
-    label.className = 'zz-alert body-small zz-sold-out-label';
-    label.setAttribute('data-layout', 'inline');
+    label.className = 'zz-sold-out-label body-small';
     label.setAttribute('aria-hidden', 'true');
     label.textContent = 'SOLD OUT';
     box.appendChild(label);
   }
   var SOLD_IMAGE_BOXES = '.zz-product-card__image, .zz-bag-item__image, .zz-gallery__item';
-  function syncSoldCrosses(el, status) {
+  function syncSoldLabels(el, status) {
     var sold = status === 'sold' || status === 'traded';
-    Array.prototype.forEach.call(el.querySelectorAll(SOLD_IMAGE_BOXES), function (box) { syncSoldCross(box, sold); });
+    Array.prototype.forEach.call(el.querySelectorAll(SOLD_IMAGE_BOXES), function (box) { syncSoldLabel(box, sold); });
   }
   function applyStatus() {
     Array.prototype.forEach.call(document.querySelectorAll('[data-bag-line]'), syncBagLine);
@@ -1244,7 +1229,7 @@
     Array.prototype.forEach.call(document.querySelectorAll('[data-listing-status]'), function (el) {
       var id = listingIdOf(el);
       if (id && !el.hasAttribute('data-bag-line')) el.setAttribute('data-listing-status', statusFor(id));
-      if (id) syncSoldCrosses(el, statusFor(id));   // cards, PDP gallery, bag lines (0086)
+      if (id) syncSoldLabels(el, statusFor(id));   // cards, PDP gallery, bag lines (0086)
     });
   }
   function readLive(force) {

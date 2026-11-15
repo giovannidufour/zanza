@@ -617,31 +617,20 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
   align-items: start;
   color: var(--text-strong);   /* Figma: text fills unbound #000 → text/strong (open.md) */
 }
-/* ── Sold-out cross (Figma: `product image` boolean `sold out`, decision 0086) ─────────────────────────────
-   A 1px X from corner to corner over the whole image, in icon/strong-invert (white); the image under it is desaturated and multiplied. Sits in a positioned image box
-   (ProductCard, BagItem, Gallery item); the stroke does not scale (vector-effect in the markup). */
-.zz-sold-out {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  overflow: hidden;
-  fill: none;
-  stroke: var(--icon-strong-invert);
-  stroke-width: 1;
-  pointer-events: none;
-}
-/* the image of a sold copy (Gio 2026-11-15): no saturation, multiplied on the page background. The box drops its own
-   fill so the image multiplies with what is behind the component; the cross is a sibling, so it stays white. */
-:is(.zz-product-card__image, .zz-bag-item__image, .zz-gallery__item):has(> .zz-sold-out) { background: none; }
-:is(.zz-product-card__image, .zz-bag-item__image, .zz-gallery__item):has(> .zz-sold-out) > img {
+/* ── Sold out (Figma: `product image` boolean `sold out`, decision 0086) ─────────────────────────────────
+   The image of a sold copy (ProductCard, BagItem, Gallery item): no saturation, multiplied on the page background
+   (the box drops its own fill so the image multiplies with what is behind the component); normal on hover. */
+:is(.zz-product-card__image, .zz-bag-item__image, .zz-gallery__item):has(> .zz-sold-out-label) { background: none; }
+:is(.zz-product-card__image, .zz-bag-item__image, .zz-gallery__item):has(> .zz-sold-out-label) > img {
   filter: grayscale(1);
   mix-blend-mode: multiply;
 }
-/* hover: the image comes back as it is, colour and normal blending (Gio 2026-11-15) */
 @media (hover: hover) {
-  :is(.zz-product-card__image, .zz-bag-item__image, .zz-gallery__item):has(> .zz-sold-out):hover > img { filter: none; mix-blend-mode: normal; }
+  :is(.zz-product-card__image, .zz-bag-item__image, .zz-gallery__item):has(> .zz-sold-out-label):hover > img { filter: none; mix-blend-mode: normal; }
 }
-/* "SOLD OUT" over the cross, centred: the inline Alert (Figma `product image` → `sold out label`) */
+/* "SOLD OUT" centred over the image: body/small in text/strong-invert, no box (Figma `product image` → `sold out label`) */
 .zz-sold-out-label {
+  color: var(--text-strong-invert);
   position: absolute; top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   white-space: nowrap;
@@ -650,7 +639,7 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
 
 .zz-product-card p, .zz-product-card h1, .zz-product-card h2, .zz-product-card h3, .zz-product-card h4 { margin: 0; }
 .zz-product-card__image {
-  position: relative;   /* holds the sold-out cross */
+  position: relative;   /* holds the sold-out label */
   grid-column: 1 / 3; grid-row: 1 / -1;
   aspect-ratio: 1;   /* Figma: product image, proportions locked 1:1 */
   overflow: hidden;

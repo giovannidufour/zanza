@@ -1,4 +1,4 @@
-# 0086 — Sold-out cross: a 1px white X over every image of a sold copy
+# 0086 — Sold-out look on every image of a sold copy (was: sold-out cross)
 
 `2026-11-15` · accepted (Gio: "una X bianca dello spessore di un pixel… da angolo ad angolo… applica e fai merge"; "ovviamente anche in Figma") · Figma: page `media` → `product image` (3:1006), boolean `sold out` + layer `sold out cross`
 
@@ -14,3 +14,7 @@
 **Amended a third time 2026-11-15 (Gio: the pink X "non mi convince"; "rimetti la X bianca e all'immagine togli la saturazione… multiply sullo sfondo. Tutto con CSS").** Current state, replacing the two amendments above: the cross is 1px `icon/strong-invert` (white), no shadow; the image under it gets `filter: grayscale(1)` and `mix-blend-mode: multiply`, and its box drops its fill so the image multiplies with the page background. CSS only (`:has(> .zz-sold-out)`), so the live JS that adds the cross also applies the treatment. Figma shows the white cross only: an image fill's saturation and a layer's blend mode can't follow a boolean (it would need a variant of `product image`). Also: the player's "Add to bag" reads "Sold out", disabled, for a sold copy, even after moving to a page where that copy is not listed (the status travels with the sample button). On hover (pointer devices) the saturation comes back; the multiply stays.
 
 **Amended a fourth time 2026-11-15 (Gio).** On hover the image comes back fully: colour and normal blending (no multiply). Over the cross, centred, an inline `alert` "SOLD OUT" (Figma: `product image` → `sold out label`, visibility bound to the same `sold out` boolean; code: `Alert layout=inline` + `.zz-sold-out-label`, aria-hidden). Reusing the alert keeps the bag's SOLD OUT look (pink box, `text/on-alert`); no new style.
+
+**Amended a fifth time 2026-11-15 (Gio: "solo scritta bianca… senza nessun riquadro").** The "SOLD OUT" over the cross is plain text: body/small, `text/strong-invert` (white), centred, no alert box. Figma: `sold out label` is now a text layer (style body/small), not an `alert` instance.
+
+**Amended a sixth time 2026-11-15 (Gio: "togli la X bianca, basta la scritta sold out in bianco").** No cross any more. **Current state, which replaces everything above about the look:** every image of a sold or traded copy is desaturated (`grayscale(1)`) and multiplied on the page background (the box drops its fill), back to normal on hover; "SOLD OUT" is centred over it, body/small, `text/strong-invert`, no box, aria-hidden. Figma: `product image` boolean `sold out` drives only the `sold out label` text layer (the vector is deleted). Code: internal `SoldOutLabel`, `.zz-sold-out-label`, site.js `syncSoldLabels`. The Rule above holds with "the cross" read as "the sold-out look".
