@@ -17,6 +17,7 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 
 - **Player track number.** Figma shows "1" next to the title and "1 of 3" in the controls; code maps the first to the track position on the record (A, B) — to confirm.
 - **ProductCard link style.** Cover and record title link to the product page ([0040](decisions/0040-card-title-links-to-pdp.md)); not drawn in Figma: hover / focus of the cover and of inline links (today: underline on hover, code only) to design.
+- **ProductCard hover ([0088](decisions/0088-product-card-hover.md)).** Padding stays as it is (Gio): the tint is flush with the text and the Add button. Not drawn in Figma: the sold-out cover back to normal on card hover (blend/saturation can't follow a variant). The whole card darkens but only cover, title, tags and buttons are clickable.
 - **ProductCard "Add" (mobile).** Button small = 32px: passes WCAG 2.5.8 (24) but under the 44px touch recommendation (2.5.5).
 - **"More for sale" content.** PDP `RelatedProducts` shows up to 3 other available products of the same section, most shared styles first (`apps/storefront/build.js` → `relatedTo`). Placeholder logic until the backend recommends.
 - **PLP filters (0028).** Working since 2026-11-10. Not designed: "Clear filters", the empty result (code: "No records match these filters.", copy by Claude), the loading of many options (a long Genre list has no "show more"). The Tags block appears as soon as a listing has one of Gio's tags (0031). Figma `filter` still has the unused `content=tag` variant.

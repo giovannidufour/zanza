@@ -617,6 +617,14 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
   align-items: start;
   color: var(--text-strong);   /* Figma: text fills unbound #000 → text/strong (open.md) */
 }
+/* Hover (Figma `product card` state=hover, decision 0088): the whole card takes surface/hover. Pointer devices only,
+   so a tap on touch does not leave the card tinted. No padding change: the tint is the card box as it is.
+   A sold-out cover (0086) goes back to normal on the same card hover (rule in the Sold out block above). */
+.zz-product-card[data-state="hover"] { background: var(--surface-hover); }
+.zz-product-card[data-state="hover"] > .zz-product-card__image:has(> .zz-sold-out-label) > img { filter: none; mix-blend-mode: normal; }
+@media (hover: hover) {
+  .zz-product-card:hover { background: var(--surface-hover); }
+}
 /* ── Sold out (Figma: `product image` boolean `sold out`, decision 0086) ─────────────────────────────────
    The image of a sold copy (ProductCard, BagItem, Gallery item): no saturation, multiplied on the page background
    (the box drops its own fill so the image multiplies with what is behind the component); normal on hover. */
@@ -626,7 +634,9 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
   mix-blend-mode: multiply;
 }
 @media (hover: hover) {
-  :is(.zz-product-card__image, .zz-bag-item__image, .zz-gallery__item):has(> .zz-sold-out-label):hover > img { filter: none; mix-blend-mode: normal; }
+  :is(.zz-bag-item__image, .zz-gallery__item):has(> .zz-sold-out-label):hover > img { filter: none; mix-blend-mode: normal; }
+  /* ProductCard: the image comes back when the pointer is anywhere on the card, together with the card hover (0088) */
+  .zz-product-card:hover > .zz-product-card__image:has(> .zz-sold-out-label) > img { filter: none; mix-blend-mode: normal; }
 }
 /* "SOLD OUT" centred over the image: body/small in text/strong-invert, no box (Figma `product image` → `sold out label`) */
 .zz-sold-out-label {
@@ -1380,7 +1390,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-chosen-release { border: 1px solid var(--border-divider-strong); }
 .zz-chosen-release__link { color: inherit; text-decoration: underline; align-self: flex-start; }
 .zz-chosen-release__change { flex: none; background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
-/* Memo item (Figma BACKEND → Memo › `memo item`, decision 0087) */
+/* Memo item (Figma BACKEND → Memo › `memo item`, decision 0088) */
 .zz-memo-item { display: flex; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
 .zz-memo-item__text { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
 .zz-memo-item__text > p { margin: 0; overflow-wrap: anywhere; }
