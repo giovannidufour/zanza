@@ -9,7 +9,7 @@ One line of the bag: one copy (copies are unique, so there is no quantity: Remov
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `device` | `"desktop" \| "mobile"` |  | Omitted → responsive (breakpoint `--mobile` from tokens.json): desktop type = ProductCard desktop, mobile = ProductCard mobile. |
-| `status` | `"available" \| "sold" \| "reserved" \| "unavailable"` | `available` | Figma `status`. sold: name plain, "SOLD OUT" in an inline Alert (alert box, decision 0078) beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). Samples stay. sold also draws the sold-out cross over the cover (decision 0086). `unavailable` is the pre-0064 name of reserved. |
+| `status` | `"available" \| "sold" \| "reserved" \| "unavailable"` | `available` | Figma `status`. sold: name plain, "SOLD OUT" in an inline Alert (alert box, decision 0078) beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). Samples stay. sold also shows the cover greyscale with "SOLD OUT" over it (decision 0086). `unavailable` is the pre-0064 name of reserved. |
 | `notice` | `ReactNode` |  | The word beside the struck price of a sold / reserved line. @default "SOLD OUT" / "RESERVED" |
 | `image` | `ProductCardImage` |  | Figma `cover`: the cover image, 96 × 96. |
 | `href` | `string` |  | Product page URL: the title and the cover link to it. |

@@ -201,7 +201,7 @@ function tagLinksOf(release, url) {
   }));
   return out;
 }
-// sold out = sold (sale) or traded (trade): the copy is gone for good (decision 0058; the cross of 0086)
+// sold out = sold (sale) or traded (trade): the copy is gone for good (decision 0058; the sold-out look of 0086)
 const isSoldOut = (listing) => listing.status === 'sold' || listing.status === 'traded';
 const TRADE_CARD_LABEL = { available: 'Make an offer', reserved: 'Reserved', traded: 'Traded' };
 // Figma labels the card samples 1, 2…; the accessible name keeps the product and the sample title.
@@ -213,7 +213,7 @@ function ProductCardFor({ product, url, headingLevel }) {
     'data-listing-section': listing.section,
     href: productHref(product, url),
     image: release.cover ? { src: url(release.cover), alt: '' } : null,
-    soldOut: isSoldOut(listing),   // the sold-out cross over the cover (decision 0086); site.js keeps it live
+    soldOut: isSoldOut(listing),   // greyscale cover + "SOLD OUT" over it (decision 0086); site.js keeps it live
     title: productNameLinked(product, url, productHref(product, url)),
     headingLevel,
     releaseInfo: releaseInfoLinked(release, url),
