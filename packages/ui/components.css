@@ -305,7 +305,7 @@ a.zz-tab {
   flex-direction: row;
   gap: 8px;
 }
-.zz-header__leading { align-items: flex-start; }
+.zz-header__leading { align-items: flex-start; min-height: 46px; }   /* Figma: min height = store name 38 + 8, so without the logo (0094) the name keeps 8px above the bottom rule (Gio, 2026-11-15) */
 .zz-header__trailing { align-items: center; }
 .zz-header__tabs { display: flex; }
 
@@ -313,7 +313,16 @@ a.zz-tab {
 .zz-header[data-device="mobile"] .zz-header__logo { width: 48px; height: 48px; }
 /* Figma `header` boolean `logo` (default on). The storefront turns it off when the row cannot hold everything
    (apps/storefront/scripts/site.js → fitHeaderLogo): the store name always stays. */
+.zz-header[data-logo="inside"] .zz-header__logo,
 .zz-header[data-logo="hidden"] .zz-header__logo { display: none; }
+/* …and it moves inside the store name (Figma `store name` logo=true): logo 36x36 against the left border,
+   padding 0 8 0 0, gap 8 → still 38px tall like the plain name. */
+.zz-header__name-logo { display: none; flex: none; width: 36px; height: 36px; overflow: hidden; }
+.zz-header__name-logo > img,
+.zz-header__name-logo > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
+.zz-header[data-logo="inside"] .zz-header__name-logo { display: block; }
+.zz-header[data-logo="inside"] .zz-header__name { padding: 0 8px 0 0; }
+/* data-logo="hidden": not even the small one fits (e.g. 320px): only the name */
 .zz-header__logo > img,
 .zz-header__logo > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
 

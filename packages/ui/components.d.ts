@@ -32,7 +32,7 @@ export declare function Button(props: ButtonProps): JSX.Element;
 export interface HeaderProps extends HTMLAttributes<HTMLElement> {
   /** Which Figma variant to render. Omitted → responsive: one markup, CSS switches menu/tabs/logo size (breakpoint `--mobile` from tokens.json, <768px placeholder). */
   device?: "desktop" | "mobile";
-  /** Logo image (<img> or <svg>). 64×64 on desktop, 48×48 on mobile. Figma: `image 2`. */
+  /** Logo image (<img> or <svg>). 64×64 on desktop, 48×48 on mobile. Figma: `logo` (boolean). Also rendered 36×36 inside the store name, shown only when the header sets `data-logo="inside"` (no room for the big one, decision 0094). */
   logo?: ReactNode;
   /** Store name shown in the bordered label box (from `site.json` → storeName). Figma: text layer `store name`. */
   storeName?: ReactNode;
