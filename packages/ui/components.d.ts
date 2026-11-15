@@ -797,7 +797,7 @@ export interface FooterProps extends HTMLAttributes<HTMLElement> {
   legal?: ReactNode;
   /** Accessible name of the legal links group. @default "Legal" */
   legalLabel?: string;
-  /** Figma `copyright`, e.g. "© 2026 rythem-trax". */
+  /** Figma `copyright`, e.g. "© 2026 rythem-works". */
   copyright?: ReactNode;
 }
 export declare function Footer(props: FooterProps): JSX.Element;
