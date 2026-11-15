@@ -10,7 +10,7 @@
 //         422 { error: "shipping", status } (not-served, too-heavy, not-configured) · 4xx/5xx { error }.
 // Called by the browser: deploy with Verify JWT OFF; allowed origins as trade-offer (SHOP_URL, ALLOWED_ORIGINS, pages.dev).
 // Secrets: STRIPE_SECRET_KEY (sk_test_… until launch), SHOP_URL, optional ALLOWED_ORIGINS, MEDIA_BASE_URL
-// (default https://media.rythem-works.com). SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set by Supabase.
+// (default https://media.rythem-works.com). SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and SUPABASE_ANON_KEY are set by Supabase.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import "./shipping.js";
 
@@ -77,6 +77,9 @@ Deno.serve(async (req) => {
   let b: any;
   try { b = await req.json(); } catch { return json({ error: "Bad request." }, 400); }
   const db = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), { auth: { persistSession: false } });
+  // public tables (shipping_settings, listing_availability) are read with the anon key: this project grants no table
+  // privileges to service_role by default (migration 20261112020000), only the checkout_* functions
+  const pub = createClient(env("SUPABASE_URL"), env("SUPABASE_ANON_KEY"), { auth: { persistSession: false } });
 
   // ── back from Stripe without paying ──────────────────────────────────────
   if (b.action === "cancel") {
@@ -101,7 +104,7 @@ Deno.serve(async (req) => {
   if (holdError) return json({ error: "Could not reserve the records." }, 500);
   if (!held || held.length !== ids.length) {
     // which ones are gone (sold, reserved by another checkout, no longer public): the Bag marks them
-    const { data: rows } = await db.from("listing_availability").select("id, status").in("id", ids);
+    const { data: rows } = await pub.from("listing_availability").select("id, status").in("id", ids);
     const free = new Set((rows ?? []).filter((r: { status: string }) => r.status === "available").map((r: { id: string }) => r.id));
     return json({ error: "unavailable", unavailable: ids.filter((id) => !free.has(id)) }, 409);
   }
@@ -110,7 +113,8 @@ Deno.serve(async (req) => {
   try {
     // deno-lint-ignore no-explicit-any
     const copies = held as any[];
-    const { data: settings } = await db.from("shipping_settings").select("config").single();
+    const { data: settings, error: settingsError } = await pub.from("shipping_settings").select("config").single();
+    if (settingsError) throw new Error(`shipping_settings: ${settingsError.message}`);
     const config = settings?.config;
     const subtotal = copies.reduce((sum, c) => sum + c.price_cents, 0);
 
