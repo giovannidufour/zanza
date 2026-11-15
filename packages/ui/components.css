@@ -311,6 +311,9 @@ a.zz-tab {
 
 .zz-header__logo { flex: none; width: 64px; height: 64px; overflow: hidden; }
 .zz-header[data-device="mobile"] .zz-header__logo { width: 48px; height: 48px; }
+/* Figma `header` boolean `logo` (default on). The storefront turns it off when the row cannot hold everything
+   (apps/storefront/scripts/site.js → fitHeaderLogo): the store name always stays. */
+.zz-header[data-logo="hidden"] .zz-header__logo { display: none; }
 .zz-header__logo > img,
 .zz-header__logo > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
 
