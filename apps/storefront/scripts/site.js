@@ -1207,7 +1207,8 @@
   var SVG_NS = 'http://www.w3.org/2000/svg';
   function syncSoldCross(box, sold) {
     var cross = box.querySelector(':scope > .zz-sold-out');
-    if (!sold) { if (cross) box.removeChild(cross); return; }
+    var label = box.querySelector(':scope > .zz-sold-out-label');
+    if (!sold) { if (cross) box.removeChild(cross); if (label) box.removeChild(label); return; }
     if (cross) return;
     cross = document.createElementNS(SVG_NS, 'svg');
     cross.setAttribute('class', 'zz-sold-out');
@@ -1220,6 +1221,13 @@
     path.setAttribute('vector-effect', 'non-scaling-stroke');
     cross.appendChild(path);
     box.appendChild(cross);
+    // "SOLD OUT" over the cross: the classes of Alert layout=inline + .zz-sold-out-label
+    label = document.createElement('span');
+    label.className = 'zz-alert body-small zz-sold-out-label';
+    label.setAttribute('data-layout', 'inline');
+    label.setAttribute('aria-hidden', 'true');
+    label.textContent = 'SOLD OUT';
+    box.appendChild(label);
   }
   var SOLD_IMAGE_BOXES = '.zz-product-card__image, .zz-bag-item__image, .zz-gallery__item';
   function syncSoldCrosses(el, status) {
