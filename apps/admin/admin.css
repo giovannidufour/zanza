@@ -78,7 +78,7 @@ h1, h2, p { margin: 0; }
   .admin-page--edit { grid-template-rows: none; }
   .admin-page--edit > .admin-main, .admin-page--edit > .admin-side { overflow: visible; margin: 0; padding: 0; }
   .admin-row { grid-template-columns: minmax(0, 1fr); }
-  .admin-row > * { grid-column: auto; }
+  .admin-row > *, .admin-row > .row-start { grid-column: 1 / -1; }   /* .row-start (1 / span 4) would add implicit columns to the 1-column grid and squeeze Label next to Country */
 }
 /* Figma `uploaded list` in Samples overview (2095:19476): rows with a title field, gap 16 */
 .admin-samples { gap: 16px; }
