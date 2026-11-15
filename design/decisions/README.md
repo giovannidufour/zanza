@@ -99,8 +99,6 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0073](0073-genre-tag-chip-shows-the-value.md) | PLP genre / tag chip shows only the value; the type stays in the remove button's accessible name | accepted |
 | [0074](0074-bag-item-gap-matches-product-card.md) | Bag item row gap = ProductCard column gap (`gutter/small`), in Figma and code | accepted |
 | [0075](0075-ship-to-lists-served-countries.md) | Bag "Ship to" lists only the countries in a zone with rates, derived from the shipping config | accepted |
-<<<<<<< HEAD
-=======
 | [0076](0076-footer.md) | Site footer: newsletter slot (off until Privacy names Buttondown), the mobile menu's links, Instagram/Discogs, legal + copyright; same tokens as the header | accepted |
 | [0077](0077-blocking-message-in-a-red-box.md) | A message that blocks an action or changes the order (minimum, sold out lines) sits in a red box (`alert`); new tokens `red` + `surface/alert` | accepted |
 | [0078](0078-unavailable-name-in-red.md) | Bag: SOLD OUT / RESERVED in an inline red `alert`; record name plain, no strikethrough | accepted |
@@ -128,4 +126,3 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0101](0101-customer-account.md) | Customer account = the verified email: sign in with a 6-digit code, orders found by email (guest ones too), only emails with orders; /account/, /account/order/, /account/details/ | accepted |
 | [0102](0102-trade-switch.md) | Trade switch (admin → Settings, `shop_settings.trade_enabled`): off = no trade page, link, record, legal passage or mention; the server refuses offers | accepted |
 | [0103](0103-newsletter-own-double-opt-in.md) | Newsletter: our own double opt-in (Supabase `newsletter` + Resend + Buttondown API), signup answers in place, one click in the email confirms on /newsletter/confirm/; Buttondown's form stays as fallback | accepted |
->>>>>>> origin/main

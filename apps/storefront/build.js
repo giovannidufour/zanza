@@ -254,11 +254,8 @@ write('search/index.html', page({ title: 'Search', body: renderToStaticMarkup(Re
 // added still shows, as unavailable); scripts/site.js shows the visitor's own lines from localStorage
 const bagProducts = products.filter(p => p.listing.section === 'sale');
 write('bag/index.html', page({ title: Bag.title, body: renderToStaticMarkup(React.createElement(Bag.Bag, { products: bagProducts, site, url, shipping, countries: shippingData.countries(shipping) })) }));
-<<<<<<< HEAD
-=======
 // after a paid Stripe Checkout (migration 0021, Figma page `Checkout`): site.js takes the paid records out of the bag
 write('checkout/thanks/index.html', page({ title: Checkout.title, body: renderToStaticMarkup(React.createElement(Checkout.Thanks, { site, url })) }));
->>>>>>> origin/main
 
 // Customer account (decision 0101, Figma page `Account`): sign in with an email code, then the orders bought with that
 // email (scripts/account.js reads them from Supabase). Static shells: nothing personal is in the HTML.
