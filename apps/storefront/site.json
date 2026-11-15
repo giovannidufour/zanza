@@ -70,7 +70,7 @@
   "comingSoon": {
     "note": "Temporary page of rythem-works.com while the shop is on staging (build-coming-soon.js, Figma page Coming soon, decision 0096). text = Figma `coming soon` text property. email = the Contact link (mailto).",
     "title": "Opening soon",
-    "text": "Reggae and dancehall records from my crates, for sale and for trade. The shop opens soon: leave your email and you’ll hear first.",
+    "text": "Reggae and dancehall records from my crates. The shop opens soon: leave your email and you’ll hear first.",
     "email": "gio@rythem-works.com"
   },
   "checkout": {

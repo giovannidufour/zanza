@@ -316,6 +316,7 @@
   // ── Create / edit listing ─────────────────────────────────────────────────
   function ListingForm(props) {
     var mobile = useIsMobile();
+    var tradeOn = useTradeEnabled();   // trade off (Settings, decision 0102): "For trade" only for a listing that already is one
     var st = useState(props.initial), f = st[0], setF = st[1];
     var er = useState({}), errors = er[0], setErrors = er[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
@@ -575,7 +576,7 @@
           f.labelSpelled ? h(Z.Input, Object.assign({ className: 'span-4', id: 'label-credit', label: 'Label spelled on record' }, bind('labelCredit'))) : null),
         h('div', { className: 'admin-row' },
           h(Z.Input, Object.assign({ className: 'span-2', id: 'format', label: 'Format', variant: 'select', placeholder: '' }, bind('format')), opts(FORMATS)),
-          h(Z.Input, Object.assign({ className: 'span-2', id: 'section', label: 'Sale type', variant: 'select' }, bind('section')), opts([['sale', 'For sale'], ['trade', 'For trade']])),
+          h(Z.Input, Object.assign({ className: 'span-2', id: 'section', label: 'Sale type', variant: 'select' }, bind('section')), opts([['sale', 'For sale']].concat(tradeOn !== false || f.section === 'trade' ? [['trade', 'For trade']] : []))),
           h(Z.Input, Object.assign({ className: 'span-2', id: 'price', label: 'Price', suffix: '€', inputMode: 'decimal', optional: f.section === 'trade' }, bind('price'))))),
       h(Z.Divider),
 
@@ -1415,6 +1416,67 @@
       h('div', null, h(Z.Button, { hierarchy: 'primary', type: 'submit', disabled: state && state.sending }, 'Send link')));
   }
 
+  // ── Settings ──────────────────────────────────────────────────────────────
+  /* Figma BACKEND → Settings (2324:1064, decision 0102): switches for the whole shop. Trade = public.shop_settings
+     (migration 0023), the single source of truth: off = the shop shows no trace of trade (pages, links, records,
+     legal passages) and the server refuses offers. Save = admin_set_trade_enabled, which also rebuilds the shop.
+     Route: #settings */
+  var tradeSetting = null;   // one read per admin session, shared by Settings and the listing form
+  function loadTradeEnabled(force) {
+    if (!tradeSetting || force) {
+      tradeSetting = sb.from('shop_settings').select('trade_enabled').maybeSingle().then(function (res) {
+        if (res.error) throw res.error;
+        return !res.data || res.data.trade_enabled !== false;
+      });
+      tradeSetting.catch(function () { tradeSetting = null; });
+    }
+    return tradeSetting;
+  }
+  // the listing form: true / false, or null while unknown (then For trade stays offered, as before)
+  function useTradeEnabled() {
+    var st = useState(null), on = st[0], setOn = st[1];
+    useEffect(function () { loadTradeEnabled().then(setOn, function () { setOn(null); }); }, []);
+    return on;
+  }
+
+  function Settings() {
+    var ss = useState(null), saved = ss[0], setSaved = ss[1];     // what the database says
+    var ts = useState(null), trade = ts[0], setTrade = ts[1];     // the checkbox
+    var er = useState(null), error = er[0], setError = er[1];
+    var ps = useState(null), problem = ps[0], setProblem = ps[1];
+    var bs = useState(false), busy = bs[0], setBusy = bs[1];
+
+    useEffect(function () {
+      loadTradeEnabled(true).then(function (on) { setSaved(on); setTrade(on); }, function (e) { setError(e.message || String(e)); });
+    }, []);
+    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' },
+      'Could not load the settings: ' + error + '. Is migration 0023 (trade switch) applied?');
+    if (saved === null) return h('p', { className: 'body-medium' }, 'Loading…');
+
+    async function save() {
+      if (trade === saved) { toast('Nothing to save.'); return; }
+      setBusy(true);
+      var res = await sb.rpc('admin_set_trade_enabled', { p_enabled: trade });
+      setBusy(false);
+      if (res.error) { setProblem('Nothing saved: ' + res.error.message); return; }
+      setProblem(null); setSaved(trade); tradeSetting = Promise.resolve(trade);
+      toast(trade ? 'Trade is on. The shop updates in about 2 minutes.' : 'Trade is off. The shop updates in about 2 minutes.');
+    }
+
+    return h('div', { className: 'admin-section admin-shipping admin-settings' },
+      h('h1', { className: 'label-extra-large' }, 'Settings'),
+      h('div', { className: 'admin-toolbar' },
+        h('p', { className: 'body-small admin-shipping__intro' }, 'Switches for the whole shop.'),
+        h(Z.Button, { hierarchy: 'secondary', 'aria-busy': busy || undefined, onClick: busy ? undefined : save }, 'Save')),
+      problem ? h('p', { className: 'body-small admin-status--error', role: 'alert' }, problem) : null,
+      // Figma BACKEND → Settings → `trade setting` (2324:1066)
+      h('section', { className: 'admin-shipping__section', 'aria-labelledby': 'settings-trade' },
+        h('h2', { id: 'settings-trade', className: 'label-medium' }, 'Trade'),
+        h('p', { className: 'body-small', id: 'settings-trade-help' }, 'Off: the shop shows no trace of trade. The For trade section and its records, the offer form, How trading works and every mention (menus, footer, home, legal pages) disappear, and the server refuses offers. Trade listings stay here in the admin as they are: switch trade on again and they are back. Saving rebuilds the shop, live in about 2 minutes.'),
+        h('div', null, h(Z.Checkbox, { label: 'Show trade on the shop', checked: trade, 'aria-describedby': 'settings-trade-help',
+          onChange: function (e) { setTrade(e.target.checked); setProblem(null); } }))));
+  }
+
   // ── Shipping ──────────────────────────────────────────────────────────────
   /* Figma BACKEND → Shipping (2201:4782, 2026-11-12, decision 0057): formats (weight per record), packaging, zones,
      rates, and "Check an order" with the same maths as the shop (packages/shipping/shipping.js). One Save for the whole
@@ -1925,6 +1987,7 @@
     else if (/^#attributes\/[a-z]+\/[^/]+$/.test(hash)) body = h(AttributeForm, { key: hash + route.visit, kind: hash.split('/')[1], id: hash.split('/')[2] });
     else if (/^#attributes/.test(hash)) body = h(Attributes, { key: 'attributes', kind: hash.split('/')[1] || 'artist' });
     else if (hash === '#shipping') body = h(Shipping, { key: 'shipping-' + route.visit });
+    else if (hash === '#settings') body = h(Settings, { key: 'settings-' + route.visit });
     else if (hash === '#orders') body = h(Orders, { key: 'orders-' + route.visit });
     else if (/^#orders\/[^/]+$/.test(hash)) body = h(OrderDetail, { key: hash + route.visit, id: hash.split('/')[1] });
     else if (hash === '#memo') body = h(Memo, { key: 'memo-' + route.visit });
@@ -1939,12 +2002,13 @@
   /* Admin navigation (Figma page `admin`, decision 0089): AdminBar (desktop buttons / mobile Menu · title · Create)
      + the mobile menu, a full-screen native modal <dialog> with a MenuLayer, like the shop's (0060): Esc, × or
      following a link closes it, focus goes back to the Menu button. */
-  var SECTIONS = [['listings', 'Listings', '#'], ['orders', 'Orders', '#orders'], ['memo', 'Memo', '#memo'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping']];
+  var SECTIONS = [['listings', 'Listings', '#'], ['orders', 'Orders', '#orders'], ['memo', 'Memo', '#memo'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings']];
   function sectionOf(hash) {
     if (/^#orders/.test(hash)) return 'orders';
     if (/^#memo/.test(hash)) return 'memo';
     if (/^#attributes/.test(hash)) return 'attributes';
     if (hash === '#shipping') return 'shipping';
+    if (hash === '#settings') return 'settings';
     if (/^#new/.test(hash)) return null;   // Create: no section is current (the Create button is the way in)
     return 'listings';                        // list and #edit-<id>
   }

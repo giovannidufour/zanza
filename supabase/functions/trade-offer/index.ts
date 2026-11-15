@@ -43,6 +43,20 @@ function allowedOrigin(origin: string | null) {
   return null;
 }
 
+// the trade switch (admin → Settings, migration 0023, decision 0102): while trade is off this function refuses every
+// request, with an answer that does not name trade. No shop_settings table yet (migration not applied) = on.
+// A database error = off: better no offer than one the shop no longer shows.
+async function tradeEnabled() {
+  const key = env("SUPABASE_ANON_KEY");
+  const r = await fetch(`${env("SUPABASE_URL")}/rest/v1/shop_settings?select=trade_enabled`, { headers: { apikey: key, Authorization: `Bearer ${key}` } })
+    .catch(() => null);
+  if (!r) return false;
+  if (r.status === 404) return true;
+  if (!r.ok) return false;
+  const rows = await r.json().catch(() => []);
+  return !rows[0] || rows[0].trade_enabled !== false;
+}
+
 const clip = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 type Rec = { record: string; media: string; sleeve: string; release: string };
 
@@ -57,6 +71,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: origin ? 204 : 403, headers: cors });
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
   if (!origin) return json({ error: "Not allowed." }, 403);
+  if (!(await tradeEnabled())) return json({ error: "Not found." }, 404);
   for (const k of ["RESEND_API_KEY", "MAIL_FROM", "SHOP_URL", "OFFER_TO"]) if (!env(k)) return json({ error: "Offers not configured." }, 500);
   if (Number(req.headers.get("content-length") || 0) > 20000) return json({ error: "Too long." }, 413);
 

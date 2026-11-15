@@ -140,6 +140,27 @@ async function fromSupabase(env, site, fetchImpl = fetch) {
   return rows.sort(byListingOrder).map((row) => toProduct(row, mediaUrl));
 }
 
+// shop-wide switches (migration 0023, decision 0102): shop_settings in the database is the single source of truth.
+// tradeEnabled = false → the build leaves out every trade page, link, record and mention. Local JSON: on, unless
+// `--trade=off` (to try the shop without trade). A database without the table yet (migration not applied) = on, as before.
+async function settingsFromSupabase(env, fetchImpl = fetch) {
+  const res = await fetchImpl(`${env.SUPABASE_URL.replace(/\/$/, '')}/rest/v1/shop_settings?select=trade_enabled`, {
+    headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, Accept: 'application/json' }
+  });
+  if (res.status === 404) return { tradeEnabled: true };   // PGRST205: no shop_settings table yet
+  if (!res.ok) throw new Error(`Supabase shop_settings: ${res.status} ${await res.text()}`);
+  const row = (await res.json())[0];
+  return { tradeEnabled: !row || row.trade_enabled !== false };
+}
+
+async function loadSettings({ source, trade } = {}) {
+  const env = readEnv();
+  const fromDb = source === 'supabase' ? await settingsFromSupabase(env) : { tradeEnabled: true };
+  if (trade === 'off') fromDb.tradeEnabled = false;
+  if (trade === 'on') fromDb.tradeEnabled = true;
+  return fromDb;
+}
+
 async function loadProducts(site, { source } = {}) {
   const env = readEnv();
   const useDb = source !== 'json' && env.SUPABASE_URL && env.SUPABASE_PUBLISHABLE_KEY;
@@ -148,4 +169,4 @@ async function loadProducts(site, { source } = {}) {
   return { products, source: useDb ? 'supabase' : 'json' };
 }
 
-module.exports = { loadProducts, readEnv, effectiveStatus, toProduct, nameOf, byListingOrder, mediaUrlFor, fromSupabase };
+module.exports = { loadProducts, loadSettings, settingsFromSupabase, readEnv, effectiveStatus, toProduct, nameOf, byListingOrder, mediaUrlFor, fromSupabase };

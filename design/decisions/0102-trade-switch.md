@@ -1,0 +1,14 @@
+# 0102 — Trade switch: off means no trace of trade anywhere
+
+`2026-11-15` · accepted · Figma: page `Settings` (BACKEND, after Orders): component `trade setting`, screens Settings - desktop · trade on / off, note "trade switch"
+
+**Context.** Gio (2026-11-15): "let me switch the trade service on or off from the admin. If I switch it off, trade appears nowhere, in no way, in no form, not even mentioned."
+**Decision.**
+- One setting in the database, the single source of truth: `shop_settings.trade_enabled` (migration 0023). Admin page `#settings` (new section "Settings" in the bar and the menu): heading Trade, help text, Checkbox "Show trade on the shop", the page's Save (as Shipping). Save = `admin_set_trade_enabled`, which requests a rebuild (site_build): the shop follows in about 2 minutes.
+- Static pages: the build reads the setting (`data/products.js → loadSettings`) and, while off, leaves out every trade page and link: `/trade/`, the offer pages, `/how-trading-works/`, the For trade tab, menu items and footer links, the trade records (home, catalog, PDP, related), and the legal passages marked `{{#trade}}…{{/trade}}` (numbered headings renumbered). A Cloudflare Pages deploy replaces the whole site, so the pages of the previous build are gone with it.
+- Server: while off, RLS hides trade listings from the public API (`listings_read`; `listing_availability` follows), and `trade-offer` and `discogs-search` answer 404 "Not found." without naming trade. A missing `shop_settings` table = on, so the code works before the migration is applied.
+- Trade listings are not touched: switching back on restores them as they were. In the admin they stay visible; the listing form offers For trade only to a listing that already is one.
+- Header with trade off: the tabs keep only For sale (still the desktop way to `/sale/`).
+**Rule.** Any new text, page, link, email or meta that is about trade must follow `site.tradeEnabled` (pages: `tradeOn(site)` in `shell.js`; legal Markdown: `{{#trade}}…{{/trade}}`; functions: `shop_settings`). Never a trade mention that is always on.
+**Where.** `supabase/migrations/20261115040000_trade_switch.sql`, `apps/admin/admin.js` (Settings, useTradeEnabled), `apps/storefront/data/products.js`, `build.js`, `pages/shell.js`, `pages/legal.js`, `content/legal/privacy.md`, `terms.md`, `supabase/functions/trade-offer`, `discogs-search`.
+**Open.** In the window between Save and the end of the rebuild (~2 min) the old pages still show trade, but offers are already refused and the live status finds no trade copy. Code identifiers (CSS classes `trade-*` reused by About and the legal pages, `css/trade.css`, comments in `js/site.js`) are not text a visitor sees; renaming them is a separate cleanup. The coming-soon page cannot read the database (it builds without Supabase): its text no longer names trade.

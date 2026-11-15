@@ -95,8 +95,10 @@ let liveMeta = '';
 
 // the site footer (decision 0076): the same on every shop page, the last child of .zz-page (after <main>), so the soft
 // navigation in site.js swaps it with the page. Rendered once here instead of in every page module.
-const footerHtml = renderToStaticMarkup(React.createElement(require('./pages/shell.js').SiteFooter, { site, url }));
-const withFooter = (body) => (body.startsWith('<div class="zz-page"') && body.endsWith('</div>') ? body.slice(0, -6) + footerHtml + '</div>' : body);
+// Rendered on first use, once the settings are loaded (the footer follows the trade switch).
+let footerCache;
+const footerHtml = () => footerCache || (footerCache = renderToStaticMarkup(React.createElement(require('./pages/shell.js').SiteFooter, { site, url })));
+const withFooter = (body) => (body.startsWith('<div class="zz-page"') && body.endsWith('</div>') ? body.slice(0, -6) + footerHtml() + '</div>' : body);
 
 // Favicon = the logo illustration (Gio 2026-11-15, decision 0097): files in public/, served from /assets/
 const faviconLinks = [
@@ -147,13 +149,20 @@ function write(rel, content) {
 }
 
 // products, in listing order
-const { loadProducts, readEnv } = require('./data/products.js');
+const { loadProducts, loadSettings, readEnv } = require('./data/products.js');
 const shippingData = require('./data/shipping.js');
 const sourceArg = (process.argv.find(a => a.startsWith('--source=')) || '').split('=')[1];
+const tradeArg = (process.argv.find(a => a.startsWith('--trade=')) || '').split('=')[1];   // on | off: try the shop either way
 
 async function main() {
-const { products, source } = await loadProducts(site, { source: sourceArg });
-console.log(`products: ${products.length} from ${source}`);
+const loaded = await loadProducts(site, { source: sourceArg });
+const source = loaded.source;
+// the trade switch (admin → Settings, migration 0023, decision 0102): off = no trade anywhere. The pages read
+// site.tradeEnabled; the trade copies leave the build here (Supabase already hides them while trade is off: RLS)
+const settings = await loadSettings({ source, trade: tradeArg });
+site.tradeEnabled = settings.tradeEnabled;
+const products = site.tradeEnabled ? loaded.products : loaded.products.filter(p => p.listing.section !== 'trade');
+console.log(`products: ${products.length} from ${source} · trade ${site.tradeEnabled ? 'on' : 'off'}`);
 if (source === 'supabase') {
   const env = readEnv();
   liveMeta = `<meta name="zz-supabase-url" content="${escape(env.SUPABASE_URL.replace(/\/$/, ''))}">\n<meta name="zz-supabase-key" content="${escape(env.SUPABASE_PUBLISHABLE_KEY)}">\n`;
@@ -208,7 +217,7 @@ write('sale/index.html', page({ title: Plp.title('sale'), body: renderToStaticMa
 // For trade (Figma page `Trade`, decision 0068): the trade PLP, one offer page per trade listing, How trading works, About.
 // Traded copies stay on the list like sold ones (behind "Show sold out").
 const forTrade = products.filter(p => p.listing.section === 'trade' && ['available', 'reserved', 'traded'].includes(p.listing.status));
-write('trade/index.html', page({ title: Plp.title('trade'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'trade', products: forTrade, allProducts: products, site, url })) }));
+if (site.tradeEnabled) write('trade/index.html', page({ title: Plp.title('trade'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'trade', products: forTrade, allProducts: products, site, url })) }));
 // Catalog (decision 0085, Gio 2026-11-15): every record of both sections mixed, newest first, with the PLP filters.
 // Linked only from the home's "See all" under Just in (no tab, no menu item).
 const catalog = products.filter(p => forSale.includes(p) || forTrade.includes(p));
@@ -216,7 +225,9 @@ write('catalog/index.html', page({ title: Plp.title('catalog'), body: renderToSt
 for (const product of forTrade.filter(p => p.listing.status === 'available')) {
   write(`products/${product.listing.slug}/offer/index.html`, page({ title: `Make an offer · ${title(product)}`, body: renderToStaticMarkup(React.createElement(Trade.Offer, { product, site, url })) }));
 }
-write('how-trading-works/index.html', page({ title: 'How trading works', body: renderToStaticMarkup(React.createElement(Trade.HowTrading, { site, url })) }));
+// trade off: no /trade/, no offer pages (forTrade is empty), no How trading works. A Pages deploy replaces the whole
+// site, so the pages of the previous build are gone too.
+if (site.tradeEnabled) write('how-trading-works/index.html', page({ title: 'How trading works', body: renderToStaticMarkup(React.createElement(Trade.HowTrading, { site, url })) }));
 write('about/index.html', page({ title: 'About', body: renderToStaticMarkup(React.createElement(Trade.About, { site, url })) }));
 
 // Search results (Figma page `Search`, 2026-11-12): /search/?q=… is a PLP of the same copies, matched in the browser
@@ -241,11 +252,11 @@ for (const p of Legal.PAGES) {
 // Contact (decision 0093): email + form, in place of an Impressum (Gio sells privately)
 write('contact/index.html', page({ title: 'Contact', body: renderToStaticMarkup(React.createElement(ContactPage.Contact, { site, url })) }));
 
-// Home (Figma page `Home`, decision 0085): Just in, For trade, Genres, About
+// Home (Figma page `Home`, decision 0085): Just in, Genres, About
 write('index.html', page({ title: Home.title, body: renderToStaticMarkup(React.createElement(Home.Home, { products, site, url })) }));
 // Cloudflare Pages response headers (target pages only). Until launch the shop lives on staging.rythem-works.com
 // (behind Cloudflare Access) and store-front-6fx.pages.dev: neither may be indexed (site.json → noindex).
 if (targetArg === 'pages' && site.noindex) write('_headers', '/*\n  X-Robots-Tag: noindex\n');
-console.log(`done: ${products.length} product page(s), ${forSale.length} for sale, ${forTrade.length} for trade`);
+console.log(`done: ${products.length} product page(s), ${forSale.length} for sale` + (site.tradeEnabled ? `, ${forTrade.length} for trade` : ', trade off'));
 }
 main().catch((err) => { console.error(err.message || err); process.exit(1); });
