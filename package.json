@@ -1,16 +1,18 @@
 {
   "name": "zanza",
   "private": true,
-  "description": "rythem-trax — vinyl record store. packages/ui = design system (tokens + components), apps/storefront = the site.",
+  "description": "rythem-works \u2014 vinyl record store. packages/ui = design system (tokens + components), apps/storefront = the site.",
   "scripts": {
     "build:tokens": "node packages/ui/build-tokens.js",
-    "build": "node packages/ui/build-tokens.js && node packages/ui/build-docs.js && node apps/storefront/build.js",
+    "build": "node supabase/scripts/sync-functions.js --check && node packages/ui/build-tokens.js && node packages/ui/build-docs.js && node apps/storefront/build.js",
     "build:artifact": "node packages/ui/build-docs.js && node packages/ui/build-artifact.js",
     "deploy": "node apps/storefront/deploy.js",
     "build:deploy": "npm run build && npm run deploy",
     "build:admin": "node apps/admin/build.js",
     "deploy:admin": "node apps/admin/build.js && npx --yes wrangler@3.80.0 pages deploy apps/admin/dist --project-name store-admin --branch main --commit-dirty=true",
-    "build:pages": "node packages/ui/build-tokens.js && node packages/ui/build-docs.js && node apps/storefront/build.js --target=pages --source=supabase"
+    "build:pages": "node packages/ui/build-tokens.js && node packages/ui/build-docs.js && node apps/storefront/build.js --target=pages --source=supabase",
+    "build:coming-soon": "node packages/ui/build-tokens.js && node apps/storefront/build-coming-soon.js",
+    "sync:functions": "node supabase/scripts/sync-functions.js"
   },
   "dependencies": {
     "react": "18.3.1",

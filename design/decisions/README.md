@@ -90,6 +90,7 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0064](0064-sold-line-in-the-bag.md) | A sold copy in the bag: name struck through, "SOLD OUT" beside the struck price, a note above Checkout | accepted |
 | [0065](0065-reserved-button-notify-me.md) | Reserved: Add button "(Reserved) Notify me" with an envelope; the bag line looks like a sold one | accepted |
 | [0066](0066-icons-are-non-scaling-strokes.md) | Icons are 1px strokes that keep their thickness at any size | accepted |
+| [0067](0067-text-moderate-meets-aa.md) | `text/moderate` is black at 56%: 4.5:1 or more on every ground it sits on | accepted |
 | [0068](0068-trade-is-a-conversation.md) | Trade: "not for sale, convince me"; the offer page asks for an introduction and starts a conversation, no shipping rule | accepted |
 | [0070](0070-traders-prove-their-profiles.md) | Traders give Discogs + Instagram or Facebook and prove them by sending Gio a two-word password from each; the conversation stays by email | accepted |
 | [0069](0069-which-record-searches-discogs.md) | "Which record" in the offer form searches Discogs releases while typing and accepts release links; plain text stays possible | accepted |
@@ -98,3 +99,33 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0073](0073-genre-tag-chip-shows-the-value.md) | PLP genre / tag chip shows only the value; the type stays in the remove button's accessible name | accepted |
 | [0074](0074-bag-item-gap-matches-product-card.md) | Bag item row gap = ProductCard column gap (`gutter/small`), in Figma and code | accepted |
 | [0075](0075-ship-to-lists-served-countries.md) | Bag "Ship to" lists only the countries in a zone with rates, derived from the shipping config | accepted |
+<<<<<<< HEAD
+=======
+| [0076](0076-footer.md) | Site footer: newsletter slot (off until Privacy names Buttondown), the mobile menu's links, Instagram/Discogs, legal + copyright; same tokens as the header | accepted |
+| [0077](0077-blocking-message-in-a-red-box.md) | A message that blocks an action or changes the order (minimum, sold out lines) sits in a red box (`alert`); new tokens `red` + `surface/alert` | accepted |
+| [0078](0078-unavailable-name-in-red.md) | Bag: SOLD OUT / RESERVED in an inline red `alert`; record name plain, no strikethrough | accepted |
+| [0079](0079-legal-pages.md) | Legal pages (Impressum, Privacy, Terms, Withdrawal, Shipping): one text template, text in `content/legal/*.md`, Gio's data in `site.json` → legal; Inter self-hosted | accepted |
+| [0080](0080-one-icon-per-name.md) | One icon per name: the "-ultra" drawings replaced the originals and took their names; no suffixed copies (amended: icon-bars-three, code re-aligned with Figma icons) | accepted |
+| [0081](0081-select-ring-for-keyboard-only.md) | SelectButton (Sort): the focus ring shows for keyboard focus only; after a mouse pick focus stays, the ring hides | accepted |
+| [0082](0082-year-or-decade.md) | Year field takes an exact year or a decade ("1990s"): `year` stays a number, `year_precision` = year / decade | accepted |
+| [0083](0083-view-in-store-button.md) | Admin action panel: the button that opens the live shop page reads "View in store"; "Preview" names only the in-admin shop preview | accepted |
+| [0085](0085-home-page.md) | Home page: Just in (8 newest, sale and trade mixed, Play all), Genres, About; PLP grid on desktop, Genres on top on mobile; store name lit as the current page (amended 2026-11-15) | accepted |
+| [0086](0086-sold-out-cross.md) | Sold-out images: tried cross / label / greyscale, rolled back: a sold copy's images look like an available one's (text says sold). Player Add to bag reads "Sold out" for a sold copy | accepted |
+| [0087](0087-admin-memo.md) | Admin Memo: Gio's list of records to sell later (free text or a Discogs release), mobile-first rows; Create listing from a memo fetches the release and takes it off the list | accepted |
+| [0088](0088-product-card-hover.md) | Product card hover: the whole card takes the new `surface/hover` (= black-a4); Figma `product card` state=default/hover | accepted |
+| [0089](0089-admin-mobile.md) | Admin on mobile: AdminBar + menu dialog (MenuLayer), ListingRow instead of tables, bulk bar and form actions (ActionBar) sticky at the bottom, Shipping fields stacked, 44px tap areas on touch | accepted |
+| [0090](0090-photo-of-the-label.md) | Memo: "Photo of the label" reads the label with a free vision model (Cloudflare Workers AI), the text lands in Record and searches Discogs by barcode, cat. no., then artist + title; the photo is never stored | accepted |
+| [0091](0091-progress-bar.md) | ProgressBar (4px, black on surface/subtle); Memo photo shows an estimated progress that eases and never claims 100 % early | accepted |
+| [0092](0092-photo-in-create.md) | Create listing: Photo of the label beside Fetch Discogs; a release picked from the photo goes into Discogs match and is fetched | accepted |
+| [0093](0093-private-seller-slim-legal.md) | Private seller: no Impressum or Withdrawal, /contact/ = email + form, one-screen Privacy, Terms = a few lines on private sale | accepted |
+| [0094](0094-header-logo-only-when-it-fits.md) | Header: the logo shows only when menu + logo + store name + actions fit in the row (measured, Figma boolean `logo`); the store name always stays | accepted |
+| [0095](0095-mobile-breakpoint-960.md) | Mobile layout below 960px (was 768): the desktop header needs ~910px even without the logo, so 768–910px scrolled sideways | proposed |
+| [0096](0096-coming-soon-page.md) | Coming-soon page on rythem-works.com (store name, Opening soon, text, newsletter, Contact/Privacy/Terms) while the shop is on staging behind a login; noindex everywhere until launch | accepted |
+| [0097](0097-favicon-logo.md) | Favicon = the logo illustration on shop, admin and coming-soon; SVG inverts in dark mode, white square only for the iOS icon | accepted |
+| [0098](0098-checkout-thanks-and-returns.md) | Checkout: /checkout/thanks/ (layout of the empty bag, Figma `order thanks`, no order details: they are in the email); cancel and failures are toasts in the Bag | accepted |
+| [0099](0099-admin-page-ground-cream.md) | Every admin page on cream: primitive `scotch-mist` #fdfbdd, semantic `surface/page` (frontend accent, backend scotch-mist) on html / screen frames | accepted |
+| [0100](0100-admin-orders-and-sell-again.md) | Admin Orders (#orders: To ship / Shipped / All; order page with Ship to, Total, Buyer, Payment; Mark as shipped + tracking) and Sell again (twin draft listing of a sold copy, same release, new SKU) | accepted |
+| [0101](0101-customer-account.md) | Customer account = the verified email: sign in with a 6-digit code, orders found by email (guest ones too), only emails with orders; /account/, /account/order/, /account/details/ | accepted |
+| [0102](0102-trade-switch.md) | Trade switch (admin → Settings, `shop_settings.trade_enabled`): off = no trade page, link, record, legal passage or mention; the server refuses offers | accepted |
+| [0103](0103-newsletter-own-double-opt-in.md) | Newsletter: our own double opt-in (Supabase `newsletter` + Resend + Buttondown API), signup answers in place, one click in the email confirms on /newsletter/confirm/; Buttondown's form stays as fallback | accepted |
+>>>>>>> origin/main

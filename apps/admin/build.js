@@ -9,7 +9,7 @@ const APP = __dirname;
 const ROOT = path.resolve(APP, '../..');
 const UI = path.join(ROOT, 'packages/ui');
 const OUT = path.join(APP, 'dist');
-const { expandMedia } = require(path.join(UI, 'media.js'));
+const { expandMedia, queries } = require(path.join(UI, 'media.js'));
 
 function readEnv(file) {
   const env = {};
@@ -29,7 +29,8 @@ const config = {
   supabaseUrl: env.SUPABASE_URL,
   supabaseKey: env.SUPABASE_PUBLISHABLE_KEY,
   mediaBaseUrl: cfg.mediaBaseUrl || '',
-  storefrontUrl: cfg.storefrontUrl || ''
+  storefrontUrl: cfg.storefrontUrl || '',
+  media: queries   // tokens.json → breakpoint, for the JS that renders differently on mobile (decision 0089)
 };
 
 // tokens.css is generated: make sure it is fresh
@@ -49,6 +50,8 @@ const files = {
   'admin.js': fs.readFileSync(path.join(APP, 'admin.js'), 'utf8')
 };
 for (const [name, body] of Object.entries(files)) fs.writeFileSync(path.join(OUT, name), body);
+// Favicon = the shop's logo illustration (decision 0097): same files as the storefront, single source in apps/storefront/public/
+for (const f of ['favicon.svg', 'favicon-32.png', 'apple-touch-icon.png']) fs.copyFileSync(path.join(ROOT, 'apps/storefront/public', f), path.join(OUT, f));
 const v = (n) => `${n}?v=${hash(files[n])}`;
 const html = fs.readFileSync(path.join(APP, 'index.html'), 'utf8')
   .replace(/\{\{(\w[\w.-]*)\}\}/g, (m, n) => (n === 'title' ? cfg.title : files[n] !== undefined ? v(n) : m));

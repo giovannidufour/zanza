@@ -6,9 +6,10 @@
 // Called by the browser: deploy with Verify JWT OFF; abuse limits = allowed origins (as trade-offer), query size, GET only.
 // Nothing is stored or cached (Discogs API terms); the page shows "Data from Discogs" under the results.
 // Secrets (Supabase → Edge Functions → Secrets): DISCOGS_TOKEN (Gio's personal access token, shared with discogs-lookup),
-// SHOP_URL (shared with trade-offer); optional ALLOWED_ORIGINS (comma-separated extra origins).
+// SHOP_URL (shared with trade-offer); optional ALLOWED_ORIGINS (comma-separated extra origins). SUPABASE_URL and
+// SUPABASE_ANON_KEY are set by Supabase (the trade switch, shop_settings).
 const env = (k: string) => Deno.env.get(k) ?? "";
-const USER_AGENT = "StoreFront/1.0 +https://store-front-6fx.pages.dev";
+const USER_AGENT = "rythem-works/1.0 +https://rythem-works.com";
 const MAX_RESULTS = 8;
 
 function allowedOrigin(origin: string | null) {
@@ -20,6 +21,20 @@ function allowedOrigin(origin: string | null) {
   if (origin === shop || extra.includes(origin)) return origin;
   if (host.endsWith(".pages.dev") && /^https:\/\/[a-z0-9-]+\./.test(origin) && origin.endsWith("." + host)) return origin;
   return null;
+}
+
+// the trade switch (admin → Settings, migration 0023, decision 0102): while trade is off this function refuses every
+// request, with an answer that does not name trade. No shop_settings table yet (migration not applied) = on.
+// A database error = off: better no offer than one the shop no longer shows.
+async function tradeEnabled() {
+  const key = env("SUPABASE_ANON_KEY");
+  const r = await fetch(`${env("SUPABASE_URL")}/rest/v1/shop_settings?select=trade_enabled`, { headers: { apikey: key, Authorization: `Bearer ${key}` } })
+    .catch(() => null);
+  if (!r) return false;
+  if (r.status === 404) return true;
+  if (!r.ok) return false;
+  const rows = await r.json().catch(() => []);
+  return !rows[0] || rows[0].trade_enabled !== false;
 }
 
 // Discogs disambiguates homonyms with " (2)"
@@ -67,6 +82,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: origin ? 204 : 403, headers: cors });
   if (req.method !== "GET") return json({ error: "Use GET." }, 405);
   if (!origin) return json({ error: "Not allowed." }, 403);
+  if (!(await tradeEnabled())) return json({ error: "Not found." }, 404);
   const token = env("DISCOGS_TOKEN").trim();
   if (!token) return json({ error: "Search not configured." }, 500);
   const headers = { "User-Agent": USER_AGENT, Accept: "application/vnd.discogs.v2.discogs+json", Authorization: `Discogs token=${token}` };

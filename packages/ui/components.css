@@ -1,4 +1,4 @@
-/* packages/ui/components.css — the ONE stylesheet of the rythem-trax components.
+/* packages/ui/components.css — the ONE stylesheet of the rythem-works components.
    Every color is a token from tokens.css. Dimensions are the values hardcoded in the Figma components
    unless a dimension token exists (page-margin-*, small). */
 
@@ -272,6 +272,10 @@ a.zz-tab {
   cursor: default;
 }
 
+/* Figma `_tab-sizes` size=extra small (account nav, decision 0101): padding 4, gap 2; label/extra small (12/14) → 24px tall */
+.zz-tab[data-size="extra-small"] { padding: 4px; gap: 2px; }
+.zz-tab[data-size="extra-small"] .zz-tab__label { gap: 2px; }
+
 /* focus: not yet defined in Figma — no style (TODO: border/focus token) */
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -305,12 +309,24 @@ a.zz-tab {
   flex-direction: row;
   gap: 8px;
 }
-.zz-header__leading { align-items: flex-start; }
+.zz-header__leading { align-items: flex-start; min-height: 46px; }   /* Figma: min height = store name 38 + 8, so without the logo (0094) the name keeps 8px above the bottom rule (Gio, 2026-11-15) */
 .zz-header__trailing { align-items: center; }
 .zz-header__tabs { display: flex; }
 
 .zz-header__logo { flex: none; width: 64px; height: 64px; overflow: hidden; }
 .zz-header[data-device="mobile"] .zz-header__logo { width: 48px; height: 48px; }
+/* Figma `header` boolean `logo` (default on). The storefront turns it off when the row cannot hold everything
+   (apps/storefront/scripts/site.js → fitHeaderLogo): the store name always stays. */
+.zz-header[data-logo="inside"] .zz-header__logo,
+.zz-header[data-logo="hidden"] .zz-header__logo { display: none; }
+/* …and it moves inside the store name (Figma `store name` logo=true): logo 36x36 against the left border,
+   padding 0 8 0 0, gap 8 → still 38px tall like the plain name. */
+.zz-header__name-logo { display: none; flex: none; width: 36px; height: 36px; overflow: hidden; }
+.zz-header__name-logo > img,
+.zz-header__name-logo > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
+.zz-header[data-logo="inside"] .zz-header__name-logo { display: block; }
+.zz-header[data-logo="inside"] .zz-header__name { padding: 0 8px 0 0; }
+/* data-logo="hidden": not even the small one fits (e.g. 320px): only the name */
 .zz-header__logo > img,
 .zz-header__logo > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
 
@@ -329,10 +345,10 @@ a.zz-tab {
   background-clip: border-box;
   background-repeat: no-repeat;
   background-image:
-    repeating-linear-gradient(90deg,  var(--border-divider-strong) 0 8px, transparent 8px 16px),
-    repeating-linear-gradient(90deg,  var(--border-divider-strong) 0 8px, transparent 8px 16px),
-    repeating-linear-gradient(180deg, var(--border-divider-strong) 0 8px, transparent 8px 16px),
-    repeating-linear-gradient(180deg, var(--border-divider-strong) 0 8px, transparent 8px 16px);
+    repeating-linear-gradient(90deg,  var(--zz-name-border, var(--border-divider-strong)) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(90deg,  var(--zz-name-border, var(--border-divider-strong)) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(180deg, var(--zz-name-border, var(--border-divider-strong)) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(180deg, var(--zz-name-border, var(--border-divider-strong)) 0 8px, transparent 8px 16px);
   background-size: 100% 1px, 100% 1px, 1px 100%, 1px 100%;
   background-position: 0 0, 0 100%, 0 0, 100% 0;
   border-radius: 0;
@@ -341,6 +357,11 @@ a.zz-tab {
   /* type: class label-medium on the element */
   white-space: nowrap;
 }
+
+/* Figma `store name` state=active (2026-11-14): the home page lights the store name like the tab of the current
+   section (tab/background/active, tab/border/active); the dashed border stays */
+.zz-header__name[data-state="active"] { --zz-name-border: var(--tab-border-active); background-color: var(--tab-background-active); }
+.zz-header__name[aria-current="page"] { cursor: default; }
 
 /* bottom rule — Figma has it hardcoded #000000; the token it should bind to is border divider/strong */
 .zz-header__rule { height: 1px; width: 100%; background: var(--border-divider-strong); }
@@ -612,6 +633,12 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
   align-items: start;
   color: var(--text-strong);   /* Figma: text fills unbound #000 → text/strong (open.md) */
 }
+/* Hover (Figma `product card` state=hover, decision 0088): the whole card takes surface/hover. Pointer devices only,
+   so a tap on touch does not leave the card tinted. No padding change: the tint is the card box as it is. */
+.zz-product-card[data-state="hover"] { background: var(--surface-hover); }
+@media (hover: hover) {
+  .zz-product-card:hover { background: var(--surface-hover); }
+}
 .zz-product-card p, .zz-product-card h1, .zz-product-card h2, .zz-product-card h3, .zz-product-card h4 { margin: 0; }
 .zz-product-card__image {
   grid-column: 1 / 3; grid-row: 1 / -1;
@@ -684,13 +711,35 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-bag-item__description { display: flex; flex-direction: column; gap: 4px; }
 .zz-bag-item__samples { display: flex; flex-wrap: wrap; gap: 8px; }
 .zz-bag-item__purchase { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: var(--small); }
-/* sold (decision 0064) and reserved (0065): name struck through; "SOLD OUT" / "RESERVED" beside the struck price (Figma `price row`, gap small) */
-.zz-bag-item:is([data-status="sold"], [data-status="reserved"]) .zz-bag-item__name,
-.zz-bag-item:is([data-status="sold"], [data-status="reserved"]) .zz-bag-item__link { text-decoration: line-through; }
+/* sold (decision 0064) and reserved (0065): name plain (decision 0078); "SOLD OUT" / "RESERVED" in an inline Alert beside the struck price (Figma `price row`, gap small) */
 .zz-bag-item:is([data-status="sold"], [data-status="reserved"]) .zz-bag-item__price { display: flex; align-items: center; gap: var(--small); white-space: nowrap; }
+/* mobile: the word below the struck price (Figma mobile `price row` vertical: price, then word; align right, gap small; Gio 2026-11-14). column-reverse keeps the DOM / screen reader order "SOLD OUT, not in your order, 12€" */
+.zz-bag-item[data-device="mobile"]:is([data-status="sold"], [data-status="reserved"]) .zz-bag-item__price { flex-direction: column-reverse; align-items: flex-end; }
+@media (--mobile) { .zz-bag-item[data-device="responsive"]:is([data-status="sold"], [data-status="reserved"]) .zz-bag-item__price { flex-direction: column-reverse; align-items: flex-end; } }
 /* mobile: samples padding-top 8 (Figma: copied from the mobile product card) */
 .zz-bag-item[data-device="mobile"] .zz-bag-item__samples { padding-top: 8px; }
 @media (--mobile) { .zz-bag-item[data-device="responsive"] .zz-bag-item__samples { padding-top: 8px; } }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   OrderItem = BagItem without Remove (Figma: page Account → `order item`, decision 0101): same classes, nothing to add.
+   OrderRow (Figma: page Account → `order row`, decision 0101): BagItem anatomy, the whole row is one link.
+   Hover = the ProductCard hover (surface/hover on the whole row, padding unchanged, decision 0088): Claude's choice, not drawn.
+   ═══════════════════════════════════════════════════════════════════════ */
+.zz-order-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gutter-small);
+  color: var(--text-strong);
+  font-family: var(--font-sans);
+  text-decoration: none;
+}
+.zz-order-row > span, .zz-order-row .zz-bag-item__title-block > span, .zz-order-row .zz-bag-item__description > span { display: block; }
+.zz-order-row .zz-bag-item__info, .zz-order-row .zz-bag-item__title-block, .zz-order-row .zz-bag-item__description { display: flex; }
+.zz-order-row .zz-bag-item__purchase { display: flex; }
+.zz-order-row__total { white-space: nowrap; }
+.zz-order-row__view { pointer-events: none; }
+.zz-order-row[data-state="hover"] { background: var(--surface-hover); }
+@media (hover: hover) { .zz-order-row:hover { background: var(--surface-hover); } }
 
 /* ═══════════════════════════════════════════════════════════════════════
    BagSummary (Figma: page Bag → `bag summary`; decision 0044)
@@ -705,9 +754,14 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-bag-summary__row dd { text-align: right; }
 .zz-bag-summary__checkout { width: 100%; }   /* Figma: button layout=fill */
 .zz-bag-summary__note { margin: 0; }
-.zz-bag-summary__sold-out { margin: 0; }
-.zz-bag-summary__minimum { margin: 0; }
-.zz-bag-summary__sold-out[hidden] { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Alert (Figma: page Bag → `alert`; decision 0077)
+   A blocking message in a coloured box: padding 8 (small), surface-alert, body/small in text-on-alert, full width.
+   ═══════════════════════════════════════════════════════════════════════ */
+.zz-alert { margin: 0; padding: var(--small); background: var(--surface-alert); color: var(--text-on-alert); font-family: var(--font-sans); }
+.zz-alert[data-layout="inline"] { display: inline-flex; padding: 2px 4px; }   /* Figma layout=inline: as Tag extra-small */
+.zz-alert[hidden] { display: none; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    RelatedProducts (Figma: PDP `you may also like`, device=desktop | mobile — same layout, only the cards differ)
@@ -1118,7 +1172,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-radio-group__legend { padding: 0; margin: 0 0 8px; }
 
 /* ── Filter / FilterBlock / Filters (Figma: page filters, 2026-11-10) ──────
-   filter: box 16, gap 8, label body/small text/strong, count body/small text/moderate (⚠ contrast, design/open.md).
+   filter: box 16, gap 8, label body/small text/strong, count body/small text/moderate (4.6:1 on acid green, 0067).
    filter block: heading label/extra small, gap 16, options gap 8. filters: blocks gap 24, padding 0 8. */
 .zz-filter { display: inline-flex; align-items: center; gap: 8px; color: var(--text-strong); cursor: pointer; position: relative; }
 .zz-filter__control { position: absolute; left: 0; top: 50%; width: 16px; height: 16px; margin: -8px 0 0; opacity: 0; cursor: inherit; }
@@ -1223,11 +1277,40 @@ a.zz-product-card__image { display: block; color: inherit; }
   color: var(--text-strong); text-decoration: none;
 }
 .zz-menu-item[data-state="current"] { background-color: var(--tab-background-active); }
+button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-style: solid; border-color: var(--border-divider-strong); background: none; font: inherit; text-align: left; cursor: pointer; }   /* an action row (0089) */
 .zz-menu-item__label { flex: 1 1 auto; min-width: 0; text-transform: uppercase; }
 .zz-menu-item__detail { flex: 0 1 auto; min-width: 0; color: var(--text-moderate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .zz-menu-layer__legal { display: flex; flex-wrap: wrap; gap: var(--small) var(--medium-small); padding: 0 var(--small); }
 .zz-menu-layer__legal a { color: var(--text-strong); text-decoration: none; }
 .zz-menu-layer__legal a:hover { text-decoration: underline; }
+
+/* ── Footer (Figma page `footer`, decision 0077): border-top = the header border (1px border-divider-strong);
+   main = newsletter + link columns, padding-y medium-small, gap medium-small; bottom = copyright + legal, padding-bottom
+   medium-small. Desktop: side by side, flex 1 each (Figma FILL), so without the newsletter the links take the whole row.
+   Mobile: stacked, links in two columns (Figma: wrap, (374 - 16) / 2), legal above the copyright. ── */
+.zz-footer { background: var(--surface-accent); color: var(--text-strong); border-top: 1px solid var(--border-divider-strong); }
+.zz-footer__main { display: flex; gap: var(--medium-small); padding: var(--medium-small) 0; }
+.zz-footer__main > * { flex: 1 1 0; min-width: 0; }
+.zz-footer__links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--medium-small); align-items: start; }
+.zz-footer__bottom { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--small) var(--medium-small); padding-bottom: var(--medium-small); }
+.zz-footer__copyright { margin: 0; }
+.zz-footer__legal { display: flex; flex-wrap: wrap; gap: var(--small) var(--medium-small); }
+/* links: as the menu legal row (text-strong, underline on hover). 16px lines 24px apart (gap small) = WCAG 2.5.8 by spacing */
+.zz-footer a { color: var(--text-strong); text-decoration: none; }
+@media (hover: hover) { .zz-footer a:hover { text-decoration: underline; } }
+.zz-footer-links__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--small); }
+.zz-footer-newsletter { display: flex; flex-direction: column; gap: var(--small); margin: 0; }
+.zz-footer-newsletter__row { display: flex; align-items: flex-end; gap: var(--small); }
+.zz-footer-newsletter__row[hidden] { display: none; }   /* after a signup the answer takes its place (decision 0103) */
+.zz-footer-newsletter__input { flex: 1 1 auto; min-width: 0; }
+.zz-footer-newsletter__note, .zz-footer-newsletter__status { margin: 0; }
+/* a link inside the note is told apart from the text by the underline, not by colour only (WCAG 1.4.1) */
+.zz-footer .zz-footer-newsletter__note a { text-decoration: underline; }
+@media (--mobile) {
+  .zz-footer__main { flex-direction: column; }
+  .zz-footer__links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .zz-footer__bottom { flex-direction: column-reverse; }
+}
 
 /* ── PlpHeader (Figma `PLP header`, device=mobile): filters trigger and sort, space-between, padding-y small,
    1px border-divider-strong under ── */
@@ -1244,6 +1327,9 @@ a.zz-product-card__image { display: block; color: inherit; }
   appearance: none; -webkit-appearance: none;
 }
 .zz-select-button:has(.zz-select-button__control:focus-visible) { outline: auto; }   /* no border/focus token yet */
+/* 0081: a select matches :focus-visible after a mouse pick too; the page marks a pointer focus and the ring hides
+   until a key is pressed. Focus stays on the select. */
+.zz-select-button[data-focus-source="pointer"]:has(.zz-select-button__control:focus-visible) { outline: none; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    Toast + ToastRegion (Figma: page `toast` → `toast` 2177:439; decision 0049)
@@ -1318,3 +1404,80 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-chosen-release { border: 1px solid var(--border-divider-strong); }
 .zz-chosen-release__link { color: inherit; text-decoration: underline; align-self: flex-start; }
 .zz-chosen-release__change { flex: none; background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
+/* Memo item (Figma BACKEND → Memo › `memo item`, decision 0088) */
+/* ProgressBar (Figma `progress bar`, 0091): 4px track, value grows with a short ease */
+.zz-progress-bar { position: relative; height: 4px; background: var(--surface-subtle); overflow: hidden; }
+.zz-progress-bar__value { height: 100%; background: var(--action-primary-background-default); transition: width 0.3s ease-out; }
+@media (prefers-reduced-motion: reduce) { .zz-progress-bar__value { transition: none; } }
+.zz-memo-item { display: flex; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
+.zz-memo-item__text { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
+.zz-memo-item__text > p { margin: 0; overflow-wrap: anywhere; }
+.zz-memo-item__meta { color: var(--text-moderate); }
+.zz-memo-item__link { color: inherit; text-decoration: underline; align-self: flex-start; }
+.zz-memo-item__actions { flex: none; display: flex; flex-wrap: wrap; gap: 8px; }
+@media (--mobile) { .zz-memo-item { flex-direction: column; align-items: stretch; gap: 8px; } }
+
+/* ── AdminBar (Figma page `admin` → `admin bar`, decision 0089): desktop = section buttons + account, mobile = menu · title · create ── */
+.zz-admin-bar__desktop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.zz-admin-bar__nav, .zz-admin-bar__account { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.zz-admin-bar__email { color: var(--text-moderate); }
+.zz-admin-bar__mobile { display: none; }
+@media (--mobile) {
+  .zz-admin-bar__desktop { display: none; }
+  .zz-admin-bar__mobile {
+    display: flex; align-items: center; gap: var(--small);
+    padding: var(--small) var(--page-margin-mobile);   /* Figma: 8 all round, like the shop mobile header */
+    background: var(--surface-accent); border-bottom: 1px solid var(--border-divider-strong);
+  }
+  .zz-admin-bar__title { flex: 1 1 auto; min-width: 0; margin: 0; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* ── ListingRow (Figma page `admin` → `listing row`, decision 0089): an admin list row on mobile, MemoItem grammar ── */
+.zz-order-block { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; color: var(--text-strong); }
+.zz-order-block__title, .zz-order-block__body { margin: 0; }
+.zz-order-block__body { white-space: pre-line; overflow-wrap: anywhere; }
+.zz-listing-row { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
+.zz-listing-row__select { flex: none; display: flex; }
+.zz-listing-row__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.zz-listing-row__title { color: inherit; overflow-wrap: anywhere; }
+.zz-listing-row__meta, .zz-listing-row__price { margin: 0; }
+.zz-listing-row__meta { color: var(--text-moderate); }
+.zz-listing-row__price { flex: none; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ── ActionBar (Figma page `admin` → `action bar`, decision 0089): form actions stuck to the bottom of the viewport ──
+   surface/base, not the ActionPanel's surface/subtle: that one is translucent in the backend mode and the form
+   scrolls under the bar (Gio 2026-11-15). */
+.zz-action-bar {
+  position: sticky; bottom: 0; z-index: 2;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: var(--medium-small);
+  background: var(--surface-base); border-top: 1px solid var(--border-divider-strong);
+}
+.zz-action-bar__actions { display: flex; gap: 8px; }
+.zz-action-bar__actions > .zz-button { flex: 1 1 0; min-width: 0; }
+.zz-action-bar__status:empty { display: none; }
+
+/* Touch targets (decision 0089, WCAG 2.5.5): on a coarse pointer, small Buttons (32) and checkboxes (24) get an
+   invisible tap area of 44, without changing how they look. */
+@media (pointer: coarse) {
+  .zz-button[data-size="small"] { position: relative; }
+  .zz-button[data-size="small"]::after { content: ""; position: absolute; inset: -6px 0; }
+  .zz-checkbox::after { content: ""; position: absolute; inset: -10px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Home (Figma page `Home`, 2026-11-14): section head, genre links, home about
+   ═══════════════════════════════════════════════════════════════════════ */
+.zz-section-head { display: flex; flex-direction: column; gap: var(--medium-small); }
+.zz-section-head__row { display: flex; align-items: center; justify-content: space-between; gap: var(--small); }
+.zz-section-head__title { margin: 0; color: var(--text-strong); }
+.zz-section-head__actions { display: flex; gap: var(--small); flex: none; }
+
+.zz-genre-links { display: flex; flex-direction: column; gap: var(--medium-small); }
+.zz-genre-links__list { display: flex; flex-wrap: wrap; gap: var(--small); margin: 0; padding: 0; list-style: none; }
+
+.zz-home-about__link { color: var(--text-strong); text-decoration: underline; }
+
+.zz-home-about { display: flex; flex-direction: column; align-items: stretch; gap: var(--medium-small); color: var(--text-strong); }
+.zz-home-about__bio { margin: 0; }
+.zz-home-about__link { align-self: flex-start; }

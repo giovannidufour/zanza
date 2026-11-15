@@ -1,4 +1,4 @@
-# rythem-trax — Stack (decisione 2026-11-09)
+# rythem-works — Stack (decisione 2026-11-09)
 
 Vincoli dati da Gio: **headless**, appoggiarsi a **servizi terzi**, codice in **inglese**, **costo fisso il più vicino possibile a 0**.
 
@@ -25,7 +25,7 @@ Medusa 2 (ex opzione B) scartata: costo fisso ~15 €/mese e un admin già fatto
 | Admin | SPA statica React con `packages/ui` (`apps/admin`) su **Cloudflare Pages**, progetto `store-admin` → **https://store-admin-3k1.pages.dev** (il nome senza suffisso era preso; questo URL è anche in Supabase Auth Site URL/Redirect, CORS del bucket R2 e default `ADMIN_ORIGINS` di `sign-upload`) (scelta di Gio 2026-11-10: non dipende da GoDaddy né dal blocco IP) | 0 € | deploy automatico da GitHub Actions a ogni push su `main` che tocca admin o `packages/ui` (`.github/workflows/deploy-admin.yml`; a mano: `npm run deploy:admin`) · upload diretto su R2 con URL firmato; resize immagini nel browser |
 | Checkout | **Stripe Checkout** | solo % a transazione | pagamento, indirizzo, tariffe di spedizione per zona |
 | Email transazionali | Resend (free, 3.000/mese) | 0 € | conferma ordine |
-| Newsletter | Buttondown (free fino a 100 iscritti, poi ~9 $/mese) — scelta 2026-11-12 | 0 € | double opt-in incluso, form HTML senza backend, RSS→email per i nuovi arrivi. Tracking aperture/click off, promemoria ai non confermati off (UWG §7). Username e account in `provisional-names.md` |
+| Newsletter | Buttondown (free fino a 100 iscritti, poi ~9 $/mese) — scelta 2026-11-12 | 0 € | double opt-in fatto da noi dal 2026-11-15 (decisione 0103: funzione Supabase `newsletter` manda il link via Resend, la conferma aggiunge l'iscritto via API Buttondown, secret `BUTTONDOWN_API_KEY`); il form HTML di Buttondown resta come ripiego senza JS. RSS→email per i nuovi arrivi. Tracking aperture/click off, promemoria ai non confermati off (UWG §7). Username e account in `provisional-names.md` |
 | Storefront | statico, `build.js` legge da Supabase | 0 € | **Cloudflare Pages** progetto `store-front` → https://store-front-6fx.pages.dev, collegato a GitHub `giovannidufour/zanza`, ricostruzione automatica quando cambia un listing (scelta di Gio 2026-11-10, `backend.md` → Pubblicazione). GoDaddy resta come riserva finché Pages non è verificato |
 
 Dettaglio di schema, flussi e storage: `backend.md`.
@@ -33,7 +33,7 @@ Dettaglio di schema, flussi e storage: `backend.md`.
 ### Account creati (2026-11-09, tutti con l'email personale di Gio)
 | Servizio | Cosa | Note |
 |---|---|---|
-| Supabase | org "Gios" (free) → progetto `store-staging`, ref `hhpknvyfypqipxufmbys`, regione eu-central-1 (Frankfurt) | "Automatically expose new tables" **off**, "automatic RLS" **on**. Password DB nel password manager di Gio. Nella stessa org c'è un progetto non correlato in pausa ("love planner"): il free tier conta i progetti *attivi* (max 2) |
+| Supabase | org "Gios" (free) → progetto `store-staging`, ref `hhpknvyfypqipxufmbys`, regione eu-central-1 (Frankfurt) | Il piano free mette in pausa il progetto dopo 7 giorni senza attività: `.github/workflows/keep-supabase-awake.yml` legge un listing lunedì e giovedì (da togliere se si passa a Pro). "Automatically expose new tables" **off**, "automatic RLS" **on**. Password DB nel password manager di Gio. Nella stessa org c'è un progetto non correlato in pausa ("love planner"): il free tier conta i progetti *attivi* (max 2) |
 | Cloudflare R2 | stesso account Cloudflare di gio-d.xyz, bucket `store-media` (Standard, posizione automatica EEUR) | lettura pubblica via Public Development URL `https://pub-a98e506f6d2e48c49301fca9123a3b20.r2.dev` (attivato 2026-11-10; rate-limited, da sostituire con dominio custom in produzione). Scrittura solo con URL firmato da `sign-upload` |
 | Stripe | account `acct_1RGEAj2LZr7JToM4`, paese **Germany**, solo **sandbox/test** | non attivare i pagamenti live prima di Q5b e del nome. Fuso orario account = Europe/Berlin (impostato il 2026-11-10) |
 
@@ -50,7 +50,18 @@ Chiavi API: mai in chat né nel repo; andranno in un `.env` git-ignored sul Mac.
 ## Portabilità (staging → nuovo dominio)
 Tutto ciò che dipende dal dominio vive in configurazione, mai nel DB o nel codice:
 `basePath`, base URL dei media, URL Supabase, origini CORS, URL di successo/annullamento del checkout, webhook Stripe, mittente email.
-Non legare un sottodominio media a `gio-d.xyz`: usare l'URL pubblico di R2 finché non c'è il dominio definitivo.
+### Dominio `rythem-works.com` (comprato da Gio il 2026-11-15, Cloudflare Registrar, stesso account Cloudflare, login = Gmail personale)
+
+| Host | Cosa | Note |
+|---|---|---|
+| `rythem-works.com` + `www.` | **fino al lancio:** Pages `coming-soon` (pagina "coming soon" + iscrizione newsletter, decisione 0096; deploy da GitHub Actions `deploy-coming-soon.yml`) | Al lancio tornano su `store-front`: `www.` → redirect 301 all'apex (Rules → Redirect Rules, query string conservata) |
+| `staging.rythem-works.com` | Pages `store-front` (negozio vero) | **dietro Cloudflare Access** (Zero Trust, team `rythem-works`, app `staging`, policy "Gio only", login con codice via email al Gmail personale, sessione 24 h). Protetto anche `store-front-6fx.pages.dev`. Al lancio: togliere l'app Access |
+| `admin.rythem-works.com` | Pages `store-admin` | il vecchio `store-admin-3k1.pages.dev` resta valido finché Supabase Auth, i secret `ADMIN_ORIGINS` e il CORS di R2 li hanno entrambi |
+| `media.rythem-works.com` | R2 `store-media` (custom domain) | = `mediaBaseUrl` in `site.json` e `admin.json`. L'URL `r2.dev` è ancora attivo: da spegnere quando nessuna pagina pubblicata lo usa più |
+| email `gio@rythem-works.com` | Cloudflare Email Routing → casella del negozio (vedi `email-setup.md` → Caselle) | record MX/SPF/DKIM di Cloudflare; DMARC `p=none` con report a Cloudflare (DMARC Management), da stringere dopo l'invio via Resend |
+| invio email | Resend, dominio `rythem-works.com` (eu-west-1) | `resend._domainkey` TXT, CNAME `rsend` e `send` (DNS only); runbook in `email-setup.md` |
+
+I `*.pages.dev` restano raggiungibili (Cloudflare non li spegne): il canonical punta al dominio quando `siteUrl` è impostato.
 **Al cambio dominio:** storefront e admin su **Cloudflare Pages** (gratis, ricostruzione automatica quando si pubblica dall'admin), GoDaddy dismesso. *Proposta, da confermare.*
 
 ## Tasse e spedizioni (Gio ha sede a Berlino, vende in tutto il mondo)

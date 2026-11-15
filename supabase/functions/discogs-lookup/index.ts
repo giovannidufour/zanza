@@ -1,4 +1,6 @@
-// supabase/functions/discogs-lookup — reads one Discogs release for the admin's "Fetch Discogs" button.
+// supabase/functions/discogs-lookup — reads one Discogs release for the admin's "Fetch Discogs" button,
+// and searches Discogs releases for the admin's Memo list (decision 0087): POST { query } → { results }, or, after a
+// photo of the label (decision 0090), POST { fields: { barcode, catno, label, artist, title } } → { results }.
 // Admin only: the caller's Supabase session must belong to a row of public.admins.
 // Why server side: Discogs wants an identifying User-Agent, rate-limits per caller, and the token
 // (needed later for search) must never reach the browser (backend.md → Creare un listing).
@@ -9,7 +11,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const ALLOWED_ORIGINS = (Deno.env.get("ADMIN_ORIGINS") ?? "https://store-admin-3k1.pages.dev").split(",").map((s) => s.trim());
-const USER_AGENT = "StoreAdmin/1.0 +https://store-admin-3k1.pages.dev";
+const USER_AGENT = "rythem-works-admin/1.0 +https://rythem-works.com";
 
 function cors(origin: string | null) {
   const allow = origin && (ALLOWED_ORIGINS.includes(origin) || /^http:\/\/localhost(:\d+)?$/.test(origin)) ? origin : ALLOWED_ORIGINS[0];
@@ -43,6 +45,21 @@ function credit(list: DiscogsArtist[] | undefined) {
   };
 }
 
+// one search result as { id, title: "Artist – Title", meta: "label · catno · year · country · format", thumb, uri }
+const cleanAll = (s: string) => String(s ?? "").replace(/\s+\(\d+\)(?=$|\s*[-–,])/g, "").trim();
+const metaOf = (parts: unknown[]) => parts.map((p) => String(p ?? "").trim()).filter((p) => p && p !== "0" && p.toLowerCase() !== "none").join(" · ");
+// deno-lint-ignore no-explicit-any
+function fromSearch(r: any) {
+  const formats = [...new Set<string>((r.format ?? []).filter((f: string) => f && !/^vinyl$/i.test(f)))].slice(0, 2).join(", ");
+  return {
+    id: r.id,
+    title: cleanAll(r.title).replace(/\s+-\s+/, " – "),
+    meta: metaOf([(r.label ?? [])[0], r.catno, r.year, r.country, formats]),
+    thumb: r.thumb || "",
+    uri: `https://www.discogs.com/release/${r.id}`,
+  };
+}
+
 Deno.serve(async (req) => {
   const headers = cors(req.headers.get("Origin"));
   if (req.method === "OPTIONS") return new Response("ok", { headers });
@@ -54,8 +71,58 @@ Deno.serve(async (req) => {
   const { data: isAdmin, error: adminError } = await supabase.rpc("is_admin");
   if (adminError || isAdmin !== true) return json({ error: "Not allowed." }, 403, headers);
 
-  let body: { releaseId?: number };
-  try { body = await req.json(); } catch { return json({ error: "Send JSON: { releaseId }." }, 400, headers); }
+  let body: { releaseId?: number; query?: string; fields?: Record<string, unknown> };
+  try { body = await req.json(); } catch { return json({ error: "Send JSON: { releaseId } or { query }." }, 400, headers); }
+
+  // text search (Memo, 0087): same result shape as discogs-search (the shop's offer form), up to 8 releases.
+  // Discogs search needs the token; nothing is stored here.
+  if (typeof body.query === "string") {
+    const q = body.query.trim().slice(0, 100);
+    if (q.length < 3) return json({ results: [] }, 200, headers);
+    const token = Deno.env.get("DISCOGS_TOKEN")?.trim();
+    if (!token) return json({ error: "Discogs search needs the DISCOGS_TOKEN secret." }, 500, headers);
+    const s = new URLSearchParams({ q, type: "release", per_page: "8", page: "1" });
+    const r = await fetch(`https://api.discogs.com/database/search?${s}`, {
+      headers: { "User-Agent": USER_AGENT, "Accept": "application/vnd.discogs.v2.discogs+json", Authorization: `Discogs token=${token}` },
+    });
+    if (r.status === 429) return json({ error: "Discogs is busy (too many requests): try again in a minute." }, 429, headers);
+    if (!r.ok) return json({ error: `Discogs answered ${r.status}.` }, 502, headers);
+    const data = await r.json();
+    return json({ results: (data.results ?? []).slice(0, 8).map(fromSearch) }, 200, headers);
+  }
+
+  // fields read from a photo (0090): the most precise key first (barcode, then catalogue number, then artist + title);
+  // each search adds the releases not found yet, up to 5. Stops at the first key that finds something precise.
+  if (body.fields && typeof body.fields === "object") {
+    const token = Deno.env.get("DISCOGS_TOKEN")?.trim();
+    if (!token) return json({ error: "Discogs search needs the DISCOGS_TOKEN secret." }, 500, headers);
+    const f = body.fields;
+    const val = (k: string, max = 100) => (typeof f[k] === "string" ? (f[k] as string).trim().slice(0, max) : "");
+    const barcode = val("barcode", 20).replace(/\D/g, ""), catno = val("catno", 40), label = val("label");
+    const artist = val("artist"), title = val("title");
+    const tries: Record<string, string>[] = [];
+    if (barcode.length >= 8) tries.push({ barcode });
+    if (catno && artist) tries.push({ catno, artist });
+    if (catno && label) tries.push({ catno, label });
+    if (catno) tries.push({ catno });
+    if (artist && title) tries.push({ artist, release_title: title });
+    if (title) tries.push({ q: [artist, title].filter(Boolean).join(" ") });
+    const found = new Map<number, ReturnType<typeof fromSearch>>();
+    for (const t of tries) {
+      if (found.size >= 5) break;
+      const s = new URLSearchParams({ ...t, type: "release", per_page: "5", page: "1" });
+      const r = await fetch(`https://api.discogs.com/database/search?${s}`, {
+        headers: { "User-Agent": USER_AGENT, "Accept": "application/vnd.discogs.v2.discogs+json", Authorization: `Discogs token=${token}` },
+      });
+      if (r.status === 429) return json({ error: "Discogs is busy (too many requests): try again in a minute." }, 429, headers);
+      if (!r.ok) return json({ error: `Discogs answered ${r.status}.` }, 502, headers);
+      const data = await r.json();
+      for (const x of data.results ?? []) if (found.size < 5 && !found.has(x.id)) found.set(x.id, fromSearch(x));
+      if (found.size && (t.barcode || t.catno)) break;   // a code match is precise: no fuzzier results under it
+    }
+    return json({ results: [...found.values()] }, 200, headers);
+  }
+
   const id = Number(body.releaseId);
   if (!Number.isInteger(id) || id <= 0) return json({ error: "releaseId must be a Discogs release number." }, 400, headers);
 

@@ -1,4 +1,4 @@
-# rythem-trax — Backend (bozza v0, 2026-11-09)
+# rythem-works — Backend (bozza v0, 2026-11-09)
 
 Stack: `stack.md`. Questa è la **bozza** dello schema e dei flussi, da rivedere prima della prima migrazione. Nomi DB in inglese.
 
@@ -16,24 +16,26 @@ Stack: `stack.md`. Questa è la **bozza** dello schema e dei flussi, da rivedere
 | Tabella | Cosa | Note |
 |---|---|---|
 | `grades` | scala di Gio (Q8): `M, NM, NM-, EX+, EX, EX-, VG+, VG, VG-, G+, G, G-, F` | `rank` 1 = migliore → filtri "da VG+ in su" |
-| `releases` | la pressatura | label, paese, anno, formato, `macro_genre` text[] (genre Discogs, es. Reggae: non mostrato), `genres` text[] (copia ordinata dei nomi di `genres`, letta dal negozio) |
+| `releases` | la pressatura | label, paese, anno (`year` + `year_precision` year/decade: "1990s" = 1990 + decade, 0018), formato, `macro_genre` text[] (genre Discogs, es. Reggae: non mostrato), `genres` text[] (copia ordinata dei nomi di `genres`, letta dal negozio) |
 | `release_lines` | artista/titolo per lato (riga 1 = lato A…), dal form "Create listing" | artista vuoto = stesso della riga 1 (non mostrato). Nome mostrato: `custom_title`, altrimenti "Artist - Title 1 / Title 2" (o "Artist 1 - Title 1 / Artist 2 - Title 2") |
 | `genres`, `release_genres` (0011, rinominati in 0014) | generi (= styles Discogs: Roots, Dancehall…) come entità con `slug`, in ordine per release; filtro Genre della PLP | `releases.genres` resta = i loro nomi in ordine. Fino alla 0014 si chiamavano `subgenres` |
 | `tags`, `release_tags` (0007, 0011) | tag di Gio (Rare, Killer version…), mai da Discogs, in ordine per release | filtro Tags della PLP |
 | `artists`, `labels` (0006) | entità con nome **ufficiale**, `slug` (pagina futura), id Discogs | `artist_aliases` / `label_aliases` = altre grafie. Le righe le collegano con `release_line_artists` (più artisti per riga, in ordine, con "&"/"feat."); la release con `label_id`. `release_lines.artist` e `releases.label` restano = il **credito come stampato** su quel disco (lo mostra il negozio) |
-| `listings` | la copia pubblicata (copy + listing del brief) | `section`, `status`, `price_cents`, `condition_media` (lato A) + `condition_media_b` (lato B, facoltativo, 0013) → `grades`, `sleeve_type` (`original`/`generic`/`none`) + `condition_sleeve` → `grades`, `photo_keys[]` (la **prima è la featured/cover**), `sku` (automatico), `custom_title`, `condition_notes`, `reserved_until`, `import_source` (solo test) |
+| `memos` (0019) | promemoria di Gio: dischi da vendere più avanti (pagina admin Memo, decisione 0087) | `title` (testo libero o "Artista – Titolo" della release scelta), `note`, `discogs_release_id` + `discogs_meta` solo se scelta su Discogs. Solo admin (RLS), niente di pubblico |
+| `listings` | la copia pubblicata (copy + listing del brief) | `section`, `status`, `price_cents`, `condition_media` (lato A) + `condition_media_b` (lato B, facoltativo, 0013) → `grades`, `sleeve_type` (`original`/`generic`/`none`) + `condition_sleeve` → `grades`, `photo_keys[]` (la **prima è la featured/cover**), `sku` (5 cifre casuali, mai riusate: registro `used_skus` + trigger, migrazione 0020), `custom_title`, `condition_notes`, `reserved_until`, `import_source` (solo test) |
 | `samples` | clip della release | `audio_key`, `line_id` (sample del lato; vuoto = "additional"), `sort` = ordine nel player |
 | `orders`, `order_items` | ordini Stripe | li scrivono solo le Edge Functions; prezzo copiato al momento dell'acquisto |
 | `admins` | l'operatore (Gio) | riga aggiunta a mano dopo la registrazione all'admin |
 
-Rimandato (con il Trade, Q2): `proposals`, `proposal_messages`. Preferiti/account: non nell'MVP.
+Rimandato (con il Trade, Q2): `proposals`, `proposal_messages`. Preferiti: non nell'MVP. Account cliente: vedi sotto "Account cliente".
 
 **Dati di prova:** `supabase/scripts/build-seed.js` genera `supabase/seed.sql` (upsert, id derivati dallo slug) dai 21 JSON di `content/products/`. Le immagini e i sample di prova restano URL assoluti verso il negozio di origine: è l'unica eccezione alla regola "solo chiavi".
 
 ## Sicurezza (RLS)
 - **Pubblico (anon):** lettura di `releases`, `samples` e dei `listings` con `status <> 'draft'`.
 - **Admin:** un solo utente Supabase Auth (Gio), presente in `admins`; `is_admin()` nelle policy. Niente ruoli.
-- Nel progetto le tabelle nuove **non** sono esposte in automatico: ogni migrazione dichiara i suoi `grant`.
+- Nel progetto le tabelle nuove **non** sono esposte in automatico: ogni migrazione dichiara i suoi `grant`. Neanche `service_role` ha grant sulle tabelle: le Edge Functions leggono le tabelle pubbliche con la chiave anon (es. `create-checkout`).
+- Una release (pressatura, `discogs_release_id` unico) può avere più listing (copie): creare un listing con una release Discogs già presente la condivide (migrazione 0023, applicata 2026-11-15); se la nuova copia non manda sample, restano quelli della release. "Sell again" in admin crea una copia gemella dello stesso disco (decisione 0100).
 - **Ordini:** nessun accesso pubblico; li scrivono solo le Edge Functions (service role).
 
 ## Storage (R2)
@@ -49,7 +51,7 @@ Chiavi casuali e immutabili (2026-11-10): l'upload avviene prima che il listing 
 ## Flussi
 
 ### Creare un listing (admin)
-1. **Fetch Discogs** (2026-11-10, Figma 2103:20718): incolli link o numero della release in "Discogs match" → il pulsante chiama l'Edge Function `discogs-lookup` (solo admin, User-Agent proprio, token opzionale `DISCOGS_TOKEN` nei secret; niente cache, ToU 6 h) e riempie **solo i campi della release**: righe artista/titolo (una per traccia; artista vuoto se uguale alla riga 1), label, cat. no (non mostrato, salvato), anno, paese, formato, macro genere (il primo genre Discogs), generi (= styles Discogs). Prezzo, condizioni, note, foto e sample restano; i sample di righe sparite diventano "additional". Valori fuori dai vocabolari del form (paese, formato, altri macro generi) vengono elencati nel messaggio, non inventati. Foto Discogs: non importate (diritti). La ricerca per testo (serve il token) arriverà nella stessa funzione.
+1. **Fetch Discogs** (2026-11-10, Figma 2103:20718): incolli link o numero della release in "Discogs match" → il pulsante chiama l'Edge Function `discogs-lookup` (solo admin, User-Agent proprio, token opzionale `DISCOGS_TOKEN` nei secret; niente cache, ToU 6 h) e riempie **solo i campi della release**: righe artista/titolo (una per traccia; artista vuoto se uguale alla riga 1), label, cat. no (non mostrato, salvato), anno, paese, formato, macro genere (il primo genre Discogs), generi (= styles Discogs). Prezzo, condizioni, note, foto e sample restano; i sample di righe sparite diventano "additional". Valori fuori dai vocabolari del form (paese, formato, altri macro generi) vengono elencati nel messaggio, non inventati. Foto Discogs: non importate (diritti). La ricerca per testo (serve il token) è nella stessa funzione: `{ query }` → fino a 8 release (pagina Memo, 0087). **Foto della label** (Memo, 0090): l'admin rimpicciolisce la foto e la manda all'Edge Function `read-label` (solo admin), che la fa leggere a un modello vision gratuito di Cloudflare Workers AI (quota Workers Free 10.000 neuron/giorno, ~60 a foto; secret `CF_ACCOUNT_ID`, `CF_AI_TOKEN`, opzionale `CF_AI_MODEL`); la foto non viene salvata. I campi letti vanno a `discogs-lookup { fields }`: barcode, poi numero di catalogo, poi artista + titolo, fino a 5 release.
 2. Condizione, prezzo, note, foto, sample.
 3. Salva = **una chiamata** a `admin_save_listing(payload)` (una transazione: release, righe, listing, sample). `draft` → **Pubblica** = `available` + `published_at`; poi ricostruzione del sito.
 4. Copertina: il grado è ammesso per busta `original` e `generic`, mai per `none` (0003).
@@ -97,6 +99,38 @@ Regola (Gio 2026-11-12): **il bag non blocca mai niente**. Un disco è bloccato 
 5. Webhook `checkout.session.expired` → listing di nuovo `available`.
 6. Ritorno sulla `cancel_url` di Stripe (l'utente torna indietro senza pagare) → `create-checkout` (o una funzione gemella) chiama `checkout.sessions.expire` sulla sessione: il disco torna libero subito, non dopo 30 min.
 
+**Implementazione (2026-11-15, branch `claude/project-thread-3ixxqo`; migrazione 0021 applicata su store-staging e funzioni `create-checkout` + `stripe-webhook` deployate il 2026-11-15, Verify JWT off, `ORDERS_TO` impostato):**
+- Migrazione `20261115020000_checkout.sql`: `checkout_hold(ids, token, minuti)` (tutto o niente, 33 min, il token `hold:<uuid>` sta in `stripe_session_id` finché la sessione non esiste), `checkout_attach`, `checkout_release(token o session)`, `checkout_complete(session, order)` (idempotente; una copia che la sessione non tiene più finisce comunque nell'ordine con `orders.attention` → rimborso a mano). Nuove colonne `orders`: `customer_name`, `subtotal_cents`, `payment_intent`, `attention`. Eseguibili solo dal service role.
+- Edge Function `create-checkout` (Verify JWT off, origini come `trade-offer`): `{ ids, country }` → `{ url }`; `{ action: "cancel", session }` dal ritorno al Bag. Sessione Stripe 31 min < hold 33 min: una copia non si può pagare dopo che l'hold è scaduto. `shipping.js` è una **copia** di `packages/shipping/shipping.js` (`npm run sync:functions`; `npm run build` fallisce se è vecchia).
+- Edge Function `stripe-webhook` (Verify JWT off, firma Stripe): `completed` (pagato) / `async_payment_succeeded` → ordine + `sold` + email al compratore e a Gio; `expired` → rilascio. Gli id dei listing tornano dalle line items (metadata `listing_id` del prodotto). Sta su Supabase perché il negozio è dietro Cloudflare Access.
+- Secret nuovi: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `ORDERS_TO` (casella del negozio; senza, usa `OFFER_TO`), opzionale `MEDIA_BASE_URL`.
+- Eventi del webhook da attivare su Stripe: `checkout.session.completed`, `checkout.session.expired`, `checkout.session.async_payment_succeeded`.
+
+### Account cliente (Gio 2026-11-15: "account light con codice OTP", decisione 0101; codice sul branch `claude/project-thread-c9cxpv`)
+Requisito di Gio: il cliente entra e vede i suoi ordini e il loro stato.
+- Checkout da ospite sempre; l'account non è mai obbligatorio. Nessuna password, nessun profilo, nessuna rubrica indirizzi: l'account è l'email verificata.
+- Login: Supabase Auth email OTP (codice a 6 cifre, non link), Turnstile, SMTP di Supabase su Resend. Pagina Figma `Account` (2198:2395).
+- Si entra solo se esiste un ordine con quell'email (hook *before user created*): niente account vuoti.
+- Ordini collegati da soli: `lower(orders.email) = lower(email verificata)`, sola lettura (RLS o vista), senza `attention`, `payment_intent`, `stripe_session_id`.
+- Stati mostrati: `paid` → "Paid, preparing" · `shipped` → "Shipped" + data (`shipped_at`) + link di tracking · `refunded` · `cancelled`. Niente "Delivered".
+- Dettagli = email + "Delete account" (cancella il login, non gli ordini). L'email di conferma porta al login con l'email già compilata.
+- Admin e clienti condividono Supabase Auth: tutto ciò che è concesso ad `authenticated` passa da `is_admin()` (verificato 2026-11-15); l'admin deve rifiutare al login chi non è admin.
+- Privacy: sezione Account (art. 6(1)(b), token di sessione necessario, Turnstile); la durata di conservazione degli ordini va rivista per il venditore privato. Newsletter separata (Buttondown), nessuna iscrizione dall'account.
+
+**Implementazione (2026-11-15):**
+- Migrazione `20261115030000_customer_account.sql` (0022): `order_items.snapshot` (trigger BEFORE INSERT `order_items_snapshot` + backfill: nome, slug, label, formato, paese, gradi, `cover_key`, sample), `orders.shipped_at` (trigger: `shipped` → now(), di nuovo `paid` → null), `customer_orders()` (solo `authenticated`, email confermata; mai `attention`, `payment_intent`, `stripe_session_id`), `delete_my_account()` (non per un admin), `hook_before_user_created(event)` (per `supabase_auth_admin`). Testata su Postgres 16 locale con tutte le migrazioni.
+- Sito: `pages/account.js` + `account.css` (3 pagine statiche, nessun dato personale nell'HTML), `scripts/account.js` (Auth via fetch: `/auth/v1/otp` → `/auth/v1/verify` type `email`, refresh, logout; sessione in localStorage `zanza-session`). Serve il build da Supabase (meta `zz-supabase-url`/`key`); col build JSON la pagina dice che gli account non sono attivi.
+- Riferimento ordine = i primi 8 caratteri dell'id, maiuscoli (come email e admin, decisione 0100).
+
+**Impostazioni Supabase Auth (progetto `store-staging`): FATTE il 2026-11-15 con l'ok di Gio** (hook acceso prima dei signup; hook verificato: email senza ordini → 403 "No orders for this email."; oggetto email "Your rythem-works sign-in code: {{ .Token }}"; la scadenza di 600 s vale anche per il magic link dell'admin). Da rifare uguale sul progetto di produzione:
+1. SQL editor: applicare la migrazione 0022.
+2. Authentication → Sign In / Providers → Email: *Allow new users to sign up* ON (l'hook limita a chi ha ordini); *Email OTP expiration* 600 s; *Email OTP length* 6.
+3. Authentication → Hooks → *Before User Created* → Postgres function `public.hook_before_user_created`. Per creare un nuovo admin: spegnerlo un momento.
+4. Authentication → Emails → SMTP: `smtp.resend.com`, porta 465, utente `resend`, password = una chiave Resend *Sending access* solo rythem-works.com, mittente `gio@rythem-works.com`, nome `rythem-works`. Senza SMTP proprio Supabase manda solo ~2 email l'ora e solo agli indirizzi del team.
+5. Authentication → Emails → Templates *Magic Link* e *Confirm signup*: il codice `{{ .Token }}` in evidenza, poi il link `{{ .ConfirmationURL }}` (l'admin entra col link, il cliente col codice o col link).
+6. Authentication → URL Configuration → Redirect URLs: aggiungere `https://staging.rythem-works.com/account/**` e `https://store-front-6fx.pages.dev/account/**` (il link dell'email porta a /account/: `scripts/account.js` passa `redirect_to`, altrimenti Auth userebbe il Site URL = l'admin). Aggiunto anche `https://rythem-works.com/account/**`.
+7. Dopo: Turnstile (captcha) e la sezione Account della Privacy.
+
 ### Notify me (0016, 2026-11-12, migrazione da applicare)
 - Su un disco Reserved il visitatore lascia l'email (`request_back_in_stock`, anon; solo mentre è reserved, max 100 per copia). Tabella `back_in_stock`, leggibile solo dall'admin.
 - Ogni minuto `pg_cron` chiama l'Edge Function `notify-back-in-stock` **solo** se qualche richiesta è dovuta (la copia conta come available, anche per hold scaduto). La funzione manda **una** email (Resend) e cancella l'indirizzo.
@@ -117,6 +151,7 @@ Le pagine sono statiche, ma "sold/reserved" non può aspettare una ricostruzione
 ### Pubblicazione (0005, scelta di Gio 2026-11-10)
 - Negozio su **Cloudflare Pages** collegato al repo GitHub: build `npm run build:pages` (`--target=pages`: sito alla radice, dati solo da Supabase), output `apps/storefront/dist`, variabili `SUPABASE_URL` + `SUPABASE_PUBLISHABLE_KEY`.
 - Un cambio a un listing pubblico (o che diventa / smette di essere pubblico) segna `site_build.pending`. Un job `pg_cron` ogni minuto chiama **una volta** il deploy hook di Pages (via `pg_net`) → negozio aggiornato in ~2 min. Le bozze e gli hold del checkout non ricostruiscono.
+- **Interruttore trade** (0023, decisione 0102): `shop_settings.trade_enabled` è l'unica fonte di verità. Spento: la build non genera pagine/link/menzioni di trade, RLS nasconde i listing trade all'API pubblica, `trade-offer` e `discogs-search` rispondono 404. Si cambia da admin → Settings (`admin_set_trade_enabled`, che chiede anche il rebuild).
 - L'URL del deploy hook sta nel **Vault** di Supabase (`pages_deploy_hook`), mai nel repo. Stato e ultimo errore: tabella `site_build`.
 - Un push su `main` ricostruisce anche lui (codice nuovo).
 - **Attivo e verificato 2026-11-10:** progetto Pages `store-front` → https://store-front-6fx.pages.dev (variabili `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `NODE_VERSION=20`), deploy hook `supabase-catalogue` (branch `main`); prova: `site_build.pending` → job → hook 200 → nuovo deploy.

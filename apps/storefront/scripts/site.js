@@ -5,6 +5,7 @@
       - scroll up: it comes back sticky at the top (animated reveal, see base.css [data-revealing])
    2. Player (packages/ui Player, rendered once per page outside .zz-page)
       - a PlayerButton with data-sample-src plays its sample; the PlayerButtons of the same product are the queue
+      - a [data-play-all] button (home) queues every sample of its [data-play-scope] section
       - previous / play-pause / next, the native audio controls and the Media Session (lock screen) stay in sync
       - opens by sliding up from the bottom of the viewport; the close button stops playback and slides it away
    3. Soft navigation
@@ -26,14 +27,17 @@
         and opens the bag (decision 0058); taking a copy out happens only on /bag/; the header Bag shows the count in brackets on every page
       - /bag/ (pages/bag.js) shows the lines of the bag, the subtotal of the available ones, or the empty state;
         with shipping set up: "Ship to" country (remembered), shipping estimate and total (decision 0057);
-        Remove takes a line out and shows a toast with Undo (packages/ui/toast.js, decision 0049). Checkout is not wired yet (create-checkout + Stripe, _context/backend.md)
+        Remove takes a line out and shows a toast with Undo (packages/ui/toast.js, decision 0049). Checkout posts to create-checkout and goes to Stripe (migration 0021, startCheckout)
    7. Live status (_context/backend.md -> Stato dal vivo)
       - the pages are static: each listing carries its status at build time (data-listing-status); with Supabase meta
         tags on the page, one read of listing_availability per page (and when the tab comes back) brings it up to date
       - reserved (someone is in Stripe Checkout, max 30 min, or held by hand): the Add buttons read "(Reserved) Notify me"
         (secondary + envelope, decision 0065) and stay active: pressing one opens the "Reserved" dialog, which explains the hold and offers "Notify me"
         (email, migration 0016). The bag line shows the notice "Reserved".
-        sold: the Add buttons read "Sold out", disabled (decision 0061); the bag line: name struck, "SOLD OUT" + struck price (0064)
+        sold: the Add buttons read "Sold out", disabled (decision 0061); the bag line: "SOLD OUT" in a red box + struck price (0064, 0078)
+
+   8. SelectButton focus (decision 0081)
+      - the ring of a native select shows for keyboard focus only, not after a mouse pick (focus stays on the select)
 
    Looks live in base.css and packages/ui/components.css; this file only sets attributes and text. */
 (function () {
@@ -95,7 +99,35 @@
     window.addEventListener('resize', apply);
     header.addEventListener('focusin', reveal);   // keyboard: tabbing into a hidden header brings it back
     header.addEventListener('transitionend', onTransitionEnd);
-    headerCleanup = function () { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', apply); };
+    var stopLogoFit = fitHeaderLogo(header);
+    headerCleanup = function () { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', apply); stopLogoFit(); };
+  }
+
+  // Logo only when everything fits (Gio, 2026-11-15; Figma `header` boolean `logo`): on screens too narrow for
+  // menu + logo + store name + Bag in one row (desktop: + tabs + search + Account) (e.g. 375px with "rythem-works"), the logo goes and the name stays.
+  // Measured, not a breakpoint: the room depends on the store name and on the Bag count. Min gap = the row's 8px gap.
+  function fitHeaderLogo(header) {
+    var bar = header.classList.contains('zz-header') ? header : header.querySelector('.zz-header');
+    var row = bar && bar.querySelector('.zz-header__row');
+    var leading = row && row.querySelector('.zz-header__leading');
+    var trailing = row && row.querySelector('.zz-header__trailing');
+    if (!leading || !trailing || !bar.querySelector('.zz-header__logo')) return function () {};
+    function overflows() {
+      var parts = Array.prototype.filter.call(row.children, function (el) { return el.offsetWidth > 0; });
+      return parts.reduce(function (sum, el) { return sum + el.getBoundingClientRect().width; }, 0) + 8 * (parts.length - 1) > row.clientWidth;
+    }
+    // big logo → logo inside the store name ("inside") → no logo at all ("hidden", only if even that does not fit)
+    function fit() {
+      bar.removeAttribute('data-logo');                     // measure with the big logo shown
+      if (!overflows()) return;
+      bar.setAttribute('data-logo', 'inside');
+      if (overflows()) bar.setAttribute('data-logo', 'hidden');
+    }
+    fit();
+    var ro = window.ResizeObserver ? new ResizeObserver(function () { window.requestAnimationFrame(fit); }) : null;
+    if (ro) { ro.observe(row); ro.observe(trailing); } else window.addEventListener('resize', fit);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);   // the web font changes the name's width
+    return function () { if (ro) ro.disconnect(); else window.removeEventListener('resize', fit); };
   }
 
   /* ---------------------------------------------------------------- 2. player */
@@ -112,6 +144,10 @@
   function current() { return queue[index] || null; }
 
   function sampleFrom(btn) {
+    // the copy's status at build time travels with the sample (Gio 2026-11-15): the player keeps playing across pages,
+    // where that copy may not be on the page, and its "Add to bag" must still read "Sold out" for a sold copy
+    var id = btn.getAttribute('data-listing-id');
+    if (id && btn.getAttribute('data-listing-status')) heard[id] = btn.getAttribute('data-listing-status');
     return {
       src: btn.getAttribute('data-sample-src'),
       title: btn.getAttribute('data-sample-title') || '',
@@ -238,8 +274,22 @@
     load(i, true);
   }
 
+  // "Play all" (home, decision 0085): every playable sample of its section ([data-play-scope]) becomes the queue,
+  // in page order, from the first one
+  function onPlayAll(btn) {
+    var scope = btn.closest('[data-play-scope]') || document;
+    var items = Array.prototype.slice.call(scope.querySelectorAll('[data-sample-src]'))
+      .filter(function (b) { return !b.disabled; }).map(sampleFrom);
+    if (!items.length) return;
+    lastTrigger = btn;
+    queue = items;
+    load(0, true);
+  }
+
   if (player && audio) {
     document.addEventListener('click', function (e) {
+      var all = e.target.closest && e.target.closest('[data-play-all]');
+      if (all) { onPlayAll(all); return; }
       var btn = e.target.closest && e.target.closest('[data-sample-src]');
       if (btn && !btn.disabled) onSampleClick(btn);
     });
@@ -920,7 +970,78 @@
     syncAddButtons(ids);
   }
 
-  function initBag() { renderBag(); }
+  function initBag() { renderBag(); checkoutReturn(); }
+
+  /* checkout (migration 0021, _context/backend.md → Checkout con hold): Checkout posts the AVAILABLE ids of the bag and
+     the country to create-checkout, which holds the copies for 33 min and answers the Stripe Checkout URL. The session
+     and its ids are remembered ('zanza-checkout'): back on /bag/?checkout=cancelled the session is expired at once (the
+     copies are free again for others); on the thanks page ([data-checkout-thanks]) the bought ids leave the bag.
+     TODO Figma: Button has no loading state; while the request runs Checkout is aria-disabled and ignores clicks,
+     with no visual change (a disabled Button is struck through = unavailable, decision 0058). */
+  var CHECKOUT_KEY = 'zanza-checkout';
+  var checkoutBusy = false;
+  function checkoutMessage(text) { if (window.ZanzaToast) window.ZanzaToast.show({ message: text }); else announce(text); }
+  function startCheckout(btn) {
+    if (checkoutBusy) return;
+    var endpoint = btn.getAttribute('data-endpoint');
+    if (!endpoint || !window.fetch) { checkoutMessage('Checkout isn\u2019t open yet.'); return; }
+    var root = document.querySelector('[data-bag-page]');
+    var ids = Array.prototype.filter.call(root.querySelectorAll('[data-bag-line]'), function (li) {
+      return !li.hidden && li.getAttribute('data-available') === 'true';
+    }).map(function (li) { return li.getAttribute('data-bag-line'); });
+    var select = root.querySelector('[data-bag-ship-to]');
+    if (!ids.length) return;
+    checkoutBusy = true;
+    btn.setAttribute('aria-disabled', 'true');
+    announce('Starting checkout\u2026');
+    function done() { checkoutBusy = false; btn.removeAttribute('aria-disabled'); }
+    fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: ids, country: select ? select.value : '' }) })
+      .then(function (res) { return res.json().catch(function () { return {}; }).then(function (b) { return { status: res.status, body: b }; }); })
+      .then(function (r) {
+        var b = r.body || {};
+        if (r.status === 200 && b.url) {
+          try { window.localStorage.setItem(CHECKOUT_KEY, JSON.stringify({ session: b.session, ids: ids })); } catch (e) { /* ignore */ }
+          window.location.href = b.url;   // keeps aria-disabled: the page is leaving
+          return;
+        }
+        done();
+        if (b.error === 'unavailable') {
+          readLive(true);   // the lines that were just taken turn Sold out / Reserved
+          checkoutMessage('Some records were just taken. Your bag is updated: check it and try again.');
+        } else if (b.error === 'below_minimum') {
+          readLive(true);
+          checkoutMessage('Your order is under the minimum of ' + formatPrice(b.min_cents || 0) + '.');
+        } else if (b.error === 'shipping') {
+          checkoutMessage(b.status === 'not-served' ? 'We don\u2019t ship to this country yet.' : 'Shipping for this bag can\u2019t be calculated. Remove a few records and try again.');
+        } else checkoutMessage('Checkout couldn\u2019t start. Please try again in a moment.');
+      })
+      .catch(function () { done(); checkoutMessage('Checkout couldn\u2019t start. Check your connection and try again.'); });
+  }
+  function readCheckout() {
+    try { var v = JSON.parse(window.localStorage.getItem(CHECKOUT_KEY) || 'null'); return v && typeof v === 'object' ? v : null; } catch (e) { return null; }
+  }
+  function forgetCheckout() { try { window.localStorage.removeItem(CHECKOUT_KEY); } catch (e) { /* ignore */ } }
+  function checkoutReturn() {
+    var pending = readCheckout();
+    // thanks page: the paid records leave the bag
+    if (document.querySelector('[data-checkout-thanks]')) {
+      if (pending && Array.isArray(pending.ids)) writeBag(readBag().filter(function (id) { return pending.ids.indexOf(id) === -1; }));
+      forgetCheckout();
+      return;
+    }
+    if (!document.querySelector('[data-bag-page]') || !/[?&]checkout=cancelled\b/.test(window.location.search)) return;
+    try { window.history.replaceState(window.history.state, '', window.location.pathname); } catch (e) { /* ignore */ }
+    var btn = document.querySelector('[data-bag-checkout]');
+    var endpoint = btn && btn.getAttribute('data-endpoint');
+    forgetCheckout();
+    if (pending && pending.session && endpoint && window.fetch) {
+      fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel', session: pending.session }) })
+        .then(function () { readLive(true); }).catch(function () { /* the hold ends by itself within 33 min */ });
+    }
+    checkoutMessage('Checkout cancelled. Your records are still in your bag.');
+  }
 
   // a copy already in the bag: its Add buttons become "In bag" (Gio 2026-11-12, decision 0058, replaces "Remove" of
   // 0054). Same Button: hierarchy secondary (the PDP CTA drops from primary), leading icon = tick (Figma `leading icon`
@@ -1032,10 +1153,11 @@
 
   var seeded = {};      // listing id -> status written in this page at build time
   var live = {};        // listing id -> status read from Supabase (fresher: wins over the page)
+  var heard = {};       // listing id -> build-time status of a copy queued in the player (kept across pages)
   var holdKind = {};    // listing id -> 'checkout' | 'manual' (reserved copies only)
   var lastLiveRead = 0;
   var LIVE_MIN_GAP = 30000;   // ms between two reads (page load, soft navigation, tab back in view)
-  function statusFor(id) { return live[id] || seeded[id] || 'available'; }
+  function statusFor(id) { return live[id] || seeded[id] || heard[id] || 'available'; }
   function listingIdOf(el) {
     return el.getAttribute('data-listing-id') || el.getAttribute('data-add-to-bag') || el.getAttribute('data-bag-line');
   }
@@ -1142,8 +1264,8 @@
   document.addEventListener('cancel', function (e) {
     if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-notify-dialog')) { e.preventDefault(); closeNotify(); }
   }, true);
-  // a bag line follows the live status, as pages/bag.js renders it: available (price), sold / reserved (name struck
-  // through, "SOLD OUT" / "RESERVED" beside the struck price, decisions 0064, 0065)
+  // a bag line follows the live status, as pages/bag.js renders it: available (price), sold / reserved (name plain,
+  // "SOLD OUT" / "RESERVED" in a red inline Alert beside the struck price, decisions 0064, 0065, 0078)
   var BAG_STATUS = { available: 'available', sold: 'sold', traded: 'sold' };
   function syncBagLine(li) {
     var id = li.getAttribute('data-bag-line');
@@ -1170,7 +1292,9 @@
       price.textContent = '';
       if (!available) {
         // as BagItem: "SOLD OUT" / "RESERVED" + (screen readers) "not in your order" + the struck price
+        // the word in an inline Alert (red box, decision 0078): same classes as Alert layout=inline
         var label = document.createElement('span'); label.textContent = line === 'sold' ? 'SOLD OUT' : 'RESERVED';
+        label.className = 'zz-alert body-small zz-bag-item__status'; label.setAttribute('data-layout', 'inline');
         var sr = document.createElement('span'); sr.className = 'zz-visually-hidden'; sr.textContent = ', not in your order, ';
         var s = document.createElement('s'); s.textContent = text;
         price.appendChild(label); price.appendChild(sr); price.appendChild(s);
@@ -1230,6 +1354,8 @@
     if (cta) { addOrOpen(cta.getAttribute('data-add-to-bag')); return; }
     var padd = t.closest('.site-player__add');
     if (padd) { var cur = typeof current === 'function' ? current() : null; if (cur && cur.section !== 'trade') addOrOpen(cur.listing); return; }
+    var checkoutBtn = t.closest('[data-bag-checkout]');
+    if (checkoutBtn) { if (!checkoutBtn.disabled) startCheckout(checkoutBtn); return; }
     var remove = t.closest('.zz-bag-item__remove');
     if (remove) {
       var li = remove.closest('[data-bag-line]');
@@ -1548,6 +1674,53 @@
     records().forEach(function (r) { initReleasePicker(r, searchEndpoint); });
   }
 
+  // /contact/ (decision 0093): checks Email and Message, posts JSON to the Supabase function `contact`
+  // (site.json → contact.endpoint), then shows the thanks line in place of the form. Nothing is stored.
+  function initContact() {
+    var form = document.querySelector('[data-contact-form]');
+    if (!form || form.hasAttribute('data-ready')) return;
+    form.setAttribute('data-ready', '');
+    var errorEl = form.querySelector('[data-contact-error]');
+    var sendBtn = form.querySelector('[data-contact-send]');
+    function field(name) { return form.querySelector('[name="' + name + '"]'); }
+    function val(name) { var el = field(name); return el ? String(el.value || '').trim() : ''; }
+    function mark(el, bad) {
+      el.setAttribute('aria-invalid', bad ? 'true' : 'false');
+      var box = el.closest('.zz-input');
+      if (box) box.setAttribute('data-invalid', bad ? 'true' : 'false');
+    }
+    function fail(text, el) { errorEl.textContent = text; errorEl.hidden = false; if (el) el.focus(); }
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      errorEl.hidden = true;
+      var email = field('email'), message = field('message');
+      var badEmail = !val('email') || !email.checkValidity(), badMessage = !val('message');
+      mark(email, badEmail); mark(message, badMessage);
+      if (badEmail || badMessage) { fail('Fill in your email and your message.', badEmail ? email : message); return; }
+      var endpoint = form.getAttribute('data-endpoint');
+      if (!endpoint) { fail('The form isn\u2019t switched on yet: please write to the email above.'); return; }
+      var label = sendBtn.querySelector('.zz-button__label');
+      var idle = label ? label.textContent : '';
+      sendBtn.disabled = true;
+      if (label) label.textContent = 'Sending\u2026';
+      fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: val('name'), email: val('email'), message: val('message'), website: val('website') }) })
+        .then(function (res) { if (!res.ok) throw new Error('HTTP ' + res.status); })
+        .then(function () {
+          form.hidden = true;
+          var sent = document.querySelector('[data-contact-sent]');
+          if (sent) sent.hidden = false;
+          var title = document.querySelector('[data-contact-title]');
+          if (title) { title.textContent = 'Message sent'; title.setAttribute('tabindex', '-1'); title.focus(); }
+        })
+        .catch(function () {
+          sendBtn.disabled = false;
+          if (label) label.textContent = idle;
+          fail('Your message didn\u2019t go through. Try again, or write to the email above.');
+        });
+    });
+  }
+
   var navToken = 0;
   function navigate(href, push) {
     var token = ++navToken;
@@ -1575,6 +1748,8 @@
       initStatus();
       initBag();
       initOffer();
+      initContact();
+      if (window.ZanzaAccount) window.ZanzaAccount.init();   // customer account (scripts/account.js, decision 0101)
       if (player && audio) render();
       // screen readers and keyboard: start from the new page's main heading, like a full load would
       var focusEl = document.querySelector('main h1') || document.querySelector('.zz-page h1:not([hidden])') || document.querySelector('main');
@@ -1596,6 +1771,27 @@
     window.addEventListener('popstate', function () { navigate(location.href, false); });
   }
 
+  /* ---------------------------------------------------------------- 8. select button focus (decision 0081) */
+
+  // Browsers count a native <select> as a "keyboard input" control, so it matches :focus-visible even when it was
+  // opened with the mouse: the ring stayed after picking an option or clicking away. Focus itself stays on the select
+  // (no blur: keyboard and screen-reader users keep their place); only the ring is hidden, via data-focus-source on
+  // the SelectButton, while the last input was a pointer. Any key press brings the ring back (components.css).
+  function initSelectFocus() {
+    document.addEventListener('pointerdown', function (e) {
+      var box = e.target.closest && e.target.closest('.zz-select-button');
+      if (box) box.setAttribute('data-focus-source', 'pointer');
+    }, true);
+    document.addEventListener('keydown', function (e) {
+      var box = e.target.closest && e.target.closest('.zz-select-button');
+      if (box) box.removeAttribute('data-focus-source');
+    }, true);
+    document.addEventListener('focusout', function (e) {
+      var box = e.target.closest && e.target.closest('.zz-select-button');
+      if (box) box.removeAttribute('data-focus-source');
+    }, true);
+  }
+
   initHeader();
   initMenu();
   initGallery();
@@ -1604,4 +1800,7 @@
   initStatus();
   initBag();
   initOffer();
+  initContact();
+  if (window.ZanzaAccount) window.ZanzaAccount.init();
+  initSelectFocus();
 })();

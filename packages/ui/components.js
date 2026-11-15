@@ -1,5 +1,5 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"}]} */
-/* packages/ui/components.js — the ONE implementation of the rythem-trax components.
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"OrderItem"},{"name":"OrderRow"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"}]} */
+/* packages/ui/components.js — the ONE implementation of the rythem-works components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
    Every visual value is a token from tokens.css or a dimension that is hardcoded in Figma. */
@@ -24,6 +24,38 @@
      Solid shapes (play triangle, radio dot) are fills. Markup is static and trusted (generated from Figma). */
   function strokeIcon(w, hh, markup) {
     return h('svg', { viewBox: '0 0 ' + w + ' ' + hh, fill: 'none', dangerouslySetInnerHTML: { __html: markup } });
+  }
+
+  /* ── Icons ──────────────────────────────────────────────────────────────
+     One entry per Figma component on page `icons`, keyed by its name without `icon/` (decision 0080).
+     Drawn as Figma draws them (decision 0066): 1px non-scaling strokes, inside strokes = 2px clipped.
+     To update an icon after it changes in Figma, replace its entry here; every component follows. */
+  var ICONS = {
+    'icon-bars-three': [24, 24, '<path d="M0 8H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M0 12H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M0 16H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
+    'icon-chevron-down-large-thin': [24, 24, '<path transform="matrix(0 -1 1 0 2 17.5)" d="M 10 0 L 0 10 L 10 20" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>'],
+    'icon-chevron-down-small-thin': [24, 24, '<path transform="matrix(0 -1 1 0 6 15.5)" d="M 6 0 L 0 6 L 6 12" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>'],
+    'icon-chevron-left-small-thin': [24, 24, '<path transform="translate(9 6)" d="M 6 0 L 0 6 L 6 12" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>'],
+    'icon-chevron-right-small-thin': [24, 24, '<path transform="translate(9 6)" d="M 0 0 L 6 6 L 0 12" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>'],
+    'icon-clock-counter-clockwise': [24, 24, '<path transform="translate(11.889 6.875)" d="M 0 0 L 0 5.121 L 5.121 5.121" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/><path transform="translate(3.555 16.326)" d="M 0.622 4.948 L 0 0 L 4.858 1.354" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/><path transform="translate(2.5 2.612)" d="M 1.056 13.714 C 2.113 15.752 3.881 17.331 6.024 18.154 C 8.167 18.976 10.537 18.985 12.687 18.179 C 14.836 17.372 16.615 15.806 17.688 13.777 C 18.761 11.747 19.053 9.395 18.509 7.164 C 17.966 4.934 16.623 2.98 14.737 1.673 C 12.85 0.365 10.55 -0.207 8.27 0.067 C 5.991 0.34 3.891 1.439 2.367 3.156 C 0.843 4.873 0.001 7.089 0 9.384" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/>'],
+    'icon-envelope': [24, 24, '<path transform="translate(1 0.875)" d="M 22 0 L 11 13 L 0 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><defs><clipPath id="zz-icon-envelope-clip"><path transform="translate(0 0)" d="M0 0H24V24H0Z"/></clipPath></defs><path transform="translate(0 0)" d="M0 0H24V24H0Z" clip-path="url(#zz-icon-envelope-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>'],
+    'icon-magnifying-glass': [24, 24, '<path transform="translate(17.256 17.25)" d="M 6 6 L 0 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="square" stroke-linejoin="round"/><defs><clipPath id="zz-icon-search-clip"><path d="M0 10A10 10 0 1 0 20 10A10 10 0 1 0 0 10Z"/></clipPath></defs><path d="M0 10A10 10 0 1 0 20 10A10 10 0 1 0 0 10Z" clip-path="url(#zz-icon-search-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>'],
+    'icon-pause': [24, 24, '<path d="M8.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M15.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
+    'icon-play': [24, 24, '<path d="M 0 24 L 24 12 L 0 0 Z" fill="currentColor"/>'],
+    'icon-plus-small-thin': [24, 24, '<path d="M12 7V17" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 12H7" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>'],
+    'icon-radio-dot': [18, 18, '<defs><clipPath id="zz-icon-radio-dot-clip"><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z"/></clipPath></defs><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z" clip-path="url(#zz-icon-radio-dot-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M3 9A6 6 0 1 0 15 9A6 6 0 1 0 3 9Z" fill="currentColor"/>'],
+    'icon-radio-empty': [18, 18, '<defs><clipPath id="zz-icon-radio-empty-clip"><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z"/></clipPath></defs><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z" clip-path="url(#zz-icon-radio-empty-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>'],
+    'icon-skip-back': [24, 24, '<defs><clipPath id="zz-icon-prev-clip"><path transform="translate(0 0)" d="M 24 24 L 0 12 L 24 0 Z"/></clipPath></defs><path transform="translate(0 0)" d="M 24 24 L 0 12 L 24 0 Z" clip-path="url(#zz-icon-prev-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M0.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
+    'icon-skip-forward': [24, 24, '<defs><clipPath id="zz-icon-next-clip"><path transform="translate(0 0)" d="M 0 24 L 24 12 L 0 0 Z"/></clipPath></defs><path transform="translate(0 0)" d="M 0 24 L 24 12 L 0 0 Z" clip-path="url(#zz-icon-next-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M23.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
+    'icon-square': [24, 24, '<defs><clipPath id="zz-icon-square-clip"><path d="M0 0H24V24H0Z"/></clipPath></defs><path d="M0 0H24V24H0Z" clip-path="url(#zz-icon-square-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>'],
+    'icon-square-minus': [24, 24, '<defs><clipPath id="zz-icon-square-minus-clip"><path d="M0 0H24V24H0Z"/></clipPath></defs><path d="M0 0H24V24H0Z" clip-path="url(#zz-icon-square-minus-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M5 12H19" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
+    'icon-square-tick': [24, 24, '<defs><clipPath id="zz-icon-square-tick-clip"><path d="M0 0H24V24H0Z"/></clipPath></defs><path d="M0 0H24V24H0Z" clip-path="url(#zz-icon-square-tick-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path transform="translate(4 4)" d="M 0 9.032 L 4.889 14 L 16 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
+    'icon-tick-large-thin': [24, 24, '<path transform="translate(3 5)" d="M 0 8.667 L 4.5 13 L 18 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/>'],
+    'icon-x': [24, 24, '<path transform="matrix(0.707 0.707 -0.707 0.707 0.023 0.977)" d="M0 0L32.52 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path transform="matrix(-0.707 0.707 -0.707 -0.707 23.014 0.023)" d="M0 0L32.52 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
+    'icon-x-thin': [24, 24, '<path transform="matrix(0.707 -0.707 0.707 0.707 5.429 5.429)" d="M 0 0 L 0 20" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/><path transform="matrix(0.707 -0.707 0.707 0.707 5.429 19.571)" d="M 20 0 L 0 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>']
+  };
+  function icon(name) {
+    var d = ICONS[name];
+    return strokeIcon(d[0], d[1], d[2]);
   }
 
   /* ── Button ─────────────────────────────────────────────────────────────
@@ -100,7 +132,10 @@
         if (ctx.onValueChange) ctx.onValueChange(props.value);
         if (props.onClick) props.onClick(e);
       }
-    }, omit(props, ['value', 'children', 'leadingIcon', 'trailingIcon', 'suffix', 'state', 'className', 'onClick']));
+    }, omit(props, ['value', 'children', 'leadingIcon', 'trailingIcon', 'suffix', 'state', 'size', 'className', 'onClick']));
+    // Figma `_tab-sizes` size=extra small (account nav, 2026-11-12): padding 4, gap 2, label/extra small (decision 0101)
+    var xs = props.size === 'extra-small';
+    if (xs) attrs['data-size'] = 'extra-small';
     if (tag === 'a') {
       if (selected) attrs['aria-current'] = 'page';
       attrs['data-selected'] = selected ? 'true' : 'false';
@@ -114,7 +149,7 @@
     return h(tag, attrs,
       props.leadingIcon ? h('span', { className: 'zz-tab__icon', 'aria-hidden': 'true' }, props.leadingIcon) : null,
       // Figma `_tab-sizes` label container: label + `suffix` (e.g. a count, "Artists 64"), gap 4, same text style
-      h('span', { className: 'zz-tab__label label-medium' }, h('span', null, props.children),
+      h('span', { className: cx('zz-tab__label', xs ? 'label-extra-small' : 'label-medium') }, h('span', null, props.children),
         props.suffix !== undefined && props.suffix !== null && props.suffix !== false ? h('span', { className: 'zz-tab__suffix' }, props.suffix) : null),
       props.trailingIcon ? h('span', { className: 'zz-tab__icon', 'aria-hidden': 'true' }, props.trailingIcon) : null);
   }
@@ -122,9 +157,7 @@
   /* ── Header ─────────────────────────────────────────────────────────────
      Figma: `header` (device=desktop | mobile). Composition: logo + store name, Tabs (desktop), actions, menu (mobile), 1px rule.
      `device` omitted → responsive: both the menu button and the tabs are rendered and CSS shows one of them (see components.css). */
-  function HamburgerIcon() {
-    return strokeIcon(24, 24, '<path d="M0 8H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M0 12H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M0 16H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>');
-  }
+  function HamburgerIcon() { return icon('icon-bars-three'); }
 
   function Header(props) {
     var device = props.device || 'responsive';
@@ -134,16 +167,22 @@
     var nameTag = props.homeHref ? 'a' : 'div';
     var nameAttrs = { className: 'zz-header__name label-medium' };
     if (props.homeHref) nameAttrs.href = props.homeHref;
+    // Figma `store name` state=active (2026-11-14): on the home page the store name is lit like the tab of the current section
+    if (props.homeCurrent) { nameAttrs['data-state'] = 'active'; if (props.homeHref) nameAttrs['aria-current'] = 'page'; }
 
     return h('header', Object.assign({
       className: cx('zz-header', props.className),
       'data-device': device
-    }, omit(props, ['device', 'logo', 'storeName', 'homeHref', 'tabs', 'actions', 'search', 'searchHref', 'searchLabel', 'onMenuClick', 'menuLabel', 'menuProps', 'className', 'children'])),
+    }, omit(props, ['device', 'logo', 'storeName', 'homeHref', 'homeCurrent', 'tabs', 'actions', 'search', 'searchHref', 'searchLabel', 'onMenuClick', 'menuLabel', 'menuProps', 'className', 'children'])),
       h('div', { className: 'zz-header__row' },
         h('div', { className: 'zz-header__leading' },
           showMenu ? h(Button, Object.assign({ className: 'zz-header__menu', hierarchy: 'secondary', leadingIcon: h(HamburgerIcon), 'aria-label': props.menuLabel || 'Menu', onClick: props.onMenuClick }, props.menuProps)) : null,
           props.logo ? h('div', { className: 'zz-header__logo' }, props.logo) : null,
-          props.storeName ? h(nameTag, nameAttrs, props.storeName) : null),
+          // Figma `store name` logo=true (2026-11-15, decision 0094): when the header has no room for the big logo
+          // (data-logo="hidden"), the same logo shows 36px inside the store name; CSS switches between the two.
+          props.storeName ? h(nameTag, nameAttrs,
+            props.logo ? h('span', { className: 'zz-header__name-logo', 'aria-hidden': 'true' }, props.logo) : null,
+            props.storeName) : null),
         showTabs ? h('div', { className: 'zz-header__tabs' }, props.tabs) : null,
         (props.actions || hasSearch) ? h('div', { className: 'zz-header__trailing' },
           // Figma boolean `search` (2026-11-12): desktop = the search field (input type=search, 280 wide) before the
@@ -216,12 +255,8 @@
 
   /* ── PlayerButton ───────────────────────────────────────────────────────
      Figma: `player button` (state default | playing). icon 24 + label body/medium, gap 0. */
-  function PlayIcon() {   // Figma: icon/icon-play-ultra
-    return strokeIcon(24, 24, '<path d="M 0 24 L 24 12 L 0 0 Z" fill="currentColor"/>');
-  }
-  function PauseIcon() {  // Figma: icon/pause-ultra
-    return strokeIcon(24, 24, '<path d="M8.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M15.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>');
-  }
+  function PlayIcon() { return icon('icon-play'); }
+  function PauseIcon() { return icon('icon-pause'); }
   /* Figma: `_player button-icon` (building block, state default | playing): the 24px play/pause icon.
      Internal, like the `_` component in Figma: PlayerButton exposes its state as the nested `playing` prop. */
   function PlayerButtonIcon(props) {
@@ -276,15 +311,9 @@
      native audio element; the site owns playback, the queue, docking and the slide in/out (apps/storefront).
      Desktop row: actions · now playing (fill) · _player controls · native player (326) · close.
      Mobile column: now playing + close / actions · _player controls / native player. */
-  function PreviousIcon() {   // Figma: icon/play-previous-ultra
-    return strokeIcon(24, 24, '<defs><clipPath id="zz-icon-prev-clip"><path transform="translate(0 0)" d="M 24 24 L 0 12 L 24 0 Z"/></clipPath></defs><path transform="translate(0 0)" d="M 24 24 L 0 12 L 24 0 Z" clip-path="url(#zz-icon-prev-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M0.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>');
-  }
-  function NextIcon() {       // Figma: icon/play-next-ultra
-    return strokeIcon(24, 24, '<defs><clipPath id="zz-icon-next-clip"><path transform="translate(0 0)" d="M 0 24 L 24 12 L 0 0 Z"/></clipPath></defs><path transform="translate(0 0)" d="M 0 24 L 24 12 L 0 0 Z" clip-path="url(#zz-icon-next-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M23.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>');
-  }
-  function CloseIcon() {      // Figma: icon/icon-x-ultra
-    return strokeIcon(24, 24, '<path transform="matrix(0.707 0.707 -0.707 0.707 0.023 0.977)" d="M0 0L32.52 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path transform="matrix(-0.707 0.707 -0.707 -0.707 23.014 0.023)" d="M0 0L32.52 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>');
-  }
+  function PreviousIcon() { return icon('icon-skip-back'); }
+  function NextIcon() { return icon('icon-skip-forward'); }
+  function CloseIcon() { return icon('icon-x'); }
   /* Figma: `_player controls` (state default | playing): position "n of total" + previous · play/pause · next.
      Internal (0008): Player exposes its state as `playing`. Previous/next are disabled at the ends of the queue. */
   function PlayerControls(props) {
@@ -388,8 +417,9 @@
     return h('article', Object.assign({
       className: cx('zz-product-card', props.className),
       'data-device': device,
+      'data-state': props.state && props.state !== 'default' ? props.state : undefined,   // doc-only pin (0009)
       'aria-labelledby': titleId
-    }, omit(props, ['device', 'image', 'href', 'title', 'releaseInfo', 'price', 'description', 'grading', 'cover', 'conditions', 'tags', 'samples',
+    }, omit(props, ['device', 'state', 'image', 'href', 'title', 'releaseInfo', 'price', 'description', 'grading', 'cover', 'conditions', 'tags', 'samples',
                     'onAdd', 'addHref', 'addLabel', 'addLabelShort', 'headingLevel', 'className', 'children'])),
       // href: the cover becomes the link to the product page (no visual change; the link style is not designed yet)
       h(props.href ? 'a' : 'div', props.href ? { className: 'zz-product-card__image', href: props.href, 'aria-labelledby': titleId } : { className: 'zz-product-card__image' },
@@ -420,11 +450,21 @@
      Figma: page `Bag` → `bag item` (device=desktop | mobile × status=available | sold | reserved, text `notice`).
      One line of the bag = one copy (copies are unique: no quantity, Remove only). Row: cover 96 · info (title block,
      grade lines, samples; gap 8) · purchase (price, Remove secondary small; right-aligned, gap 8); gaps 16.
-     sold: product name struck through, "SOLD OUT" beside the struck price, in the price style (decision 0064: struck =
+     sold: product name plain (decision 0078; was struck through), "SOLD OUT" in an inline Alert (alert box) beside the struck price, in the price style (decision 0064: struck =
      unavailable for good, as the disabled Button); no notice. reserved (held by someone else's checkout or by hand):
      the same line with "RESERVED" (Gio 2026-11-12, decision 0065). `notice` overrides the word. `unavailable` (before 0064) = reserved. Samples stay (Gio 2026-11-10). Desktop type = ProductCard desktop,
      mobile = ProductCard mobile. Decision 0044. */
-  function BagItem(props) {
+  function BagItem(props) { return bagLine(props, true); }
+
+  /* ── OrderItem ──────────────────────────────────────────────────────────
+     Figma: page `Account` → `order item` (device=desktop | mobile; 2198:2462). One record of a past order (account › order
+     detail): the BagItem anatomy without Remove (Figma description: "bag item without the remove action"); the price is
+     what was paid. Always available-looking: an order line has no sold / reserved state. Decision 0101. */
+  function OrderItem(props) {
+    return bagLine(Object.assign({}, omit(props, ['status', 'notice', 'onRemove', 'removeLabel']), { status: 'available' }), false);
+  }
+
+  function bagLine(props, removable) {
     var device = props.device || 'responsive';
     var t = CARD_TYPE[device];
     var titleId = useId();
@@ -455,18 +495,49 @@
       h('div', { className: 'zz-bag-item__purchase' },
         unavailable
           ? h('p', { className: cx('zz-bag-item__price', t.head) },
-              h('span', null, props.notice || (status === 'sold' ? 'SOLD OUT' : 'RESERVED')),
+              h(Alert, { layout: 'inline', className: 'zz-bag-item__status' }, props.notice || (status === 'sold' ? 'SOLD OUT' : 'RESERVED')),
               h('span', { className: 'zz-visually-hidden' }, ', not in your order, '),
               props.price != null ? h('s', null, props.price) : null)
           : status === 'available' && props.price != null ? h('p', { className: cx('zz-bag-item__price', t.head) }, props.price) : null,
-        h(Button, { hierarchy: 'secondary', size: 'small', className: 'zz-bag-item__remove', onClick: props.onRemove, 'aria-describedby': titleId },
-          props.removeLabel || 'Remove')));
+        removable ? h(Button, { hierarchy: 'secondary', size: 'small', className: 'zz-bag-item__remove', onClick: props.onRemove, 'aria-describedby': titleId },
+          props.removeLabel || 'Remove') : null));
+  }
+
+  /* ── OrderRow ───────────────────────────────────────────────────────────
+     Figma: page `Account` → `order row` (device=desktop | mobile; 2198:2509). One order in account › orders: the BagItem
+     anatomy (cover 96 of the first record · info: heading = "Order <ref>" + date, details = "<n> records" + "Status: …" ·
+     right column: total + View). The whole row is ONE link (Figma note: "View" is not a second tab stop): View is drawn
+     as a secondary small Button but is a span inside the link, aria-hidden; the link's accessible name is `label`
+     ("Order 1A2B3C4D, 9 Nov 2026, shipped, 39€"). Type classes as BagItem / ProductCard. Decision 0101. */
+  function OrderRow(props) {
+    var device = props.device || 'responsive';
+    var t = CARD_TYPE[device];
+    var img = props.image;
+    return h('a', Object.assign({
+      className: cx('zz-order-row', props.className),
+      'data-device': device,
+      href: props.href,
+      'aria-label': props.label
+    }, omit(props, ['device', 'image', 'href', 'label', 'title', 'date', 'count', 'status', 'total', 'viewLabel', 'className', 'children'])),
+      h('span', { className: 'zz-bag-item__image zz-order-row__image' },
+        img && img.src ? h('img', { src: img.src, alt: '', loading: 'lazy' }) : null),
+      h('span', { className: 'zz-bag-item__info' },
+        h('span', { className: 'zz-bag-item__title-block' },
+          h('span', { className: cx('zz-order-row__title', t.head) }, props.title),
+          props.date ? h('span', { className: cx('zz-order-row__date', t.head) }, props.date) : null),
+        h('span', { className: 'zz-bag-item__description' },
+          props.count ? h('span', { className: cx('zz-order-row__count', t.meta) }, props.count) : null,
+          props.status ? h('span', { className: cx('zz-order-row__status', t.meta) }, props.status) : null)),
+      h('span', { className: 'zz-bag-item__purchase' },
+        h('span', { className: cx('zz-order-row__total', t.head) }, props.total),
+        h('span', { className: 'zz-button zz-order-row__view', 'data-hierarchy': 'secondary', 'data-size': 'small', 'aria-hidden': 'true' },
+          h('span', { className: 'zz-button__label label-extra-small' }, props.viewLabel || 'View'))));
   }
 
   /* ── BagSummary ─────────────────────────────────────────────────────────
      Figma: page `Bag` → `bag summary` (2026-11-10; shipping estimate 2026-11-12, decision 0057). Column, gap 8: divider · `ship to` slot (a select) · subtotal row · shipping row ·
-     total row (label left, value right, body/medium) · `sold out note` (body/small, when the bag has sold lines:
-     "1 record sold out, not included.", decision 0064) · `minimum note` (body/small, Figma minimum=below: "Minimum
+     total row (label left, value right, body/medium) · `sold out note` (an Alert, decision 0077, when the bag has sold lines:
+     "1 record sold out, not included.", decision 0064) · `minimum note` (an Alert, decision 0077; Figma minimum=below: "Minimum
      order 20€. Add 8€ more to check out.", decision 0072; the consumer also disables Checkout and points its
      aria-describedby at the note) · Checkout (primary, large, fill) · note (body/small).
      Figma `destination=not served` = no total, shipping "Not available", Checkout disabled: the consumer passes that
@@ -490,10 +561,10 @@
           h('dt', { className: 'body-medium' }, props.totalLabel || 'Total'),
           h('dd', { className: 'body-medium' }, props.total)) : null),
       props.soldOutNote || props.soldOutNoteProps
-        ? h('p', Object.assign({ className: 'zz-bag-summary__sold-out body-small' }, props.soldOutNoteProps || {}), props.soldOutNote)
+        ? h(Alert, Object.assign({}, props.soldOutNoteProps || {}, { className: 'zz-bag-summary__sold-out' }), props.soldOutNote)
         : null,
       props.minimumNote || props.minimumNoteProps
-        ? h('p', Object.assign({ className: 'zz-bag-summary__minimum body-small' }, props.minimumNoteProps || {}), props.minimumNote)
+        ? h(Alert, Object.assign({}, props.minimumNoteProps || {}, { className: 'zz-bag-summary__minimum' }), props.minimumNote)
         : null,
       h(Button, Object.assign({ hierarchy: 'primary', size: 'large', className: 'zz-bag-summary__checkout', onClick: props.onCheckout, disabled: !!props.checkoutDisabled },
         props.checkoutProps || {}), props.checkoutLabel || 'Checkout'),
@@ -538,15 +609,10 @@
   /* ══ Admin forms ═══════════════════════════════════════════════════════
      Used by the admin (Figma page BACKEND → Create). Render inside data-theme="backend" (Figma mode `backend`). */
 
-  function SearchIcon() {        // Figma: icon/icon-magnifying-glass
-    return strokeIcon(24, 24, '<path transform="translate(16.891 17.074)" d="M 5.256 5.054 L 0 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/><path transform="translate(2.89 2.184)" d="M 16.944 8.472 C 16.944 13.151 13.151 16.944 8.472 16.944 C 3.793 16.944 0 13.151 0 8.472 C 0 3.793 3.793 0 8.472 0 C 13.151 0 16.944 3.793 16.944 8.472 Z" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
-  }
-  function ChevronDownIcon() {   // Figma: icon/icon-chevron-down-small-thin
-    return strokeIcon(24, 24, '<path transform="matrix(0 -1 1 0 6 15.5)" d="M 6 0 L 0 6 L 6 12" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
-  }
-  function DragHandleIcon() {    // Figma: icon/hamburger-menu-ultra at 24 (the `drag handle` instance)
-    return strokeIcon(24, 24, '<path d="M0 8H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M0 12H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M0 16H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>');
-  }
+  function SearchIcon() { return icon('icon-magnifying-glass'); }
+  function ChevronDownIcon() { return icon('icon-chevron-down-small-thin'); }
+  function ChevronDownLargeIcon() { return icon('icon-chevron-down-large-thin'); }   // Sort select, shown at 14
+  function DragHandleIcon() { return icon('icon-bars-three'); }   // at 24 (the `drag handle` instance)
 
   var idCounter = 0;
   function useStableId(given) {   // React 18 useId when available (SSR-safe), else a counter
@@ -825,6 +891,20 @@
       hasBody ? null : remove);
   }
 
+  /* ── Alert ──────────────────────────────────────────────────────────────
+     Figma: page `Bag` → `alert` (2026-11-14, decision 0077): a message that blocks an action or changes what the user
+     gets (records left out of the order), in an alert box (surface-alert). Padding 8
+     (small), surface/alert, text body/small in text/strong-invert, fills its container. A <p>: the consumer adds the
+     live region / id it needs (the bag's minimum note is aria-live polite and Checkout's aria-describedby). Figma
+     `layout`: block (default, a <p>) | inline (a <span>, padding 2/4 as Tag extra-small, hugs: bag item SOLD OUT /
+     RESERVED, decision 0078). Not a toast:
+     it stays as long as the condition holds. */
+  function Alert(props) {
+    var inline = props.layout === 'inline';
+    return h(inline ? 'span' : 'p', Object.assign({}, omit(props, ['className', 'children', 'layout']),
+      { className: cx('zz-alert body-small', props.className), 'data-layout': inline ? 'inline' : 'block' }), props.children);
+  }
+
   /* ── Divider ────────────────────────────────────────────────────────────
      Figma: page `divider` → `divider` (2026-11-10): 1px, border/divider/strong, fills its container. Between the sections
      of the admin form. A native <hr> (a thematic break for screen readers). */
@@ -888,6 +968,90 @@
           props.linkLabel || 'On Discogs', h('span', { 'aria-hidden': 'true' }, ' ↗'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')) : null),
       h('button', { type: 'button', className: 'zz-chosen-release__change body-small', onClick: props.onChange }, props.changeLabel || 'Change'));
   }
+  /* ── Memo item (Figma BACKEND → Memo › `memo item`, decision 0087) ──
+     One record on the admin Memo list. Text column: title body/medium text/strong, meta body/small text/moderate,
+     note body/small, "On Discogs ↗" body/small underlined; actions = two secondary small Buttons (Create listing, Remove).
+     Row: padding 16 top/bottom, gap 8, 1px border-divider/strong at the bottom. device=mobile stacks the actions under
+     the text; desktop puts them on the right, centred (CSS @media, one markup). */
+  function MemoItem(props) {
+    var name = typeof props.title === 'string' ? props.title : 'record';
+    return h('li', Object.assign({}, omit(props, ['title', 'meta', 'note', 'href', 'onCreate', 'onRemove', 'createLabel', 'removeLabel', 'className']),
+      { className: cx('zz-memo-item', props.className) }),
+      h('div', { className: 'zz-memo-item__text' },
+        h('p', { className: 'zz-memo-item__title body-medium' }, props.title),
+        props.meta ? h('p', { className: 'zz-memo-item__meta body-small' }, props.meta) : null,
+        props.note ? h('p', { className: 'zz-memo-item__note body-small' }, props.note) : null,
+        props.href ? h('a', { className: 'zz-memo-item__link body-small', href: props.href, target: '_blank', rel: 'noopener' },
+          'On Discogs', h('span', { 'aria-hidden': 'true' }, ' ↗'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')) : null),
+      h('div', { className: 'zz-memo-item__actions' },
+        props.onCreate ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onCreate, 'aria-label': (props.createLabel || 'Create listing') + ': ' + name }, props.createLabel || 'Create listing') : null,
+        props.onRemove ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onRemove, 'aria-label': (props.removeLabel || 'Remove') + ': ' + name }, props.removeLabel || 'Remove') : null));
+  }
+  /* ── ProgressBar (Figma BACKEND → Memo → `progress bar`, decision 0091) ──
+     Determinate bar: track surface/subtle, value action/primary/background/default, 4px high, square ends.
+     value 0–100. role=progressbar + aria-valuenow; the visible status text stays next to it. */
+  function ProgressBar(props) {
+    var v = Math.max(0, Math.min(100, Math.round(Number(props.value) || 0)));
+    return h('div', Object.assign({ role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': v },
+      omit(props, ['value', 'className']), { className: cx('zz-progress-bar', props.className) }),
+      h('div', { className: 'zz-progress-bar__value', style: { width: v + '%' } }));
+  }
+  /* ── AdminBar (Figma page `admin` → `admin bar`, device=desktop | mobile, decision 0089) ──
+     One responsive markup. desktop: section Buttons (secondary small, state=active = the section you are on, 0045)
+     + Create listing (primary small) · the signed-in email (body/small text/moderate) + Sign out.
+     mobile (--mobile): Menu Button (secondary, bars icon, like the shop header) · title (label/medium) · Create (primary),
+     padding page-margin/mobile, bottom border divider/strong; the sections and Sign out live in the page's menu dialog
+     (MenuLayer), opened by onMenuClick. */
+  function AdminBar(props) {
+    var items = props.items || [];
+    return h('header', Object.assign({}, omit(props, ['items', 'title', 'createHref', 'createLabel', 'createShortLabel', 'email', 'onSignOut', 'signOutLabel',
+      'onMenuClick', 'menuLabel', 'menuProps', 'navLabel', 'className']), { className: cx('zz-admin-bar', props.className) }),
+      h('div', { className: 'zz-admin-bar__desktop' },
+        h('nav', { className: 'zz-admin-bar__nav', 'aria-label': props.navLabel || 'Admin' },
+          items.map(function (it) {
+            return h(Button, { key: it.href, hierarchy: 'secondary', size: 'small', href: it.href, state: it.current ? 'active' : undefined }, it.label);
+          }),
+          props.createHref ? h(Button, { hierarchy: 'primary', size: 'small', href: props.createHref }, props.createLabel || 'Create listing') : null),
+        h('div', { className: 'zz-admin-bar__account' },
+          props.email ? h('span', { className: 'zz-admin-bar__email body-small' }, props.email) : null,
+          props.onSignOut ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onSignOut }, props.signOutLabel || 'Sign out') : null)),
+      h('div', { className: 'zz-admin-bar__mobile' },
+        h(Button, Object.assign({ className: 'zz-admin-bar__menu', hierarchy: 'secondary', leadingIcon: h(HamburgerIcon),
+          'aria-label': props.menuLabel || 'Menu', onClick: props.onMenuClick }, props.menuProps)),
+        h('p', { className: 'zz-admin-bar__title label-medium' }, props.title || 'Store admin'),
+        props.createHref ? h(Button, { hierarchy: 'primary', href: props.createHref, 'aria-label': props.createLabel || 'Create listing' }, props.createShortLabel || 'Create') : null));
+  }
+  /* ── ListingRow (Figma page `admin` → `listing row`, decision 0089) ──
+     One row of an admin list on mobile (Listings, Attributes), in place of the table row. Same grammar as MemoItem:
+     select (a Checkbox, label hidden) · text (title link body/small underlined, meta body/small text/moderate, gap 4)
+     · price (body/small, right). Padding 16 top/bottom, gap 16, bottom border divider/strong. */
+  function ListingRow(props) {
+    return h('li', Object.assign({}, omit(props, ['select', 'title', 'href', 'meta', 'price', 'className']), { className: cx('zz-listing-row', props.className) }),
+      props.select ? h('div', { className: 'zz-listing-row__select' }, props.select) : null,
+      h('div', { className: 'zz-listing-row__text' },
+        h('a', { className: 'zz-listing-row__title body-small', href: props.href }, props.title),
+        props.meta ? h('p', { className: 'zz-listing-row__meta body-small' }, props.meta) : null),
+      props.price ? h('p', { className: 'zz-listing-row__price body-small' }, props.price) : null);
+  }
+  /* ── ActionBar (Figma page `admin` → `action bar`, decision 0089) ──
+     The ActionPanel buttons of a form on mobile, in a bar that stays at the bottom of the viewport (position: sticky,
+     so at the end of the page it sits in its place and covers nothing). Fill surface/base, top border divider/strong,
+     padding medium-small, buttons side by side, gap 8. `children` = the Buttons (primary first); `status` = an optional
+     line above them (the save result: it must be visible where the button was pressed). */
+  function ActionBar(props) {
+    return h('div', Object.assign({}, omit(props, ['className', 'children', 'status']), { className: cx('zz-action-bar', props.className) }),
+      props.status ? h('div', { className: 'zz-action-bar__status' }, props.status) : null,
+      h('div', { className: 'zz-action-bar__actions' }, props.children));
+  }
+  /* ── OrderBlock (Figma page `Orders` (BACKEND) → `order block`, decision 0100) ──
+     One block of the admin order page: title (label/medium) · body (body/small, line breaks kept: an address, the
+     totals) · an optional action (a Button, hug). Vertical, gap 8. Booleans: `action` (on). */
+  function OrderBlock(props) {
+    return h('section', Object.assign({}, omit(props, ['title', 'children', 'action', 'className']), { className: cx('zz-order-block', props.className) }),
+      h('h2', { className: 'zz-order-block__title label-medium' }, props.title),
+      h('p', { className: 'zz-order-block__body body-small' }, props.children),
+      props.action ? h('div', { className: 'zz-order-block__action' }, props.action) : null);
+  }
   function TradeStep(props) {
     return h('li', Object.assign({}, omit(props, ['number', 'title', 'className', 'children']), { className: cx('zz-trade-step', props.className) }),
       h('span', { className: 'zz-trade-step__number label-large', 'aria-hidden': 'true' }, props.number),
@@ -929,15 +1093,9 @@
      Figma: page `controls` → `checkbox` (state default | active). A native checkbox (0018): the input is visually
      hidden and drives the drawn box (icon/icon-square ↔ icon/icon-square-tick); the label is clickable.
      state=active = checked. Focus: browser ring on the box (no focus token yet, design/open.md). */
-  function SquareIcon() {        // Figma: icon/icon-square
-    return strokeIcon(24, 24, '<path transform="translate(3.75 3.75)" d="M 0.75 0 L 15.75 0 C 16.164 0 16.5 0.336 16.5 0.75 L 16.5 15.75 C 16.5 16.164 16.164 16.5 15.75 16.5 L 0.75 16.5 C 0.336 16.5 0 16.164 0 15.75 L 0 0.75 C 0 0.336 0.336 0 0.75 0 Z" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
-  }
-  function SquareTickIcon() {    // Figma: icon/icon-square-tick
-    return strokeIcon(24, 24, '<path transform="translate(8.25 9.75)" d="M 0 3 L 2.25 5.25 L 7.5 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/><path transform="translate(3.75 3.75)" d="M 0.75 0 L 15.75 0 C 16.164 0 16.5 0.336 16.5 0.75 L 16.5 15.75 C 16.5 16.164 16.164 16.5 15.75 16.5 L 0.75 16.5 C 0.336 16.5 0 16.164 0 15.75 L 0 0.75 C 0 0.336 0.336 0 0.75 0 Z" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
-  }
-  function SquareMinusIcon() {   // Figma: icon/icon-square-minus (2026-11-10, checkbox state=indeterminate)
-    return strokeIcon(24, 24, '<path d="M8 12H16" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path transform="translate(3.75 3.75)" d="M 0.75 0 L 15.75 0 C 16.164 0 16.5 0.336 16.5 0.75 L 16.5 15.75 C 16.5 16.164 16.164 16.5 15.75 16.5 L 0.75 16.5 C 0.336 16.5 0 16.164 0 15.75 L 0 0.75 C 0 0.336 0.336 0 0.75 0 Z" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
-  }
+  function SquareIcon() { return icon('icon-square'); }
+  function SquareTickIcon() { return icon('icon-square-tick'); }
+  function SquareMinusIcon() { return icon('icon-square-minus'); }   // (2026-11-10, checkbox state=indeterminate)
   /* state=indeterminate (Figma 2026-11-10): `indeterminate` sets the native property (no HTML attribute exists), so
      screen readers announce "mixed". label=false (Figma boolean `label`): `hideLabel` keeps the label for assistive
      tech but hides it, e.g. "Select <record>" on a table row. */
@@ -1018,12 +1176,8 @@
      checkbox: a 24px control (icon/icon-radio-empty ↔ icon/icon-radio-dot, 18px, centred), gap 8, label body/medium
      text/strong. Native radio (0018): the input is visually hidden over the control; arrow keys move between the
      radios of a group (browser behaviour). RadioGroup = <fieldset> + <legend>, gap 8 (Figma: dialog `choices`). */
-  function RadioEmptyIcon() {   // Figma: icon/icon-radio-empty (18)
-    return strokeIcon(18, 18, '<defs><clipPath id="zz-icon-radio-empty-clip"><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z"/></clipPath></defs><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z" clip-path="url(#zz-icon-radio-empty-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>');
-  }
-  function RadioDotIcon() {     // Figma: icon/icon-radio-dot (18)
-    return strokeIcon(18, 18, '<defs><clipPath id="zz-icon-radio-dot-clip"><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z"/></clipPath></defs><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z" clip-path="url(#zz-icon-radio-dot-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M3 9A6 6 0 1 0 15 9A6 6 0 1 0 3 9Z" fill="currentColor"/>');
-  }
+  function RadioEmptyIcon() { return icon('icon-radio-empty'); }   // (18)
+  function RadioDotIcon() { return icon('icon-radio-dot'); }   // (18)
   var RadioGroupContext = React.createContext(null);
   function Radio(props) {
     var g = React.useContext(RadioGroupContext);
@@ -1084,12 +1238,8 @@
      (entity chips, large) + one `filter facet` per facet; level=facet: the options of one facet (`filter`).
      `PLP header` (device=mobile): "Filter" + the number of applied filters as suffix, and the sort, a native select
      drawn as a small secondary button with a trailing chevron (Gio: every select opens the native dropdown). */
-  function ChevronRightIcon() {   // Figma: icon/icon-chevron-right-small-thin (= chevron-down turned)
-    return strokeIcon(24, 24, '<path transform="translate(9 6)" d="M 0 0 L 6 6 L 0 12" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
-  }
-  function ChevronLeftIcon() {    // Figma: icon/icon-chevron-left-small-thin
-    return strokeIcon(24, 24, '<path transform="translate(9 6)" d="M 6 0 L 0 6 L 6 12" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
-  }
+  function ChevronRightIcon() { return icon('icon-chevron-right-small-thin'); }   // (= chevron-down turned)
+  function ChevronLeftIcon() { return icon('icon-chevron-left-small-thin'); }
   function FilterFacet(props) {
     var hasValue = props.value !== undefined && props.value !== null && props.value !== false && props.value !== '';
     return h('button', Object.assign({ type: 'button', className: cx('zz-filter-facet', props.className) },
@@ -1110,7 +1260,7 @@
         h(IconButton, { className: 'zz-filters-layer__back', icon: h(ChevronLeftIcon), 'aria-label': props.backLabel || 'Back to filters',
           onClick: props.onBack, hidden: level !== 'facet', 'data-layer-back': '' }),
         h('h2', { id: titleId, className: 'zz-filters-layer__title label-medium', 'data-layer-title': '' }, props.title),
-        h(IconButton, { className: 'zz-filters-layer__close', icon: h(XThinIcon), 'aria-label': props.closeLabel || 'Close filters',
+        h(IconButton, { className: 'zz-filters-layer__close', icon: h(CloseIcon), 'aria-label': props.closeLabel || 'Close filters',
           onClick: props.onClose, 'data-layer-close': '' })),
       h('div', { className: 'zz-filters-layer__body' },
         hasApplied || props.appliedLabel ? h('div', { className: 'zz-filters-layer__applied', hidden: level !== 'main' || !hasApplied, 'data-layer-applied': '' },
@@ -1137,7 +1287,8 @@
   function MenuItem(props) {
     var current = !!props.current;
     var hasDetail = props.detail !== undefined && props.detail !== null && props.detail !== false && props.detail !== '';
-    return h('a', Object.assign({ className: cx('zz-menu-item', props.className), 'data-state': current ? 'current' : 'default',
+    // no href → a <button> (an action in the menu, e.g. the admin's Sign out, decision 0089)
+    return h(props.href ? 'a' : 'button', Object.assign(props.href ? {} : { type: 'button' }, { className: cx('zz-menu-item', props.className), 'data-state': current ? 'current' : 'default',
       'aria-current': current ? 'page' : undefined }, omit(props, ['label', 'detail', 'current', 'className', 'children'])),
       h('span', { className: 'zz-menu-item__label label-medium' }, props.label),
       hasDetail ? h('span', { className: 'zz-menu-item__detail body-small' }, props.detail) : null);
@@ -1151,11 +1302,57 @@
       omit(props, ['title', 'legal', 'legalLabel', 'onClose', 'closeLabel', 'children', 'className'])),
       h('div', { className: 'zz-menu-layer__bar' },
         h('h2', { id: titleId, className: 'zz-menu-layer__title label-medium' }, props.title || 'Menu'),
-        h(IconButton, { className: 'zz-menu-layer__close', icon: h(XThinIcon), 'aria-label': props.closeLabel || 'Close menu',
+        h(IconButton, { className: 'zz-menu-layer__close', icon: h(CloseIcon), 'aria-label': props.closeLabel || 'Close menu',
           onClick: props.onClose, 'data-menu-close': '' })),
       h('nav', { className: 'zz-menu-layer__body', 'aria-labelledby': titleId },
         props.children,
         props.legal ? h('div', { className: 'zz-menu-layer__legal body-small', role: 'group', 'aria-label': props.legalLabel || 'Legal' }, props.legal) : null));
+  }
+
+  /* ── Footer / FooterLinks / FooterNewsletter (Figma page `footer`: `footer` device=desktop | mobile,
+     `footer link list` group=shop | info | social, `footer newsletter`, `footer legal`; decision 0077) ──
+     One responsive markup: desktop = newsletter and the link columns side by side, mobile (--mobile) = stacked,
+     links in two columns. The page gives the content: the DS has no site data. */
+  function Footer(props) {
+    return h('footer', Object.assign({ className: cx('zz-footer', props.className) },
+      omit(props, ['newsletter', 'children', 'navLabel', 'legal', 'legalLabel', 'copyright', 'className'])),
+      h('div', { className: 'zz-footer__main' },
+        props.newsletter ? h('div', { className: 'zz-footer__newsletter' }, props.newsletter) : null,   // Figma boolean `newsletter`
+        h('nav', { className: 'zz-footer__links', 'aria-label': props.navLabel || 'Footer' }, props.children)),
+      h('div', { className: 'zz-footer__bottom body-small' },
+        props.copyright ? h('p', { className: 'zz-footer__copyright' }, props.copyright) : null,   // Figma `copyright`
+        props.legal ? h('div', { className: 'zz-footer__legal', role: 'group', 'aria-label': props.legalLabel || 'Legal' }, props.legal) : null));
+  }
+  // Figma `footer link list`: one column of links. `links` = [{ href, label }]. `label` names the list for screen readers
+  // (aria-label: the columns have no titles in Figma). No useId: the storefront renders the footer as its own React
+  // root, where generated ids would repeat the page's.
+  function FooterLinks(props) {
+    return h('div', Object.assign({ className: cx('zz-footer-links', props.className) }, omit(props, ['links', 'label', 'className'])),
+      h('ul', { className: 'zz-footer-links__list body-small', role: 'list', 'aria-label': props.label },
+        (props.links || []).map(function (l) {
+          return h('li', { key: l.href + l.label }, h('a', { href: l.href, rel: l.rel, target: l.target }, l.label));
+        })));
+  }
+  // Figma `footer newsletter`: a plain HTML form (works without JS) → the provider's subscribe endpoint (Buttondown,
+  // double opt-in). Input text field (label) + secondary Button, then the note (`note`, links inside are underlined).
+  // `endpoint` (decision 0103): the site's own signup function; the page script (apps/storefront/scripts/newsletter.js)
+  // posts there and answers in place, in the status line, and falls back to `action` if the function can't be reached.
+  // The hidden `website` field is a honeypot for bots.
+  function FooterNewsletter(props) {
+    var base = props.id || 'zz-footer-newsletter';   // fixed ids, not useId (see FooterLinks)
+    var noteId = base + '-note';
+    return h('form', Object.assign({ className: cx('zz-footer-newsletter', props.className), action: props.action, method: props.method || 'post',
+      'data-newsletter-endpoint': props.endpoint || undefined },
+      omit(props, ['action', 'method', 'endpoint', 'label', 'placeholder', 'submitLabel', 'note', 'name', 'className'])),
+      h('div', { className: 'zz-footer-newsletter__row' },
+        h(Input, { id: base + '-email', className: 'zz-footer-newsletter__input', label: props.label || 'Newsletter', type: 'email', name: props.name || 'email',
+          placeholder: props.placeholder || 'Your email', autoComplete: 'email', required: true, 'aria-describedby': props.note ? noteId : undefined }),
+        h(Button, { hierarchy: 'secondary', type: 'submit' }, props.submitLabel || 'Subscribe')),
+      props.endpoint ? h('div', { className: 'zz-visually-hidden', 'aria-hidden': 'true' },
+        h('label', null, 'Website', h('input', { type: 'text', name: 'website', tabIndex: -1, autoComplete: 'off' }))) : null,
+      // the answer after submit (filled by the page script): sent → replaces the row; error → under the row
+      props.endpoint ? h('p', { className: 'zz-footer-newsletter__status body-small', role: 'status', tabIndex: -1, hidden: true, 'data-newsletter-status': '' }) : null,
+      props.note ? h('p', { id: noteId, className: 'zz-footer-newsletter__note body-small' }, props.note) : null);
   }
 
   // a native <select> drawn as a Button (Figma: button + trailing icon chevron-down): the select is invisible over
@@ -1169,7 +1366,7 @@
       h('span', { className: cx('zz-button__label', (size === 'small' || size === 'extra-small') ? 'label-extra-small' : 'label-medium') },
         props.prefix ? h('span', { className: 'zz-button__prefix' }, props.prefix) : null,   // Figma `prefix` ("Sort:", desktop)
         h('span', { 'data-select-label': '' }, current.label)),
-      h('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, h(ChevronDownIcon)),
+      h('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, h(ChevronDownLargeIcon)),
       h('select', Object.assign({ className: 'zz-select-button__control' },
         omit(props, ['options', 'className', 'hierarchy', 'size', 'layout', 'prefix'])),
         options.map(function (o) { return h('option', { key: o.value, value: o.value }, o.label); })));
@@ -1183,21 +1380,11 @@
      a chip is not a value. Suggestions in a menu below the field (WAI-ARIA combobox + listbox, keyboard: arrows,
      Enter, Escape, Backspace on the empty field removes the last chip). `multiple={false}`: one chip, and the text
      box is hidden while it is there (remove the chip to change it). */
-  function XThinIcon() {      // Figma: icon/icon-x-thin
-    return strokeIcon(24, 24, '<path transform="matrix(0.707 -0.707 0.707 0.707 5.429 5.429)" d="M 0 0 L 0 20" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/><path transform="matrix(0.707 -0.707 0.707 0.707 5.429 19.571)" d="M 20 0 L 0 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
-  }
-  function TickLargeThinIcon() {      // Figma: icon/icon-tick-large-thin leading icon of "In bag" (decision 0058)
-    return strokeIcon(24, 24, '<path transform="translate(3 5)" d="M 0 8.667 L 4.5 13 L 18 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/>');
-  }
-  function ClockCounterClockwiseIcon() {   // Figma: icon/icon-clock-counter-clockwise, leading icon of "Reserved" (proposal, design/open.md)
-    return strokeIcon(24, 24, '<path transform="translate(11.889 6.875)" d="M 0 0 L 0 5.121 L 5.121 5.121" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/><path transform="translate(3.555 16.326)" d="M 0.622 4.948 L 0 0 L 4.858 1.354" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/><path transform="translate(2.5 2.612)" d="M 1.056 13.714 C 2.113 15.752 3.881 17.331 6.024 18.154 C 8.167 18.976 10.537 18.985 12.687 18.179 C 14.836 17.372 16.615 15.806 17.688 13.777 C 18.761 11.747 19.053 9.395 18.509 7.164 C 17.966 4.934 16.623 2.98 14.737 1.673 C 12.85 0.365 10.55 -0.207 8.27 0.067 C 5.991 0.34 3.891 1.439 2.367 3.156 C 0.843 4.873 0.001 7.089 0 9.384" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/>');
-  }
-  function EnvelopeIcon() {   // Figma: icon/icon-envelope, trailing icon of "(Reserved) Notify me" (decision 0065)
-    return strokeIcon(24, 24, '<path transform="translate(1 0.875)" d="M 22 0 L 11 13 L 0 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><defs><clipPath id="zz-icon-envelope-clip"><path transform="translate(0 0)" d="M0 0H24V24H0Z"/></clipPath></defs><path transform="translate(0 0)" d="M0 0H24V24H0Z" clip-path="url(#zz-icon-envelope-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>');
-  }
-  function PlusSmallThinIcon() {      // Figma: icon/icon-plus-small-thin
-    return strokeIcon(24, 24, '<path d="M12 7V17" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 12H7" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>');
-  }
+  function XThinIcon() { return icon('icon-x-thin'); }
+  function TickLargeThinIcon() { return icon('icon-tick-large-thin'); }   // leading icon of "In bag" (decision 0058)
+  function ClockCounterClockwiseIcon() { return icon('icon-clock-counter-clockwise'); }   // leading icon of "Reserved" (proposal, design/open.md)
+  function EnvelopeIcon() { return icon('icon-envelope'); }   // trailing icon of "(Reserved) Notify me" (decision 0065)
+  function PlusSmallThinIcon() { return icon('icon-plus-small-thin'); }
   function EntityChip(props) {
     var label = props.label !== undefined ? props.label : props.children;
     var size = props.size || 'medium';   // Figma `size` (2026-11-10): medium 24px | large 44px (mobile, body/medium, × 44 × 44)
@@ -1205,7 +1392,7 @@
       omit(props, ['label', 'children', 'className', 'onRemove', 'removeLabel', 'state', 'size'])),
       h('span', { className: cx('zz-entity-chip__label', size === 'large' ? 'body-medium' : 'body-small') }, label),
       h('button', { type: 'button', className: 'zz-entity-chip__remove', 'aria-label': props.removeLabel || ('Remove ' + label),
-        onClick: props.onRemove, tabIndex: props.onRemove ? undefined : -1 }, h(XThinIcon)));
+        onClick: props.onRemove, tabIndex: props.onRemove ? undefined : -1 }, h(CloseIcon)));
   }
   function entityMatches(options, text, taken, limit) {
     var t = String(text || '').trim().toLowerCase();
@@ -1313,14 +1500,44 @@
       support ? h('p', { id: supportId, className: 'zz-input__support body-small' }, support) : null);
   }
 
+  /* ── Home (Figma page `Home`, 2026-11-14) ────────────────────────────────
+     SectionHead: `section head` — divider on top (boolean `divider`), then a row: title body/large text/strong, actions on
+       the right (gap small): `play` ("Play all") and `see all`, secondary Buttons; gap medium-small.
+     GenreLinks: `genre links` — SectionHead (no actions) + the genres as Tag size=medium links, wrapping, gap small.
+     HomeAbout: `home about` — SectionHead (no actions) + bio body/medium + DiscogsCard (boolean `discogs`) + an underlined link; gap medium-small. */
+  function SectionHead(props) {
+    var HeadingTag = 'h' + (props.headingLevel || 2);
+    return h('div', Object.assign({}, omit(props, ['title', 'headingLevel', 'divider', 'actions', 'titleId', 'className']), { className: cx('zz-section-head', props.className) }),
+      props.divider === false ? null : h(Divider),
+      h('div', { className: 'zz-section-head__row' },
+        h(HeadingTag, { className: 'zz-section-head__title body-large', id: props.titleId }, props.title),
+        props.actions ? h('div', { className: 'zz-section-head__actions' }, props.actions) : null));
+  }
+  function GenreLinks(props) {
+    var genres = props.genres || [];
+    return h('section', Object.assign({}, omit(props, ['title', 'genres', 'headingLevel', 'divider', 'className']), { className: cx('zz-genre-links', props.className), 'aria-labelledby': props.id ? props.id + '-title' : undefined }),
+      h(SectionHead, { title: props.title || 'Genres', headingLevel: props.headingLevel, divider: props.divider, titleId: props.id ? props.id + '-title' : undefined }),
+      h('ul', { className: 'zz-genre-links__list' }, genres.map(function (g) {
+        return h('li', { key: g.href }, h(Tag, { size: 'medium', href: g.href }, g.label));
+      })));
+  }
+  function HomeAbout(props) {
+    return h('section', Object.assign({}, omit(props, ['title', 'headingLevel', 'divider', 'discogs', 'href', 'linkLabel', 'className', 'children']), { className: cx('zz-home-about', props.className), 'aria-labelledby': props.id ? props.id + '-title' : undefined }),
+      h(SectionHead, { title: props.title || 'About', headingLevel: props.headingLevel, divider: props.divider, titleId: props.id ? props.id + '-title' : undefined }),
+      props.children ? h('p', { className: 'zz-home-about__bio body-medium' }, props.children) : null,
+      props.discogs ? h(DiscogsCard, props.discogs) : null,
+      props.href ? h('a', { className: 'zz-home-about__link body-medium', href: props.href }, props.linkLabel || 'More about me') : null);
+  }
+
   return { Button: Button, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, ActiveFilter: ActiveFilter, Tag: Tag, TagGroup: TagGroup,
-           PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, BagItem: BagItem, BagSummary: BagSummary, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
-           Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, DragHandleIcon: DragHandleIcon,
-           Checkbox: Checkbox, Divider: Divider, ActionPanel: ActionPanel, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog, Toast: Toast, ToastRegion: ToastRegion,
+           PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, BagItem: BagItem, OrderItem: OrderItem, OrderRow: OrderRow, BagSummary: BagSummary, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
+           Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, ChevronDownLargeIcon: ChevronDownLargeIcon, DragHandleIcon: DragHandleIcon,
+           Checkbox: Checkbox, Alert: Alert, Divider: Divider, ActionPanel: ActionPanel, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog, Toast: Toast, ToastRegion: ToastRegion,
            EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon, TickLargeThinIcon: TickLargeThinIcon, ClockCounterClockwiseIcon: ClockCounterClockwiseIcon, EnvelopeIcon: EnvelopeIcon,
            Radio: Radio, RadioGroup: RadioGroup, RadioEmptyIcon: RadioEmptyIcon, RadioDotIcon: RadioDotIcon,
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
-           FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
+           FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease };
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, ProgressBar: ProgressBar, AdminBar: AdminBar, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock,
+           SectionHead: SectionHead, GenreLinks: GenreLinks, HomeAbout: HomeAbout };
 });

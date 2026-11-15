@@ -9,9 +9,10 @@ The site header: logo and store name on the left, section tabs in the middle (de
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `device` | `"desktop" \| "mobile"` |  | Which Figma variant to render. Omitted → responsive: one markup, CSS switches menu/tabs/logo size (breakpoint `--mobile` from tokens.json, &lt;768px placeholder). |
-| `logo` | `ReactNode` |  | Logo image (&lt;img> or &lt;svg>). 64×64 on desktop, 48×48 on mobile. Figma: `image 2`. |
+| `logo` | `ReactNode` |  | Logo image (&lt;img> or &lt;svg>). 64×64 on desktop, 48×48 on mobile. Figma: `logo` (boolean). Also rendered 36×36 inside the store name, shown only when the header sets `data-logo="inside"` (no room for the big one, decision 0094). |
 | `storeName` | `ReactNode` |  | Store name shown in the bordered label box (from `site.json` → storeName). Figma: text layer `store name`. |
 | `homeHref` | `string` |  | When set, the store name becomes a link to this URL. |
+| `homeCurrent` | `boolean` |  | Figma `store name` state=active: the page is the home page. Lit like the active tab; aria-current="page" on the link. |
 | `tabs` | `ReactNode` |  | A &lt;Tabs> element. Rendered on desktop only (Figma: no tabs in the mobile variant). |
 | `actions` | `ReactNode` |  | Trailing actions, usually secondary &lt;Button>s (Figma: `trailing actions`, gap 8). |
 | `search` | `ReactNode` |  | Figma boolean `search` (desktop): the search field, usually a &lt;form role="search"> with an &lt;Input variant="search">. Rendered 280px wide before `actions`. |

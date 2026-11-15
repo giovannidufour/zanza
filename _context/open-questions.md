@@ -1,4 +1,4 @@
-# rythem-trax — Decisioni aperte
+# rythem-works — Decisioni aperte
 
 > Da chiudere **prima** di scrivere codice. Quando una decisione è presa: aggiorna `product-brief.md`/`stack.md` e sposta la voce in "Chiuse".
 
@@ -9,9 +9,10 @@ Sede in Germania, vendita in tutto il mondo (Q5 chiusa). Da verificare con uno S
 MVP (2026-11-12): tutto fuori app, nella conversazione; nell'admin il listing passa a Reserved e poi Traded. Da decidere dopo: salvare le offerte in una tabella (lista nell'admin) e se un accordo diventa un ordine.
 
 ## Q7 — Nome
-**Nome scelto (Gio, 2026-11-14): `rythem-trax`** (grafia voluta: *rythem*, non *rhythm*), al posto del provvisorio "Zanza". Resta aperto: verificare dominio e marchio prima di investire in brand/DS; Gio l'ha introdotto con "forse ho trovato un nome", quindi non ancora definitivo. Collegata al cambio di dominio (vedi `stack.md` → Portabilità).
+**Nome scelto (Gio, 2026-11-15): `rythem-works`** (grafia voluta: *rythem*, non *rhythm*), al posto del provvisorio "Zanza" e di `rythem-trax` (14/11, scartato: dominio rythem-tracks.com non disponibile). Resta aperto: verificare dominio e marchio prima di investire in brand/DS; Gio l'ha introdotto con "forse ho trovato un nome", quindi non ancora definitivo. Collegata al cambio di dominio (vedi `stack.md` → Portabilità).
 
 ## Chiuse
+- **Venditore privato** (Gio, 2026-11-15): "sono un privato che vende saltuariamente". Pagine legali snelle (decisione 0093): niente recesso, niente Impressum (né indirizzo né telefono), contatto via email e form. Rischio: lo status dipende da volume e regolarità delle vendite (all'avvio si parlava di 10–20 dischi a settimana, Q4): da confermare con commercialista/avvocato, collegata a Q5b.
 - **Q2 — Trade** (2026-11-12): utente ↔ negozio (Gio), dischi solo trade per ora (sale+trade forse dopo). Scambi pochi e one-shot: "non è in vendita, convincimi". Niente regola di spedizione sul sito: l'accordo si trova parlando. Fiducia presa in prestito da Discogs/Instagram (dell'utente e di Gio), niente identità reale. MVP: form → email a Gio (decisione 0068).
 - **Q1 — Chi vende** (2026-11-09): un solo venditore, un solo operatore (Gio).
 - **Q3 — Fonte dei sample** (2026-11-09): (b) clip registrate da Gio dai suoi dischi, hostate su R2. Il rischio sui diritti resta (registrare la propria copia non dà i diritti sulla registrazione): clip corte (30–60 s), mp3 128 kbps, disclaimer.

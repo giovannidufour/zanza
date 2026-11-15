@@ -5,18 +5,27 @@
    Listings: Figma BACKEND → Listings (2026-11-10). Sign-in has no Figma frame (design/open.md). */
 
 * { box-sizing: border-box; }
-/* background on html only: surface-accent is translucent in the backend mode (black-a4), stacking it on body darkens it (0023) */
-html { background: var(--surface-accent); min-height: 100%; }
-/* Figma BACKEND → Create (Gio, 2026-11-10): the create / edit frame is on surface/base (white); fields keep surface-accent (black-a4) over it, decision 0032 */
-html:has(.admin-page) { background: var(--surface-base); }
+/* every admin page sits on surface-page (backend: scotch-mist, the cream; decision 0100, replaces the per-page grounds of 0023 / 0032 / 0057).
+   On html only, so nothing stacks; fields keep surface-accent (black-a4) over it. */
+html { background: var(--surface-page); min-height: 100%; }
 body { margin: 0; color: var(--text-strong); font-family: var(--font-sans); }
 h1, h2, p { margin: 0; }
 
 .admin { padding: 24px; display: flex; flex-direction: column; gap: 24px; max-width: 1024px; }
 
-/* top bar (not in Figma): who is signed in + navigation */
-.admin-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
-.admin-bar__nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+/* top bar = DS AdminBar (Figma page `admin` → `admin bar`, decision 0089). Mobile menu: a full-screen native modal
+   dialog with a MenuLayer, like the shop's .site-menu (apps/storefront/base.css). */
+.admin-menu {
+  position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none;
+  margin: 0; padding: 0; border: 0; color: var(--text-strong);
+  background: var(--surface-page);   /* surface-accent (the MenuLayer fill) is translucent in the backend mode: page under it = the page look */
+}
+.admin-menu:not([open]) { display: none; }
+.admin-menu::backdrop { background: var(--surface-page); }
+.admin-menu:focus { outline: none; }   /* programmatic focus target (decision 0043) */
+/* lists on mobile: DS ListingRow in a plain <ul> (Figma Listings - mobile) */
+.admin-rows { list-style: none; margin: 0; padding: 0; }
+.admin-rows__empty { padding: 16px 0; }
 
 /* Figma BACKEND → Create (2026-11-10): the frame is a 12-column grid, gap 16; main = 8 columns, side = 4 (fill).
    Create / edit is full width (Gio, 2026-11-10); the other admin pages keep max-width 1024. */
@@ -69,16 +78,32 @@ h1, h2, p { margin: 0; }
 .admin-bulk__message[hidden] { display: none; }
 
 @media (--mobile) {
-  .admin { padding: 16px; }
+  /* Figma page `admin` (decision 0089): the AdminBar bleeds to the screen edges, the page content keeps 16 */
+  .admin { padding: 0 16px 16px; }
+  .admin > .zz-admin-bar { margin: 0 -16px; }
+  /* status tabs: one row that scrolls sideways (the last tab is cut at the edge, so it reads as more) */
+  .admin .zz-tabs { overflow-x: auto; margin-right: -16px; padding-right: 16px; scrollbar-width: none; }
+  .admin .zz-tabs > * { flex: none; }
   .admin-page { grid-template-columns: minmax(0, 1fr); }
   .admin-main, .admin-side { grid-column: auto; }
-  .admin-side { order: -1; }
+  /* the side (SKU, status, preview) follows the form; the actions are in the ActionBar at the bottom */
+  .admin-page > .zz-action-bar { grid-column: 1 / -1; margin: 0 -16px -16px; }
+  html:has(.zz-action-bar) { scroll-padding-bottom: 88px; }   /* the bar (16 + 38 + 16 + 1) + a gap: a focused field is never under it */
+  /* bulk bar: after the rows; while something is selected it stays at the bottom of the viewport (Figma `bulk bar`) */
+  .admin-bulk { min-height: 0; padding: 0; background: none; }
+  .admin-bulk:not(:has(.admin-bulk__actions)) .admin-bulk__count { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .admin-bulk:has(.admin-bulk__actions) {
+    position: sticky; bottom: 0; z-index: 2; margin: 0 -16px -16px;
+    flex-direction: column; align-items: stretch; gap: 8px; padding: 16px;
+    background: var(--surface-base); border-top: 1px solid var(--border-divider-strong);
+  }
+  .admin-bulk__actions { justify-content: flex-start; }
   .admin-page--attribute > .admin-side { position: static; }
   .admin:has(.admin-page--edit) { height: auto; padding-bottom: 16px; }
   .admin-page--edit { grid-template-rows: none; }
   .admin-page--edit > .admin-main, .admin-page--edit > .admin-side { overflow: visible; margin: 0; padding: 0; }
   .admin-row { grid-template-columns: minmax(0, 1fr); }
-  .admin-row > * { grid-column: auto; }
+  .admin-row > *, .admin-row > .row-start { grid-column: 1 / -1; }   /* .row-start (1 / span 4) would add implicit columns to the 1-column grid and squeeze Label next to Country */
 }
 /* Figma `uploaded list` in Samples overview (2095:19476): rows with a title field, gap 16 */
 .admin-samples { gap: 16px; }
@@ -96,17 +121,15 @@ h1, h2, p { margin: 0; }
 .admin-preview__shop .zz-gallery { --zz-gallery-bleed: var(--page-margin-mobile); }
 
 /* Figma BACKEND → Attributes (2123:2053, decision 0034): list = Listings grammar + a toolbar (search fill, button hug,
-   gap 16); entity page = the Create layout (main 8 + side 4) but in a 1024 frame on surface-accent, like Listings. */
+   gap 16); entity page = the Create layout (main 8 + side 4) but in a 1024 frame, like Listings. */
 .admin-toolbar { display: flex; gap: 16px; align-items: flex-start; }
 .admin-toolbar__search { flex: 1 1 auto; min-width: 0; }
 .admin:has(.admin-page--attribute) { max-width: 1024px; }
-html:has(.admin-page--attribute) { background: var(--surface-accent); }
 .admin-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }   /* Figma `record list`, gap 8 */
 .admin-links a { color: inherit; }
 
-/* Figma BACKEND → Shipping (2201:4782, decision 0057): frame on surface/base (Gio 2026-11-12, like Create, 0032);
+/* Figma BACKEND → Shipping (2201:4782, decision 0057): frame on surface/page like every admin page (0099);
    fields keep surface-accent over it. Sections of heading · help · table · Add, gap 16; column widths from the frame. */
-html:has(.admin-shipping) { background: var(--surface-base); }
 .admin-shipping { display: flex; flex-direction: column; gap: 24px; }
 .admin-shipping h1, .admin-shipping h2, .admin-shipping p { margin: 0; }
 .admin-shipping .admin-toolbar { align-items: center; }
@@ -129,3 +152,44 @@ html:has(.admin-shipping) { background: var(--surface-base); }
 .admin-shipping__check > :last-child { width: 400px; max-width: 100%; }
 .admin-shipping p.admin-shipping__result { margin-top: 16px; white-space: pre-line; }
 #shipping-zones td { vertical-align: top; }   /* Figma zones rows: top left (Gio 2026-11-12), the countries cell grows with its names */
+
+/* Figma BACKEND → Memo (2296:9962, decision 0087): Gio's list of records to sell later, mobile first. Frame on
+   surface-page like every admin page (0099); stack gap 24; add form 480 wide on desktop (fill on mobile), fields gap 16;
+   list = MemoItem rows (packages/ui). Record = the offer form's release picker: the suggestions overlay what follows. */
+.admin-memo { display: flex; flex-direction: column; gap: 24px; }
+.admin-memo__add { display: flex; flex-direction: column; gap: 16px; width: 480px; max-width: 100%; }
+.admin-memo__add .admin-status:empty { display: none; }
+.admin-memo__submit { width: 100%; }
+.admin-memo__photo { display: flex; flex-direction: column; gap: 8px; }
+.admin-memo__photo-button { width: 100%; }
+.admin-photo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.admin-memo__photo-status { margin: 0; color: var(--text-moderate); }
+.admin-memo__photo-status:empty { display: none; }
+.admin-memo__list { display: flex; flex-direction: column; gap: 24px; }
+.admin-memo__count { color: var(--text-moderate); }
+.admin-memo__items { list-style: none; margin: 0; padding: 0; }
+.admin-picker { position: relative; display: flex; flex-direction: column; gap: 4px; }
+.admin-picker > p { margin: 0; }
+.admin-picker__list { position: absolute; top: 100%; left: 0; right: 0; z-index: 5; max-height: 360px; overflow-y: auto; }
+@media (--mobile) { .admin-memo__add { width: auto; } }
+
+/* Shipping on mobile (decision 0089): the tables stack, one row = a block of fields, each with its column name
+   above it (data-label, set in admin.js); the fixed desktop column widths are dropped. */
+@media (--mobile) {
+  .admin-shipping .admin-toolbar { flex-direction: column; align-items: stretch; }
+  .admin-shipping__table, .admin-shipping__table tbody, .admin-shipping__table tr, .admin-shipping__table td { display: block; width: auto; }
+  .admin-shipping__table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .admin-shipping__table tr { display: flex; flex-direction: column; gap: 8px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); }
+  .admin-shipping__table td { padding: 0; border: 0; text-align: left; }
+  .admin-shipping__table td:empty { display: none; }
+  .admin-shipping__table td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 4px; color: var(--text-moderate); }
+  .admin-shipping__minimum { flex-direction: column; align-items: stretch; gap: 4px; }
+  .admin-shipping__minimum > label, .admin-shipping__minimum > .zz-input, .admin-shipping__check > :first-child { width: auto; }
+}
+
+/* Orders (Figma BACKEND → Orders, decision 0100): order page = the Create layout (main + side); details in two
+   columns (Figma `details`: gap 16 × 32), one column on mobile */
+.admin-order__records { display: flex; flex-direction: column; gap: 8px; }
+.admin-order__records h2 { margin: 0; }
+.admin-order__details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 16px; }
+@media (--mobile) { .admin-order__details { grid-template-columns: minmax(0, 1fr); gap: 24px; } }

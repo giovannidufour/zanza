@@ -32,12 +32,14 @@ export declare function Button(props: ButtonProps): JSX.Element;
 export interface HeaderProps extends HTMLAttributes<HTMLElement> {
   /** Which Figma variant to render. Omitted → responsive: one markup, CSS switches menu/tabs/logo size (breakpoint `--mobile` from tokens.json, <768px placeholder). */
   device?: "desktop" | "mobile";
-  /** Logo image (<img> or <svg>). 64×64 on desktop, 48×48 on mobile. Figma: `image 2`. */
+  /** Logo image (<img> or <svg>). 64×64 on desktop, 48×48 on mobile. Figma: `logo` (boolean). Also rendered 36×36 inside the store name, shown only when the header sets `data-logo="inside"` (no room for the big one, decision 0094). */
   logo?: ReactNode;
   /** Store name shown in the bordered label box (from `site.json` → storeName). Figma: text layer `store name`. */
   storeName?: ReactNode;
   /** When set, the store name becomes a link to this URL. */
   homeHref?: string;
+  /** Figma `store name` state=active: the page is the home page. Lit like the active tab; aria-current="page" on the link. */
+  homeCurrent?: boolean;
   /** A <Tabs> element. Rendered on desktop only (Figma: no tabs in the mobile variant). */
   tabs?: ReactNode;
   /** Trailing actions, usually secondary <Button>s (Figma: `trailing actions`, gap 8). */
@@ -82,6 +84,8 @@ export interface TabProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
   leadingIcon?: ReactNode;
   /** Icon slot after the label (20px). Figma: `trailing icon`. */
   trailingIcon?: ReactNode;
+  /** Figma `_tab-sizes` size. extra-small = padding 4, label/extra small, 24px (account nav, decision 0101). @default "medium" */
+  size?: "medium" | "extra-small";
   /** Text after the label, same style, gap 4: a count ("Artists" + 64). Figma: `suffix` + `suffix text`. */
   suffix?: ReactNode;
   /** Documentation only: pins a visual state regardless of pointer/selection. */
@@ -229,6 +233,8 @@ export interface ProductCardImage {
 export interface ProductCardProps extends HTMLAttributes<HTMLElement> {
   /** Omitted → responsive (breakpoint `--mobile` from tokens.json, <768px placeholder). */
   device?: "desktop" | "mobile";
+  /** Figma `state`. Pins the hover look in docs/previews only; on the site `:hover` drives it (decisions 0009, 0088). @default "default" */
+  state?: "default" | "hover";
   /** Figma `product image`: the cover, square. */
   image?: ProductCardImage;
   /** Product page URL: the cover becomes a link to it (no visual change; a designed link style is in open.md). */
@@ -269,7 +275,7 @@ export declare function ProductCard(props: ProductCardProps): JSX.Element;
 export interface BagItemProps extends HTMLAttributes<HTMLElement> {
   /** Omitted → responsive (breakpoint `--mobile` from tokens.json): desktop type = ProductCard desktop, mobile = ProductCard mobile. */
   device?: "desktop" | "mobile";
-  /** Figma `status`. sold: name struck through, "SOLD OUT" beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). Samples stay. `unavailable` is the pre-0064 name of reserved. @default "available" */
+  /** Figma `status`. sold: name plain, "SOLD OUT" in an inline Alert (alert box, decision 0078) beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). Samples stay. `unavailable` is the pre-0064 name of reserved. @default "available" */
   status?: "available" | "sold" | "reserved" | "unavailable";
   /** The word beside the struck price of a sold / reserved line. @default "SOLD OUT" / "RESERVED" */
   notice?: ReactNode;
@@ -300,6 +306,35 @@ export interface BagItemProps extends HTMLAttributes<HTMLElement> {
 }
 export declare function BagItem(props: BagItemProps): JSX.Element;
 
+/** One record of a past order (Figma: page Account → `order item`, decision 0101): the BagItem anatomy without Remove; the price is what was paid. Same type styles as BagItem. */
+export interface OrderItemProps extends Omit<BagItemProps, "status" | "notice" | "onRemove" | "removeLabel"> {}
+export declare function OrderItem(props: OrderItemProps): JSX.Element;
+
+/** One order in the account's order list (Figma: page Account → `order row`, decision 0101). The whole row is one link; "View" is drawn as a secondary small Button but is not a second tab stop. */
+export interface OrderRowProps extends HTMLAttributes<HTMLAnchorElement> {
+  /** Omitted → responsive (breakpoint `--mobile`): type as BagItem desktop / mobile. */
+  device?: "desktop" | "mobile";
+  /** The order page URL. */
+  href: string;
+  /** The link's accessible name, the whole row in one sentence: "Order 1A2B3C4D, 9 Nov 2026, shipped, 39€". */
+  label: string;
+  /** Figma `first cover`: the cover of the first record, 96 × 96 (decorative: alt is always empty). */
+  image?: ProductCardImage;
+  /** Figma heading line 1, "Order 1A2B3C4D". */
+  title: ReactNode;
+  /** Figma heading line 2, the date ("12 Nov 2026"). */
+  date?: ReactNode;
+  /** Figma details line 1, "3 records". */
+  count?: ReactNode;
+  /** Figma details line 2, "Status: Shipped". */
+  status?: ReactNode;
+  /** Figma `total`, already formatted ("33€"). */
+  total: ReactNode;
+  /** @default "View" */
+  viewLabel?: ReactNode;
+}
+export declare function OrderRow(props: OrderRowProps): JSX.Element;
+
 /** The bag's totals and the way to checkout (Figma: page Bag → `bag summary`). Shipping and tax are computed by Stripe Checkout: the bag shows the subtotal only (decision 0044). */
 export interface BagSummaryProps extends HTMLAttributes<HTMLElement> {
   /** Figma `subtotal label`, e.g. "Subtotal (3 records)". @default "Subtotal" */
@@ -326,11 +361,11 @@ export interface BagSummaryProps extends HTMLAttributes<HTMLElement> {
   checkoutProps?: Record<string, unknown>;
   /** Figma `note`, body/small, below the button. */
   note?: ReactNode;
-  /** Figma `sold out` + `sold out note`, body/small, above Checkout: says that sold lines are not in the order ("1 record sold out, not included.", decision 0064). Omit when the bag has no sold lines. */
+  /** Figma `sold out` + `sold out note`, an `Alert` (alert box, decision 0077) above Checkout: says that sold lines are not in the order ("1 record sold out, not included.", decision 0064). Omit when the bag has no sold lines. */
   soldOutNote?: ReactNode;
   /** Extra attributes for the sold out note (data-*, hidden), so a script can fill it; rendered even without `soldOutNote`. */
   soldOutNoteProps?: Record<string, unknown>;
-  /** Figma `minimum note` (variant minimum=below), body/small, above Checkout: the minimum order and what is missing ("Minimum order 20€. Add 8€ more to check out.", decision 0072). Pass it with `checkoutDisabled` and point Checkout's aria-describedby (via `checkoutProps`) at the note, so the disabled button is never unexplained. */
+  /** Figma `minimum note` (variant minimum=below), an `Alert` (alert box, decision 0077) above Checkout: the minimum order and what is missing ("Minimum order 20€. Add 8€ more to check out.", decision 0072). Pass it with `checkoutDisabled` and point Checkout's aria-describedby (via `checkoutProps`) at the note, so the disabled button is never unexplained. */
   minimumNote?: ReactNode;
   /** Extra attributes for the minimum note (id, data-*, hidden), so a script can fill it; rendered even without `minimumNote`. */
   minimumNoteProps?: Record<string, unknown>;
@@ -463,6 +498,16 @@ export interface FileItemProps extends HTMLAttributes<HTMLDivElement> {
   children?: ReactNode;
 }
 export declare function FileItem(props: FileItemProps): JSX.Element;
+
+/** Mirrors the Figma component `alert` (page `Bag`, decision 0077): a message that blocks an action, in an alert box (surface-alert)
+ *  (surface-alert, text-on-alert, body/small, padding small), full width. Renders <p>; add aria-live / id as needed. */
+export interface AlertProps extends HTMLAttributes<HTMLElement> {
+  /** Figma `layout`. block: a <p>, padding small, fills its container. inline: a <span>, padding 2/4, hugs (bag item SOLD OUT / RESERVED, decision 0078). @default "block" */
+  layout?: "block" | "inline";
+  /** The message: what blocks the action and what to do, e.g. "Minimum order 20€. Add 8€ more to check out." */
+  children?: ReactNode;
+}
+export declare function Alert(props: AlertProps): JSX.Element;
 
 /** Mirrors the Figma component `divider` (page `divider`): a 1px rule in border/divider/strong, full width. Renders <hr>. */
 export interface DividerProps extends HTMLAttributes<HTMLHRElement> {}
@@ -736,8 +781,9 @@ export interface PlpHeaderProps extends HTMLAttributes<HTMLDivElement> {
 export declare function PlpHeader(props: PlpHeaderProps): JSX.Element;
 
 /** Mirrors the Figma component `menu item` (state default | current): a link row of the mobile menu. */
-export interface MenuItemProps extends HTMLAttributes<HTMLAnchorElement> {
-  href: string;
+export interface MenuItemProps extends HTMLAttributes<HTMLAnchorElement | HTMLButtonElement> {
+  /** The page the row leads to. Omit (and give onClick) for an action row: rendered as a <button>, e.g. the admin's Sign out (0089). */
+  href?: string;
   /** Figma: `label`. Uppercase via CSS. */
   label: ReactNode;
   /** Secondary text at the end of the row (Account: "Sign in to see your orders" or the email). Figma: `detail` + `detail text`. */
@@ -770,6 +816,53 @@ export interface MenuLayerProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function MenuLayer(props: MenuLayerProps): JSX.Element;
 
+/** Mirrors the Figma component `footer` (device=desktop | mobile, one responsive markup): the site footer, a <footer> landmark. */
+export interface FooterProps extends HTMLAttributes<HTMLElement> {
+  /** Figma boolean `newsletter`: the signup (a FooterNewsletter). Omit → the link columns take the whole row. */
+  newsletter?: ReactNode;
+  /** FooterLinks columns (Figma `footer link list` instances: shop, info, social). Rendered in a <nav>. */
+  children?: ReactNode;
+  /** Accessible name of the footer <nav>. @default "Footer" */
+  navLabel?: string;
+  /** Legal links (<a> elements), body-small, wrapping. Figma: `footer legal`. */
+  legal?: ReactNode;
+  /** Accessible name of the legal links group. @default "Legal" */
+  legalLabel?: string;
+  /** Figma `copyright`, e.g. "© 2026 rythem-works". */
+  copyright?: ReactNode;
+}
+export declare function Footer(props: FooterProps): JSX.Element;
+
+/** Mirrors the Figma component `footer link list` (group=shop | info | social): one column of links, body-small, no title. */
+export interface FooterLinksProps extends HTMLAttributes<HTMLDivElement> {
+  /** The links, in order. */
+  links: { href: string; label: ReactNode; rel?: string; target?: string }[];
+  /** Name of the list for screen readers (aria-label: the columns have no title in Figma). */
+  label?: string;
+}
+export declare function FooterLinks(props: FooterLinksProps): JSX.Element;
+
+/** Mirrors the Figma component `footer newsletter`: an HTML form to the provider's subscribe endpoint (works without JS). */
+export interface FooterNewsletterProps extends HTMLAttributes<HTMLFormElement> {
+  /** The form action: the provider's subscribe URL (Buttondown embed-subscribe). Used as is without JS, and as the fallback. */
+  action: string;
+  /** The site's own signup function (decision 0103): with it the page script posts there and answers in place (status line, honeypot field). */
+  endpoint?: string;
+  /** @default "post" */
+  method?: string;
+  /** Field label. @default "Newsletter" */
+  label?: ReactNode;
+  /** @default "Your email" */
+  placeholder?: string;
+  /** Name of the email field sent to the provider. @default "email" */
+  name?: string;
+  /** Button text (secondary). @default "Subscribe" */
+  submitLabel?: ReactNode;
+  /** Figma `note`: what you get and how double opt-in works, ending with the Privacy link (underlined). Describes the field. */
+  note?: ReactNode;
+}
+export declare function FooterNewsletter(props: FooterNewsletterProps): JSX.Element;
+
 /** A native <select> drawn as a Button with a trailing chevron-down (Figma: button + trailing icon). The platform picker opens. */
 export interface SelectButtonProps extends HTMLAttributes<HTMLSelectElement> {
   /** The choices; the visible text is the selected option's label. */
@@ -785,6 +878,7 @@ export interface SelectButtonProps extends HTMLAttributes<HTMLSelectElement> {
   /** Text before the value, same style, gap 4 ("Sort:", desktop). Figma: `prefix` + `prefix text`. */
   prefix?: ReactNode;
 }
+/** Focus ring: keyboard only (0081). The page sets data-focus-source="pointer" on the outer box after a pointer press (the shop does it in site.js). */
 export declare function SelectButton(props: SelectButtonProps): JSX.Element;
 export declare function ChevronRightIcon(): JSX.Element;
 export declare function ChevronLeftIcon(): JSX.Element;
@@ -866,3 +960,142 @@ export interface ChosenReleaseProps extends HTMLAttributes<HTMLDivElement> {
   onChange?: () => void;
 }
 export declare function ChosenRelease(props: ChosenReleaseProps): JSX.Element;
+
+/** Figma `memo item` (page Memo, BACKEND, decision 0087): one record on the admin Memo list. An <li>: wrap in a <ul>. */
+export interface MemoItemProps extends HTMLAttributes<HTMLLIElement> {
+  /** free text, or "Artist – Title" of the picked Discogs release */
+  title: ReactNode;
+  /** Figma boolean `discogs release`: label · cat no · year · country · format. Omit → no meta */
+  meta?: ReactNode;
+  /** Figma boolean `has note`: Gio's own note. Omit → no note */
+  note?: ReactNode;
+  /** the release on discogs.com (Figma: shown with `discogs release`). Omit → no link */
+  href?: string;
+  /** Create listing. Omit → no button */
+  onCreate?: () => void;
+  /** Remove. Omit → no button */
+  onRemove?: () => void;
+  /** Default "Create listing" */
+  createLabel?: string;
+  /** Default "Remove" */
+  removeLabel?: string;
+}
+export declare function MemoItem(props: MemoItemProps): JSX.Element;
+
+/** Mirrors the Figma component `progress bar` (BACKEND → Memo): a determinate bar, 4px, track surface/subtle,
+ *  value action/primary/background/default. role="progressbar"; pass aria-label (or aria-labelledby). Decision 0091. */
+export interface ProgressBarProps extends HTMLAttributes<HTMLDivElement> {
+  /** Percent done, 0–100 (clamped, rounded). Figma: width of the `value` layer. */
+  value: number;
+}
+export declare function ProgressBar(props: ProgressBarProps): JSX.Element;
+
+/** Mirrors the Figma component `admin bar` (page `admin`, device=desktop | mobile, one responsive markup, decision 0089). */
+export interface AdminBarProps extends HTMLAttributes<HTMLElement> {
+  /** Desktop section buttons, in order. `current` = the section you are on (Button state=active, aria-current). */
+  items?: { href: string; label: ReactNode; current?: boolean }[];
+  /** Mobile title (Figma `title`). @default "Store admin" */
+  title?: ReactNode;
+  /** Create listing link (primary). Omit → no button. */
+  createHref?: string;
+  /** Desktop label and mobile accessible name. @default "Create listing" */
+  createLabel?: string;
+  /** Mobile visible label. @default "Create" */
+  createShortLabel?: ReactNode;
+  /** Desktop: the signed-in email (body/small, text/moderate). */
+  email?: ReactNode;
+  /** Desktop Sign out. Omit → no button (on mobile Sign out is in the menu). */
+  onSignOut?: () => void;
+  /** @default "Sign out" */
+  signOutLabel?: string;
+  /** Mobile Menu button: opens the page's menu dialog (a MenuLayer). */
+  onMenuClick?: () => void;
+  /** @default "Menu" */
+  menuLabel?: string;
+  /** Extra attributes for the Menu button (aria-expanded, aria-controls). */
+  menuProps?: object;
+  /** Accessible name of the desktop <nav>. @default "Admin" */
+  navLabel?: string;
+}
+export declare function AdminBar(props: AdminBarProps): JSX.Element;
+
+/** Mirrors the Figma component `listing row` (page `admin`, decision 0089): a row of an admin list on mobile, in a <ul>. */
+export interface ListingRowProps extends HTMLAttributes<HTMLLIElement> {
+  /** A Checkbox with hideLabel (accessible name "Select <record>"). Omit → no select column. */
+  select?: ReactNode;
+  /** The record (Figma `record`): a link to its edit page. */
+  title: ReactNode;
+  href: string;
+  /** Figma `meta`, e.g. "0048 · Draft · sale". */
+  meta?: ReactNode;
+  /** Figma `price` + boolean `show price`. Omit → no price. */
+  price?: ReactNode;
+}
+export declare function ListingRow(props: ListingRowProps): JSX.Element;
+
+/** Mirrors the Figma component `order block` (page `Orders`, BACKEND, decision 0100): one block of the admin order page. */
+export interface OrderBlockProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
+  /** Figma `title`, e.g. "Ship to". Rendered as <h2>. */
+  title: ReactNode;
+  /** Figma `body`: plain text, line breaks kept (an address, the totals). */
+  children?: ReactNode;
+  /** Figma `action` (boolean, on): a Button (hug), e.g. "Copy address". Omit → no action. */
+  action?: ReactNode;
+}
+export declare function OrderBlock(props: OrderBlockProps): JSX.Element;
+
+/** Mirrors the Figma component `action bar` (page `admin`, decision 0089): form actions sticky at the bottom of the viewport on mobile. */
+export interface ActionBarProps extends HTMLAttributes<HTMLDivElement> {
+  /** The Buttons, primary first, side by side. Figma: `primary`, `secondary` (boolean, on). */
+  children?: ReactNode;
+  /** A line above the buttons (e.g. the save result, role=status). */
+  status?: ReactNode;
+}
+export declare function ActionBar(props: ActionBarProps): JSX.Element;
+
+/** Figma `section head` (page Home): heading of a home section. Divider on top, title, actions on the right. */
+export interface SectionHeadProps extends HTMLAttributes<HTMLDivElement> {
+  /** Figma `title`. */
+  title: ReactNode;
+  /** Heading level of the title. @default 2 */
+  headingLevel?: 2 | 3 | 4;
+  /** Figma boolean `divider`: false for the first section under the header (the header border is already there). @default true */
+  divider?: boolean;
+  /** Figma booleans `play` and `see all`: secondary Buttons ("Play all", "See all"). Omit → no actions. */
+  actions?: ReactNode;
+  /** id of the title, to name the section (aria-labelledby). */
+  titleId?: string;
+}
+export declare function SectionHead(props: SectionHeadProps): JSX.Element;
+
+/** Figma `genre links` (page Home): the catalogue's genres as Tag links (size medium) to the filtered PLP. A <section>. */
+export interface GenreLinksProps extends HTMLAttributes<HTMLElement> {
+  /** @default "Genres" */
+  title?: ReactNode;
+  /** The genres, in order. */
+  genres: { label: ReactNode; href: string }[];
+  /** @default 2 */
+  headingLevel?: 2 | 3 | 4;
+  /** The SectionHead divider. @default true */
+  divider?: boolean;
+}
+export declare function GenreLinks(props: GenreLinksProps): JSX.Element;
+
+/** Figma `home about` (page Home): who is behind the shop. A <section>. */
+export interface HomeAboutProps extends HTMLAttributes<HTMLElement> {
+  /** @default "About" */
+  title?: ReactNode;
+  /** @default 2 */
+  headingLevel?: 2 | 3 | 4;
+  /** The SectionHead divider. @default true */
+  divider?: boolean;
+  /** Figma `bio`: one line. */
+  children?: ReactNode;
+  /** Figma boolean `discogs`: the DiscogsCard props. Omit → no card. */
+  discogs?: DiscogsCardProps;
+  /** Link to the About page. Omit → no link. */
+  href?: string;
+  /** @default "More about me" */
+  linkLabel?: ReactNode;
+}
+export declare function HomeAbout(props: HomeAboutProps): JSX.Element;

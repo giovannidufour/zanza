@@ -1,6 +1,7 @@
 /* apps/admin/admin.js — the admin single-page app (React via createElement, no build step).
    Screens: sign-in (email link) · listings (Figma BACKEND → Listings: bulk actions, archive, delete) · create / edit listing (Figma BACKEND → Create)
-   · attributes: artists, labels, genres, tags (Figma BACKEND → Attributes) · shipping (Figma BACKEND → Shipping).
+   · attributes: artists, labels, genres, tags (Figma BACKEND → Attributes) · shipping (Figma BACKEND → Shipping)
+   · memo: Gio's reminder list of records to sell later (Figma BACKEND → Memo, decision 0087).
    Data: Supabase with the signed-in user's session (RLS: only public.admins can write).
    Save = one call to public.admin_save_listing (one transaction). Files go straight to R2 through
    short-lived upload URLs from the Edge Function sign-upload; the database keeps only the keys. */
@@ -34,6 +35,19 @@
   }
   var uid = 0;
   function nextId() { return 'u' + (++uid); }
+  // the mobile breakpoint, from tokens.json → breakpoint (build.js puts it in config.js): the one place it is decided (0004)
+  var MOBILE_QUERY = (CFG.media && CFG.media.mobile) || '(max-width: 767px)';
+  function useIsMobile() {
+    var mq = window.matchMedia ? window.matchMedia(MOBILE_QUERY) : null;
+    var st = useState(mq ? mq.matches : false), on = st[0], setOn = st[1];
+    useEffect(function () {
+      if (!mq) return;
+      function ch() { setOn(mq.matches); }
+      mq.addEventListener ? mq.addEventListener('change', ch) : mq.addListener(ch);
+      return function () { mq.removeEventListener ? mq.removeEventListener('change', ch) : mq.removeListener(ch); };
+    }, []);
+    return on;
+  }
   function opts(list) {
     return list.map(function (o) { var v = Array.isArray(o) ? o[0] : o, l = Array.isArray(o) ? o[1] : o; return h('option', { key: v, value: v }, l); });
   }
@@ -155,7 +169,7 @@
     var le = r.label_entity;
     f.label = le ? [chip(le)] : r.label ? [{ id: null, name: r.label }] : [];
     f.preRelease = !!r.pre_release;
-    f.labelSpelled = !!le && differs(r.label, le.name); f.labelCredit = f.labelSpelled ? r.label : ''; f.country = r.country || ''; f.year = r.year ? String(r.year) : ''; f.format = r.format || '';
+    f.labelSpelled = !!le && differs(r.label, le.name); f.labelCredit = f.labelSpelled ? r.label : ''; f.country = r.country || ''; f.year = yearText(r.year, r.year_precision); f.format = r.format || '';
     f.section = row.section; f.price = centsToText(row.price_cents);
     var byPos = function (a, b) { return a.position - b.position; };
     var genreRows = (r.genre_rows || []).slice().sort(byPos);
@@ -222,6 +236,13 @@
   }
 
   // ── validation: what the database needs (format, condition, line 1, price for sale) ──
+  // Year field (decision 0082): an exact year ("1983") or a decade ("1990s", stored as 1990 + year_precision 'decade')
+  function parseYear(text) {
+    var m = /^((?:19|20)\d\d)$/.exec(text.trim()) || /^((?:19|20)\d0)s$/i.exec(text.trim());
+    if (!m) return null;
+    return { year: m[1], precision: /s$/i.test(text.trim()) ? 'decade' : 'year' };
+  }
+  function yearText(year, precision) { return year ? String(year) + (precision === 'decade' ? 's' : '') : ''; }
   function validate(f) {
     var e = {};
     if (!f.lines[0].artists.length) e['artist-0'] = 'Pick or create the artist.';
@@ -231,7 +252,7 @@
     var cents = textToCents(f.price);
     if (f.section === 'sale' && cents === null) e.price = 'Enter a price.';
     else if (Number.isNaN(cents)) e.price = 'Use a number, e.g. 12 or 12.50.';
-    if (f.year && !/^(19|20)\d\d$/.test(f.year.trim())) e.year = 'Use four digits, e.g. 1983.';
+    if (f.year.trim() && !parseYear(f.year)) e.year = 'Use a year (1983) or a decade (1990s).';
     if (f.discogs && discogsId(f.discogs) === null) e.discogs = 'Paste a Discogs release URL or its number.';
     if (f.images.some(function (x) { return x.uploading; }) || f.samples.some(function (x) { return x.uploading; })) e.uploads = 'Wait for the uploads to finish.';
     return e;
@@ -243,7 +264,7 @@
         discogs_release_id: f.discogs ? discogsId(f.discogs) : null,
         label: f.label.length ? f.label[0].name : '', label_credit: f.labelSpelled ? f.labelCredit : '',
         pre_release: f.preRelease,
-        label_id: f.label.length ? f.label[0].id : null, label_discogs_id: f.label.length ? f.label[0].discogsId || null : null, cat_no: f.catNo, year: f.year.trim(), country: f.country, format: f.format,
+        label_id: f.label.length ? f.label[0].id : null, label_discogs_id: f.label.length ? f.label[0].discogsId || null : null, cat_no: f.catNo, year: (parseYear(f.year) || {}).year || '', year_precision: (parseYear(f.year) || {}).precision || 'year', country: f.country, format: f.format,
         macro_genre: f.macroGenre ? [f.macroGenre] : [],
         genres: f.genres.map(function (t) { return { id: t.id, name: t.name }; }),
         tags: f.tags.map(function (t) { return { id: t.id, name: t.name }; })
@@ -294,6 +315,8 @@
 
   // ── Create / edit listing ─────────────────────────────────────────────────
   function ListingForm(props) {
+    var mobile = useIsMobile();
+    var tradeOn = useTradeEnabled();   // trade off (Settings, decision 0102): "For trade" only for a listing that already is one
     var st = useState(props.initial), f = st[0], setF = st[1];
     var er = useState({}), errors = er[0], setErrors = er[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
@@ -301,10 +324,22 @@
     var pl = useState(null), playing = pl[0], setPlaying = pl[1];
     var fRef = useRef(f); fRef.current = f;
     var fd = useState(false), fetching = fd[0], setFetching = fd[1];
+    var pf = useState(null), photoFound = pf[0], setPhotoFound = pf[1];   // releases from a photo of the label (0092)
     var en = useState(null), entities = en[0], setEntities = en[1];
     useEffect(function () {
       loadEntities().then(setEntities).catch(function (err) { setMessage({ error: true, text: 'Suggestions not loaded: ' + err.message }); });
     }, []);
+    // opened from the Memo list (0087): the release is fetched once the suggestions are in (chips bind to entities);
+    // a free-text item only names the record in the status line. The first save takes the item off the list.
+    var fromMemo = props.fromMemo || null;
+    var tookOff = useRef(false), autoFetched = useRef(false);
+    useEffect(function () {
+      if (!fromMemo) return;
+      if (!fromMemo.discogs) { setMessage({ error: false, text: 'From Memo: ' + fromMemo.title + (fromMemo.note ? ' (' + fromMemo.note + ')' : '') + '. No Discogs release: fill in the record.' }); return; }
+      if (autoFetched.current || entities === null) return;
+      autoFetched.current = true;
+      fetchDiscogs();
+    }, [entities]);
 
     function set(patch) { setF(function (cur) { return Object.assign({}, cur, typeof patch === 'function' ? patch(cur) : patch); }); }
     function bind(name) {
@@ -397,6 +432,12 @@
       if (res.error) { setMessage({ error: true, text: 'Not saved: ' + res.error.message }); return; }
       var d = res.data;
       set({ listingId: d.listing_id, sku: d.sku, status: d.status, slug: d.slug });
+      if (fromMemo && !tookOff.current) {
+        tookOff.current = true;
+        sb.from('memos').delete().eq('id', fromMemo.id).then(function (r) {
+          toast(r.error ? 'Still on Memo: ' + r.error.message : 'Taken off Memo.');
+        });
+      }
       setMessage({ error: false, text: d.status === 'available'
         ? 'Published · SKU ' + d.sku + '. The shop updates in about 2 minutes.'
         : 'Saved as draft · SKU ' + d.sku + '.' });
@@ -404,9 +445,9 @@
     }
 
     // Fetch Discogs: reads the release in "Discogs match" and fills the release fields
-    async function fetchDiscogs() {
+    async function fetchDiscogs(picked) {
       if (fetching) return;
-      var id = discogsId(fRef.current.discogs);
+      var id = typeof picked === 'number' ? picked : discogsId(fRef.current.discogs);
       if (id === null) {
         setErrors(function (cur) { return Object.assign({}, cur, { discogs: 'Paste a Discogs release URL or its number.' }); });
         return;
@@ -483,7 +524,17 @@
         h(Z.Input, Object.assign({ id: 'discogs', label: 'Discogs match', optional: true, variant: 'search',
           placeholder: 'Release URL or number', supportText: errors.discogs ? undefined : 'Paste the release link, then Fetch Discogs.' }, bind('discogs'))),
         // Figma 2104:20728: secondary button right under Discogs match (gap 16)
-        h('div', null, h(Z.Button, { hierarchy: 'secondary', disabled: locked, 'aria-busy': fetching || undefined, onClick: fetchDiscogs }, 'Fetch Discogs'))),
+        // Figma Create → `discogs actions` (0092): Fetch Discogs + Photo of the label; picking a release found from
+        // the photo puts its link in Discogs match and fetches it
+        h(PhotoField, { disabled: locked, pickHint: 'Pick the pressing to fetch it.', onFound: setPhotoFound,
+          actions: h(Z.Button, { hierarchy: 'secondary', disabled: locked, 'aria-busy': fetching || undefined, onClick: function () { fetchDiscogs(); } }, 'Fetch Discogs') }),
+        photoFound ? h(Z.ReleaseList, { listId: 'photo-releases', label: 'Releases on Discogs',
+            message: photoFound.results.length ? undefined : 'No match on Discogs for what the photo shows. Paste the release link instead.' },
+          photoFound.results.map(function (r, i) {
+            function pick() { setPhotoFound(null); set({ discogs: 'https://www.discogs.com/release/' + r.id }); fetchDiscogs(r.id); }
+            return h(Z.ReleaseOption, { key: r.id, id: 'photo-release-' + i, title: r.title, meta: r.meta, thumb: r.thumb, tabIndex: 0,
+              onClick: pick, onKeyDown: function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } } });
+          })) : null),
       h(Z.Divider),
 
       h('section', { className: 'admin-section' },
@@ -516,7 +567,7 @@
           h(Z.EntityField, { className: 'span-4', id: 'label', label: 'Label', multiple: false, placeholder: 'Search or create',
             options: entities && entities.labels, value: f.label, error: errors.label, onChange: setLabel }),
           h(Z.Input, Object.assign({ className: 'span-2', id: 'country', label: 'Country', variant: 'select', placeholder: '' }, bind('country')), opts(COUNTRIES)),
-          h(Z.Input, Object.assign({ className: 'span-2', id: 'year', label: 'Year', optional: true, inputMode: 'numeric', maxLength: 4 }, bind('year'))),
+          h(Z.Input, Object.assign({ className: 'span-2', id: 'year', label: 'Year', optional: true, placeholder: '1983 or 1990s', maxLength: 5 }, bind('year'))),
           // Figma 2104:21454: a pre-release ("blank") of the same label → the shop shows "Pre" next to the label
           h(Z.Checkbox, { className: 'span-4 row-start', label: 'Pre-release', checked: f.preRelease,
             onChange: function (e) { set({ preRelease: e.target.checked }); } }),
@@ -525,7 +576,7 @@
           f.labelSpelled ? h(Z.Input, Object.assign({ className: 'span-4', id: 'label-credit', label: 'Label spelled on record' }, bind('labelCredit'))) : null),
         h('div', { className: 'admin-row' },
           h(Z.Input, Object.assign({ className: 'span-2', id: 'format', label: 'Format', variant: 'select', placeholder: '' }, bind('format')), opts(FORMATS)),
-          h(Z.Input, Object.assign({ className: 'span-2', id: 'section', label: 'Sale type', variant: 'select' }, bind('section')), opts([['sale', 'For sale'], ['trade', 'For trade']])),
+          h(Z.Input, Object.assign({ className: 'span-2', id: 'section', label: 'Sale type', variant: 'select' }, bind('section')), opts([['sale', 'For sale']].concat(tradeOn !== false || f.section === 'trade' ? [['trade', 'For trade']] : []))),
           h(Z.Input, Object.assign({ className: 'span-2', id: 'price', label: 'Price', suffix: '€', inputMode: 'decimal', optional: f.section === 'trade' }, bind('price'))))),
       h(Z.Divider),
 
@@ -570,12 +621,15 @@
         h(Z.DropZone, { label: 'Browse sample', accept: 'audio/mpeg', multiple: true, onFiles: addFiles('sample', null) })));
 
     var shopUrl = f.slug && f.status !== 'draft' && f.status !== 'archived' && CFG.storefrontUrl ? CFG.storefrontUrl.replace(/\/$/, '') + '/products/' + f.slug + '/' : null;
+    var publishBtn = h(Z.Button, { key: 'publish', hierarchy: 'primary', disabled: saving || locked, onClick: function () { save('available'); } }, f.status === 'available' ? 'Update' : 'Publish now');
+    var draftBtn = h(Z.Button, { key: 'draft', hierarchy: 'secondary', disabled: saving || locked || f.status === 'available', onClick: function () { save('draft'); } }, 'Save draft');
+    var shopBtn = shopUrl ? h(Z.Button, { key: 'shop', hierarchy: 'secondary', href: shopUrl, target: '_blank', rel: 'noopener' }, 'View in store') : null;
+    var statusLine = h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '');
+    // mobile (decision 0089): Publish / Save draft in the ActionBar at the bottom of the viewport, with the save result
+    // above them; View in store stays in the side content, which follows the form
     var side = h('aside', { className: 'admin-side' },
-      h(Z.ActionPanel, null,
-        h(Z.Button, { hierarchy: 'primary', disabled: saving || locked, onClick: function () { save('available'); } }, f.status === 'available' ? 'Update' : 'Publish now'),
-        h(Z.Button, { hierarchy: 'secondary', disabled: saving || locked || f.status === 'available', onClick: function () { save('draft'); } }, 'Save draft'),
-        h(Z.Button, { hierarchy: 'secondary', href: shopUrl || undefined, disabled: !shopUrl, target: '_blank', rel: 'noopener' }, 'Preview')),
-      h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : ''),
+      mobile ? shopBtn : h(Z.ActionPanel, null, publishBtn, draftBtn, shopBtn),
+      mobile ? null : statusLine,
       h(Z.Input, { id: 'sku', label: 'Sku', readOnly: true, value: f.sku ? String(f.sku) : '', placeholder: 'On first save', supportText: 'Automatic-generated' }),
       shopPreview(),
       locked ? h('p', { className: 'body-small' }, 'This copy is ' + f.status + ': it can no longer be edited here.') : null,
@@ -612,6 +666,15 @@
           })));
     }
 
+    function again() {
+      if (saving) return;
+      setSaving(true); setMessage(null);
+      sellAgain(f.listingId).then(function (twin) {
+        setSaving(false);
+        location.hash = '#edit-' + twin.id;
+        toast('New listing, SKU ' + twin.sku + ': a draft of the same record. Check condition, price and photos, then publish.');
+      }, function (err) { setSaving(false); setMessage({ error: true, text: 'Not created: ' + err.message }); });
+    }
     function statusPanel() {
       var closing = f.section === 'sale' ? 'sold' : 'traded';
       var actions = {
@@ -630,10 +693,14 @@
           supportText: 'Kept in the history, e.g. "sold at the fair".', onChange: function (e) { setStatusNote(e.target.value); } }) : null,
         actions.map(function (a) {
           return h(Z.Button, { key: a[0], hierarchy: 'secondary', disabled: saving || !!f.checkoutUntil, onClick: function () { a[0] === 'restore' ? restore() : setStatus(a[0]); } }, a[1]);
-        }));
+        }),
+        // decision 0100: a twin of a sold copy (new SKU, same record), as a draft
+        f.status === 'sold' || f.status === 'traded' ? h(Z.Button, { key: 'again', hierarchy: 'secondary', disabled: saving, onClick: again }, 'Sell again') : null,
+        f.status === 'sold' || f.status === 'traded' ? h('p', { className: 'body-small' }, 'Sell again: a new draft listing of the same record (new SKU, same details, photos and samples). This one stays ' + f.status + '.') : null);
     }
 
-    return h('div', { className: 'admin-page admin-page--edit' }, main, side);
+    return h('div', { className: 'admin-page admin-page--edit' }, main, side,
+      mobile ? h(Z.ActionBar, { status: statusLine }, publishBtn, draftBtn) : null);
   }
 
   // ── Listings ──────────────────────────────────────────────────────────────
@@ -678,6 +745,7 @@
   };
 
   function Listings() {
+    var mobile = useIsMobile();
     var st = useState(null), rows = st[0], setRows = st[1];
     var er = useState(null), error = er[0], setError = er[1];
     var tb = useState('all'), tab = tb[0], setTab = tb[1];
@@ -689,7 +757,7 @@
 
     function load() {
       return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_cents,custom_title,created_at,orders:order_items(count),release:releases(lines:release_lines(position,artist,title))')
-        .order('sku', { ascending: false })
+        .order('created_at', { ascending: false })
         .then(function (res) { if (res.error) setError(res.error.message); else setRows(res.data); });
     }
     useEffect(function () {
@@ -817,8 +885,16 @@
       h('h1', { className: 'label-extra-large' }, 'Listings'),
       h(Z.Tabs, { value: tab, onValueChange: pickTab, 'aria-label': 'Filter by status' },
         TABS.map(function (t) { return h(Z.Tab, { key: t[0], value: t[0], suffix: String(counts[t[0]]), 'aria-controls': 'listings-table' }, t[1]); })),
-      bar,
-      h('div', { className: 'admin-table-wrap' },
+      // mobile (Figma page `admin` → Listings - mobile, decision 0089): rows instead of the table, the bulk bar after them
+      // (sticky at the bottom while something is selected)
+      mobile ? h('ul', { id: 'listings-table', className: 'admin-rows' }, visible.length ? visible.map(function (r) {
+        return h(Z.ListingRow, { key: r.id, href: '#edit-' + r.id, title: nameOf(r),
+          meta: [r.sku, STATUS_LABEL[r.eff] || r.status, r.section].filter(Boolean).join(' · '),
+          price: r.price_cents === null ? null : centsToText(r.price_cents) + ' €',
+          select: h(Z.Checkbox, { id: 'select-' + r.id, hideLabel: true, label: 'Select ' + nameOf(r),
+            checked: selected.indexOf(r.id) >= 0, onChange: function (e) { toggle(r.id, e.target.checked); } }) });
+      }) : h('li', { className: 'body-small admin-rows__empty' }, 'No listings here.')) : bar,
+      mobile ? bar : h('div', { className: 'admin-table-wrap' },
         h('table', { id: 'listings-table', className: 'admin-table body-small' },
           h('thead', null, h('tr', null,
             h('th', { className: 'select' }, visible.length ? h(Z.Checkbox, { id: 'select-all', hideLabel: true, label: 'Select all', checked: allOn, indeterminate: someOn, onChange: toggleAll }) : null),
@@ -846,6 +922,164 @@
     if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not open this listing: ' + error);
     if (!initial) return h('p', { className: 'body-medium' }, 'Loading…');
     return h(ListingForm, { initial: initial });
+  }
+
+  // ── Orders ────────────────────────────────────────────────────────────────
+  /* Figma BACKEND → Orders (2322:5367, decision 0100): orders are written by Stripe (stripe-webhook, migration 0021);
+     the admin reads them and moves paid → shipped with the tracking number (RLS orders_admin / orders_admin_update).
+     Tabs To ship · Shipped · All, newest first. "Check" = orders.attention (a copy not held any more: refund by hand).
+     Routes: #orders · #orders/<id> */
+  var ORDER_TABS = [
+    ['toship', 'To ship', function (o) { return o.status === 'paid'; }],
+    ['shipped', 'Shipped', function (o) { return o.status === 'shipped'; }],
+    ['all', 'All', function () { return true; }]
+  ];
+  var ORDER_STATUS = { paid: 'To ship', shipped: 'Shipped', refunded: 'Refunded', cancelled: 'Cancelled' };
+  function orderRef(o) { return String(o.id).slice(0, 8).toUpperCase(); }
+  function orderStatus(o) { return o.attention && o.status === 'paid' ? 'Check' : ORDER_STATUS[o.status] || o.status; }
+  function euro(c) { return c === null || c === undefined ? '' : centsToText(c) + ' €'; }   // as the Listings prices
+  function shortDate(t) { return new Date(t).toLocaleDateString([], { day: 'numeric', month: 'short' }); }
+  function buyerOf(o) { return o.customer_name || (o.shipping_address && o.shipping_address.name) || o.email; }
+
+  function Orders() {
+    var mobile = useIsMobile();
+    var st = useState(null), rows = st[0], setRows = st[1];
+    var er = useState(null), error = er[0], setError = er[1];
+    var tb = useState('toship'), tab = tb[0], setTab = tb[1];
+    useEffect(function () {
+      sb.from('orders').select('id,created_at,email,customer_name,shipping_address,total_cents,status,attention')
+        .order('created_at', { ascending: false })
+        .then(function (res) { if (res.error) setError(res.error.message); else setRows(res.data); });
+    }, []);
+    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not load the orders: ' + error);
+    if (!rows) return h('p', { className: 'body-medium' }, 'Loading…');
+    var counts = {}; ORDER_TABS.forEach(function (t) { counts[t[0]] = rows.filter(t[2]).length; });
+    var filter = ORDER_TABS.filter(function (t) { return t[0] === tab; })[0][2];
+    var visible = rows.filter(filter);
+    var empty = rows.length ? 'No orders here.' : 'No orders yet. They arrive here when someone pays on Stripe.';
+    return h('div', { className: 'admin-section admin-listings' },
+      h('h1', { className: 'label-extra-large' }, 'Orders'),
+      h(Z.Tabs, { value: tab, onValueChange: setTab, 'aria-label': 'Filter by status' },
+        ORDER_TABS.map(function (t) { return h(Z.Tab, { key: t[0], value: t[0], suffix: String(counts[t[0]]), 'aria-controls': 'orders-table' }, t[1]); })),
+      mobile ? h('ul', { id: 'orders-table', className: 'admin-rows' }, visible.length ? visible.map(function (o) {
+        return h(Z.ListingRow, { key: o.id, href: '#orders/' + o.id, title: buyerOf(o),
+          meta: [orderRef(o), shortDate(o.created_at), orderStatus(o)].join(' · '), price: euro(o.total_cents) });
+      }) : h('li', { className: 'body-small admin-rows__empty' }, empty))
+      : h('div', { className: 'admin-table-wrap' },
+          h('table', { id: 'orders-table', className: 'admin-table body-small' },
+            h('thead', null, h('tr', null,
+              ['Order', 'Buyer', 'Status', 'Date', 'Total'].map(function (t) { return h('th', { key: t, className: t === 'Order' ? 'num' : t === 'Total' ? 'num price' : '' }, t); }))),
+            h('tbody', null, visible.length ? visible.map(function (o) {
+              return h('tr', { key: o.id },
+                h('td', { className: 'num' }, orderRef(o)),
+                h('td', null, h('a', { href: '#orders/' + o.id }, buyerOf(o))),
+                h('td', null, orderStatus(o)),
+                h('td', null, shortDate(o.created_at)),
+                h('td', { className: 'num price' }, euro(o.total_cents)));
+            }) : h('tr', null, h('td', { colSpan: 5 }, empty))))));
+  }
+
+  function OrderDetail(props) {
+    var mobile = useIsMobile();
+    var st = useState(null), o = st[0], setO = st[1];
+    var er = useState(null), error = er[0], setError = er[1];
+    var tr = useState(''), tracking = tr[0], setTracking = tr[1];
+    var sv = useState(false), saving = sv[0], setSaving = sv[1];
+    var ms = useState(null), message = ms[0], setMessage = ms[1];
+    useEffect(function () {
+      sb.from('orders').select('*,items:order_items(price_cents,listing:listings(id,sku,slug,status,custom_title,release:releases(format,lines:release_lines(position,artist,title))))')
+        .eq('id', props.id).single()
+        .then(function (res) { if (res.error) setError(res.error.message); else { setO(res.data); setTracking(res.data.tracking_number || ''); } });
+    }, [props.id]);
+    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not open this order: ' + error);
+    if (!o) return h('p', { className: 'body-medium' }, 'Loading…');
+
+    var ref = orderRef(o), a = o.shipping_address || {};
+    var address = [a.name || o.customer_name, a.line1, a.line2, [a.postal_code, a.city].filter(Boolean).join(' '), a.state, a.country].filter(Boolean).join('\n');
+    var records = (o.subtotal_cents === null || o.subtotal_cents === undefined) ? o.total_cents - o.shipping_cents : o.subtotal_cents;
+    var test = /^cs_test_/.test(o.stripe_session_id);
+    var stripeUrl = o.payment_intent ? 'https://dashboard.stripe.com/' + (test ? 'test/' : '') + 'payments/' + o.payment_intent : null;
+    var when = new Date(o.created_at).toLocaleString([], { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    async function setShipped(shipped) {
+      if (saving) return;
+      setSaving(true); setMessage(null);
+      var patch = shipped ? { status: 'shipped', tracking_number: tracking.trim() || null } : { status: 'paid' };
+      var res = await sb.from('orders').update(patch).eq('id', o.id).select().single();
+      setSaving(false);
+      if (res.error) { setMessage({ error: true, text: 'Not saved: ' + res.error.message }); return; }
+      setO(Object.assign({}, o, res.data));
+      setMessage({ error: false, text: shipped ? 'Marked as shipped.' : 'Back to To ship.' });
+    }
+    async function saveTracking() {
+      if (saving) return;
+      setSaving(true); setMessage(null);
+      var res = await sb.from('orders').update({ tracking_number: tracking.trim() || null }).eq('id', o.id).select().single();
+      setSaving(false);
+      if (res.error) { setMessage({ error: true, text: 'Not saved: ' + res.error.message }); return; }
+      setO(Object.assign({}, o, res.data)); setMessage({ error: false, text: 'Tracking number saved.' });
+    }
+    function copyAddress() {
+      (navigator.clipboard ? navigator.clipboard.writeText(address) : Promise.reject())
+        .then(function () { toast('Address copied.'); }, function () { setMessage({ error: true, text: 'Could not copy: select the address and copy it.' }); });
+    }
+
+    var shipped = o.status === 'shipped', open = o.status === 'paid';
+    var primary = shipped
+      ? h(Z.Button, { key: 'ship', hierarchy: 'primary', 'aria-busy': saving || undefined, onClick: saveTracking }, 'Save tracking')
+      : h(Z.Button, { key: 'ship', hierarchy: 'primary', disabled: !open, 'aria-busy': saving || undefined, onClick: function () { setShipped(true); } }, 'Mark as shipped');
+    var secondary = stripeUrl ? h(Z.Button, { key: 'stripe', hierarchy: 'secondary', href: stripeUrl, target: '_blank', rel: 'noopener' }, 'Open in Stripe') : null;
+    var undo = shipped ? h(Z.Button, { key: 'undo', hierarchy: 'secondary', 'aria-busy': saving || undefined, onClick: function () { setShipped(false); } }, 'Mark as not shipped') : null;
+    var statusLine = h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '');
+
+    var main = h('div', { className: 'admin-main' },
+      h('h1', { className: 'label-extra-large' }, 'Order ' + ref),
+      h('p', { className: 'body-small' }, [when, 'Paid', orderStatus(o)].filter(function (x, i, all) { return all.indexOf(x) === i; }).join(' · ')),
+      o.attention ? h(Z.Alert, null, o.attention) : null,
+      h('section', { className: 'admin-order__records', 'aria-labelledby': 'order-records' },
+        h('h2', { id: 'order-records', className: 'label-medium' }, 'Records'),
+        h('ul', { className: 'admin-rows' }, (o.items || []).map(function (it) {
+          var l = it.listing || {};
+          return h(Z.ListingRow, { key: l.id, href: '#edit-' + l.id, title: nameOf(l),
+            meta: [l.sku, l.release && l.release.format, STATUS_LABEL[l.status] || l.status].filter(Boolean).join(' · '),
+            price: euro(it.price_cents) });
+        }))),
+      h('div', { className: 'admin-order__details' },
+        h(Z.OrderBlock, { title: 'Ship to', action: h(Z.Button, { hierarchy: 'secondary', onClick: copyAddress }, 'Copy address') }, address),
+        h(Z.OrderBlock, { title: 'Total' }, ['Records: ' + euro(records), 'Shipping: ' + euro(o.shipping_cents), 'Total paid: ' + euro(o.total_cents)].join('\n')),
+        h(Z.OrderBlock, { title: 'Buyer', action: h(Z.Button, { hierarchy: 'secondary', href: 'mailto:' + o.email + '?subject=' + encodeURIComponent('Your order ' + ref) }, 'Write to buyer') }, o.email),
+        h(Z.OrderBlock, { title: 'Payment' }, ['Stripe' + (test ? ' test mode' : ''), o.status === 'refunded' ? 'Refunded' : null].filter(Boolean).join('\n'))));
+
+    var trackingField = h(Z.Input, { id: 'tracking', label: 'Tracking number', optional: true, value: tracking,
+      supportText: 'Saved with the order.', onChange: function (e) { setTracking(e.target.value); } });
+    var side = h('aside', { className: 'admin-side' },
+      trackingField,
+      mobile ? null : h(Z.ActionPanel, null, primary, undo, secondary),
+      mobile ? null : statusLine);
+    return h('div', { className: 'admin-page admin-page--edit' }, main, side,
+      mobile ? h(Z.ActionBar, { status: statusLine }, primary, undo || secondary) : null);
+  }
+
+  // ── Sell again ────────────────────────────────────────────────────────────
+  /* Figma BACKEND → Create › "Edit listing · sold · side" (decision 0100, Gio 2026-11-15): a sold copy can be put on
+     sale again as a twin: a NEW listing (new SKU from the trigger of 0020, its own slug) of the same release (same
+     pressing: lines, samples, label), with the sold copy's price, conditions, notes and photos, as a draft. The sold
+     listing stays sold (its order keeps pointing at it). Then the form opens on the twin to adjust and publish. */
+  async function sellAgain(id) {
+    var src = await sb.from('listings').select('*').eq('id', id).single();
+    if (src.error) throw new Error(src.error.message);
+    var l = src.data, base = (l.slug || 'record').replace(/-\d+$/, '');
+    var taken = await sb.from('listings').select('slug').like('slug', base + '%');
+    if (taken.error) throw new Error(taken.error.message);
+    var used = {}; (taken.data || []).forEach(function (r) { used[r.slug] = true; });
+    var n = 2; while (used[base + '-' + n]) n++;
+    var row = { slug: base + '-' + n, release_id: l.release_id, section: l.section, status: 'draft', price_cents: l.price_cents,
+      currency: l.currency, condition_media: l.condition_media, condition_media_b: l.condition_media_b, sleeve_type: l.sleeve_type,
+      condition_sleeve: l.condition_sleeve, condition_notes: l.condition_notes, notes: l.notes, photo_keys: l.photo_keys,
+      weight_g: l.weight_g, custom_title: l.custom_title };
+    var res = await sb.from('listings').insert(row).select('id,sku').single();
+    if (res.error) throw new Error(res.error.message);
+    return res.data;
   }
 
   // ── Attributes ────────────────────────────────────────────────────────────
@@ -878,6 +1112,7 @@
   }
 
   function Attributes(props) {
+    var mobile = useIsMobile();
     var kind = kindOf(props.kind);
     var st = useState(null), data = st[0], setData = st[1];
     var er = useState(null), error = er[0], setError = er[1];
@@ -986,8 +1221,14 @@
         h(Z.Input, { className: 'admin-toolbar__search', variant: 'search', 'aria-label': kind.search, placeholder: kind.search, value: query,
           onChange: function (e) { setQuery(e.target.value); setSelected([]); } }),
         h(Z.Button, { hierarchy: 'secondary', href: '#attributes/' + kind.key + '/new' }, 'New ' + kind.one)),
-      bar,
-      h('div', { className: 'admin-table-wrap' },
+      mobile ? h('ul', { id: 'attributes-table', className: 'admin-rows' }, visible.length ? visible.map(function (r) {
+        var meta = (kind.aliases ? [(r.aliases || []).length ? 'Also ' + r.aliases.join(', ') : null, r.discogs_id ? 'Discogs ' + r.discogs_id : null] : [])
+          .concat([plural(r.records, 'record')]).filter(Boolean).join(' · ');
+        return h(Z.ListingRow, { key: r.id, href: '#attributes/' + kind.key + '/' + r.id, title: r.name, meta: meta,
+          select: h(Z.Checkbox, { id: 'select-' + r.id, hideLabel: true, label: 'Select ' + r.name,
+            checked: selected.indexOf(r.id) >= 0, onChange: function (e) { toggle(r.id, e.target.checked); } }) });
+      }) : h('li', { className: 'body-small admin-rows__empty' }, q ? 'Nothing matches “' + query.trim() + '”.' : 'No ' + kind.list + ' yet.')) : bar,
+      mobile ? bar : h('div', { className: 'admin-table-wrap' },
         h('table', { id: 'attributes-table', className: 'admin-table body-small' },
           h('thead', null, h('tr', null,
             h('th', { className: 'select' }, visible.length ? h(Z.Checkbox, { id: 'select-all', hideLabel: true, label: 'Select all', checked: allOn, indeterminate: someOn, onChange: toggleAll }) : null),
@@ -1006,6 +1247,7 @@
 
   /* Figma BACKEND → Attributes › Artist - desktop · edit (2123:3216) and · split confirm (2123:4664) */
   function AttributeForm(props) {
+    var mobile = useIsMobile();
     var kind = kindOf(props.kind), isNew = props.id === 'new';
     var st = useState(null), f = st[0], setF = st[1];
     var ls = useState(null), lists = ls[0], setLists = ls[1];
@@ -1030,7 +1272,7 @@
         setCount(e.listing_ids.length);
         if (e.listing_ids.length) {
           sb.from('listings').select('id,sku,slug,status,reserved_until,custom_title,release:releases(lines:release_lines(position,artist,title))')
-            .in('id', e.listing_ids).order('sku', { ascending: false })
+            .in('id', e.listing_ids).order('created_at', { ascending: false })
             .then(function (r2) { if (!r2.error) setRecords(r2.data); });
         }
       });
@@ -1110,7 +1352,7 @@
       isNew ? null : h('section', { className: 'admin-section', 'aria-labelledby': 'records-title' },
         h('h2', { id: 'records-title', className: 'label-medium' }, 'Records ' + n),   // Figma: one text "Records 2"
         n ? h('ul', { className: 'admin-links body-small' }, records.map(function (r) {
-          return h('li', { key: r.id }, h('a', { href: '#edit-' + r.id }, [String(r.sku).padStart(4, '0'), nameOf(r), STATUS_LABEL[effectiveStatus(r)] || r.status].join(' · ')));
+          return h('li', { key: r.id }, h('a', { href: '#edit-' + r.id }, [String(r.sku), nameOf(r), STATUS_LABEL[effectiveStatus(r)] || r.status].join(' · ')));
         })) : h('p', { className: 'body-small' }, 'Not on any record.')),
       isNew || !n ? null : h(Z.Divider),
       isNew || !n ? null : h('section', { className: 'admin-section', 'aria-labelledby': 'replace-title' },
@@ -1124,14 +1366,16 @@
         h('div', null, h(Z.Button, { hierarchy: 'secondary', disabled: saving || !replace.length, onClick: function () { setConfirm('replace'); } }, 'Replace'))));
 
     var why = n ? 'On ' + plural(n, 'record') + ': ' + (kind.split ? 'merge or split it' : 'merge it into another ' + kind.one) + ' to remove it.' : null;
+    var saveBtn = h(Z.Button, { key: 'save', hierarchy: 'primary', disabled: saving, onClick: save }, isNew ? 'Create' : 'Save');
+    var otherBtn = isNew ? h(Z.Button, { key: 'cancel', hierarchy: 'secondary', href: '#attributes/' + kind.key }, 'Cancel')
+              : h(Z.Button, { key: 'delete', hierarchy: 'secondary', disabled: saving || n > 0, 'aria-describedby': n ? 'delete-why' : undefined,
+                  onClick: function () { setConfirm('delete'); } }, 'Delete');
+    var statusLine = h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '');
+    // mobile (decision 0089): the two actions in the ActionBar at the bottom, the side content follows the form
     var side = h('aside', { className: 'admin-side' },
-      h(Z.ActionPanel, null,
-        h(Z.Button, { hierarchy: 'primary', disabled: saving, onClick: save }, isNew ? 'Create' : 'Save'),
-        isNew ? h(Z.Button, { hierarchy: 'secondary', href: '#attributes/' + kind.key }, 'Cancel')
-              : h(Z.Button, { hierarchy: 'secondary', disabled: saving || n > 0, 'aria-describedby': n ? 'delete-why' : undefined,
-                  onClick: function () { setConfirm('delete'); } }, 'Delete')),
+      mobile ? null : h(Z.ActionPanel, null, saveBtn, otherBtn),
       why ? h('p', { id: 'delete-why', className: 'body-small' }, why) : null,
-      h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : ''));
+      mobile ? null : statusLine);
 
     var dialog;
     if (confirm === 'delete') {
@@ -1150,7 +1394,8 @@
           (kind.key === 'artist' || kind.key === 'label' ? ' The credit printed on the record does not change.' : ' The shop updates in about 2 minutes.')));
     } else dialog = h(Z.Dialog, { open: false, title: '', confirmLabel: '', onCancel: function () {}, onConfirm: function () {} }, '');
 
-    return h('div', { className: 'admin-page admin-page--attribute' }, main, side, dialog);
+    return h('div', { className: 'admin-page admin-page--attribute' }, main, side,
+      mobile ? h(Z.ActionBar, { status: statusLine }, saveBtn, otherBtn) : null, dialog);
   }
 
   // ── Sign-in ───────────────────────────────────────────────────────────────
@@ -1169,6 +1414,67 @@
       h(Z.Input, { id: 'email', label: 'Email', type: 'email', autoComplete: 'email', value: email, onChange: function (e) { setEmail(e.target.value); },
         error: state && state.error, supportText: state && state.sent ? 'Check your inbox: the link signs you in on this browser.' : 'We email you a sign-in link.' }),
       h('div', null, h(Z.Button, { hierarchy: 'primary', type: 'submit', disabled: state && state.sending }, 'Send link')));
+  }
+
+  // ── Settings ──────────────────────────────────────────────────────────────
+  /* Figma BACKEND → Settings (2324:1064, decision 0102): switches for the whole shop. Trade = public.shop_settings
+     (migration 0023), the single source of truth: off = the shop shows no trace of trade (pages, links, records,
+     legal passages) and the server refuses offers. Save = admin_set_trade_enabled, which also rebuilds the shop.
+     Route: #settings */
+  var tradeSetting = null;   // one read per admin session, shared by Settings and the listing form
+  function loadTradeEnabled(force) {
+    if (!tradeSetting || force) {
+      tradeSetting = sb.from('shop_settings').select('trade_enabled').maybeSingle().then(function (res) {
+        if (res.error) throw res.error;
+        return !res.data || res.data.trade_enabled !== false;
+      });
+      tradeSetting.catch(function () { tradeSetting = null; });
+    }
+    return tradeSetting;
+  }
+  // the listing form: true / false, or null while unknown (then For trade stays offered, as before)
+  function useTradeEnabled() {
+    var st = useState(null), on = st[0], setOn = st[1];
+    useEffect(function () { loadTradeEnabled().then(setOn, function () { setOn(null); }); }, []);
+    return on;
+  }
+
+  function Settings() {
+    var ss = useState(null), saved = ss[0], setSaved = ss[1];     // what the database says
+    var ts = useState(null), trade = ts[0], setTrade = ts[1];     // the checkbox
+    var er = useState(null), error = er[0], setError = er[1];
+    var ps = useState(null), problem = ps[0], setProblem = ps[1];
+    var bs = useState(false), busy = bs[0], setBusy = bs[1];
+
+    useEffect(function () {
+      loadTradeEnabled(true).then(function (on) { setSaved(on); setTrade(on); }, function (e) { setError(e.message || String(e)); });
+    }, []);
+    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' },
+      'Could not load the settings: ' + error + '. Is migration 0023 (trade switch) applied?');
+    if (saved === null) return h('p', { className: 'body-medium' }, 'Loading…');
+
+    async function save() {
+      if (trade === saved) { toast('Nothing to save.'); return; }
+      setBusy(true);
+      var res = await sb.rpc('admin_set_trade_enabled', { p_enabled: trade });
+      setBusy(false);
+      if (res.error) { setProblem('Nothing saved: ' + res.error.message); return; }
+      setProblem(null); setSaved(trade); tradeSetting = Promise.resolve(trade);
+      toast(trade ? 'Trade is on. The shop updates in about 2 minutes.' : 'Trade is off. The shop updates in about 2 minutes.');
+    }
+
+    return h('div', { className: 'admin-section admin-shipping admin-settings' },
+      h('h1', { className: 'label-extra-large' }, 'Settings'),
+      h('div', { className: 'admin-toolbar' },
+        h('p', { className: 'body-small admin-shipping__intro' }, 'Switches for the whole shop.'),
+        h(Z.Button, { hierarchy: 'secondary', 'aria-busy': busy || undefined, onClick: busy ? undefined : save }, 'Save')),
+      problem ? h('p', { className: 'body-small admin-status--error', role: 'alert' }, problem) : null,
+      // Figma BACKEND → Settings → `trade setting` (2324:1066)
+      h('section', { className: 'admin-shipping__section', 'aria-labelledby': 'settings-trade' },
+        h('h2', { id: 'settings-trade', className: 'label-medium' }, 'Trade'),
+        h('p', { className: 'body-small', id: 'settings-trade-help' }, 'Off: the shop shows no trace of trade. The For trade section and its records, the offer form, How trading works and every mention (menus, footer, home, legal pages) disappear, and the server refuses offers. Trade listings stay here in the admin as they are: switch trade on again and they are back. Saving rebuilds the shop, live in about 2 minutes.'),
+        h('div', null, h(Z.Checkbox, { label: 'Show trade on the shop', checked: trade, 'aria-describedby': 'settings-trade-help',
+          onChange: function (e) { setTrade(e.target.checked); setProblem(null); } }))));
   }
 
   // ── Shipping ──────────────────────────────────────────────────────────────
@@ -1278,7 +1584,13 @@
       return h('div', { className: 'admin-table-wrap' },
         h('table', { id: id, className: 'admin-table admin-shipping__table body-small' },
           h('thead', null, h('tr', null, cols.map(function (c, i) { return h('th', { key: i, scope: 'col', className: c.className || '' }, c.label); }))),
-          h('tbody', null, rows)));
+          // each cell carries its column name: on mobile the rows stack and show it above the field (decision 0089)
+          h('tbody', null, React.Children.map(rows, function (tr) {
+            if (!tr || !tr.props) return tr;
+            return React.cloneElement(tr, null, React.Children.map(tr.props.children, function (td, i) {
+              return td && cols[i] && cols[i].label ? React.cloneElement(td, { 'data-label': cols[i].label }) : td;
+            }));
+          }))));
     }
     function section(key, heading, help, body, addLabel, onAdd) {
       var hid = 'shipping-' + key;
@@ -1404,6 +1716,241 @@
           h('p', { className: 'body-medium admin-shipping__result', role: 'status' }, result))));
   }
 
+  // ── Memo ──────────────────────────────────────────────────────────────────
+  /* Figma BACKEND → Memo (2296:9962, decision 0087): Gio's list of records to sell later, made for the phone.
+     Add = Record (free text, or a Discogs release picked while typing) + optional Note. The list is public.memos
+     (migration 0019, admin only), newest first. Create listing opens #new/memo/<id> (release fetched; the first
+     save takes the item off the list). Remove deletes at once, toast with Undo (0049). */
+  // a release as the picker shows it, from the discogs-lookup release answer (a pasted link)
+  function releaseFromLookup(d) {
+    var fmt = d.format || {}, desc = (fmt.descriptions || []).slice(0, 2).join(', ') || fmt.name || '';
+    return { id: d.releaseId, title: (d.artist || 'Unknown') + ' – ' + (d.title || ''), thumb: '',
+             meta: [d.label, d.catNo, d.year, d.country, desc].filter(function (x) { return x && String(x) !== '0'; }).join(' · '),
+             uri: 'https://www.discogs.com/release/' + d.releaseId };
+  }
+  /* Record: the offer form's "Which record" (Figma `which record`, 0069) for the admin. ARIA 1.2 combobox: focus stays
+     in the input, arrows move aria-activedescendant, Enter picks (or submits when nothing is highlighted), Escape
+     closes. 3+ letters ask discogs-lookup { query } (debounced; a newer request wins); a pasted release link resolves. */
+  function RecordField(props) {
+    var id = 'memo-record';
+    var rs = useState(null), box = rs[0], setBox = rs[1];          // null | { results: [] } | { message: '' }
+    var ac = useState(-1), active = ac[0], setActive = ac[1];
+    var timer = useRef(null), seq = useRef(0);
+    useEffect(function () { return function () { clearTimeout(timer.current); }; }, []);
+    // releases found from a photo of the label (0090): shown as if typed; a newer photo or keystroke wins
+    useEffect(function () {
+      var f = props.found;
+      if (!f) return;
+      clearTimeout(timer.current); seq.current++;
+      setBox(f.results.length ? { results: f.results } : { message: 'No match on Discogs for what the photo shows. Fix the text, or keep it as it is.' });
+      setActive(-1);
+    }, [props.found]);
+    function close() { clearTimeout(timer.current); seq.current++; setBox(null); setActive(-1); }
+    function show(next) { setBox(next); setActive(-1); }
+    function onText(e) {
+      var q = e.target.value;
+      props.onText(q);
+      clearTimeout(timer.current);
+      var n = ++seq.current, t = q.trim();
+      var link = t.match(/discogs\.com\/(?:[a-z-]+\/)?(release|master)\/(\d+)/i);
+      if (link && link[1].toLowerCase() === 'master') { show({ message: 'That link is the master (every pressing). Search the title and pick your pressing, or paste its release link.' }); return; }
+      if (!link && t.length < 3) { setBox(null); return; }
+      timer.current = setTimeout(function () {
+        var ask = link ? invoke('discogs-lookup', { releaseId: parseInt(link[2], 10) }).then(function (d) { return [releaseFromLookup(d)]; })
+                       : invoke('discogs-lookup', { query: t }).then(function (d) { return d.results || []; });
+        ask.then(function (list) {
+          if (n !== seq.current) return;
+          show(list.length ? { results: list } : { message: 'No match on Discogs. Keep it as you wrote it.' });
+        }).catch(function (err) {
+          if (n !== seq.current) return;
+          show({ message: 'Discogs isn’t answering (' + err.message + '). Keep it as you wrote it.' });
+        });
+      }, link ? 0 : 350);
+    }
+    function pick(r) { close(); props.onRelease(r); }
+    var results = box && box.results || [];
+    function onKey(e) {
+      if (e.key === 'ArrowDown' && results.length) { e.preventDefault(); setActive((active + 1) % results.length); }
+      else if (e.key === 'ArrowUp' && results.length) { e.preventDefault(); setActive((active - 1 + results.length) % results.length); }
+      else if (e.key === 'Enter' && active >= 0 && results[active]) { e.preventDefault(); pick(results[active]); }
+      else if (e.key === 'Escape' && box) { e.preventDefault(); close(); }
+    }
+    if (props.release) {
+      var r = props.release;
+      return h('div', { className: 'admin-picker' },
+        h('p', { className: 'body-small' }, 'Record'),
+        h(Z.ChosenRelease, { title: r.title, meta: r.meta, thumb: r.thumb, href: r.uri, 'aria-live': 'polite',
+          changeLabel: 'Change', onChange: function () { props.onRelease(null); setTimeout(function () { var el = document.getElementById(id); if (el) el.focus(); }, 0); } }));
+    }
+    return h('div', { className: 'admin-picker' },
+      h(Z.Input, { id: id, label: 'Record', value: props.value, error: props.error, placeholder: 'Artist – title, or search Discogs',
+        autoComplete: 'off', role: 'combobox', 'aria-autocomplete': 'list', 'aria-expanded': results.length ? 'true' : 'false',
+        'aria-controls': id + '-list', 'aria-activedescendant': active >= 0 ? id + '-opt-' + active : undefined,
+        onChange: onText, onKeyDown: onKey, onBlur: function () { setTimeout(close, 150); } }),
+      box ? h(Z.ReleaseList, { className: 'admin-picker__list', listId: id + '-list', label: 'Releases on Discogs', message: box.message },
+        results.map(function (r, i) {
+          return h(Z.ReleaseOption, { key: r.id, id: id + '-opt-' + i, title: r.title, meta: r.meta, thumb: r.thumb, highlighted: i === active,
+            onMouseDown: function (e) { e.preventDefault(); }, onClick: function () { pick(r); } });
+        })) : null,
+      h('p', { className: 'zz-visually-hidden', 'aria-live': 'polite' },
+        box ? (box.message || results.length + (results.length === 1 ? ' release' : ' releases') + ' found. Use the arrow keys to choose.') : ''));
+  }
+  /* Photo of the label (Figma BACKEND → Memo → `memo photo`, state default | reading | read | not read; decision 0090).
+     Opens the phone's back camera (a file picker on desktop). The photo is shrunk here (longest side 1280 px, JPEG),
+     read by read-label (free vision model on Cloudflare Workers AI, nothing stored), then the fields go to
+     discogs-lookup { fields }: barcode, then catalogue number, then artist + title. The words read land in Record. */
+  var PHOTO_SIDE = 1280;
+  function shrinkPhoto(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var k = Math.min(1, PHOTO_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+        var c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL('image/jpeg', 0.85).split(',')[1]);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('this file is not a photo the browser can open')); };
+      img.src = url;
+    });
+  }
+  function PhotoField(props) {
+    var ss = useState({ state: 'default', text: '' }), st = ss[0], setSt = ss[1];
+    var ps = useState(0), progress = ps[0], setProgress = ps[1];
+    var input = useRef(null), seq = useRef(0), tick = useRef(null);
+    useEffect(function () { return function () { clearInterval(tick.current); }; }, []);
+    /* the reader gives no progress: the bar is an estimate (0091). It eases towards a ceiling for the step
+       (reading ~10 s → 85 %, Discogs → 97 %) and never stops moving or reaches 100 % until the answer is in. */
+    function creep(ceiling, seconds) {
+      clearInterval(tick.current);
+      var k = 1 - Math.pow(0.05, 0.2 / seconds);   // ~95 % of the way to the ceiling after `seconds`
+      tick.current = setInterval(function () {
+        setProgress(function (p) { return p + Math.max((ceiling - p) * k, 0.05); });
+      }, 200);
+    }
+    function stopAt(value) { clearInterval(tick.current); setProgress(value); }
+    async function onFile(e) {
+      var file = e.target.files && e.target.files[0];
+      e.target.value = '';                       // the same photo can be taken again
+      if (!file) return;
+      var n = ++seq.current;
+      setProgress(3);
+      setSt({ state: 'reading', text: 'Reading the label…' });
+      creep(85, 10);
+      try {
+        var image = await shrinkPhoto(file);
+        var got = await invoke('read-label', { image: image });
+        if (n !== seq.current) return;
+        if (!got.read) { stopAt(0); setSt({ state: 'not read', text: 'Couldn’t read the label. Try closer, flat and with more light, or type it.' }); return; }
+        var r = got.read;
+        var said = [r.artist, r.title, [r.label, r.catno].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
+        if (props.onText) props.onText(got.query);
+        setSt({ state: 'reading', text: 'Looking for it on Discogs…' });
+        creep(97, 3);
+        var found = await invoke('discogs-lookup', { fields: r });
+        if (n !== seq.current) return;
+        stopAt(100);
+        props.onFound({ results: found.results || [] });
+        setSt({ state: 'read', text: 'Read from the photo: ' + said + '. ' + (props.pickHint || 'Pick your pressing in the list, or fix the text.') });
+      } catch (err) {
+        if (n !== seq.current) return;
+        stopAt(0);
+        setSt({ state: 'not read', text: 'Not read: ' + err.message });
+      }
+    }
+    var reading = st.state === 'reading';
+    // full: one full-width button (Memo); otherwise the button sits in a row after props.actions (Create, 0092)
+    var button = h(Z.Button, { type: 'button', hierarchy: 'secondary', disabled: props.disabled, className: props.full ? 'admin-memo__photo-button' : undefined,
+        'aria-busy': reading || undefined, onClick: function () { if (!reading) input.current.click(); } },
+        st.state === 'read' || st.state === 'not read' ? 'Another photo' : 'Photo of the label');
+    return h('div', { className: 'admin-memo__photo' },
+      h('input', { ref: input, type: 'file', accept: 'image/*', capture: 'environment', className: 'zz-visually-hidden',
+        tabIndex: -1, 'aria-hidden': 'true', onChange: onFile }),
+      props.full ? button : h('div', { className: 'admin-photo-actions' }, props.actions, button),
+      reading ? h(Z.ProgressBar, { value: progress, 'aria-label': 'Reading the photo' }) : null,
+      h('p', { className: 'body-small admin-memo__photo-status', role: 'status' }, st.text));
+  }
+  function Memo() {
+    var ls = useState(null), rows = ls[0], setRows = ls[1];
+    var es = useState(null), loadError = es[0], setLoadError = es[1];
+    var ts = useState(''), text = ts[0], setText = ts[1];
+    var rl = useState(null), release = rl[0], setRelease = rl[1];
+    var ns = useState(''), note = ns[0], setNote = ns[1];
+    var er = useState(null), error = er[0], setError = er[1];
+    var sv = useState(false), saving = sv[0], setSaving = sv[1];
+    var ms = useState(null), message = ms[0], setMessage = ms[1];
+    var fs = useState(null), found = fs[0], setFound = fs[1];       // releases from the last photo (0090)
+    var pk = useState(0), photoKey = pk[0], setPhotoKey = pk[1];   // a new PhotoField after each add
+    function load() {
+      return sb.from('memos').select('*').order('created_at', { ascending: false }).then(function (res) {
+        if (res.error) setLoadError(res.error.message); else { setLoadError(null); setRows(res.data); }
+      });
+    }
+    useEffect(function () { load(); }, []);
+    async function add(e) {
+      e.preventDefault();
+      if (saving) return;
+      var title = release ? release.title : text.trim();
+      if (!title) { setError('Write the record, or pick it on Discogs.'); return; }
+      setError(null); setSaving(true); setMessage(null);
+      var row = { title: title.slice(0, 300), note: note.trim() ? note.trim().slice(0, 1000) : null,
+                  discogs_release_id: release ? release.id : null, discogs_meta: release && release.meta ? release.meta.slice(0, 300) : null };
+      var res = await sb.from('memos').insert(row).select().single();
+      setSaving(false);
+      if (res.error) { setMessage({ error: true, text: 'Not added: ' + res.error.message }); return; }
+      setRows(function (cur) { return [res.data].concat(cur || []); });
+      setText(''); setRelease(null); setNote(''); setFound(null); setPhotoKey(photoKey + 1);
+      setMessage({ error: false, text: 'Added: ' + res.data.title + '.' });
+      var el = document.getElementById('memo-record'); if (el) el.focus();
+    }
+    async function remove(row) {
+      setMessage(null);   // the last "Added:" line would outlive its row
+      setRows(function (cur) { return cur.filter(function (r) { return r.id !== row.id; }); });
+      var res = await sb.from('memos').delete().eq('id', row.id);
+      if (res.error) { setMessage({ error: true, text: 'Not removed: ' + res.error.message }); load(); return; }
+      toast('Removed: ' + row.title + '.', function () {
+        sb.from('memos').insert(row).then(function (r) { if (r.error) setMessage({ error: true, text: 'Not restored: ' + r.error.message }); load(); });
+      });
+    }
+    var count = rows ? rows.length : 0;
+    return h('div', { className: 'admin-memo' },
+      h('h1', { className: 'label-extra-large' }, 'Memo'),
+      h('form', { className: 'admin-memo__add', onSubmit: add, noValidate: true },
+        h(RecordField, { value: text, release: release, error: error,
+          found: found, onText: function (v) { setText(v); if (error) setError(null); }, onRelease: function (r) { setRelease(r); if (r) setError(null); } }),
+        h(PhotoField, { key: 'photo-' + photoKey, full: true,
+          onText: function (v) { setRelease(null); setText(v); if (error) setError(null); }, onFound: setFound }),
+        h(Z.Input, { id: 'memo-note', label: 'Note', optional: true, placeholder: 'Sleeve, condition, where it is…',
+          value: note, onChange: function (e) { setNote(e.target.value); } }),
+        h(Z.Button, { type: 'submit', className: 'admin-memo__submit', 'aria-busy': saving || undefined }, 'Add to list'),
+        h('p', { className: 'body-small admin-status' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '')),
+      loadError ? h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'List not loaded: ' + loadError)
+        : !rows ? h('p', { className: 'body-small' }, 'Loading…')
+        : h('div', { className: 'admin-memo__list' },
+            h('p', { className: 'body-small admin-memo__count' }, count ? count + (count === 1 ? ' record' : ' records') : 'Nothing here yet. Add the records you want to sell later.'),
+            count ? h('ul', { className: 'admin-memo__items', 'aria-label': 'Memo list' }, rows.map(function (r) {
+              return h(Z.MemoItem, { key: r.id, title: r.title, meta: r.discogs_meta || undefined, note: r.note || undefined,
+                href: r.discogs_release_id ? 'https://www.discogs.com/release/' + r.discogs_release_id : undefined,
+                onCreate: function () { location.hash = '#new/memo/' + r.id; },
+                onRemove: function () { remove(r); } });
+            })) : null));
+  }
+  // #new/memo/<id>: the listing form, started from a memo
+  function FromMemoLoader(props) {
+    var st = useState(null), item = st[0], setItem = st[1];
+    var er = useState(null), error = er[0], setError = er[1];
+    useEffect(function () {
+      sb.from('memos').select('*').eq('id', props.id).single()
+        .then(function (res) { if (res.error) setError(res.error.message); else setItem(res.data); });
+    }, [props.id]);
+    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not open this memo: ' + error);
+    if (!item) return h('p', { className: 'body-medium' }, 'Loading…');
+    var initial = emptyForm();
+    if (item.discogs_release_id) initial.discogs = String(item.discogs_release_id);
+    return h(ListingForm, { initial: initial, fromMemo: { id: item.id, title: item.title, note: item.note, discogs: item.discogs_release_id } });
+  }
+
   // ── App ───────────────────────────────────────────────────────────────────
   // [hash, visit]: visit changes on every navigation, so "Create listing" always opens an empty form
   function useHash() {
@@ -1440,19 +1987,56 @@
     else if (/^#attributes\/[a-z]+\/[^/]+$/.test(hash)) body = h(AttributeForm, { key: hash + route.visit, kind: hash.split('/')[1], id: hash.split('/')[2] });
     else if (/^#attributes/.test(hash)) body = h(Attributes, { key: 'attributes', kind: hash.split('/')[1] || 'artist' });
     else if (hash === '#shipping') body = h(Shipping, { key: 'shipping-' + route.visit });
+    else if (hash === '#settings') body = h(Settings, { key: 'settings-' + route.visit });
+    else if (hash === '#orders') body = h(Orders, { key: 'orders-' + route.visit });
+    else if (/^#orders\/[^/]+$/.test(hash)) body = h(OrderDetail, { key: hash + route.visit, id: hash.split('/')[1] });
+    else if (hash === '#memo') body = h(Memo, { key: 'memo-' + route.visit });
+    else if (/^#new\/memo\/[^/]+$/.test(hash)) body = h(FromMemoLoader, { key: hash + route.visit, id: hash.split('/')[2] });
     else body = h(Listings, { key: 'list-' + route.visit });
 
     return h('div', { className: 'admin' },
-      session ? h('header', { className: 'admin-bar' },
-        h('nav', { className: 'admin-bar__nav', 'aria-label': 'Admin' },
-          h(Z.Button, { hierarchy: 'secondary', size: 'small', href: '#' }, 'Listings'),
-          h(Z.Button, { hierarchy: 'secondary', size: 'small', href: '#attributes' }, 'Attributes'),
-          h(Z.Button, { hierarchy: 'secondary', size: 'small', href: '#shipping' }, 'Shipping'),
-          h(Z.Button, { hierarchy: 'primary', size: 'small', href: '#new' }, 'Create listing')),
-        h('div', { className: 'admin-bar__nav' },
-          h('span', { className: 'body-small' }, session.user.email),
-          h(Z.Button, { hierarchy: 'secondary', size: 'small', onClick: function () { sb.auth.signOut(); } }, 'Sign out'))) : null,
+      session ? h(Nav, { hash: hash, email: session.user.email }) : null,
       body);
+  }
+
+  /* Admin navigation (Figma page `admin`, decision 0089): AdminBar (desktop buttons / mobile Menu · title · Create)
+     + the mobile menu, a full-screen native modal <dialog> with a MenuLayer, like the shop's (0060): Esc, × or
+     following a link closes it, focus goes back to the Menu button. */
+  var SECTIONS = [['listings', 'Listings', '#'], ['orders', 'Orders', '#orders'], ['memo', 'Memo', '#memo'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings']];
+  function sectionOf(hash) {
+    if (/^#orders/.test(hash)) return 'orders';
+    if (/^#memo/.test(hash)) return 'memo';
+    if (/^#attributes/.test(hash)) return 'attributes';
+    if (hash === '#shipping') return 'shipping';
+    if (hash === '#settings') return 'settings';
+    if (/^#new/.test(hash)) return null;   // Create: no section is current (the Create button is the way in)
+    return 'listings';                        // list and #edit-<id>
+  }
+  function Nav(props) {
+    var dialogRef = useRef(null), menuBtn = useRef(null);
+    var op = useState(false), open = op[0], setOpen = op[1];
+    var current = sectionOf(props.hash);
+    function signOut() { sb.auth.signOut(); }
+    function openMenu() { var d = dialogRef.current; if (d && d.showModal) { d.showModal(); setOpen(true); d.focus(); } }
+    function closeMenu() { var d = dialogRef.current; if (d && d.open) d.close(); }
+    useEffect(function () {
+      var d = dialogRef.current; if (!d) return;
+      function onClose() { setOpen(false); var b = document.querySelector('.zz-admin-bar__menu'); if (b) b.focus(); }
+      d.addEventListener('close', onClose);
+      return function () { d.removeEventListener('close', onClose); };
+    }, []);
+    useEffect(function () { closeMenu(); }, [props.hash]);   // following a link (hash change) closes the menu
+    return h(React.Fragment, null,
+      h(Z.AdminBar, {
+        items: SECTIONS.map(function (x) { return { href: x[2], label: x[1], current: x[0] === current }; }),
+        title: document.title || 'Store admin', createHref: '#new', email: props.email, onSignOut: signOut,
+        onMenuClick: openMenu, menuProps: { 'aria-expanded': open ? 'true' : 'false', 'aria-controls': 'admin-menu', 'aria-haspopup': 'dialog' }
+      }),
+      h('dialog', { id: 'admin-menu', className: 'admin-menu', 'aria-label': 'Menu', tabIndex: -1, ref: dialogRef,
+        onClick: function (e) { if (e.target.closest && e.target.closest('a[href]')) closeMenu(); } },
+        h(Z.MenuLayer, { title: 'Menu', closeLabel: 'Close menu', onClose: closeMenu },
+          h(Z.MenuGroup, null, SECTIONS.map(function (x) { return h(Z.MenuItem, { key: x[0], href: x[2], label: x[1], current: x[0] === current }); })),
+          h(Z.MenuGroup, null, h(Z.MenuItem, { label: 'Sign out', detail: props.email, onClick: signOut })))));
   }
 
   window.ReactDOM.createRoot(document.getElementById('root')).render(h(App));

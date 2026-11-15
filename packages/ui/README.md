@@ -1,6 +1,6 @@
-# rythem-trax
+# rythem-works
 
-Design system for rythem-trax (formerly Zanza), a headless vinyl record store (For Sale first, For Trade later). This is the **code-side mirror of the Figma file** `Zanza - Record Store`: every token here is a Figma variable, every component a Figma component. Figma is the source of design decisions; this system is where they become CSS variables and React components.
+Design system for rythem-works (formerly Zanza), a headless vinyl record store (For Sale first, For Trade later). This is the **code-side mirror of the Figma file** `Zanza - Record Store`: every token here is a Figma variable, every component a Figma component. Figma is the source of design decisions; this system is where they become CSS variables and React components.
 
 The source lives in the repo at `packages/ui/` (tokens.json, components.js, components.css, docs/). This artifact is **generated from it** by `npm run build:artifact` — edit the repo, not this page.
 
@@ -38,7 +38,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | Component | Figma | Status |
 | --- | --- | --- |
 | Button | page `buttons` → section `button` | ported: hierarchy × size × state (incl. `active` = current page, aria-current), `suffix` |
-| Tabs / Tab | page `tabs` → `tab group`, `tab` | ported: controlled selection, 4 states, `suffix` (counts, 0029) |
+| Tabs / Tab | page `tabs` → `tab group`, `tab` | ported: controlled selection, 4 states, `suffix` (counts, 0029), size extra-small (account nav, 0101) |
 | Header | page `header` → `header` | ported: device desktop/mobile or responsive, composition of Button + Tabs |
 | Breadcrumbs | page `breadcrumbs` → `breadcrumbs` | ported (PDP; PLP uses ActiveFilter, 0041) |
 | ActiveFilter | page `active filter` → `active filter` | ported: device = chip size, set by the consumer |
@@ -49,12 +49,15 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | ProductInfo | page `PDP` → `product info` | ported: desktop / mobile / responsive |
 | ProductCard | page `PDP` → `product card` | ported: desktop / mobile / responsive |
 | BagItem | page `Bag` → `bag item` | ported: desktop / mobile / responsive × status available / unavailable (`notice`) |
+| OrderItem | page `Account` → `order item` | ported (0101): BagItem without Remove |
+| OrderRow | page `Account` → `order row` | ported (0101): one link per order, View not a tab stop |
 | BagSummary | page `Bag` → `bag summary` | ported: subtotal, shipping "Calculated at checkout", Checkout, note |
 | RelatedProducts | page `PDP` → `you may also like` | ported: one layout, cards carry the device |
 | Gallery | page `PDP` → `product image` ×2, `mobile gallery` | ported from page placement; Figma component pending |
 | Input | page `input` → `input` + `_input-master` | ported: variant text field / search / select / text area (2026-11-12, default state only) × size medium / compact; error, locked (admin) |
 | DropZone | page `uploads` → `drop zone` | ported |
 | FileList / FileItem | page `uploads` → `file item` (list = layout frame) | ported: type audio / image, state default / dragging, handle, featured, title field |
+| Alert | page `Bag` → `alert` | ported (0077): red box, used by BagSummary `minimumNote` and `soldOutNote` |
 | Divider | page `divider` → `divider` | ported |
 | ActionPanel | page `listing form` → `action panel` | ported |
 | ListingLine | page `listing form` → `listing line` | ported: removable, sample empty / uploaded, artist on label |
@@ -64,13 +67,21 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | ReleaseOption | page `Trade` → `release option` | ported (0069) |
 | ReleaseList | page `Trade` → `release list` | ported (0069) |
 | ChosenRelease | page `Trade` → `chosen release` | ported (0069) |
+| MemoItem | page `Memo` (BACKEND) → `memo item` | ported (0087): device mobile / desktop (responsive), meta + link, note, Create listing / Remove |
+| ProgressBar | page `Memo` (BACKEND) → `progress bar` | ported (0091): value 0–100, role=progressbar |
+| AdminBar | page `admin` → `admin bar` | ported (0089): device desktop / mobile (responsive); mobile opens a MenuLayer dialog |
+| ListingRow | page `admin` → `listing row` | ported (0089): admin list row on mobile (Listings, Attributes), select, meta, price |
+| OrderBlock | page `Orders` (BACKEND) → `order block` | ported (0100): title, body (line breaks kept), optional action |
+| ActionBar | page `admin` → `action bar` | ported (0089): form actions sticky at the bottom on mobile, optional status line |
 | Checkbox | page `controls` → `checkbox` | ported: state default / active (= checked) / indeterminate, `label` boolean (hideLabel), native input |
 | Dialog | page `dialog` → `dialog` | ported: native `<dialog>` + showModal, surface-base, backdrop surface-scrim, `choices` (radio group) |
 | Toast | page `toast` → `toast` | ported: `message`, `action` (Undo), `dismiss`; ToastRegion + `toast.js` (one at a time, 6 s without action, live region), decision 0049 |
 | Radio · RadioGroup | page `controls` → `radio` | ported: state default / active, `label` boolean (hideLabel), native radio in a fieldset |
 | Filter · FilterBlock · Filters | page `filters` → `filter`, `filter block`, `filters` | ported: content label / tag × state × device (responsive), count; shop PLP (0028) |
 | FiltersLayer · FilterFacet · PlpHeader · SelectButton | page `filters` → `filters layer`, `filter facet`, `PLP header` | ported: mobile filters, level main / facet, sticky actions; sort = native select as a button (0038) |
-| MenuLayer · MenuGroup · MenuItem | page `menu` → `menu layer`, `menu item` | ported: mobile menu opened by the header hamburger (0060) |
+| MenuLayer · MenuGroup · MenuItem | page `menu` → `menu layer`, `menu item` | ported: mobile menu opened by the header hamburger (0060); also the admin mobile menu, MenuItem without href = action button (0089) |
+| Footer · FooterLinks · FooterNewsletter | page `footer` → `footer`, `footer link list`, `footer newsletter`, `footer legal` | ported (0077): `<footer>` landmark, newsletter slot, link columns, legal + copyright; desktop / mobile responsive |
+| SectionHead · GenreLinks · HomeAbout | page `Home` → `section head`, `genre links`, `home about` | ported (0085): home blocks; Header `homeCurrent` = `store name` state=active |
 | EntityField · EntityChip | `input` › `chips` + `_input chips`, `entity chip` (tags), `entity option` (input › building blocks) | ported: chips, menu (entity / alias / create), keyboard; Label = one chip; chip size medium / large |
 
 ## Open items

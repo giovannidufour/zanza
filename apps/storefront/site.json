@@ -1,11 +1,11 @@
 {
-  "storeName": "rythem-trax",
+  "storeName": "rythem-works",
   "lang": "en",
   "outputDir": "zanza",
   "basePath": "/zanza",
-  "mediaBaseUrl": "https://pub-a98e506f6d2e48c49301fca9123a3b20.r2.dev",
+  "mediaBaseUrl": "https://media.rythem-works.com",
   "owner": {
-    "note": "Who runs the shop (Figma page Trade / About). PLACEHOLDERS until Gio fills them: name, bio, Instagram and Mixes links. Discogs (highmuzik) and Instagram (giouann) are real (Gio, 2026-11-12/13); facebook.message = Gio's m.me link, empty until he gives it (then Facebook verification has no button); stats show only the join year until the ratings are checked. No legal name or address here (that is the Impressum).",
+    "note": "Who runs the shop (Figma page Trade / About). PLACEHOLDERS until Gio fills them: name, bio, Instagram and Mixes links. Discogs (highmuzik) and Instagram (giouann) are real (Gio, 2026-11-12/13); Facebook is real too (Gio, 2026-11-13), used only for the verification button, not listed on About (the profile URL carries his full name); stats show only the join year until the ratings are checked. No legal name or address here (that is the Impressum).",
     "name": "Gio",
     "djName": "DJ name",
     "bio": "Placeholder: who you are in three lines. DJ and collector, what you play, where. These records come from my own crates.",
@@ -35,9 +35,26 @@
       "message": "https://ig.me/m/giouann"
     },
     "facebook": {
-      "href": "",
-      "message": ""
+      "href": "https://www.facebook.com/giovanni.dufour.3/",
+      "message": "https://m.me/giovanni.dufour.3"
     }
+  },
+  "newsletter": {
+    "note": "Footer newsletter signup (decision 0076). action = the Buttondown subscribe URL (https://buttondown.com/api/emails/embed-subscribe/rythem-works). Empty = the footer shows no signup. Switched on 2026-11-14: the Privacy page names Buttondown (decision 0079).",
+    "action": "https://buttondown.com/api/emails/embed-subscribe/rythem-works",
+    "endpoint": "https://hhpknvyfypqipxufmbys.supabase.co/functions/v1/newsletter",
+    "autoConfirm": true,
+    "flowNote": "Own double opt-in (decision 0103): endpoint = URL of the Supabase function newsletter (secret BUTTONDOWN_API_KEY, Verify JWT OFF); the form posts there and answers in place, the email link lands on /newsletter/confirm/ and adds the address to Buttondown as active. If the function is missing or fails, the form falls back to action (Buttondown's own flow). autoConfirm true = the confirm page confirms as it opens (one click); false = it shows a Confirm button (safe from email link scanners that run JavaScript)."
+  },
+  "legal": {
+    "note": "Legal pages (decisions 0079, 0093): content/legal/*.md, {{legal.x}} is filled from here; empty = a bracketed placeholder on the page, listed by the build. Gio sells privately (2026-11-15): no address, no phone, no VAT line, no Impressum: name + email, and the contact form (site.json → contact). email = the shop contact address, also shown on /contact/ (provisional: see _context/provisional-names.md). updated = date of the last change to Privacy.",
+    "name": "",
+    "email": "gio@rythem-works.com",
+    "updated": "2026-11-15"
+  },
+  "contact": {
+    "note": "Contact form on /contact/ (decision 0093). endpoint = URL of the Supabase function contact (supabase/functions/contact, deploy with Verify JWT OFF, secret CONTACT_TO or OFFER_TO); empty = the form says it is not switched on yet and points to the email.",
+    "endpoint": ""
   },
   "trade": {
     "note": "Trade offers (Figma page Trade). offerEndpoint = URL of the Supabase function trade-offer; empty = the form shows that offers are not switched on yet. searchEndpoint = URL of the Supabase function discogs-search (decision 0069); empty = \"Which record\" is a plain text field.",
@@ -49,7 +66,18 @@
     "pages": {
       "basePath": "",
       "outputDir": "",
-      "note": "Cloudflare Pages (npm run build:pages): served from the web root. The top-level values are the GoDaddy staging (gio-d.xyz/zanza)."
+      "noindex": true,
+      "note": "noindex = every page answers X-Robots-Tag: noindex (_headers), while the shop is on staging and rythem-works.com shows the coming-soon page (build-coming-soon.js). Set to false at launch. Cloudflare Pages (npm run build:pages): served from the web root. The top-level values are the GoDaddy staging (gio-d.xyz/zanza)."
     }
+  },
+  "comingSoon": {
+    "note": "Temporary page of rythem-works.com while the shop is on staging (build-coming-soon.js, Figma page Coming soon, decision 0096). text = Figma `coming soon` text property. email = the Contact link (mailto).",
+    "title": "Opening soon",
+    "text": "Reggae and dancehall records from my crates. The shop opens soon: leave your email and you’ll hear first.",
+    "email": "gio@rythem-works.com"
+  },
+  "checkout": {
+    "note": "Stripe Checkout (migration 0021, _context/backend.md → Checkout con hold). endpoint = URL of the Supabase function create-checkout; empty = Checkout in the Bag says checkout is not open yet.",
+    "endpoint": "https://hhpknvyfypqipxufmbys.supabase.co/functions/v1/create-checkout"
   }
 }

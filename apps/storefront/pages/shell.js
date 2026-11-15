@@ -5,7 +5,8 @@ const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 
-const SECTION_LABEL = { sale: 'For sale', trade: 'For trade' };
+// catalog = every record, sale and trade mixed (/catalog/, reached only from the home's "See all", decision 0085)
+const SECTION_LABEL = { sale: 'For sale', trade: 'For trade', catalog: 'Catalog' };
 
 // ── data → text (mapping confirmed 2026-11-07) ──
 const formatPrice = (p) => `${p.amount % 100 === 0 ? p.amount / 100 : (p.amount / 100).toFixed(2)}€`;
@@ -86,9 +87,12 @@ function gradingProps(c) {
   return { grading: record, cover, conditions: note };
 }
 const productHref = (product, url) => url(`/products/${product.listing.slug}/`);
+// the trade switch (admin → Settings, migration 0023, decision 0102), set by build.js from the database. Off = no
+// trade link, tab, menu item or mention on any page. Undefined (a page rendered outside build.js) = on, as before.
+const tradeOn = (site) => !site || site.tradeEnabled !== false;
 
 // Figma: `header` (device=desktop | mobile), the same on every page.
-// `section` = the active tab (none on /bag/). `current = 'bag'` → the Bag button is the current page (state active,
+// `section` = the active tab (none on /bag/). `current = 'home'` → the store name is lit (decision 0085). `current = 'bag'` → the Bag button is the current page (state active,
 // decision 0045). The Bag count is the button's suffix in brackets (Gio 2026-11-10): "(0)" in the static HTML,
 // scripts/site.js writes the real count from the bag in the browser ([data-bag-count]).
 // Mobile: the hamburger opens SiteMenu (scripts/site.js); it is rendered next to the header, inside .zz-page.
@@ -99,18 +103,22 @@ function SiteHeader({ site, url, section, current }) {
       logo: h('img', { src: url('/assets/logo.png'), alt: '', width: 64, height: 64 }),
       storeName: site.storeName,
       homeHref: url('/'),
+      homeCurrent: current === 'home',   // Figma `store name` state=active on the home page (decision 0085)
       menuProps: { 'aria-haspopup': 'dialog', 'aria-controls': 'site-menu', 'aria-expanded': 'false', 'data-menu-open': '' },
       // Figma `header` boolean `search` (2026-11-12): the field on desktop; on mobile it lives in the menu (Gio 2026-11-12)
       search: h(SearchForm, { url, id: 'site-search-header' }),
+      // trade off (admin → Settings, decision 0102): only "For sale", still the desktop way to /sale/
       tabs: h(Z.Tabs, { as: 'nav', value: section, 'aria-label': 'Section' },
         h(Z.Tab, { value: 'sale', href: url('/sale/') }, 'For sale'),
-        h(Z.Tab, { value: 'trade', href: url('/trade/') }, 'For trade')),
+        tradeOn(site) ? h(Z.Tab, { value: 'trade', href: url('/trade/') }, 'For trade') : null),
       actions: h(React.Fragment, null,
-        h(Z.Button, { hierarchy: 'secondary', className: 'zz-header__account' }, 'Account'),
+        // Account (decision 0101): the customer's orders; state active on /account/ pages, as Bag on /bag/ (0045)
+        h(Z.Button, { hierarchy: 'secondary', className: 'zz-header__account', href: url('/account/'),
+          state: current === 'account' ? 'active' : undefined }, 'Account'),
         h(Z.Button, { hierarchy: 'secondary', href: url('/bag/'), state: current === 'bag' ? 'active' : undefined,
           suffix: '(0)', 'data-bag-count': '' }, 'Bag'))
     }),
-    h(SiteMenu, { url, current: current || section }));
+    h(SiteMenu, { site, url, current: current || section }));
 }
 
 // the search field (Figma `input` type=search): a GET form to /search/?q=…, so it works without JS; scripts/site.js
@@ -128,18 +136,45 @@ const cx = (...c) => c.filter(Boolean).join(' ');
 // Figma page `menu` (proposal 2026-11-12, search field on top since 2026-11-12): the mobile menu, a full-screen native modal dialog (focus trapped, Esc
 // closes, the page behind is inert). Account is the entry point to /account/ on mobile; the Bag stays in the header.
 // The Account detail is "Sign in to see your orders" until accounts exist (then: the signed-in email).
-function SiteMenu({ url, current }) {
+function SiteMenu({ site, url, current }) {
+  const trade = tradeOn(site);
   const item = (key, label, href, detail) => h(Z.MenuItem, { key, label, href: url(href), detail, current: key === current });
-  const legal = [['Impressum', '/impressum/'], ['Privacy', '/privacy/'], ['Terms', '/terms/'], ['Withdrawal', '/withdrawal/']]
+  const legal = LEGAL_LINKS
     .map(([text, href]) => h('a', { key: href, href: url(href) }, text));
   return h('dialog', { id: 'site-menu', className: 'site-menu', 'aria-label': 'Menu', tabIndex: -1, 'data-site-menu': '' },
     h(Z.MenuLayer, { title: 'Menu', closeLabel: 'Close menu', legal },
       // Figma `menu layer`: the search field on top of the body (Gio 2026-11-12: mobile search in the menu, not the header)
       h(SearchForm, { url, id: 'site-search-menu', className: 'site-menu__search' }),
-      h(Z.MenuGroup, null, item('sale', 'For sale', '/sale/'), item('trade', 'For trade', '/trade/')),
-      h(Z.MenuGroup, null, item('account', 'Account', '/account/', 'Sign in to see your orders')),
-      h(Z.MenuGroup, null, item('about', 'About', '/about/'), item('how-trading-works', 'How trading works', '/how-trading-works/'),
+      h(Z.MenuGroup, null, item('sale', 'For sale', '/sale/'), trade ? item('trade', 'For trade', '/trade/') : null),
+      // the detail becomes the signed-in email (scripts/account.js, [data-account-email]); decision 0101
+      h(Z.MenuGroup, null, item('account', 'Account', '/account/', h('span', { 'data-account-email': '' }, 'Sign in to see your orders'))),
+      h(Z.MenuGroup, null, item('about', 'About', '/about/'), trade ? item('how-trading-works', 'How trading works', '/how-trading-works/') : null,
         item('grading', 'Grading', '/grading/'), item('shipping', 'Shipping', '/shipping/'), item('contact', 'Contact', '/contact/'))));
+}
+
+// Figma page `footer` (decision 0076): the same on every shop page, after <main>. Links = the mobile menu's
+// (SiteMenu), so both lead to the same places; social = Gio's Instagram and Discogs (site.json → owner, his personal
+// identity). The newsletter slot shows only when site.json → newsletter.action is set (Buttondown subscribe URL):
+// it stays off until the Privacy page names Buttondown (German law, design/open.md). newsletter.endpoint = our own
+// double opt-in (decision 0103, scripts/newsletter.js); Buttondown's form stays as the fallback without JS.
+const LEGAL_LINKS = [['Privacy', '/privacy/'], ['Terms', '/terms/']];   // private seller (decision 0093): no Impressum, no Withdrawal; contact = /contact/;
+function SiteFooter({ site, url }) {
+  const owner = site.owner || {};
+  const nl = site.newsletter || {};
+  const link = (label, href) => ({ label, href: url(href) });
+  const social = [owner.instagram && owner.instagram.href && { label: 'Instagram', href: owner.instagram.href },
+    owner.discogs && owner.discogs.href && { label: 'Discogs', href: owner.discogs.href }].filter(Boolean);
+  return h(Z.Footer, {
+    className: 'site-footer',
+    newsletter: nl.action ? h(Z.FooterNewsletter, { action: nl.action, endpoint: nl.endpoint || undefined,
+      note: [`New records in your inbox. You confirm ${nl.endpoint && nl.autoConfirm !== false ? 'with one click in an email' : 'by email'} and can leave anytime. `, h('a', { key: 'p', href: url('/privacy/') }, 'Privacy')] }) : null,
+    legal: LEGAL_LINKS.map(([text, href]) => h('a', { key: href, href: url(href) }, text)),
+    copyright: `\u00a9 ${new Date().getFullYear()} ${site.storeName}`
+  },
+  h(Z.FooterLinks, { label: 'Shop', links: [link('For sale', '/sale/'), tradeOn(site) && link('For trade', '/trade/')].filter(Boolean) }),
+  h(Z.FooterLinks, { label: 'Info', links: [link('About', '/about/'), tradeOn(site) && link('How trading works', '/how-trading-works/'),
+    link('Grading', '/grading/'), link('Shipping', '/shipping/'), link('Contact', '/contact/')].filter(Boolean) }),
+  social.length ? h(Z.FooterLinks, { label: 'Follow', links: social }) : null);
 }
 
 // the data the site player (scripts/site.js) reads from a PlayerButton: a product's samples are its queue
@@ -153,7 +188,8 @@ function sampleAttrs(product, s, url) {
     'data-product-image': release.cover ? url(release.cover) : undefined,
     'data-product-href': productHref(product, url),
     'data-listing-id': product.listing.id,   // the player's "Add to bag" adds the playing product
-    'data-listing-section': product.listing.section   // trade listings: no Add to bag in the player
+    'data-listing-section': product.listing.section,   // trade listings: no Add to bag in the player
+    'data-listing-status': product.listing.status   // sold / traded: the player's button reads "Sold out", disabled
   };
 }
 
@@ -203,4 +239,4 @@ function ProductCardFor({ product, url, headingLevel }) {
   });
 }
 
-module.exports = { SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, sampleAttrs, ProductCardFor };
+module.exports = { tradeOn, SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor };

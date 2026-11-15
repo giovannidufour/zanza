@@ -1,0 +1,68 @@
+/* apps/storefront/account.css — page layout of the customer account (Figma: page Account → frame `account content`,
+   decision 0101). Layout only: OrderRow / OrderItem / Tab / Input / Button bring their own styles from packages/ui. */
+
+.account-content {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));   /* Figma: 12 columns, gap 8 */
+  column-gap: var(--gutter-small);
+  row-gap: var(--gutter-small);
+  padding: var(--small) 0;                             /* Figma: paddingTop/Bottom → small */
+  align-items: start;
+}
+.account-content p, .account-content h2, .account-content h3 { margin: 0; }
+.account-content__title, .account-content__message { grid-column: 1 / -1; margin: 0; }
+.account-content__message[hidden] { display: none; }
+.account-signin { grid-column: 1 / span 4; }                    /* Figma: sign in `main`, cols 1–4 */
+.account-main { grid-column: 1 / span 8; }                      /* Figma: orders / order detail `main`, cols 1–8 */
+.account-content--details .account-main { grid-column: 1 / span 6; }   /* Figma: details `main`, 500 of 1008 = cols 1–6 */
+.account-signin[hidden], .account-main[hidden], .account-stack[hidden], .account-main [hidden] { display: none; }
+
+/* Figma `main`: a column, gap medium-small (16); details: gap 24 (a literal in Figma, no token) */
+.account-signin, .account-stack, .account-main { display: flex; flex-direction: column; align-items: flex-start; gap: var(--medium-small); }
+.account-content--details .account-main { gap: 24px; }
+.account-signin > .zz-divider, .account-stack > .zz-divider, .account-main > .zz-divider { align-self: stretch; }
+.account-stack, .account-stack .zz-input, .account-list { align-self: stretch; }
+.account-fill { align-self: stretch; }                          /* Figma: Send code / Sign in, layout fill */
+.account-hug { align-self: flex-start; }
+.account-actions { display: flex; flex-wrap: wrap; gap: var(--small); }   /* Figma `other actions`: gap 8, wrap */
+
+/* rows and lines: each <li> = divider + OrderRow / OrderItem, gap medium-small, as the bag list */
+.account-list { display: flex; flex-direction: column; gap: var(--medium-small); margin: 0; padding: 0; list-style: none; }
+.account-list > li { display: flex; flex-direction: column; gap: var(--medium-small); }
+
+/* order detail (Figma: Account - desktop · order detail): nav + order (back, heading, lines) in cols 1–8, the aside
+   (`order aside`) in cols 9–12 from the top of `main` */
+.account-content--order .account-main {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: auto 1fr;          /* a tall aside grows the second row, never the gap under the nav */
+  column-gap: var(--gutter-small);
+  row-gap: var(--medium-small);
+  align-items: start;
+}
+.account-content--order .account-nav { grid-column: 1 / span 8; grid-row: 1; justify-self: start; }
+.account-order { grid-column: 1 / span 8; grid-row: 2; display: flex; flex-direction: column; align-items: flex-start; gap: var(--medium-small); }
+.account-order > .account-list { align-self: stretch; }
+.account-content--order .account-aside { grid-column: 9 / span 4; grid-row: 1 / span 2; }
+.account-order-heading { display: flex; flex-direction: column; }
+.account-aside { display: flex; flex-direction: column; gap: var(--medium-small); }
+.account-aside__block { display: flex; flex-direction: column; align-items: flex-start; gap: var(--small); }
+.account-aside__block > .zz-divider { align-self: stretch; }
+.account-totals { display: flex; flex-direction: column; gap: var(--small); margin: 0; align-self: stretch; }
+.account-totals__row { display: flex; justify-content: space-between; gap: var(--small); white-space: nowrap; }
+.account-totals__row dt, .account-totals__row dd { margin: 0; }
+
+/* details: blocks of divider, title, text, button; gap 8 (Figma) */
+.account-details { display: contents; }
+.account-details__block { display: flex; flex-direction: column; align-items: flex-start; gap: var(--small); align-self: stretch; }
+.account-details__block > .zz-divider, .account-details > .zz-divider { align-self: stretch; }
+
+@media (--mobile) {
+  /* Figma: Account - mobile, one column; sign in buttons fill, secondary actions of order / details fill */
+  .account-content { grid-template-columns: minmax(0, 1fr); }
+  .account-signin, .account-main, .account-content--details .account-main { grid-column: 1; }
+  .account-content--order .account-main { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .account-content--order .account-nav, .account-order, .account-content--order .account-aside { grid-column: 1; grid-row: auto; }
+  .account-fill--mobile { align-self: stretch; }
+}

@@ -1,0 +1,40 @@
+/* apps/storefront/coming-soon.css — the temporary page of rythem-works.com (Figma page `Coming soon`, component
+   `coming soon`, decision 0096). Layout only: type classes, Header, Divider and FooterNewsletter come from packages/ui. */
+
+/* Figma `coming soon`: store name, intro, bottom row; gap medium-small, padding-bottom medium-small (padding-top small
+   is the header row's own) */
+.coming-soon { gap: var(--medium-small); padding-bottom: var(--medium-small); }
+/* Figma: the store name stands alone, no rule under it (the divider is under the title) */
+.coming-soon__header .zz-header__rule { display: none; }
+
+/* Figma `intro`: half the page on desktop (503 of 1008 = 6 of 12 columns, gutter-small), full width on mobile */
+.coming-soon__intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--medium-small);
+  width: calc((100% - var(--gutter-small)) / 2);
+  color: var(--text-strong);
+}
+.coming-soon__title, .coming-soon__text { margin: 0; }
+/* links inside running text are underlined (decision 0076 rule, WCAG 1.4.1) */
+.coming-soon__intro a { color: inherit; text-decoration: underline; }
+
+/* Figma `bottom`: copyright only (links removed 2026-11-15, decision 0096 amendment); at the bottom of the viewport on a
+   tall screen, after the content on a short one */
+.coming-soon__bottom {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--small) var(--medium-small);
+  color: var(--text-strong);
+}
+.coming-soon__copyright { margin: 0; }
+
+/* /newsletter/confirm/ (decision 0103, base rules in legal.css): spaced like the intro */
+.coming-soon .newsletter-confirm__state { gap: var(--medium-small); }
+.coming-soon .newsletter-confirm p { margin: 0; }
+
+@media (--mobile) {
+  .coming-soon__intro { width: auto; }
+}

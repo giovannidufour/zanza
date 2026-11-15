@@ -7,3 +7,4 @@ packages/ui/artifact/
 apps/storefront/_to_delete/
 .supabase.env
 apps/admin/dist/
+apps/storefront/dist-coming-soon/

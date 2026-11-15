@@ -3,7 +3,7 @@
    BagItem for every listing of the sale section, hidden, and site.js shows the ones in the bag, in the order they were
    added, computes the subtotal and swaps to the empty state. A copy is unique: one line per copy, no quantity.
    Adding to the bag does not hold the copy: the 30 min hold starts at checkout (_context/backend.md). A listing that
-   is no longer available shows its notice: sold = name struck through, "SOLD OUT" beside the struck price (decision 0064), reserved (held by
+   is no longer available shows its notice: sold = "SOLD OUT" in a red inline Alert beside the struck price (decisions 0064, 0078), reserved (held by
    another checkout) = the same with "RESERVED" (decision 0065). Only available lines count in the subtotal.
    Shipping (decision 0057, Figma `bag summary` destination=served | not served): when shipping is set up (admin page
    Shipping), the summary has a "Ship to" country select and a total; the page carries the shipping config as JSON and
@@ -70,8 +70,9 @@ function Bag({ products, site, url, shipping, countries }) {
         'data-min-order-cents': minimum || undefined,
         subtotalLabel: h('span', { 'data-bag-subtotal-label': '' }, 'Subtotal (0 records)'),
         subtotal: h('span', { 'data-bag-subtotal': '' }, formatPrice({ amount: 0 })),
-        // TODO checkout: create-checkout (hold + Stripe Checkout session) is not built yet (_context/backend.md)
-        checkoutProps: { 'data-bag-checkout': '' },
+        // Checkout → create-checkout (hold + Stripe Checkout session, migration 0021): site.js posts the available ids
+        // and the country, then goes to Stripe. Empty endpoint = not switched on yet
+        checkoutProps: { 'data-bag-checkout': '', 'data-endpoint': (site.checkout || {}).endpoint || '' },
         // sold lines are not in the order (decision 0064): site.js fills and shows it
         soldOutNoteProps: { 'data-bag-sold-out': '', hidden: true },
         // minimum order (decision 0072, Figma `bag summary` minimum=below): site.js fills it, disables Checkout and
