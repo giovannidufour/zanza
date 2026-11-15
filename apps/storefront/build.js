@@ -96,6 +96,13 @@ let liveMeta = '';
 const footerHtml = renderToStaticMarkup(React.createElement(require('./pages/shell.js').SiteFooter, { site, url }));
 const withFooter = (body) => (body.startsWith('<div class="zz-page"') && body.endsWith('</div>') ? body.slice(0, -6) + footerHtml + '</div>' : body);
 
+// Favicon = the logo illustration (Gio 2026-11-15, decision 0097): files in public/, served from /assets/
+const faviconLinks = [
+  `<link rel="icon" href="${url('/assets/favicon.svg')}" type="image/svg+xml">`,
+  `<link rel="icon" href="${url('/assets/favicon-32.png')}" type="image/png" sizes="32x32">`,
+  `<link rel="apple-touch-icon" href="${url('/assets/apple-touch-icon.png')}">`
+].join('\n');
+
 function page({ title: t, body }) {
   return `<!doctype html>
 <html lang="${site.lang}">
@@ -103,6 +110,7 @@ function page({ title: t, body }) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escape(t)} · ${escape(site.storeName)}</title>
+${faviconLinks}
 <link rel="stylesheet" href="${cssHref('fonts')}">
 <link rel="stylesheet" href="${cssHref('tokens')}">
 <link rel="stylesheet" href="${cssHref('components')}">

@@ -61,6 +61,9 @@ function page({ title, body, description }) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escape(title)}</title>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 ${description ? `<meta name="description" content="${escape(description)}">\n` : ''}<meta name="robots" content="noindex">
 ${links}
 </head>
@@ -80,7 +83,7 @@ function write(rel, content) {
 fs.rmSync(DIST, { recursive: true, force: true });
 for (const [n, c] of Object.entries(css)) write(`css/${n}.css`, c);
 for (const f of fs.readdirSync(path.join(APP, 'public'))) {
-  if (/\.(woff2|png|txt)$/.test(f)) write('assets/' + f, fs.readFileSync(path.join(APP, 'public', f)));
+  if (/\.(woff2|png|svg|txt)$/.test(f)) write('assets/' + f, fs.readFileSync(path.join(APP, 'public', f)));
 }
 // noindex until launch (Figma note on the `Coming soon` page)
 write('_headers', '/*\n  X-Robots-Tag: noindex\n');

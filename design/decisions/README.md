@@ -118,3 +118,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0094](0094-header-logo-only-when-it-fits.md) | Header: the logo shows only when menu + logo + store name + actions fit in the row (measured, Figma boolean `logo`); the store name always stays | accepted |
 | [0095](0095-mobile-breakpoint-960.md) | Mobile layout below 960px (was 768): the desktop header needs ~910px even without the logo, so 768–910px scrolled sideways | proposed |
 | [0096](0096-coming-soon-page.md) | Coming-soon page on rythem-works.com (store name, Opening soon, text, newsletter, Contact/Privacy/Terms) while the shop is on staging behind a login; noindex everywhere until launch | accepted |
+| [0097](0097-favicon-logo.md) | Favicon = the logo illustration on shop, admin and coming-soon; SVG inverts in dark mode, white square only for the iOS icon | accepted |
