@@ -8,7 +8,7 @@
 // Secrets (Supabase → Edge Functions → Secrets): DISCOGS_TOKEN (Gio's personal access token, shared with discogs-lookup),
 // SHOP_URL (shared with trade-offer); optional ALLOWED_ORIGINS (comma-separated extra origins).
 const env = (k: string) => Deno.env.get(k) ?? "";
-const USER_AGENT = "StoreFront/1.0 +https://store-front-6fx.pages.dev";
+const USER_AGENT = "rythem-works/1.0 +https://rythem-works.com";
 const MAX_RESULTS = 8;
 
 function allowedOrigin(origin: string | null) {
