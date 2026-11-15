@@ -18,7 +18,7 @@ The site footer, the same on every shop page, after `<main>` ([0076](../../../..
 | `navLabel` | `string` | `Footer` | Accessible name of the footer &lt;nav>. |
 | `legal` | `ReactNode` |  | Legal links (&lt;a> elements), body-small, wrapping. Figma: `footer legal`. |
 | `legalLabel` | `string` | `Legal` | Accessible name of the legal links group. |
-| `copyright` | `ReactNode` |  | Figma `copyright`, e.g. "© 2026 rythem-trax". |
+| `copyright` | `ReactNode` |  | Figma `copyright`, e.g. "© 2026 rythem-works". |
 
 `*` required.
 <!-- /api -->
