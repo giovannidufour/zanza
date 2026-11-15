@@ -1221,10 +1221,9 @@
     path.setAttribute('vector-effect', 'non-scaling-stroke');
     cross.appendChild(path);
     box.appendChild(cross);
-    // "SOLD OUT" over the cross: the classes of Alert layout=inline + .zz-sold-out-label
+    // "SOLD OUT" over the cross: white text, no box (as SoldOutCross)
     label = document.createElement('span');
-    label.className = 'zz-alert body-small zz-sold-out-label';
-    label.setAttribute('data-layout', 'inline');
+    label.className = 'zz-sold-out-label body-small';
     label.setAttribute('aria-hidden', 'true');
     label.textContent = 'SOLD OUT';
     box.appendChild(label);

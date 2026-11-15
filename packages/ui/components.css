@@ -640,8 +640,9 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
 @media (hover: hover) {
   :is(.zz-product-card__image, .zz-bag-item__image, .zz-gallery__item):has(> .zz-sold-out):hover > img { filter: none; mix-blend-mode: normal; }
 }
-/* "SOLD OUT" over the cross, centred: the inline Alert (Figma `product image` → `sold out label`) */
+/* "SOLD OUT" over the cross, centred: body/small in text/strong-invert, no box (Figma `product image` → `sold out label`) */
 .zz-sold-out-label {
+  color: var(--text-strong-invert);
   position: absolute; top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   white-space: nowrap;
