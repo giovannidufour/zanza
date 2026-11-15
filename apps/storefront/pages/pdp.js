@@ -30,7 +30,7 @@ function Pdp({ product, related = [], site, url }) {
       // Figma: `product image` ×2 / `mobile gallery` — images: cover + first copy photo
       h(Z.Gallery, {
         className: 'pdp-content__gallery',
-        // sold out: the cross on every image (decision 0086); the status lets site.js keep it live
+        // sold out: greyscale + "SOLD OUT" on every image (decision 0086); the status lets site.js keep it live
         soldOut: isSoldOut(listing),
         'data-listing-id': listing.id,
         'data-listing-status': listing.status,
