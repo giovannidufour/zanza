@@ -1,4 +1,4 @@
-# Zanza — Product Brief (v0, 2026-10-31)
+# rythem-trax — Product Brief (v0, 2026-10-31)
 
 ## Cos'è
 Negozio online di vinili con due sezioni: **For Sale** (vendita) e **For Trade** (scambio con il negozio).
@@ -12,6 +12,9 @@ Da liste e schede si ascoltano i sample dei dischi.
 3. Play sample da card (PLP) e da tracklist (PDP) senza interrompere la navigazione
 
 ### For Trade
+**Aggiornato 2026-11-12 (decisione 0068, sostituisce i punti sotto per l'MVP):** "non è in vendita, convincimi". PDP trade con "Trade only", la nota di Gio (la descrizione dell'admin) e la sua Discogs card; CTA *Make an offer* → pagina offerta: dischi offerti (1–5, con i gradi), pitch, presentazione (chi sei + Discogs e/o Instagram), dove parliamo (Discogs, Instagram, email, oppure ci vediamo di persona), email. L'offerta arriva a Gio per email (funzione `trade-offer`), nessun account, niente salvato. Niente regola su chi spedisce: l'accordo si trova parlando. Pagine /how-trading-works/ e /about/. La wantlist di Gio non è mai pubblica. Fase 2: drop con finestra di offerte, card Discogs automatiche, offerte salvate.
+
+Bozza originale (pre-MVP):
 1. PLP trade → PDP trade (stessa anatomia, CTA **Trade** al posto di Add to cart)
 2. Form proposta: cosa offro (1+ dischi: ricerca Discogs o inserimento manuale + condizione media/sleeve + foto), eventuale conguaglio in €, messaggio
 3. Il negozio risponde: accetta / rifiuta / controproposta. Tutto tracciato in account → "My proposals"
@@ -23,11 +26,11 @@ Il listing `trade` passa a `reserved` quando una proposal è `accepted`, a `trad
 
 ## Modello dati (bozza)
 
-- **Release** — discogs_release_id, discogs_master_id, artist, title, label, cat_no, year, country, format (12"/7"/LP/EP), macro_genre[] (genre Discogs, es. Reggae, non mostrato), genres[] (gli style Discogs: Roots, Dancehall…), tracklist[], cover
+- **Release** — discogs_release_id, discogs_master_id, artist, title, label, cat_no, year (+ year_precision: anno esatto o decade, es. 1990s), country, format (12"/7"/LP/EP), macro_genre[] (genre Discogs, es. Reggae, non mostrato), genres[] (gli style Discogs: Roots, Dancehall…), tracklist[], cover
 - **Copy** — release_id, condition_media (lato A) + condition_media_b (lato B, facoltativo: "VG+ / VG"), condition_sleeve (Goldmine: M/NM/VG+/VG/G+/G/F/P), notes, photos[], price (solo sale), section (`sale`|`trade`), status (`available`|`reserved`|`sold`|`traded`)
 - **Sample** — release_id, track_position, audio_url, duration, source
 - **Proposal** — copy_id (il disco del negozio), user_id, offered_items[] {discogs_release_id | manual{artist,title}, condition_media, condition_sleeve, photos[]}, cash_adjustment, message, status, thread[] (messaggi/controproposte)
-- **Wishlist**, **Cart** (il bag non riserva niente: l'hold parte solo al checkout, 30 min, e per gli altri la copia è **Reserved**, non sold; Gio 2026-11-12), **Back in stock** ("Notify me" su una copia Reserved: una email se torna disponibile), **Order**, **User**
+- **Wishlist**, **Cart** (il bag non riserva niente: l'hold parte solo al checkout, 30 min, e per gli altri la copia è **Reserved**, non sold; Gio 2026-11-12; **ordine minimo** sul subtotale dei dischi, spedizione esclusa, impostato dall'admin, 2026-11-13), **Back in stock** ("Notify me" su una copia Reserved: una email se torna disponibile), **Order**, **User**
 
 Punto chiave: l'inventario è **per copia**, non per SKU+quantità. Due persone non possono comprare lo stesso disco → serve una riserva al checkout (hold) e un chiaro stato "sold" in PLP/PDP.
 

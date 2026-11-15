@@ -5,7 +5,8 @@ const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 
-const SECTION_LABEL = { sale: 'For sale', trade: 'For trade' };
+// catalog = every record, sale and trade mixed (/catalog/, reached only from the home's "See all", decision 0085)
+const SECTION_LABEL = { sale: 'For sale', trade: 'For trade', catalog: 'Catalog' };
 
 // ── data → text (mapping confirmed 2026-11-07) ──
 const formatPrice = (p) => `${p.amount % 100 === 0 ? p.amount / 100 : (p.amount / 100).toFixed(2)}€`;
@@ -88,7 +89,7 @@ function gradingProps(c) {
 const productHref = (product, url) => url(`/products/${product.listing.slug}/`);
 
 // Figma: `header` (device=desktop | mobile), the same on every page.
-// `section` = the active tab (none on /bag/). `current = 'bag'` → the Bag button is the current page (state active,
+// `section` = the active tab (none on /bag/). `current = 'home'` → the store name is lit (decision 0085). `current = 'bag'` → the Bag button is the current page (state active,
 // decision 0045). The Bag count is the button's suffix in brackets (Gio 2026-11-10): "(0)" in the static HTML,
 // scripts/site.js writes the real count from the bag in the browser ([data-bag-count]).
 // Mobile: the hamburger opens SiteMenu (scripts/site.js); it is rendered next to the header, inside .zz-page.
@@ -99,6 +100,7 @@ function SiteHeader({ site, url, section, current }) {
       logo: h('img', { src: url('/assets/logo.png'), alt: '', width: 64, height: 64 }),
       storeName: site.storeName,
       homeHref: url('/'),
+      homeCurrent: current === 'home',   // Figma `store name` state=active on the home page (decision 0085)
       menuProps: { 'aria-haspopup': 'dialog', 'aria-controls': 'site-menu', 'aria-expanded': 'false', 'data-menu-open': '' },
       // Figma `header` boolean `search` (2026-11-12): the field on desktop; on mobile it lives in the menu (Gio 2026-11-12)
       search: h(SearchForm, { url, id: 'site-search-header' }),
@@ -130,7 +132,7 @@ const cx = (...c) => c.filter(Boolean).join(' ');
 // The Account detail is "Sign in to see your orders" until accounts exist (then: the signed-in email).
 function SiteMenu({ url, current }) {
   const item = (key, label, href, detail) => h(Z.MenuItem, { key, label, href: url(href), detail, current: key === current });
-  const legal = [['Impressum', '/impressum/'], ['Privacy', '/privacy/'], ['Terms', '/terms/'], ['Withdrawal', '/withdrawal/']]
+  const legal = LEGAL_LINKS
     .map(([text, href]) => h('a', { key: href, href: url(href) }, text));
   return h('dialog', { id: 'site-menu', className: 'site-menu', 'aria-label': 'Menu', tabIndex: -1, 'data-site-menu': '' },
     h(Z.MenuLayer, { title: 'Menu', closeLabel: 'Close menu', legal },
@@ -138,8 +140,32 @@ function SiteMenu({ url, current }) {
       h(SearchForm, { url, id: 'site-search-menu', className: 'site-menu__search' }),
       h(Z.MenuGroup, null, item('sale', 'For sale', '/sale/'), item('trade', 'For trade', '/trade/')),
       h(Z.MenuGroup, null, item('account', 'Account', '/account/', 'Sign in to see your orders')),
-      h(Z.MenuGroup, null, item('grading', 'Grading', '/grading/'), item('shipping', 'Shipping', '/shipping/'),
-        item('contact', 'Contact', '/contact/'))));
+      h(Z.MenuGroup, null, item('about', 'About', '/about/'), item('how-trading-works', 'How trading works', '/how-trading-works/'),
+        item('grading', 'Grading', '/grading/'), item('shipping', 'Shipping', '/shipping/'), item('contact', 'Contact', '/contact/'))));
+}
+
+// Figma page `footer` (decision 0076): the same on every shop page, after <main>. Links = the mobile menu's
+// (SiteMenu), so both lead to the same places; social = Gio's Instagram and Discogs (site.json → owner, his personal
+// identity). The newsletter slot shows only when site.json → newsletter.action is set (Buttondown subscribe URL):
+// it stays off until the Privacy page names Buttondown (German law, design/open.md).
+const LEGAL_LINKS = [['Impressum', '/impressum/'], ['Privacy', '/privacy/'], ['Terms', '/terms/'], ['Withdrawal', '/withdrawal/']];
+function SiteFooter({ site, url }) {
+  const owner = site.owner || {};
+  const nl = site.newsletter || {};
+  const link = (label, href) => ({ label, href: url(href) });
+  const social = [owner.instagram && owner.instagram.href && { label: 'Instagram', href: owner.instagram.href },
+    owner.discogs && owner.discogs.href && { label: 'Discogs', href: owner.discogs.href }].filter(Boolean);
+  return h(Z.Footer, {
+    className: 'site-footer',
+    newsletter: nl.action ? h(Z.FooterNewsletter, { action: nl.action,
+      note: ['New records in your inbox. You confirm by email and can leave anytime. ', h('a', { key: 'p', href: url('/privacy/') }, 'Privacy')] }) : null,
+    legal: LEGAL_LINKS.map(([text, href]) => h('a', { key: href, href: url(href) }, text)),
+    copyright: `\u00a9 ${new Date().getFullYear()} ${site.storeName}`
+  },
+  h(Z.FooterLinks, { label: 'Shop', links: [link('For sale', '/sale/'), link('For trade', '/trade/')] }),
+  h(Z.FooterLinks, { label: 'Info', links: [link('About', '/about/'), link('How trading works', '/how-trading-works/'),
+    link('Grading', '/grading/'), link('Shipping', '/shipping/'), link('Contact', '/contact/')] }),
+  social.length ? h(Z.FooterLinks, { label: 'Follow', links: social }) : null);
 }
 
 // the data the site player (scripts/site.js) reads from a PlayerButton: a product's samples are its queue
@@ -152,7 +178,9 @@ function sampleAttrs(product, s, url) {
     'data-product-name': productName(release),
     'data-product-image': release.cover ? url(release.cover) : undefined,
     'data-product-href': productHref(product, url),
-    'data-listing-id': product.listing.id   // the player's "Add to bag" adds the playing product
+    'data-listing-id': product.listing.id,   // the player's "Add to bag" adds the playing product
+    'data-listing-section': product.listing.section,   // trade listings: no Add to bag in the player
+    'data-listing-status': product.listing.status   // sold / traded: the player's button reads "Sold out", disabled
   };
 }
 
@@ -173,18 +201,25 @@ function tagLinksOf(release, url) {
   }));
   return out;
 }
+const TRADE_CARD_LABEL = { available: 'Make an offer', reserved: 'Reserved', traded: 'Traded' };
 // Figma labels the card samples 1, 2…; the accessible name keeps the product and the sample title.
 function ProductCardFor({ product, url, headingLevel }) {
   const { listing, release, copy, samples } = product;
   return h(Z.ProductCard, {
     'data-listing-id': listing.id,   // its Add button puts this copy in the bag (scripts/site.js)
     'data-listing-status': listing.status,   // status at build time; site.js updates it live (Reserved)
+    'data-listing-section': listing.section,
     href: productHref(product, url),
     image: release.cover ? { src: url(release.cover), alt: '' } : null,
     title: productNameLinked(product, url, productHref(product, url)),
     headingLevel,
     releaseInfo: releaseInfoLinked(release, url),
-    price: listing.section === 'sale' ? formatPrice(listing.price) : null,
+    price: listing.section === 'sale' ? formatPrice(listing.price) : 'Trade only',
+    // trade (Figma page Trade): the card button is a link to the offer page, not a bag button
+    // (only while available: a reserved or traded trade copy shows its state, and site.js ignores its button)
+    addHref: listing.section === 'trade' && listing.status === 'available' ? url(`/products/${listing.slug}/offer/`) : undefined,
+    addLabel: listing.section === 'trade' ? TRADE_CARD_LABEL[listing.status] || TRADE_CARD_LABEL.available : undefined,
+    addLabelShort: listing.section === 'trade' ? (listing.status === 'available' ? 'Offer' : TRADE_CARD_LABEL[listing.status]) : undefined,
     tags: tagLinksOf(release, url),
     description: copy.notes,
     ...gradingProps(copy),
@@ -195,4 +230,4 @@ function ProductCardFor({ product, url, headingLevel }) {
   });
 }
 
-module.exports = { SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, sampleAttrs, ProductCardFor };
+module.exports = { SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor };

@@ -8,7 +8,7 @@ Form field of the admin: label row, bordered field, support text. Figma: page `i
 <!-- generated from components.d.ts by build-docs.js: edit the .d.ts, not this table -->
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `variant` | `"text-field" \| "search" \| "select"` | `text-field` | Figma `type` (renamed: `type` is the native input attribute). search adds the magnifying glass, select the chevron. |
+| `variant` | `"text-field" \| "search" \| "select" \| "text-area"` | `text-field` | Figma `type` (renamed: `type` is the native input attribute). search adds the magnifying glass, select the chevron. |
 | `size` | `"medium" \| "compact"` | `medium` | Figma `size`. medium = 38px field, compact = 30px. |
 | `label` | `ReactNode` |  | Figma `label`. Rendered as a &lt;label> (body-small). Without it, pass `aria-label`. |
 | `optional` | `boolean` |  | Figma `optional`: shows "Optional" right-aligned in the label row (part of the accessible name). |

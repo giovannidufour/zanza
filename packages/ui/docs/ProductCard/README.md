@@ -16,6 +16,7 @@ One markup for both variants; CSS grid places the blocks ([0016](../../../../des
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `device` | `"desktop" \| "mobile"` |  | Omitted → responsive (breakpoint `--mobile` from tokens.json, &lt;768px placeholder). |
+| `state` | `"default" \| "hover"` | `default` | Figma `state`. Pins the hover look in docs/previews only; on the site `:hover` drives it (decisions 0009, 0088). |
 | `image` | `ProductCardImage` |  | Figma `product image`: the cover, square. |
 | `href` | `string` |  | Product page URL: the cover becomes a link to it (no visual change; a designed link style is in open.md). |
 | `title` * | `ReactNode` |  | Figma `product name`. Rendered as a heading; it also names the card and its button. |
@@ -29,6 +30,7 @@ One markup for both variants; CSS grid places the blocks ([0016](../../../../des
 | `tags` | `Array<string \| { label: string; href?: string }>` |  | Tag labels, or `{ label, href }` for a tag that links somewhere. Rendered as a TagGroup: size large on desktop, small on mobile. |
 | `samples` | `ReactNode` |  | &lt;PlayerButton>s, in a row (gap 8). |
 | `onAdd` | `() => void` |  | Click on the add button. |
+| `addHref` | `string` |  | Makes the add button a link (trade listings: the offer page, label "Make an offer" / "Offer"). |
 | `addLabel` | `string` |  | Desktop button label (Figma: "Add to bag"). Default "Add to bag". |
 | `addLabelShort` | `string` |  | Mobile button label (Figma: "Add"). Default "Add". |
 

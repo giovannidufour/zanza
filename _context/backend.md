@@ -1,4 +1,4 @@
-# Zanza — Backend (bozza v0, 2026-11-09)
+# rythem-trax — Backend (bozza v0, 2026-11-09)
 
 Stack: `stack.md`. Questa è la **bozza** dello schema e dei flussi, da rivedere prima della prima migrazione. Nomi DB in inglese.
 
@@ -16,11 +16,12 @@ Stack: `stack.md`. Questa è la **bozza** dello schema e dei flussi, da rivedere
 | Tabella | Cosa | Note |
 |---|---|---|
 | `grades` | scala di Gio (Q8): `M, NM, NM-, EX+, EX, EX-, VG+, VG, VG-, G+, G, G-, F` | `rank` 1 = migliore → filtri "da VG+ in su" |
-| `releases` | la pressatura | label, paese, anno, formato, `macro_genre` text[] (genre Discogs, es. Reggae: non mostrato), `genres` text[] (copia ordinata dei nomi di `genres`, letta dal negozio) |
+| `releases` | la pressatura | label, paese, anno (`year` + `year_precision` year/decade: "1990s" = 1990 + decade, 0018), formato, `macro_genre` text[] (genre Discogs, es. Reggae: non mostrato), `genres` text[] (copia ordinata dei nomi di `genres`, letta dal negozio) |
 | `release_lines` | artista/titolo per lato (riga 1 = lato A…), dal form "Create listing" | artista vuoto = stesso della riga 1 (non mostrato). Nome mostrato: `custom_title`, altrimenti "Artist - Title 1 / Title 2" (o "Artist 1 - Title 1 / Artist 2 - Title 2") |
 | `genres`, `release_genres` (0011, rinominati in 0014) | generi (= styles Discogs: Roots, Dancehall…) come entità con `slug`, in ordine per release; filtro Genre della PLP | `releases.genres` resta = i loro nomi in ordine. Fino alla 0014 si chiamavano `subgenres` |
 | `tags`, `release_tags` (0007, 0011) | tag di Gio (Rare, Killer version…), mai da Discogs, in ordine per release | filtro Tags della PLP |
 | `artists`, `labels` (0006) | entità con nome **ufficiale**, `slug` (pagina futura), id Discogs | `artist_aliases` / `label_aliases` = altre grafie. Le righe le collegano con `release_line_artists` (più artisti per riga, in ordine, con "&"/"feat."); la release con `label_id`. `release_lines.artist` e `releases.label` restano = il **credito come stampato** su quel disco (lo mostra il negozio) |
+| `memos` (0019) | promemoria di Gio: dischi da vendere più avanti (pagina admin Memo, decisione 0087) | `title` (testo libero o "Artista – Titolo" della release scelta), `note`, `discogs_release_id` + `discogs_meta` solo se scelta su Discogs. Solo admin (RLS), niente di pubblico |
 | `listings` | la copia pubblicata (copy + listing del brief) | `section`, `status`, `price_cents`, `condition_media` (lato A) + `condition_media_b` (lato B, facoltativo, 0013) → `grades`, `sleeve_type` (`original`/`generic`/`none`) + `condition_sleeve` → `grades`, `photo_keys[]` (la **prima è la featured/cover**), `sku` (automatico), `custom_title`, `condition_notes`, `reserved_until`, `import_source` (solo test) |
 | `samples` | clip della release | `audio_key`, `line_id` (sample del lato; vuoto = "additional"), `sort` = ordine nel player |
 | `orders`, `order_items` | ordini Stripe | li scrivono solo le Edge Functions; prezzo copiato al momento dell'acquisto |
@@ -49,7 +50,7 @@ Chiavi casuali e immutabili (2026-11-10): l'upload avviene prima che il listing 
 ## Flussi
 
 ### Creare un listing (admin)
-1. **Fetch Discogs** (2026-11-10, Figma 2103:20718): incolli link o numero della release in "Discogs match" → il pulsante chiama l'Edge Function `discogs-lookup` (solo admin, User-Agent proprio, token opzionale `DISCOGS_TOKEN` nei secret; niente cache, ToU 6 h) e riempie **solo i campi della release**: righe artista/titolo (una per traccia; artista vuoto se uguale alla riga 1), label, cat. no (non mostrato, salvato), anno, paese, formato, macro genere (il primo genre Discogs), generi (= styles Discogs). Prezzo, condizioni, note, foto e sample restano; i sample di righe sparite diventano "additional". Valori fuori dai vocabolari del form (paese, formato, altri macro generi) vengono elencati nel messaggio, non inventati. Foto Discogs: non importate (diritti). La ricerca per testo (serve il token) arriverà nella stessa funzione.
+1. **Fetch Discogs** (2026-11-10, Figma 2103:20718): incolli link o numero della release in "Discogs match" → il pulsante chiama l'Edge Function `discogs-lookup` (solo admin, User-Agent proprio, token opzionale `DISCOGS_TOKEN` nei secret; niente cache, ToU 6 h) e riempie **solo i campi della release**: righe artista/titolo (una per traccia; artista vuoto se uguale alla riga 1), label, cat. no (non mostrato, salvato), anno, paese, formato, macro genere (il primo genre Discogs), generi (= styles Discogs). Prezzo, condizioni, note, foto e sample restano; i sample di righe sparite diventano "additional". Valori fuori dai vocabolari del form (paese, formato, altri macro generi) vengono elencati nel messaggio, non inventati. Foto Discogs: non importate (diritti). La ricerca per testo (serve il token) è nella stessa funzione: `{ query }` → fino a 8 release (pagina Memo, 0087).
 2. Condizione, prezzo, note, foto, sample.
 3. Salva = **una chiamata** a `admin_save_listing(payload)` (una transazione: release, righe, listing, sample). `draft` → **Pubblica** = `available` + `published_at`; poi ricostruzione del sito.
 4. Copertina: il grado è ammesso per busta `original` e `generic`, mai per `none` (0003).
@@ -91,6 +92,7 @@ available ──► sold / traded diretto (venduto fuori dal sito: fiera, Discog
 Regola (Gio 2026-11-12): **il bag non blocca mai niente**. Un disco è bloccato solo mentre qualcuno è dentro Stripe Checkout (max 30 min) e per gli altri si vede **Reserved**, non sold: resta in PLP, il bottone apre la spiegazione e "Notify me".
 1. Il sito chiama `create-checkout` con gli id dei listing.
 2. Update atomico: `status = 'reserved', reserved_until = now() + 30 min` **solo se** `available` (o se l'hold è scaduto). Se una copia non passa → "appena venduto", niente sessione.
+2b. **Ordine minimo** (decisione 0072, Gio 2026-11-13): somma dei prezzi (dal DB) delle copie davvero bloccate, spedizione esclusa, contro `shipping_settings.config.min_order_cents` con `ZanzaShipping.minimumOrder()` (stesso file del Bag). Sotto il minimo → rilascia gli hold appena presi e risponde `below_minimum` con quanto manca; niente sessione Stripe.
 3. Crea la sessione Stripe Checkout (`expires_at` = 30 min, il minimo di Stripe; righe con il prezzo letto dal DB, mai quello inviato dal client; tariffe di spedizione per zona).
 4. Webhook `checkout.session.completed` → `orders` + `order_items`, listing `sold`, email Resend.
 5. Webhook `checkout.session.expired` → listing di nuovo `available`.
@@ -103,6 +105,7 @@ Regola (Gio 2026-11-12): **il bag non blocca mai niente**. Un disco è bloccato 
 - Segreti: Vault `notify_back_in_stock_url`, `notify_back_in_stock_secret`; funzione: `NOTIFY_SECRET`, `RESEND_API_KEY`, `MAIL_FROM`, `SHOP_URL`, `STORE_NAME`. Deploy con `--no-verify-jwt`. Config e runbook: `email-setup.md`.
 
 ### Spedizione (0057, 2026-11-12)
+- **Ordine minimo** (0072, 2026-11-13): `min_order_cents` nella stessa config (vuoto = nessun minimo), sezione "Minimum order" della pagina admin Shipping. Conta solo i dischi disponibili, spedizione esclusa. Il Bag lo mostra e blocca Checkout; create-checkout lo ricontrolla (sopra, passo 2b).
 - Config in `shipping_settings` (una riga, JSON: formati con peso, mailer con max dischi per formato + peso, zone con paesi ISO, tariffe zona × mailer × peso massimo → servizio + prezzo). Si modifica dalla pagina admin **Shipping** (`admin_save_shipping`, che segna anche la ricostruzione del negozio).
 - Calcolo unico in `packages/shipping/shipping.js`: il Bag mostra la stima per il paese scelto; create-checkout la ricalcola sul server e la passa a Stripe come una sola tariffa, con l'indirizzo limitato a quel paese.
 - Solo paese, niente CAP. Finché non ci sono tariffe il Bag dice "Calculated at checkout".

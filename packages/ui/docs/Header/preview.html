@@ -47,7 +47,7 @@
   }
 
   function Playground() {
-    var st = useState({ device: 'desktop', storeName: 'Store-name', logo: true, section: 'sale', tabs: true, actions: true });
+    var st = useState({ device: 'desktop', storeName: 'rythem-trax', logo: true, section: 'sale', tabs: true, actions: true });
     var s = st[0], set = st[1];
     var upd = function (k) { return function (v) { var n = Object.assign({}, s); n[k] = v; set(n); }; };
 

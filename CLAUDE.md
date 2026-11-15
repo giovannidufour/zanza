@@ -1,13 +1,13 @@
-# Zanza — Project Summary
+# rythem-trax (ex Zanza) — Project Summary
 
-> Leggi questo file all'inizio di ogni sessione su Zanza.
+> Leggi questo file all'inizio di ogni sessione su rythem-trax (ex Zanza: repo, cartelle e identificatori interni si chiamano ancora `zanza`).
 > Poi leggi i file in `_context/` prima di rispondere. Non proporre feature senza aver letto `open-questions.md`.
 
 ---
 
 ## What It Is
 
-**Zanza** (nome provvisorio) — e-commerce headless di dischi in vinile con due sezioni:
+**rythem-trax** (nome scelto da Gio il 2026-11-14, ex "Zanza"; si scrive così, *rythem* e non *rhythm*, minuscolo col trattino; dominio e marchio da verificare, Q7) — e-commerce headless di dischi in vinile con due sezioni:
 
 - **For Sale** — e-commerce classico: PLP, PDP, carrello, checkout, account, preferiti
 - **For Trade** — PDP di dischi NON in vendita, con CTA **Trade** che apre un form di proposta di scambio
@@ -47,13 +47,14 @@ Architettura: **headless**, frontend custom, servizi terzi per commerce/pagament
 | `_context/backend.md` | Schema DB, chiavi di storage, flussi (upload, hold/checkout, pubblicazione) |
 | `_context/email-setup.md` | Email transazionali (Resend): config attuale e runbook per rifarla con nome/dominio/email nuovi |
 | `_context/open-questions.md` | Decisioni aperte — da chiudere prima del codice |
+| `_context/provisional-names.md` | **Registro di dove si usano il nome dello store (ex provvisorio "Zanza", ora rythem-trax) e l'email personale, con lo stato della rinomina** (account, username, URL, codice). Ogni thread che ne aggiunge uno aggiunge la riga qui |
 | `design/README.md` | Mappa della documentazione DS + flusso Figma → codice + checklist di porting di un componente |
 | `design/decisions/` | **Il perché**: una decisione di design per file (inglese, append-only, con la *Rule* da applicare). Leggere prima di portare o modificare un componente |
 | `design/open.md` | **L'unico backlog** di gap, parcheggi e fix Figma. Una voce chiusa diventa una decisione |
 | `packages/ui/` | **Design system in codice — unica fonte dei componenti.** `tokens.json` (mirror delle variabili Figma) → `tokens.css` (generato, mai a mano) · `media.js` (espande `@media (--mobile)` dal gruppo `breakpoint` di tokens.json: il breakpoint vive solo lì) · `components.js` (React, createElement, UMD) · `components.css` · `toast.js` (comportamento dei toast senza framework, stesso file in shop e admin, decisione 0049) |
-| `apps/storefront/` | Sito statico. `content/products/*.json` (modello del brief) · `pages/shell.js` (header, ProductCard da prodotto, mapping dati→testo condivisi) · `pages/pdp.js` · `pages/plp.js` (listing `/sale/` e risultati `/search/?q=`, filtri dai dati, decisioni 0028, 0061) · `pages/bag.js` (bag `/bag/`, decisione 0044: righe nascoste per ogni listing sale, il bag vive in localStorage) · `base.css` (reset + page shell) · `pdp.css` / `plp.css` / `bag.css` (grid di pagina) · `scripts/site.js` (comportamenti di sito: header sticky allo scroll up, player, navigazione soft, filtri PLP, bag: Add to bag, conteggio nell'header, pagina /bag/) · `site.json` (storeName, outputDir, basePath, mediaBaseUrl = base URL delle chiavi media su R2, vuoto finché non c'è) · `data/products.js` (da dove arrivano i prodotti: **Supabase** se esiste `apps/storefront/.supabase.env` (git-ignored: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`), altrimenti i JSON di `content/`; `node apps/storefront/build.js --source=json` forza i JSON) · `build.js` → **`dist/zanza/` = la cartella da caricare via FTP** |
+| `apps/storefront/` | Sito statico. `content/products/*.json` (modello del brief) · `pages/shell.js` (header, ProductCard da prodotto, mapping dati→testo condivisi) · `pages/pdp.js` · `pages/plp.js` (listing `/sale/` e risultati `/search/?q=`, filtri dai dati, decisioni 0028, 0061) · `pages/bag.js` (bag `/bag/`, decisione 0044: righe nascoste per ogni listing sale, il bag vive in localStorage) · `pages/trade.js` + `trade.css` (trade, decisione 0068: azioni della PDP trade, pagina offerta `/products/<slug>/offer/`, `/how-trading-works/`, `/about/`; dati di Gio in `site.json` → owner, endpoint in → trade) · `pages/home.js` + `home.css` (home `/`, decisione 0085: Just in sale+trade mischiati, Genres, About; See all → `/catalog/`, PLP di tutti i dischi, raggiungibile solo da lì) · `pages/legal.js` + `legal.css` (pagine legali e Shipping, decisione 0079: testi in `content/legal/*.md`, dati di Gio in `site.json` → legal) · `fonts.css` (Inter servito dal sito, niente Google Fonts) · `base.css` (reset + page shell) · `pdp.css` / `plp.css` / `bag.css` (grid di pagina) · `scripts/site.js` (comportamenti di sito: header sticky allo scroll up, player, navigazione soft, filtri PLP, bag: Add to bag, conteggio nell'header, pagina /bag/) · `site.json` (storeName, outputDir, basePath, mediaBaseUrl = base URL delle chiavi media su R2, vuoto finché non c'è) · `data/products.js` (da dove arrivano i prodotti: **Supabase** se esiste `apps/storefront/.supabase.env` (git-ignored: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`), altrimenti i JSON di `content/`; `node apps/storefront/build.js --source=json` forza i JSON) · `build.js` → **`dist/zanza/` = la cartella da caricare via FTP** |
 | `packages/shipping/` | `shipping.js`: stima della spedizione (pesi, mailer con max dischi per formato, zone, tariffe), lo stesso file per Bag, admin Shipping e create-checkout (decisione 0057) |
-| `supabase/` | `migrations/` (schema DB, fonte di verità; applicate a mano dall'editor SQL del progetto `store-staging`) · `scripts/build-seed.js` → `seed.sql` (dati di prova da `content/products/`) |
+| `supabase/` | `functions/` (Edge Functions, deploy dal dashboard; `trade-offer` = offerte di scambio via email, 0068; `discogs-search` = release Discogs nel campo "Which record", 0069) · `migrations/` (schema DB, fonte di verità; applicate a mano dall'editor SQL del progetto `store-staging`) · `scripts/build-seed.js` → `seed.sql` (dati di prova da `content/products/`) |
 | `package.json` | `npm run build` (tokens.css + dist/) · `npm run build:artifact` (cartella da pubblicare come artifact DS) · `npm run deploy` / `npm run build:deploy` (upload FTPS di `dist/zanza/` → `public_html/zanza` su GoDaddy, https://gio-d.xyz/zanza/). Claude lancia build e deploy; Gio non usa il terminale. Dopo l'upload il deploy verifica il sito da solo (solo i file di `dist/`, uno al secondo; `npm run deploy -- --verify` per rifarlo). **Mai** richiedere al sito percorsi del progetto (`.git`, `node_modules`, config): l'host banna l'IP |
 | Git / deploy | **GitHub `giovannidufour/zanza` (privato), branch `main` = fonte di verità**; la cartella sul Mac è una copia di lavoro. **Negozio: Cloudflare Pages `store-front` → https://store-front-6fx.pages.dev** (`npm run build:pages`), si ricostruisce da solo a ogni push su `main` e, via deploy hook, quando cambia un listing pubblico (`_context/backend.md` → Pubblicazione). Admin: Pages `store-admin`, pubblicato da GitHub Actions a ogni push su `main` che tocca admin o `packages/ui` (`.github/workflows/deploy-admin.yml`). GoDaddy = staging di riserva (sotto). `apps/storefront/deploy.js` + `deploy.json` (host, remoteDir). Credenziali FTP in `apps/storefront/.deploy.env` (git-ignored, mai committare né stampare). Il deploy carica/sovrascrive soltanto: i file rimossi in locale restano sul server |
 
@@ -63,7 +64,7 @@ Componenti portati: tabella in `packages/ui/README.md`. Aperti: `design/open.md`
 
 ## Regole del codice
 
-- `packages/ui` è l'unica implementazione dei componenti: l'artifact "Zanza Design System" (claude.ai) va rigenerato da qui, non scritto a parte
+- `packages/ui` è l'unica implementazione dei componenti: l'artifact "rythem-trax Design System" (ex "Zanza Design System") (claude.ai) va rigenerato da qui, non scritto a parte
 - Nessun valore visivo inventato: colori solo via token; dimensioni = quelle in Figma; se manca (focus, breakpoint) resta un TODO dichiarato
 - Figma: segnalare sempre refusi e residui di altri file; rinominare i layer anonimi dei componenti su cui si lavora
 - Dati finti in `content/` con già la forma del modello dati, così il backend sostituisce la sorgente e non le pagine

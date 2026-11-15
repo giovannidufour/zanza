@@ -157,7 +157,10 @@ function Plp({ section, products, allProducts = products, site, url, search = fa
           ? h('div', { className: 'search-message plp-list__empty', hidden: true, 'data-plp-empty': '' },
             h('p', { className: 'body-medium' }, 'Check the spelling, or try an artist, a label or a catalogue number.'),
             h(Z.Button, { hierarchy: 'secondary', href: url('/sale/') }, 'Browse all records'))
-          : h('p', { className: 'plp-list__empty body-medium', hidden: true, 'data-plp-empty': '' }, 'No records match these filters.')),
+          : products.length
+            ? h('p', { className: 'plp-list__empty body-medium', hidden: true, 'data-plp-empty': '' }, 'No records match these filters.')
+            // a section with no copies yet (For trade at launch): said plainly, not designed (design/open.md)
+            : h('p', { className: 'plp-list__empty body-medium' }, section === 'trade' ? 'Nothing up for trade right now. Come back soon.' : 'No records right now.')),
       facets.length ? h(PlpLayer, { facets }) : null)
   );
 }

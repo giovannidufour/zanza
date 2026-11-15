@@ -1,4 +1,4 @@
-# design/ — how Zanza's design system is kept
+# design/ — how rythem-trax's design system is kept
 
 > Design source: Figma **Zanza - Record Store** (`X9aI5cZ8UF3T2fskPdUChY`). Code source: `packages/ui/`.
 
@@ -20,7 +20,7 @@ tokens.json ──build-tokens.js──▶ tokens.css
 components.js + components.css + components.d.ts ──build-docs.js──▶ docs/<Comp>/README.md (API)
         │                                   │
         ▼                                   ▼
-apps/storefront (build.js → dist/)          build-artifact.js → claude.ai "Zanza Design System"
+apps/storefront (build.js → dist/)          build-artifact.js → claude.ai "rythem-trax Design System"
 ```
 
 ## Porting a Figma component (checklist)

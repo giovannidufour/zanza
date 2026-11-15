@@ -1,9 +1,66 @@
 {
-  "storeName": "Store-name",
+  "storeName": "rythem-trax",
   "lang": "en",
   "outputDir": "zanza",
   "basePath": "/zanza",
   "mediaBaseUrl": "https://pub-a98e506f6d2e48c49301fca9123a3b20.r2.dev",
+  "owner": {
+    "note": "Who runs the shop (Figma page Trade / About). PLACEHOLDERS until Gio fills them: name, bio, Instagram and Mixes links. Discogs (highmuzik) and Instagram (giouann) are real (Gio, 2026-11-12/13); facebook.message = Gio's m.me link, empty until he gives it (then Facebook verification has no button); stats show only the join year until the ratings are checked. No legal name or address here (that is the Impressum).",
+    "name": "Gio",
+    "djName": "DJ name",
+    "bio": "Placeholder: who you are in three lines. DJ and collector, what you play, where. These records come from my own crates.",
+    "links": [
+      {
+        "label": "Instagram",
+        "href": "https://www.instagram.com/giouann/"
+      },
+      {
+        "label": "Discogs",
+        "href": "https://www.discogs.com/user/highmuzik"
+      },
+      {
+        "label": "Mixes",
+        "href": "https://www.mixcloud.com/"
+      }
+    ],
+    "discogs": {
+      "username": "highmuzik",
+      "href": "https://www.discogs.com/user/highmuzik",
+      "stats": "Member since 2015",
+      "message": "https://www.discogs.com/messages/compose?to=highmuzik"
+    },
+    "instagram": {
+      "handle": "giouann",
+      "href": "https://www.instagram.com/giouann/",
+      "message": "https://ig.me/m/giouann"
+    },
+    "facebook": {
+      "href": "",
+      "message": ""
+    }
+  },
+  "newsletter": {
+    "note": "Footer newsletter signup (decision 0076). action = the Buttondown subscribe URL (https://buttondown.com/api/emails/embed-subscribe/dufour). Empty = the footer shows no signup. Switched on 2026-11-14: the Privacy page names Buttondown (decision 0079).",
+    "action": "https://buttondown.com/api/emails/embed-subscribe/dufour"
+  },
+  "legal": {
+    "note": "Legal pages (decision 0079): content/legal/*.md, {{legal.x}} is filled from here. EMPTY = the page shows the bracketed placeholder and the build lists it: Gio fills these himself (his legal name and a postal address where he can be served, required by § 5 DDG; no P.O. box). email = the shop contact address (provisional: see _context/provisional-names.md). vat = the VAT line of the Impressum, decided with the tax advisor (Q5b). updated = date of the last change to Privacy and Terms.",
+    "name": "",
+    "street": "",
+    "postcode": "",
+    "city": "",
+    "country": "Germany",
+    "email": "",
+    "phone": "",
+    "vat": "",
+    "updated": "2026-11-14"
+  },
+  "trade": {
+    "note": "Trade offers (Figma page Trade). offerEndpoint = URL of the Supabase function trade-offer; empty = the form shows that offers are not switched on yet. searchEndpoint = URL of the Supabase function discogs-search (decision 0069); empty = \"Which record\" is a plain text field.",
+    "offerEndpoint": "https://hhpknvyfypqipxufmbys.supabase.co/functions/v1/trade-offer",
+    "searchEndpoint": "https://hhpknvyfypqipxufmbys.supabase.co/functions/v1/discogs-search",
+    "replyDays": 3
+  },
   "targets": {
     "pages": {
       "basePath": "",
