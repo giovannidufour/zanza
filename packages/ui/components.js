@@ -381,9 +381,14 @@
      (preserveAspectRatio none) and the stroke stays 1px at any size (non-scaling-stroke, as the icons). Decorative:
      the sold state is said in text by the component that shows it ("Sold out" button, "SOLD OUT" alert).
      scripts/site.js builds the same markup when a copy is sold while the page is open. Internal (decision 0008). */
+  // + a centred inline Alert "SOLD OUT" over the cross (Figma layer `sold out label`, same boolean; Gio 2026-11-15),
+  // aria-hidden like the cross: the state is already said by the button / bag line
   function SoldOutCross() {
-    return h('svg', { className: 'zz-sold-out', viewBox: '0 0 100 100', preserveAspectRatio: 'none', 'aria-hidden': 'true', focusable: 'false' },
-      h('path', { d: 'M0 0L100 100M100 0L0 100', vectorEffect: 'non-scaling-stroke' }));
+    return [
+      h('svg', { key: 'x', className: 'zz-sold-out', viewBox: '0 0 100 100', preserveAspectRatio: 'none', 'aria-hidden': 'true', focusable: 'false' },
+        h('path', { d: 'M0 0L100 100M100 0L0 100', vectorEffect: 'non-scaling-stroke' })),
+      h(Alert, { key: 'l', layout: 'inline', className: 'zz-sold-out-label', 'aria-hidden': 'true' }, 'SOLD OUT')
+    ];
   }
 
   /* ── ProductCard ────────────────────────────────────────────────────────
