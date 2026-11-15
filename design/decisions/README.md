@@ -113,3 +113,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0088](0088-product-card-hover.md) | Product card hover: the whole card takes the new `surface/hover` (= black-a4); Figma `product card` state=default/hover | accepted |
 | [0089](0089-admin-mobile.md) | Admin on mobile: AdminBar + menu dialog (MenuLayer), ListingRow instead of tables, bulk bar and form actions (ActionBar) sticky at the bottom, Shipping fields stacked, 44px tap areas on touch | accepted |
 | [0090](0090-photo-of-the-label.md) | Memo: "Photo of the label" reads the label with a free vision model (Cloudflare Workers AI), the text lands in Record and searches Discogs by barcode, cat. no., then artist + title; the photo is never stored | accepted |
+| [0091](0091-progress-bar.md) | ProgressBar (4px, black on surface/subtle); Memo photo shows an estimated progress that eases and never claims 100 % early | accepted |

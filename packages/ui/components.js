@@ -939,6 +939,15 @@
         props.onCreate ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onCreate, 'aria-label': (props.createLabel || 'Create listing') + ': ' + name }, props.createLabel || 'Create listing') : null,
         props.onRemove ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onRemove, 'aria-label': (props.removeLabel || 'Remove') + ': ' + name }, props.removeLabel || 'Remove') : null));
   }
+  /* ── ProgressBar (Figma BACKEND → Memo → `progress bar`, decision 0091) ──
+     Determinate bar: track surface/subtle, value action/primary/background/default, 4px high, square ends.
+     value 0–100. role=progressbar + aria-valuenow; the visible status text stays next to it. */
+  function ProgressBar(props) {
+    var v = Math.max(0, Math.min(100, Math.round(Number(props.value) || 0)));
+    return h('div', Object.assign({ role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': v },
+      omit(props, ['value', 'className']), { className: cx('zz-progress-bar', props.className) }),
+      h('div', { className: 'zz-progress-bar__value', style: { width: v + '%' } }));
+  }
   /* ── AdminBar (Figma page `admin` → `admin bar`, device=desktop | mobile, decision 0089) ──
      One responsive markup. desktop: section Buttons (secondary small, state=active = the section you are on, 0045)
      + Create listing (primary small) · the signed-in email (body/small text/moderate) + Sign out.
@@ -1463,6 +1472,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, AdminBar: AdminBar, ListingRow: ListingRow, ActionBar: ActionBar,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, ProgressBar: ProgressBar, AdminBar: AdminBar, ListingRow: ListingRow, ActionBar: ActionBar,
            SectionHead: SectionHead, GenreLinks: GenreLinks, HomeAbout: HomeAbout };
 });

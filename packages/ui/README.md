@@ -66,6 +66,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | ReleaseList | page `Trade` → `release list` | ported (0069) |
 | ChosenRelease | page `Trade` → `chosen release` | ported (0069) |
 | MemoItem | page `Memo` (BACKEND) → `memo item` | ported (0087): device mobile / desktop (responsive), meta + link, note, Create listing / Remove |
+| ProgressBar | page `Memo` (BACKEND) → `progress bar` | ported (0091): value 0–100, role=progressbar |
 | AdminBar | page `admin` → `admin bar` | ported (0089): device desktop / mobile (responsive); mobile opens a MenuLayer dialog |
 | ListingRow | page `admin` → `listing row` | ported (0089): admin list row on mobile (Listings, Attributes), select, meta, price |
 | ActionBar | page `admin` → `action bar` | ported (0089): form actions sticky at the bottom on mobile, optional status line |

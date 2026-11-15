@@ -949,6 +949,14 @@ export interface MemoItemProps extends HTMLAttributes<HTMLLIElement> {
 }
 export declare function MemoItem(props: MemoItemProps): JSX.Element;
 
+/** Mirrors the Figma component `progress bar` (BACKEND → Memo): a determinate bar, 4px, track surface/subtle,
+ *  value action/primary/background/default. role="progressbar"; pass aria-label (or aria-labelledby). Decision 0091. */
+export interface ProgressBarProps extends HTMLAttributes<HTMLDivElement> {
+  /** Percent done, 0–100 (clamped, rounded). Figma: width of the `value` layer. */
+  value: number;
+}
+export declare function ProgressBar(props: ProgressBarProps): JSX.Element;
+
 /** Mirrors the Figma component `admin bar` (page `admin`, device=desktop | mobile, one responsive markup, decision 0089). */
 export interface AdminBarProps extends HTMLAttributes<HTMLElement> {
   /** Desktop section buttons, in order. `current` = the section you are on (Button state=active, aria-current). */
