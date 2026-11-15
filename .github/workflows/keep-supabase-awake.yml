@@ -1,0 +1,28 @@
+# Keeps the Supabase free-tier project (store-staging) from being paused after 7 days without activity.
+# A paused project stops the admin, trade offers and "Notify me" until it is restored by hand.
+# Runs twice a week: one read of a single public listing id through the REST API, the same request the
+# storefront build makes. Remove this workflow if the project moves to a paid plan.
+# Repository secret (already used by deploy-admin.yml):
+#   SUPABASE_PUBLISHABLE_KEY  the publishable key of store-staging (public by design)
+name: Keep Supabase awake
+
+on:
+  schedule:
+    - cron: '17 6 * * 1,4'   # Monday and Thursday, 06:17 UTC
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read one listing
+        run: |
+          KEY="$(printf %s "$RAW_KEY" | tr -d '[:space:]')"
+          status=$(curl -sS -o body.json -w '%{http_code}' \
+            -H "apikey: $KEY" -H 'Accept: application/json' \
+            "$SUPABASE_URL/rest/v1/listings?select=id&limit=1")
+          echo "HTTP $status"
+          test "$status" = 200
+        env:
+          SUPABASE_URL: https://hhpknvyfypqipxufmbys.supabase.co
+          RAW_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}

@@ -33,7 +33,7 @@ Dettaglio di schema, flussi e storage: `backend.md`.
 ### Account creati (2026-11-09, tutti con l'email personale di Gio)
 | Servizio | Cosa | Note |
 |---|---|---|
-| Supabase | org "Gios" (free) → progetto `store-staging`, ref `hhpknvyfypqipxufmbys`, regione eu-central-1 (Frankfurt) | "Automatically expose new tables" **off**, "automatic RLS" **on**. Password DB nel password manager di Gio. Nella stessa org c'è un progetto non correlato in pausa ("love planner"): il free tier conta i progetti *attivi* (max 2) |
+| Supabase | org "Gios" (free) → progetto `store-staging`, ref `hhpknvyfypqipxufmbys`, regione eu-central-1 (Frankfurt) | Il piano free mette in pausa il progetto dopo 7 giorni senza attività: `.github/workflows/keep-supabase-awake.yml` legge un listing lunedì e giovedì (da togliere se si passa a Pro). "Automatically expose new tables" **off**, "automatic RLS" **on**. Password DB nel password manager di Gio. Nella stessa org c'è un progetto non correlato in pausa ("love planner"): il free tier conta i progetti *attivi* (max 2) |
 | Cloudflare R2 | stesso account Cloudflare di gio-d.xyz, bucket `store-media` (Standard, posizione automatica EEUR) | lettura pubblica via Public Development URL `https://pub-a98e506f6d2e48c49301fca9123a3b20.r2.dev` (attivato 2026-11-10; rate-limited, da sostituire con dominio custom in produzione). Scrittura solo con URL firmato da `sign-upload` |
 | Stripe | account `acct_1RGEAj2LZr7JToM4`, paese **Germany**, solo **sandbox/test** | non attivare i pagamenti live prima di Q5b e del nome. Fuso orario account = Europe/Berlin (impostato il 2026-11-10) |
 
