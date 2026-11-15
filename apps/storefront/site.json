@@ -77,6 +77,6 @@
   },
   "checkout": {
     "note": "Stripe Checkout (migration 0021, _context/backend.md → Checkout con hold). endpoint = URL of the Supabase function create-checkout; empty = Checkout in the Bag says checkout is not open yet.",
-    "endpoint": ""
+    "endpoint": "https://hhpknvyfypqipxufmbys.supabase.co/functions/v1/create-checkout"
   }
 }
