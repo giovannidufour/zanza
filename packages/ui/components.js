@@ -1291,14 +1291,23 @@
   }
   // Figma `footer newsletter`: a plain HTML form (works without JS) → the provider's subscribe endpoint (Buttondown,
   // double opt-in). Input text field (label) + secondary Button, then the note (`note`, links inside are underlined).
+  // `endpoint` (decision 0103): the site's own signup function; the page script (apps/storefront/scripts/newsletter.js)
+  // posts there and answers in place, in the status line, and falls back to `action` if the function can't be reached.
+  // The hidden `website` field is a honeypot for bots.
   function FooterNewsletter(props) {
-    var noteId = (props.id || 'zz-footer-newsletter') + '-note';   // fixed, not useId (see FooterLinks)
-    return h('form', Object.assign({ className: cx('zz-footer-newsletter', props.className), action: props.action, method: props.method || 'post' },
-      omit(props, ['action', 'method', 'label', 'placeholder', 'submitLabel', 'note', 'name', 'className'])),
+    var base = props.id || 'zz-footer-newsletter';   // fixed ids, not useId (see FooterLinks)
+    var noteId = base + '-note';
+    return h('form', Object.assign({ className: cx('zz-footer-newsletter', props.className), action: props.action, method: props.method || 'post',
+      'data-newsletter-endpoint': props.endpoint || undefined },
+      omit(props, ['action', 'method', 'endpoint', 'label', 'placeholder', 'submitLabel', 'note', 'name', 'className'])),
       h('div', { className: 'zz-footer-newsletter__row' },
-        h(Input, { id: (props.id || 'zz-footer-newsletter') + '-email', className: 'zz-footer-newsletter__input', label: props.label || 'Newsletter', type: 'email', name: props.name || 'email',
+        h(Input, { id: base + '-email', className: 'zz-footer-newsletter__input', label: props.label || 'Newsletter', type: 'email', name: props.name || 'email',
           placeholder: props.placeholder || 'Your email', autoComplete: 'email', required: true, 'aria-describedby': props.note ? noteId : undefined }),
         h(Button, { hierarchy: 'secondary', type: 'submit' }, props.submitLabel || 'Subscribe')),
+      props.endpoint ? h('div', { className: 'zz-visually-hidden', 'aria-hidden': 'true' },
+        h('label', null, 'Website', h('input', { type: 'text', name: 'website', tabIndex: -1, autoComplete: 'off' }))) : null,
+      // the answer after submit (filled by the page script): sent → replaces the row; error → under the row
+      props.endpoint ? h('p', { className: 'zz-footer-newsletter__status body-small', role: 'status', tabIndex: -1, hidden: true, 'data-newsletter-status': '' }) : null,
       props.note ? h('p', { id: noteId, className: 'zz-footer-newsletter__note body-small' }, props.note) : null);
   }
 

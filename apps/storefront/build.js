@@ -51,6 +51,9 @@ const toastJsHref = url(`/js/toast.js?v=${hashOf(toastJs)}`);
 // shipping estimate (decision 0057): the same file as the admin and create-checkout, straight from packages/shipping
 const shippingJs = fs.readFileSync(path.join(ROOT, 'packages/shipping/shipping.js'));
 const shippingJsHref = url(`/js/shipping.js?v=${hashOf(shippingJs)}`);
+// newsletter signup + confirm page (decision 0103): the same file as the coming-soon page
+const newsletterJs = fs.readFileSync(path.join(APP, 'scripts/newsletter.js'));
+const newsletterJsHref = url(`/js/newsletter.js?v=${hashOf(newsletterJs)}`);
 const { Pdp, title } = require('./pages/pdp.js');
 const Plp = require('./pages/plp.js');
 const Bag = require('./pages/bag.js');
@@ -58,6 +61,7 @@ const Checkout = require('./pages/checkout.js');
 const Trade = require('./pages/trade.js');
 const Legal = require('./pages/legal.js');
 const ContactPage = require('./pages/contact.js');
+const Newsletter = require('./pages/newsletter.js');
 const Home = require('./pages/home.js');
 const Z = require(path.join(UI, 'components.js'));
 
@@ -128,6 +132,7 @@ ${faviconLinks}
 <script src="${toastJsHref}" defer></script>
 <script src="${shippingJsHref}" defer></script>
 <script src="${siteJsHref}" defer></script>
+<script src="${newsletterJsHref}" defer></script>
 ${liveMeta}</head>
 <body>
 ${withFooter(body)}
@@ -189,6 +194,7 @@ write('css/home.css', css.home);
 write('js/site.js', siteJs);
 write('js/toast.js', toastJs);
 write('js/shipping.js', shippingJs);
+write('js/newsletter.js', newsletterJs);
 for (const f of fs.readdirSync(path.join(APP, 'public'))) write('assets/' + f, fs.readFileSync(path.join(APP, 'public', f)));
 
 const order = new Map(products.map((p, i) => [p, i]));
@@ -251,6 +257,8 @@ for (const p of Legal.PAGES) {
 }
 // Contact (decision 0093): email + form, in place of an Impressum (Gio sells privately)
 write('contact/index.html', page({ title: 'Contact', body: renderToStaticMarkup(React.createElement(ContactPage.Contact, { site, url })) }));
+// the link in the newsletter confirmation email lands here (decision 0103)
+write('newsletter/confirm/index.html', page({ title: Newsletter.title, body: renderToStaticMarkup(React.createElement(Newsletter.ShopConfirm, { site, url })) }));
 
 // Home (Figma page `Home`, decision 0085): Just in, Genres, About
 write('index.html', page({ title: Home.title, body: renderToStaticMarkup(React.createElement(Home.Home, { products, site, url })) }));

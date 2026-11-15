@@ -152,7 +152,8 @@ function SiteMenu({ site, url, current }) {
 // Figma page `footer` (decision 0076): the same on every shop page, after <main>. Links = the mobile menu's
 // (SiteMenu), so both lead to the same places; social = Gio's Instagram and Discogs (site.json → owner, his personal
 // identity). The newsletter slot shows only when site.json → newsletter.action is set (Buttondown subscribe URL):
-// it stays off until the Privacy page names Buttondown (German law, design/open.md).
+// it stays off until the Privacy page names Buttondown (German law, design/open.md). newsletter.endpoint = our own
+// double opt-in (decision 0103, scripts/newsletter.js); Buttondown's form stays as the fallback without JS.
 const LEGAL_LINKS = [['Privacy', '/privacy/'], ['Terms', '/terms/']];   // private seller (decision 0093): no Impressum, no Withdrawal; contact = /contact/;
 function SiteFooter({ site, url }) {
   const owner = site.owner || {};
@@ -162,8 +163,8 @@ function SiteFooter({ site, url }) {
     owner.discogs && owner.discogs.href && { label: 'Discogs', href: owner.discogs.href }].filter(Boolean);
   return h(Z.Footer, {
     className: 'site-footer',
-    newsletter: nl.action ? h(Z.FooterNewsletter, { action: nl.action,
-      note: ['New records in your inbox. You confirm by email and can leave anytime. ', h('a', { key: 'p', href: url('/privacy/') }, 'Privacy')] }) : null,
+    newsletter: nl.action ? h(Z.FooterNewsletter, { action: nl.action, endpoint: nl.endpoint || undefined,
+      note: [`New records in your inbox. You confirm ${nl.endpoint && nl.autoConfirm !== false ? 'with one click in an email' : 'by email'} and can leave anytime. `, h('a', { key: 'p', href: url('/privacy/') }, 'Privacy')] }) : null,
     legal: LEGAL_LINKS.map(([text, href]) => h('a', { key: href, href: url(href) }, text)),
     copyright: `\u00a9 ${new Date().getFullYear()} ${site.storeName}`
   },

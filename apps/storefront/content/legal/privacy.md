@@ -14,7 +14,7 @@ No tracking, no analytics, no ads, no cookies. I only use what the shop needs an
 - **Availability and "Notify me":** the page checks with the shop database (Supabase, Frankfurt) whether a record is still there. If you ask to be told when a reserved record is back, your email is kept until that one email is sent (through Resend, USA) or the record is gone, then deleted.
 - **Your bag** is saved only in your own browser.
 - **Contact form{{#trade}} and trade offers{{/trade}}** reach me by email (through Resend) with what you wrote in the form; nothing is stored in a database.{{#trade}} The Discogs search in the form goes through the shop's server; the small cover images load from Discogs.{{/trade}}
-- **Newsletter:** Buttondown (USA) keeps your email after you confirm it (double opt-in). Unsubscribe with the link in every email.
+- **Newsletter:** the confirmation email goes out through Resend; after you click its link (double opt-in), Buttondown (USA) keeps your email with the time of sign-up and confirmation, the page and your IP address as proof of consent. Unsubscribe with the link in every email.
 - **Orders:** Stripe (Ireland) handles payment on its own page; I get your name, address, email and what you bought, give your address to the carrier, and keep order records as long as tax law requires.
 
 US providers are covered by the EU–U.S. Data Privacy Framework or the EU Standard Contractual Clauses.

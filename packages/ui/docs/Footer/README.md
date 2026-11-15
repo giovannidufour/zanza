@@ -37,7 +37,8 @@ The site footer, the same on every shop page, after `<main>` ([0076](../../../..
 <!-- generated from components.d.ts by build-docs.js: edit the .d.ts, not this table -->
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `action` * | `string` |  | The form action: the provider's subscribe URL (Buttondown embed-subscribe). |
+| `action` * | `string` |  | The form action: the provider's subscribe URL (Buttondown embed-subscribe). Used as is without JS, and as the fallback. |
+| `endpoint` | `string` |  | The site's own signup function (decision 0103): with it the page script posts there and answers in place (status line, honeypot field). |
 | `method` | `string` | `post` |  |
 | `label` | `ReactNode` | `Newsletter` | Field label. |
 | `placeholder` | `string` |  | @default "Your email" |

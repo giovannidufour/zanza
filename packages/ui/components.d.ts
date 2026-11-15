@@ -813,8 +813,10 @@ export declare function FooterLinks(props: FooterLinksProps): JSX.Element;
 
 /** Mirrors the Figma component `footer newsletter`: an HTML form to the provider's subscribe endpoint (works without JS). */
 export interface FooterNewsletterProps extends HTMLAttributes<HTMLFormElement> {
-  /** The form action: the provider's subscribe URL (Buttondown embed-subscribe). */
+  /** The form action: the provider's subscribe URL (Buttondown embed-subscribe). Used as is without JS, and as the fallback. */
   action: string;
+  /** The site's own signup function (decision 0103): with it the page script posts there and answers in place (status line, honeypot field). */
+  endpoint?: string;
   /** @default "post" */
   method?: string;
   /** Field label. @default "Newsletter" */
