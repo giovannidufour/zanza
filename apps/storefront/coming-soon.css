@@ -19,7 +19,7 @@
 /* links inside running text are underlined (decision 0076 rule, WCAG 1.4.1) */
 .coming-soon__intro a { color: inherit; text-decoration: underline; }
 
-/* Figma `bottom`: copyright left, Contact · Privacy · Terms right (gap medium-small); at the bottom of the viewport on a
+/* Figma `bottom`: copyright only (links removed 2026-11-15, decision 0096 amendment); at the bottom of the viewport on a
    tall screen, after the content on a short one */
 .coming-soon__bottom {
   margin-top: auto;
@@ -30,10 +30,6 @@
   color: var(--text-strong);
 }
 .coming-soon__copyright { margin: 0; }
-.coming-soon__links { display: flex; flex-wrap: wrap; gap: var(--small) var(--medium-small); }
-/* as the footer's legal row: text-strong, underline on hover */
-.coming-soon__links a { color: var(--text-strong); text-decoration: none; }
-@media (hover: hover) { .coming-soon__links a:hover { text-decoration: underline; } }
 
 @media (--mobile) {
   .coming-soon__intro { width: auto; }
