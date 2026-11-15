@@ -84,6 +84,8 @@ export interface TabProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
   leadingIcon?: ReactNode;
   /** Icon slot after the label (20px). Figma: `trailing icon`. */
   trailingIcon?: ReactNode;
+  /** Figma `_tab-sizes` size. extra-small = padding 4, label/extra small, 24px (account nav, decision 0101). @default "medium" */
+  size?: "medium" | "extra-small";
   /** Text after the label, same style, gap 4: a count ("Artists" + 64). Figma: `suffix` + `suffix text`. */
   suffix?: ReactNode;
   /** Documentation only: pins a visual state regardless of pointer/selection. */
@@ -303,6 +305,35 @@ export interface BagItemProps extends HTMLAttributes<HTMLElement> {
   removeLabel?: string;
 }
 export declare function BagItem(props: BagItemProps): JSX.Element;
+
+/** One record of a past order (Figma: page Account → `order item`, decision 0101): the BagItem anatomy without Remove; the price is what was paid. Same type styles as BagItem. */
+export interface OrderItemProps extends Omit<BagItemProps, "status" | "notice" | "onRemove" | "removeLabel"> {}
+export declare function OrderItem(props: OrderItemProps): JSX.Element;
+
+/** One order in the account's order list (Figma: page Account → `order row`, decision 0101). The whole row is one link; "View" is drawn as a secondary small Button but is not a second tab stop. */
+export interface OrderRowProps extends HTMLAttributes<HTMLAnchorElement> {
+  /** Omitted → responsive (breakpoint `--mobile`): type as BagItem desktop / mobile. */
+  device?: "desktop" | "mobile";
+  /** The order page URL. */
+  href: string;
+  /** The link's accessible name, the whole row in one sentence: "Order 1A2B3C4D, 9 Nov 2026, shipped, 39€". */
+  label: string;
+  /** Figma `first cover`: the cover of the first record, 96 × 96 (decorative: alt is always empty). */
+  image?: ProductCardImage;
+  /** Figma heading line 1, "Order 1A2B3C4D". */
+  title: ReactNode;
+  /** Figma heading line 2, the date ("12 Nov 2026"). */
+  date?: ReactNode;
+  /** Figma details line 1, "3 records". */
+  count?: ReactNode;
+  /** Figma details line 2, "Status: Shipped". */
+  status?: ReactNode;
+  /** Figma `total`, already formatted ("33€"). */
+  total: ReactNode;
+  /** @default "View" */
+  viewLabel?: ReactNode;
+}
+export declare function OrderRow(props: OrderRowProps): JSX.Element;
 
 /** The bag's totals and the way to checkout (Figma: page Bag → `bag summary`). Shipping and tax are computed by Stripe Checkout: the bag shows the subtotal only (decision 0044). */
 export interface BagSummaryProps extends HTMLAttributes<HTMLElement> {
