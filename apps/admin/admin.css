@@ -5,10 +5,9 @@
    Listings: Figma BACKEND → Listings (2026-11-10). Sign-in has no Figma frame (design/open.md). */
 
 * { box-sizing: border-box; }
-/* background on html only: surface-accent is translucent in the backend mode (black-a4), stacking it on body darkens it (0023) */
-html { background: var(--surface-accent); min-height: 100%; }
-/* Figma BACKEND → Create (Gio, 2026-11-10): the create / edit frame is on surface/base (white); fields keep surface-accent (black-a4) over it, decision 0032 */
-html:has(.admin-page) { background: var(--surface-base); }
+/* every admin page sits on surface-page (backend: scotch-mist, the cream; decision 0099, replaces the per-page grounds of 0023 / 0032 / 0057).
+   On html only, so nothing stacks; fields keep surface-accent (black-a4) over it. */
+html { background: var(--surface-page); min-height: 100%; }
 body { margin: 0; color: var(--text-strong); font-family: var(--font-sans); }
 h1, h2, p { margin: 0; }
 
@@ -19,10 +18,10 @@ h1, h2, p { margin: 0; }
 .admin-menu {
   position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none;
   margin: 0; padding: 0; border: 0; color: var(--text-strong);
-  background: var(--surface-base);   /* surface-accent (the MenuLayer fill) is translucent in the backend mode: base under it = the page look */
+  background: var(--surface-page);   /* surface-accent (the MenuLayer fill) is translucent in the backend mode: page under it = the page look */
 }
 .admin-menu:not([open]) { display: none; }
-.admin-menu::backdrop { background: var(--surface-base); }
+.admin-menu::backdrop { background: var(--surface-page); }
 .admin-menu:focus { outline: none; }   /* programmatic focus target (decision 0043) */
 /* lists on mobile: DS ListingRow in a plain <ul> (Figma Listings - mobile) */
 .admin-rows { list-style: none; margin: 0; padding: 0; }
@@ -122,17 +121,15 @@ h1, h2, p { margin: 0; }
 .admin-preview__shop .zz-gallery { --zz-gallery-bleed: var(--page-margin-mobile); }
 
 /* Figma BACKEND → Attributes (2123:2053, decision 0034): list = Listings grammar + a toolbar (search fill, button hug,
-   gap 16); entity page = the Create layout (main 8 + side 4) but in a 1024 frame on surface-accent, like Listings. */
+   gap 16); entity page = the Create layout (main 8 + side 4) but in a 1024 frame, like Listings. */
 .admin-toolbar { display: flex; gap: 16px; align-items: flex-start; }
 .admin-toolbar__search { flex: 1 1 auto; min-width: 0; }
 .admin:has(.admin-page--attribute) { max-width: 1024px; }
-html:has(.admin-page--attribute) { background: var(--surface-accent); }
 .admin-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }   /* Figma `record list`, gap 8 */
 .admin-links a { color: inherit; }
 
-/* Figma BACKEND → Shipping (2201:4782, decision 0057): frame on surface/base (Gio 2026-11-12, like Create, 0032);
+/* Figma BACKEND → Shipping (2201:4782, decision 0057): frame on surface/page like every admin page (0099);
    fields keep surface-accent over it. Sections of heading · help · table · Add, gap 16; column widths from the frame. */
-html:has(.admin-shipping) { background: var(--surface-base); }
 .admin-shipping { display: flex; flex-direction: column; gap: 24px; }
 .admin-shipping h1, .admin-shipping h2, .admin-shipping p { margin: 0; }
 .admin-shipping .admin-toolbar { align-items: center; }
@@ -157,7 +154,7 @@ html:has(.admin-shipping) { background: var(--surface-base); }
 #shipping-zones td { vertical-align: top; }   /* Figma zones rows: top left (Gio 2026-11-12), the countries cell grows with its names */
 
 /* Figma BACKEND → Memo (2296:9962, decision 0087): Gio's list of records to sell later, mobile first. Frame on
-   surface-accent like Listings; stack gap 24; add form 480 wide on desktop (fill on mobile), fields gap 16;
+   surface-page like every admin page (0099); stack gap 24; add form 480 wide on desktop (fill on mobile), fields gap 16;
    list = MemoItem rows (packages/ui). Record = the offer form's release picker: the suggestions overlay what follows. */
 .admin-memo { display: flex; flex-direction: column; gap: 24px; }
 .admin-memo__add { display: flex; flex-direction: column; gap: 16px; width: 480px; max-width: 100%; }
