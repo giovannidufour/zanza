@@ -1288,9 +1288,9 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
    main = newsletter + link columns, padding-y medium-small, gap medium-small; bottom = copyright + legal, padding-bottom
    medium-small. Desktop: side by side, flex 1 each (Figma FILL), so without the newsletter the links take the whole row.
    Mobile: stacked, links in two columns (Figma: wrap, (374 - 16) / 2), legal above the copyright. ── */
-/* padding-top `large` = the space above the border (Figma: the component's paddingTop, before the `border` layer;
+/* padding-top `footer-gap` = the space above the border (Figma: the component's paddingTop, before the `border` layer;
    decision 0104): the footer reads as separate from the page on every page, desktop and mobile */
-.zz-footer { background: var(--surface-accent); color: var(--text-strong); padding-top: var(--large); }
+.zz-footer { background: var(--surface-accent); color: var(--text-strong); padding-top: var(--footer-gap); }
 .zz-footer__main { border-top: 1px solid var(--border-divider-strong); display: flex; gap: var(--medium-small); padding: var(--medium-small) 0; }
 .zz-footer__main > * { flex: 1 1 0; min-width: 0; }
 .zz-footer__links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--medium-small); align-items: start; }
