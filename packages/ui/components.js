@@ -939,6 +939,53 @@
         props.onCreate ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onCreate, 'aria-label': (props.createLabel || 'Create listing') + ': ' + name }, props.createLabel || 'Create listing') : null,
         props.onRemove ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onRemove, 'aria-label': (props.removeLabel || 'Remove') + ': ' + name }, props.removeLabel || 'Remove') : null));
   }
+  /* ── AdminBar (Figma page `admin` → `admin bar`, device=desktop | mobile, decision 0089) ──
+     One responsive markup. desktop: section Buttons (secondary small, state=active = the section you are on, 0045)
+     + Create listing (primary small) · the signed-in email (body/small text/moderate) + Sign out.
+     mobile (--mobile): Menu Button (secondary, bars icon, like the shop header) · title (label/medium) · Create (primary),
+     padding page-margin/mobile, bottom border divider/strong; the sections and Sign out live in the page's menu dialog
+     (MenuLayer), opened by onMenuClick. */
+  function AdminBar(props) {
+    var items = props.items || [];
+    return h('header', Object.assign({}, omit(props, ['items', 'title', 'createHref', 'createLabel', 'createShortLabel', 'email', 'onSignOut', 'signOutLabel',
+      'onMenuClick', 'menuLabel', 'menuProps', 'navLabel', 'className']), { className: cx('zz-admin-bar', props.className) }),
+      h('div', { className: 'zz-admin-bar__desktop' },
+        h('nav', { className: 'zz-admin-bar__nav', 'aria-label': props.navLabel || 'Admin' },
+          items.map(function (it) {
+            return h(Button, { key: it.href, hierarchy: 'secondary', size: 'small', href: it.href, state: it.current ? 'active' : undefined }, it.label);
+          }),
+          props.createHref ? h(Button, { hierarchy: 'primary', size: 'small', href: props.createHref }, props.createLabel || 'Create listing') : null),
+        h('div', { className: 'zz-admin-bar__account' },
+          props.email ? h('span', { className: 'zz-admin-bar__email body-small' }, props.email) : null,
+          props.onSignOut ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onSignOut }, props.signOutLabel || 'Sign out') : null)),
+      h('div', { className: 'zz-admin-bar__mobile' },
+        h(Button, Object.assign({ className: 'zz-admin-bar__menu', hierarchy: 'secondary', leadingIcon: h(HamburgerIcon),
+          'aria-label': props.menuLabel || 'Menu', onClick: props.onMenuClick }, props.menuProps)),
+        h('p', { className: 'zz-admin-bar__title label-medium' }, props.title || 'Store admin'),
+        props.createHref ? h(Button, { hierarchy: 'primary', href: props.createHref, 'aria-label': props.createLabel || 'Create listing' }, props.createShortLabel || 'Create') : null));
+  }
+  /* ── ListingRow (Figma page `admin` → `listing row`, decision 0089) ──
+     One row of an admin list on mobile (Listings, Attributes), in place of the table row. Same grammar as MemoItem:
+     select (a Checkbox, label hidden) · text (title link body/small underlined, meta body/small text/moderate, gap 4)
+     · price (body/small, right). Padding 16 top/bottom, gap 16, bottom border divider/strong. */
+  function ListingRow(props) {
+    return h('li', Object.assign({}, omit(props, ['select', 'title', 'href', 'meta', 'price', 'className']), { className: cx('zz-listing-row', props.className) }),
+      props.select ? h('div', { className: 'zz-listing-row__select' }, props.select) : null,
+      h('div', { className: 'zz-listing-row__text' },
+        h('a', { className: 'zz-listing-row__title body-small', href: props.href }, props.title),
+        props.meta ? h('p', { className: 'zz-listing-row__meta body-small' }, props.meta) : null),
+      props.price ? h('p', { className: 'zz-listing-row__price body-small' }, props.price) : null);
+  }
+  /* ── ActionBar (Figma page `admin` → `action bar`, decision 0089) ──
+     The ActionPanel buttons of a form on mobile, in a bar that stays at the bottom of the viewport (position: sticky,
+     so at the end of the page it sits in its place and covers nothing). Fill surface/base, top border divider/strong,
+     padding medium-small, buttons side by side, gap 8. `children` = the Buttons (primary first); `status` = an optional
+     line above them (the save result: it must be visible where the button was pressed). */
+  function ActionBar(props) {
+    return h('div', Object.assign({}, omit(props, ['className', 'children', 'status']), { className: cx('zz-action-bar', props.className) }),
+      props.status ? h('div', { className: 'zz-action-bar__status' }, props.status) : null,
+      h('div', { className: 'zz-action-bar__actions' }, props.children));
+  }
   function TradeStep(props) {
     return h('li', Object.assign({}, omit(props, ['number', 'title', 'className', 'children']), { className: cx('zz-trade-step', props.className) }),
       h('span', { className: 'zz-trade-step__number label-large', 'aria-hidden': 'true' }, props.number),
@@ -1174,7 +1221,8 @@
   function MenuItem(props) {
     var current = !!props.current;
     var hasDetail = props.detail !== undefined && props.detail !== null && props.detail !== false && props.detail !== '';
-    return h('a', Object.assign({ className: cx('zz-menu-item', props.className), 'data-state': current ? 'current' : 'default',
+    // no href → a <button> (an action in the menu, e.g. the admin's Sign out, decision 0089)
+    return h(props.href ? 'a' : 'button', Object.assign(props.href ? {} : { type: 'button' }, { className: cx('zz-menu-item', props.className), 'data-state': current ? 'current' : 'default',
       'aria-current': current ? 'page' : undefined }, omit(props, ['label', 'detail', 'current', 'className', 'children'])),
       h('span', { className: 'zz-menu-item__label label-medium' }, props.label),
       hasDetail ? h('span', { className: 'zz-menu-item__detail body-small' }, props.detail) : null);
@@ -1415,6 +1463,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, AdminBar: AdminBar, ListingRow: ListingRow, ActionBar: ActionBar,
            SectionHead: SectionHead, GenreLinks: GenreLinks, HomeAbout: HomeAbout };
 });

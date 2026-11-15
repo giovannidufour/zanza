@@ -35,6 +35,19 @@
   }
   var uid = 0;
   function nextId() { return 'u' + (++uid); }
+  // the mobile breakpoint, from tokens.json → breakpoint (build.js puts it in config.js): the one place it is decided (0004)
+  var MOBILE_QUERY = (CFG.media && CFG.media.mobile) || '(max-width: 767px)';
+  function useIsMobile() {
+    var mq = window.matchMedia ? window.matchMedia(MOBILE_QUERY) : null;
+    var st = useState(mq ? mq.matches : false), on = st[0], setOn = st[1];
+    useEffect(function () {
+      if (!mq) return;
+      function ch() { setOn(mq.matches); }
+      mq.addEventListener ? mq.addEventListener('change', ch) : mq.addListener(ch);
+      return function () { mq.removeEventListener ? mq.removeEventListener('change', ch) : mq.removeListener(ch); };
+    }, []);
+    return on;
+  }
   function opts(list) {
     return list.map(function (o) { var v = Array.isArray(o) ? o[0] : o, l = Array.isArray(o) ? o[1] : o; return h('option', { key: v, value: v }, l); });
   }
@@ -302,6 +315,7 @@
 
   // ── Create / edit listing ─────────────────────────────────────────────────
   function ListingForm(props) {
+    var mobile = useIsMobile();
     var st = useState(props.initial), f = st[0], setF = st[1];
     var er = useState({}), errors = er[0], setErrors = er[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
@@ -595,12 +609,15 @@
         h(Z.DropZone, { label: 'Browse sample', accept: 'audio/mpeg', multiple: true, onFiles: addFiles('sample', null) })));
 
     var shopUrl = f.slug && f.status !== 'draft' && f.status !== 'archived' && CFG.storefrontUrl ? CFG.storefrontUrl.replace(/\/$/, '') + '/products/' + f.slug + '/' : null;
+    var publishBtn = h(Z.Button, { key: 'publish', hierarchy: 'primary', disabled: saving || locked, onClick: function () { save('available'); } }, f.status === 'available' ? 'Update' : 'Publish now');
+    var draftBtn = h(Z.Button, { key: 'draft', hierarchy: 'secondary', disabled: saving || locked || f.status === 'available', onClick: function () { save('draft'); } }, 'Save draft');
+    var shopBtn = shopUrl ? h(Z.Button, { key: 'shop', hierarchy: 'secondary', href: shopUrl, target: '_blank', rel: 'noopener' }, 'View in store') : null;
+    var statusLine = h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '');
+    // mobile (decision 0089): Publish / Save draft in the ActionBar at the bottom of the viewport, with the save result
+    // above them; View in store stays in the side content, which follows the form
     var side = h('aside', { className: 'admin-side' },
-      h(Z.ActionPanel, null,
-        h(Z.Button, { hierarchy: 'primary', disabled: saving || locked, onClick: function () { save('available'); } }, f.status === 'available' ? 'Update' : 'Publish now'),
-        h(Z.Button, { hierarchy: 'secondary', disabled: saving || locked || f.status === 'available', onClick: function () { save('draft'); } }, 'Save draft'),
-        shopUrl ? h(Z.Button, { hierarchy: 'secondary', href: shopUrl, target: '_blank', rel: 'noopener' }, 'View in store') : null),
-      h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : ''),
+      mobile ? shopBtn : h(Z.ActionPanel, null, publishBtn, draftBtn, shopBtn),
+      mobile ? null : statusLine,
       h(Z.Input, { id: 'sku', label: 'Sku', readOnly: true, value: f.sku ? String(f.sku) : '', placeholder: 'On first save', supportText: 'Automatic-generated' }),
       shopPreview(),
       locked ? h('p', { className: 'body-small' }, 'This copy is ' + f.status + ': it can no longer be edited here.') : null,
@@ -658,7 +675,8 @@
         }));
     }
 
-    return h('div', { className: 'admin-page admin-page--edit' }, main, side);
+    return h('div', { className: 'admin-page admin-page--edit' }, main, side,
+      mobile ? h(Z.ActionBar, { status: statusLine }, publishBtn, draftBtn) : null);
   }
 
   // ── Listings ──────────────────────────────────────────────────────────────
@@ -703,6 +721,7 @@
   };
 
   function Listings() {
+    var mobile = useIsMobile();
     var st = useState(null), rows = st[0], setRows = st[1];
     var er = useState(null), error = er[0], setError = er[1];
     var tb = useState('all'), tab = tb[0], setTab = tb[1];
@@ -842,8 +861,16 @@
       h('h1', { className: 'label-extra-large' }, 'Listings'),
       h(Z.Tabs, { value: tab, onValueChange: pickTab, 'aria-label': 'Filter by status' },
         TABS.map(function (t) { return h(Z.Tab, { key: t[0], value: t[0], suffix: String(counts[t[0]]), 'aria-controls': 'listings-table' }, t[1]); })),
-      bar,
-      h('div', { className: 'admin-table-wrap' },
+      // mobile (Figma page `admin` → Listings - mobile, decision 0089): rows instead of the table, the bulk bar after them
+      // (sticky at the bottom while something is selected)
+      mobile ? h('ul', { id: 'listings-table', className: 'admin-rows' }, visible.length ? visible.map(function (r) {
+        return h(Z.ListingRow, { key: r.id, href: '#edit-' + r.id, title: nameOf(r),
+          meta: [r.sku, STATUS_LABEL[r.eff] || r.status, r.section].filter(Boolean).join(' · '),
+          price: r.price_cents === null ? null : centsToText(r.price_cents) + ' €',
+          select: h(Z.Checkbox, { id: 'select-' + r.id, hideLabel: true, label: 'Select ' + nameOf(r),
+            checked: selected.indexOf(r.id) >= 0, onChange: function (e) { toggle(r.id, e.target.checked); } }) });
+      }) : h('li', { className: 'body-small admin-rows__empty' }, 'No listings here.')) : bar,
+      mobile ? bar : h('div', { className: 'admin-table-wrap' },
         h('table', { id: 'listings-table', className: 'admin-table body-small' },
           h('thead', null, h('tr', null,
             h('th', { className: 'select' }, visible.length ? h(Z.Checkbox, { id: 'select-all', hideLabel: true, label: 'Select all', checked: allOn, indeterminate: someOn, onChange: toggleAll }) : null),
@@ -903,6 +930,7 @@
   }
 
   function Attributes(props) {
+    var mobile = useIsMobile();
     var kind = kindOf(props.kind);
     var st = useState(null), data = st[0], setData = st[1];
     var er = useState(null), error = er[0], setError = er[1];
@@ -1011,8 +1039,14 @@
         h(Z.Input, { className: 'admin-toolbar__search', variant: 'search', 'aria-label': kind.search, placeholder: kind.search, value: query,
           onChange: function (e) { setQuery(e.target.value); setSelected([]); } }),
         h(Z.Button, { hierarchy: 'secondary', href: '#attributes/' + kind.key + '/new' }, 'New ' + kind.one)),
-      bar,
-      h('div', { className: 'admin-table-wrap' },
+      mobile ? h('ul', { id: 'attributes-table', className: 'admin-rows' }, visible.length ? visible.map(function (r) {
+        var meta = (kind.aliases ? [(r.aliases || []).length ? 'Also ' + r.aliases.join(', ') : null, r.discogs_id ? 'Discogs ' + r.discogs_id : null] : [])
+          .concat([plural(r.records, 'record')]).filter(Boolean).join(' · ');
+        return h(Z.ListingRow, { key: r.id, href: '#attributes/' + kind.key + '/' + r.id, title: r.name, meta: meta,
+          select: h(Z.Checkbox, { id: 'select-' + r.id, hideLabel: true, label: 'Select ' + r.name,
+            checked: selected.indexOf(r.id) >= 0, onChange: function (e) { toggle(r.id, e.target.checked); } }) });
+      }) : h('li', { className: 'body-small admin-rows__empty' }, q ? 'Nothing matches “' + query.trim() + '”.' : 'No ' + kind.list + ' yet.')) : bar,
+      mobile ? bar : h('div', { className: 'admin-table-wrap' },
         h('table', { id: 'attributes-table', className: 'admin-table body-small' },
           h('thead', null, h('tr', null,
             h('th', { className: 'select' }, visible.length ? h(Z.Checkbox, { id: 'select-all', hideLabel: true, label: 'Select all', checked: allOn, indeterminate: someOn, onChange: toggleAll }) : null),
@@ -1031,6 +1065,7 @@
 
   /* Figma BACKEND → Attributes › Artist - desktop · edit (2123:3216) and · split confirm (2123:4664) */
   function AttributeForm(props) {
+    var mobile = useIsMobile();
     var kind = kindOf(props.kind), isNew = props.id === 'new';
     var st = useState(null), f = st[0], setF = st[1];
     var ls = useState(null), lists = ls[0], setLists = ls[1];
@@ -1149,14 +1184,16 @@
         h('div', null, h(Z.Button, { hierarchy: 'secondary', disabled: saving || !replace.length, onClick: function () { setConfirm('replace'); } }, 'Replace'))));
 
     var why = n ? 'On ' + plural(n, 'record') + ': ' + (kind.split ? 'merge or split it' : 'merge it into another ' + kind.one) + ' to remove it.' : null;
+    var saveBtn = h(Z.Button, { key: 'save', hierarchy: 'primary', disabled: saving, onClick: save }, isNew ? 'Create' : 'Save');
+    var otherBtn = isNew ? h(Z.Button, { key: 'cancel', hierarchy: 'secondary', href: '#attributes/' + kind.key }, 'Cancel')
+              : h(Z.Button, { key: 'delete', hierarchy: 'secondary', disabled: saving || n > 0, 'aria-describedby': n ? 'delete-why' : undefined,
+                  onClick: function () { setConfirm('delete'); } }, 'Delete');
+    var statusLine = h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '');
+    // mobile (decision 0089): the two actions in the ActionBar at the bottom, the side content follows the form
     var side = h('aside', { className: 'admin-side' },
-      h(Z.ActionPanel, null,
-        h(Z.Button, { hierarchy: 'primary', disabled: saving, onClick: save }, isNew ? 'Create' : 'Save'),
-        isNew ? h(Z.Button, { hierarchy: 'secondary', href: '#attributes/' + kind.key }, 'Cancel')
-              : h(Z.Button, { hierarchy: 'secondary', disabled: saving || n > 0, 'aria-describedby': n ? 'delete-why' : undefined,
-                  onClick: function () { setConfirm('delete'); } }, 'Delete')),
+      mobile ? null : h(Z.ActionPanel, null, saveBtn, otherBtn),
       why ? h('p', { id: 'delete-why', className: 'body-small' }, why) : null,
-      h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : ''));
+      mobile ? null : statusLine);
 
     var dialog;
     if (confirm === 'delete') {
@@ -1175,7 +1212,8 @@
           (kind.key === 'artist' || kind.key === 'label' ? ' The credit printed on the record does not change.' : ' The shop updates in about 2 minutes.')));
     } else dialog = h(Z.Dialog, { open: false, title: '', confirmLabel: '', onCancel: function () {}, onConfirm: function () {} }, '');
 
-    return h('div', { className: 'admin-page admin-page--attribute' }, main, side, dialog);
+    return h('div', { className: 'admin-page admin-page--attribute' }, main, side,
+      mobile ? h(Z.ActionBar, { status: statusLine }, saveBtn, otherBtn) : null, dialog);
   }
 
   // ── Sign-in ───────────────────────────────────────────────────────────────
@@ -1303,7 +1341,13 @@
       return h('div', { className: 'admin-table-wrap' },
         h('table', { id: id, className: 'admin-table admin-shipping__table body-small' },
           h('thead', null, h('tr', null, cols.map(function (c, i) { return h('th', { key: i, scope: 'col', className: c.className || '' }, c.label); }))),
-          h('tbody', null, rows)));
+          // each cell carries its column name: on mobile the rows stack and show it above the field (decision 0089)
+          h('tbody', null, React.Children.map(rows, function (tr) {
+            if (!tr || !tr.props) return tr;
+            return React.cloneElement(tr, null, React.Children.map(tr.props.children, function (td, i) {
+              return td && cols[i] && cols[i].label ? React.cloneElement(td, { 'data-label': cols[i].label }) : td;
+            }));
+          }))));
     }
     function section(key, heading, help, body, addLabel, onAdd) {
       var hid = 'shipping-' + key;
@@ -1684,17 +1728,46 @@
     else body = h(Listings, { key: 'list-' + route.visit });
 
     return h('div', { className: 'admin' },
-      session ? h('header', { className: 'admin-bar' },
-        h('nav', { className: 'admin-bar__nav', 'aria-label': 'Admin' },
-          h(Z.Button, { hierarchy: 'secondary', size: 'small', href: '#' }, 'Listings'),
-          h(Z.Button, { hierarchy: 'secondary', size: 'small', href: '#memo' }, 'Memo'),
-          h(Z.Button, { hierarchy: 'secondary', size: 'small', href: '#attributes' }, 'Attributes'),
-          h(Z.Button, { hierarchy: 'secondary', size: 'small', href: '#shipping' }, 'Shipping'),
-          h(Z.Button, { hierarchy: 'primary', size: 'small', href: '#new' }, 'Create listing')),
-        h('div', { className: 'admin-bar__nav' },
-          h('span', { className: 'body-small' }, session.user.email),
-          h(Z.Button, { hierarchy: 'secondary', size: 'small', onClick: function () { sb.auth.signOut(); } }, 'Sign out'))) : null,
+      session ? h(Nav, { hash: hash, email: session.user.email }) : null,
       body);
+  }
+
+  /* Admin navigation (Figma page `admin`, decision 0089): AdminBar (desktop buttons / mobile Menu · title · Create)
+     + the mobile menu, a full-screen native modal <dialog> with a MenuLayer, like the shop's (0060): Esc, × or
+     following a link closes it, focus goes back to the Menu button. */
+  var SECTIONS = [['listings', 'Listings', '#'], ['memo', 'Memo', '#memo'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping']];
+  function sectionOf(hash) {
+    if (/^#memo/.test(hash)) return 'memo';
+    if (/^#attributes/.test(hash)) return 'attributes';
+    if (hash === '#shipping') return 'shipping';
+    if (/^#new/.test(hash)) return null;   // Create: no section is current (the Create button is the way in)
+    return 'listings';                        // list and #edit-<id>
+  }
+  function Nav(props) {
+    var dialogRef = useRef(null), menuBtn = useRef(null);
+    var op = useState(false), open = op[0], setOpen = op[1];
+    var current = sectionOf(props.hash);
+    function signOut() { sb.auth.signOut(); }
+    function openMenu() { var d = dialogRef.current; if (d && d.showModal) { d.showModal(); setOpen(true); d.focus(); } }
+    function closeMenu() { var d = dialogRef.current; if (d && d.open) d.close(); }
+    useEffect(function () {
+      var d = dialogRef.current; if (!d) return;
+      function onClose() { setOpen(false); var b = document.querySelector('.zz-admin-bar__menu'); if (b) b.focus(); }
+      d.addEventListener('close', onClose);
+      return function () { d.removeEventListener('close', onClose); };
+    }, []);
+    useEffect(function () { closeMenu(); }, [props.hash]);   // following a link (hash change) closes the menu
+    return h(React.Fragment, null,
+      h(Z.AdminBar, {
+        items: SECTIONS.map(function (x) { return { href: x[2], label: x[1], current: x[0] === current }; }),
+        title: document.title || 'Store admin', createHref: '#new', email: props.email, onSignOut: signOut,
+        onMenuClick: openMenu, menuProps: { 'aria-expanded': open ? 'true' : 'false', 'aria-controls': 'admin-menu', 'aria-haspopup': 'dialog' }
+      }),
+      h('dialog', { id: 'admin-menu', className: 'admin-menu', 'aria-label': 'Menu', tabIndex: -1, ref: dialogRef,
+        onClick: function (e) { if (e.target.closest && e.target.closest('a[href]')) closeMenu(); } },
+        h(Z.MenuLayer, { title: 'Menu', closeLabel: 'Close menu', onClose: closeMenu },
+          h(Z.MenuGroup, null, SECTIONS.map(function (x) { return h(Z.MenuItem, { key: x[0], href: x[2], label: x[1], current: x[0] === current }); })),
+          h(Z.MenuGroup, null, h(Z.MenuItem, { label: 'Sign out', detail: props.email, onClick: signOut })))));
   }
 
   window.ReactDOM.createRoot(document.getElementById('root')).render(h(App));

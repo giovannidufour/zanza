@@ -9,7 +9,7 @@ const APP = __dirname;
 const ROOT = path.resolve(APP, '../..');
 const UI = path.join(ROOT, 'packages/ui');
 const OUT = path.join(APP, 'dist');
-const { expandMedia } = require(path.join(UI, 'media.js'));
+const { expandMedia, queries } = require(path.join(UI, 'media.js'));
 
 function readEnv(file) {
   const env = {};
@@ -29,7 +29,8 @@ const config = {
   supabaseUrl: env.SUPABASE_URL,
   supabaseKey: env.SUPABASE_PUBLISHABLE_KEY,
   mediaBaseUrl: cfg.mediaBaseUrl || '',
-  storefrontUrl: cfg.storefrontUrl || ''
+  storefrontUrl: cfg.storefrontUrl || '',
+  media: queries   // tokens.json → breakpoint, for the JS that renders differently on mobile (decision 0089)
 };
 
 // tokens.css is generated: make sure it is fresh
