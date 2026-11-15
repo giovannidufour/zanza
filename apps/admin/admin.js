@@ -1574,27 +1574,45 @@
   }
   function PhotoField(props) {
     var ss = useState({ state: 'default', text: '' }), st = ss[0], setSt = ss[1];
-    var input = useRef(null), seq = useRef(0);
+    var ps = useState(0), progress = ps[0], setProgress = ps[1];
+    var input = useRef(null), seq = useRef(0), tick = useRef(null);
+    useEffect(function () { return function () { clearInterval(tick.current); }; }, []);
+    /* the reader gives no progress: the bar is an estimate (0091). It eases towards a ceiling for the step
+       (reading ~10 s → 85 %, Discogs → 97 %) and never stops moving or reaches 100 % until the answer is in. */
+    function creep(ceiling, seconds) {
+      clearInterval(tick.current);
+      var k = 1 - Math.pow(0.05, 0.2 / seconds);   // ~95 % of the way to the ceiling after `seconds`
+      tick.current = setInterval(function () {
+        setProgress(function (p) { return p + Math.max((ceiling - p) * k, 0.05); });
+      }, 200);
+    }
+    function stopAt(value) { clearInterval(tick.current); setProgress(value); }
     async function onFile(e) {
       var file = e.target.files && e.target.files[0];
       e.target.value = '';                       // the same photo can be taken again
       if (!file) return;
       var n = ++seq.current;
+      setProgress(3);
       setSt({ state: 'reading', text: 'Reading the label…' });
+      creep(85, 10);
       try {
         var image = await shrinkPhoto(file);
         var got = await invoke('read-label', { image: image });
         if (n !== seq.current) return;
-        if (!got.read) { setSt({ state: 'not read', text: 'Couldn’t read the label. Try closer, flat and with more light, or type it.' }); return; }
+        if (!got.read) { stopAt(0); setSt({ state: 'not read', text: 'Couldn’t read the label. Try closer, flat and with more light, or type it.' }); return; }
         var r = got.read;
         var said = [r.artist, r.title, [r.label, r.catno].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
         props.onText(got.query);
+        setSt({ state: 'reading', text: 'Looking for it on Discogs…' });
+        creep(97, 3);
         var found = await invoke('discogs-lookup', { fields: r });
         if (n !== seq.current) return;
+        stopAt(100);
         props.onFound({ results: found.results || [] });
         setSt({ state: 'read', text: 'Read from the photo: ' + said + '. Pick your pressing in the list, or fix the text.' });
       } catch (err) {
         if (n !== seq.current) return;
+        stopAt(0);
         setSt({ state: 'not read', text: 'Not read: ' + err.message });
       }
     }
@@ -1605,6 +1623,7 @@
       h(Z.Button, { type: 'button', hierarchy: 'secondary', className: 'admin-memo__photo-button', 'aria-busy': reading || undefined,
         onClick: function () { if (!reading) input.current.click(); } },
         st.state === 'read' || st.state === 'not read' ? 'Another photo' : 'Photo of the label'),
+      reading ? h(Z.ProgressBar, { value: progress, 'aria-label': 'Reading the photo' }) : null,
       h('p', { className: 'body-small admin-memo__photo-status', role: 'status' }, st.text));
   }
   function Memo() {
