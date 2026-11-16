@@ -72,3 +72,6 @@ html[data-header-revealing] .plp-filters { transition: top 200ms ease-out, max-h
 /* "Show sold out" in the mobile filters layer: above the facet rows (Figma `filters layer` level=main) */
 .plp-layer__sold { padding: var(--small) 0; }
 .plp-layer__sold[hidden] { display: none; }
+
+/* card view switch (trial, decision 0105): hidden until site.js runs (it does nothing without JS) */
+[data-plp-view][hidden] { display: none; }

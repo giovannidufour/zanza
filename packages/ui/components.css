@@ -672,6 +672,21 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-product-card[data-device="mobile"] .zz-product-card__purchase    { grid-column: 3; grid-row: 1 / -1; align-items: flex-end; }   /* Figma: hug, counter-axis MAX */
 .zz-product-card[data-device="mobile"] .zz-product-card__add         { width: auto; }   /* Figma: button layout=hug */
 
+/* layout=large (Figma `product card` 2332:7170, on trial, decision 0105): the alternative mobile card. */
+.zz-product-card[data-device="mobile"][data-layout="large"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));   /* Figma 2332:7170: 2 equal columns, gap 8 */
+  grid-template-rows: auto auto 1fr auto auto;    /* purchase, description, samples (takes the cover's extra height), title, tags */
+  column-gap: var(--gutter-small);
+  row-gap: 0;   /* spacing per block (margin), so a missing block leaves no gap */
+  }
+.zz-product-card[data-device="mobile"][data-layout="large"] .zz-product-card__image     { grid-column: 1; grid-row: 1 / 4; }
+.zz-product-card[data-device="mobile"][data-layout="large"] .zz-product-card__purchase  { grid-column: 2; grid-row: 1; align-items: stretch; }   /* Figma: children fill, price left */
+.zz-product-card[data-device="mobile"][data-layout="large"] .zz-product-card__add     { width: 100%; }   /* Figma: button layout=fill */
+.zz-product-card[data-device="mobile"][data-layout="large"] .zz-product-card__description { grid-column: 2; grid-row: 2; margin-top: 8px; }
+.zz-product-card[data-device="mobile"][data-layout="large"] .zz-product-card__samples   { grid-column: 2; grid-row: 3; align-self: start; margin-top: 8px; padding: 8px 0; }   /* Figma: details gap 8 + samples padding-top 8; details padding-bottom 8 */
+.zz-product-card[data-device="mobile"][data-layout="large"] .zz-product-card__title-block { grid-column: 1 / -1; grid-row: 4; margin-top: 8px; }
+.zz-product-card[data-device="mobile"][data-layout="large"] .zz-product-card__tags    { grid-column: 1 / -1; grid-row: 5; margin-top: 8px; }
+
 @media (--mobile) {
   .zz-product-card[data-device="responsive"] {
     grid-template-columns: min(calc((100% - 11 * var(--gutter-small)) / 3 + 3 * var(--gutter-small)), 96px) minmax(0, 1fr) auto;   /* image = 4 of 12 cols, max 96 (Figma: image track fixed 96, decision 0039); info fill; purchase hug */
@@ -688,6 +703,20 @@ a.zz-product-card__image { display: block; color: inherit; }
   .zz-product-card[data-device="responsive"] .zz-product-card__add         { width: auto; }   /* Figma: button layout=hug */
   .zz-product-card[data-device="responsive"] .zz-product-card__add[data-device="desktop"] { display: none; }
   .zz-product-card[data-device="responsive"] .zz-product-card__add[data-device="mobile"]  { display: inline-flex; }
+  .zz-product-card[data-device="responsive"][data-layout="large"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));   /* Figma 2332:7170: 2 equal columns, gap 8 */
+    grid-template-rows: auto auto 1fr auto auto;        /* purchase, description, samples (takes the cover's extra height), title, tags */
+    column-gap: var(--gutter-small);
+    row-gap: 0;   /* spacing per block (margin), so a missing block leaves no gap */
+  }
+  .zz-product-card[data-device="responsive"][data-layout="large"] .zz-product-card__image       { grid-column: 1; grid-row: 1 / 4; }
+  .zz-product-card[data-device="responsive"][data-layout="large"] .zz-product-card__purchase    { grid-column: 2; grid-row: 1; align-items: stretch; }   /* Figma: children fill, price left */
+  .zz-product-card[data-device="responsive"][data-layout="large"] .zz-product-card__add         { width: 100%; }   /* Figma: button layout=fill */
+  .zz-product-card[data-device="responsive"][data-layout="large"] .zz-product-card__description { grid-column: 2; grid-row: 2; margin-top: 8px; }
+  .zz-product-card[data-device="responsive"][data-layout="large"] .zz-product-card__samples     { grid-column: 2; grid-row: 3; align-self: start; margin-top: 8px; padding: 8px 0; }   /* Figma: details gap 8 + samples padding-top 8; details padding-bottom 8 */
+  .zz-product-card[data-device="responsive"][data-layout="large"] .zz-product-card__title-block { grid-column: 1 / -1; grid-row: 4; margin-top: 8px; }
+  .zz-product-card[data-device="responsive"][data-layout="large"] .zz-product-card__tags        { grid-column: 1 / -1; grid-row: 5; margin-top: 8px; }
+  .zz-product-card[data-device="responsive"][data-layout="large"] .zz-product-card__add[data-device="mobile"] { display: flex; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -1318,6 +1347,7 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
    1px border-divider-strong under ── */
 .zz-plp-header { display: flex; flex-direction: column; }
 .zz-plp-header__controls { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: var(--small) 0; }
+.zz-plp-header__end { display: flex; align-items: center; gap: 4px; }   /* view switch + sort (proposal, 0105) */
 .zz-plp-header__rule { height: 1px; background: var(--border-divider-strong); }
 
 /* ── SelectButton: a native select invisible over a Button look (Figma: button + trailing chevron-down) ── */
