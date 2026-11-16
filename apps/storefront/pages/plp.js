@@ -139,9 +139,6 @@ function Plp({ section, products, allProducts = products, site, url, search = fa
     // Figma `PLP header` (device=mobile, Gio 2026-11-10): mobile only (plp.css). "Filter" + applied count (site.js)
     h(Z.PlpHeader, { className: 'plp-header',
       filters: facets.length ? h(Z.Button, { hierarchy: 'secondary', size: 'small', 'aria-haspopup': 'dialog', 'data-plp-open': '' }, 'Filter') : h('span'),
-      // card view switch (trial, decision 0105; not in Figma): current mobile card vs layout=large. site.js shows it and
-      // sets the label from the saved choice; without JS it stays hidden.
-      view: h(Z.Button, { hierarchy: 'secondary', size: 'small', prefix: 'View:', hidden: true, 'data-plp-view': '' }, 'Compact'),
       sort: h(Z.SelectButton, { 'aria-label': 'Sort', 'data-plp-sort': '', defaultValue: 'newest',
         options: sortsFor(section) }) }),
 

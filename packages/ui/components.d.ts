@@ -233,10 +233,6 @@ export interface ProductCardImage {
 export interface ProductCardProps extends HTMLAttributes<HTMLElement> {
   /** Omitted → responsive (breakpoint `--mobile` from tokens.json, <768px placeholder). */
   device?: "desktop" | "mobile";
-  /** Mobile card layout. compact = cover 96px beside the info (Figma `product card` device=mobile). large = alternative on trial
-   *  (Figma 2332:7170, decision 0105): cover half the width, purchase + grades + samples beside it, title and tags below.
-   *  Ignored on desktop. @default "compact" */
-  layout?: "compact" | "large";
   /** Figma `state`. Pins the hover look in docs/previews only; on the site `:hover` drives it (decisions 0009, 0088). @default "default" */
   state?: "default" | "hover";
   /** Figma `product image`: the cover, square. */
@@ -781,8 +777,6 @@ export interface PlpHeaderProps extends HTMLAttributes<HTMLDivElement> {
   filters?: ReactNode;
   /** The sort: a SelectButton. */
   sort?: ReactNode;
-  /** Proposal, not in Figma (decision 0105): the card view switch, grouped with the sort on the right (gap 4). */
-  view?: ReactNode;
 }
 export declare function PlpHeader(props: PlpHeaderProps): JSX.Element;
 
