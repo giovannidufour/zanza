@@ -2,6 +2,17 @@
 
 Come sono configurate le email del negozio e **come rifare tutto da zero** con nome, dominio o email nuovi (nome **rythem-works** e dominio **rythem-works.com** dal 2026-11-15; prima "Zanza" su `gio-d.xyz`). Seconda: **offerte di scambio** (decisione 0068, funzione `trade-offer`: email a Gio con Reply-To del trader; secret in più `OFFER_TO` = indirizzo di Gio, Verify JWT **off**, chiamata dal browser, origini ammesse = `SHOP_URL` + anteprime Pages + `ALLOWED_ORIGINS`). Prima email in uso: **Notify me** (decisione 0059, migrazione 0016, funzione `notify-back-in-stock`). Le prossime (conferma ordine) useranno lo stesso account e dominio.
 
+## Nome del mittente: RYTHEM-WORKS (Gio, 2026-11-16)
+
+Ogni email in uscita mostra come mittente **RYTHEM-WORKS** (maiuscolo). Il nome nel testo delle email (`STORE_NAME`) resta `rythem-works`. Dove si imposta:
+
+| Dove | Campo |
+|---|---|
+| Supabase → Edge Functions → Secrets | `MAIL_FROM` = `RYTHEM-WORKS <gio@rythem-works.com>` (ordini, offerte, contatti, Notify me, conferma newsletter) |
+| Supabase → Authentication → Emails → SMTP Settings | Sender name = `RYTHEM-WORKS` (codice di login dei clienti) |
+| Buttondown → Settings → Email | Author name = `RYTHEM-WORKS` (newsletter) |
+| Gmail della casella del negozio → Impostazioni → Account → Invia messaggio come → modifica info | Nome = `RYTHEM-WORKS` (risposte di Gio ai clienti) |
+
 ## Caselle (Gio, 2026-11-15)
 
 | Casella | A cosa serve |
@@ -21,7 +32,7 @@ Eccezione voluta: l'account **Buttondown** ha come email `gio@rythem-works.com`,
 | Account Resend | login Google con il Gmail personale |
 | Dominio di invio | `rythem-works.com` (DNS su Cloudflare, regione Resend **eu-west-1**) · `gio-d.xyz` rimosso da Resend e dal DNS il 2026-11-15 |
 | Chiavi API | `rythem-works-site` (Sending access, solo rythem-works.com) = secret `RESEND_API_KEY` · `gmail-smtp-2` (Sending access) = password SMTP del "Invia come" nella casella del negozio · `zanza-notify` (vecchia) cancellata il 2026-11-15 |
-| Mittente (`MAIL_FROM`) | `rythem-works <gio@rythem-works.com>` |
+| Mittente (`MAIL_FROM`) | `RYTHEM-WORKS <gio@rythem-works.com>` (nome mittente in maiuscolo, Gio 2026-11-16) |
 | Nome nel testo (`STORE_NAME`) | `rythem-works` |
 | Link nel testo (`SHOP_URL`) | `https://rythem-works.com` (oggi è la pagina coming soon: va bene finché il negozio non è aperto) |
 | Destinatario offerte (`OFFER_TO`) | `gio.rythem.works@gmail.com` |
