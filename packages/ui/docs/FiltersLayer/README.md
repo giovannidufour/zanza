@@ -36,6 +36,7 @@ The shop's mobile filters (decision [0038](../../../../design/decisions/0038-mob
 | --- | --- | --- | --- |
 | `filters` | `ReactNode` |  | The filters trigger: Button secondary small "Filter" with the applied count as `suffix`. |
 | `sort` | `ReactNode` |  | The sort: a SelectButton. |
+| `view` | `ReactNode` |  | Proposal, not in Figma (decision 0105): the card view switch, grouped with the sort on the right (gap 4). |
 
 ### SelectButton
 
