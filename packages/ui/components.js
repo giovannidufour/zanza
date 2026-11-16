@@ -389,10 +389,7 @@
        mobile:  12-col grid · image 4 cols · info (title block, description, tags, samples; gap 8) + purchase (button
                 hug small "Add", price, right-aligned) share the other 8 cols.
      In Figma the description sits in different frames per variant (auto layout cannot move it); here it is one node.
-     Responsive (no device): both buttons are rendered and CSS shows one per breakpoint (labels and sizes differ).
-     layout=large (Figma `product card` 2332:7170, alternative mobile card on trial, decision 0105): mobile only. Cover =
-       half the width; beside it purchase (button small fill, price), description, samples; title block + tags below,
-       full width. Same markup, CSS places it; desktop ignores it. */
+     Responsive (no device): both buttons are rendered and CSS shows one per breakpoint (labels and sizes differ). */
   var CARD_TYPE = {
     desktop:    { head: 'body-large', meta: 'body-medium', tag: 'large' },
     mobile:     { head: 'body-medium', meta: 'body-small', tag: 'small' },
@@ -420,10 +417,9 @@
     return h('article', Object.assign({
       className: cx('zz-product-card', props.className),
       'data-device': device,
-      'data-layout': props.layout === 'large' ? 'large' : undefined,   // mobile-only alternative (0105)
       'data-state': props.state && props.state !== 'default' ? props.state : undefined,   // doc-only pin (0009)
       'aria-labelledby': titleId
-    }, omit(props, ['device', 'layout', 'state', 'image', 'href', 'title', 'releaseInfo', 'price', 'description', 'grading', 'cover', 'conditions', 'tags', 'samples',
+    }, omit(props, ['device', 'state', 'image', 'href', 'title', 'releaseInfo', 'price', 'description', 'grading', 'cover', 'conditions', 'tags', 'samples',
                     'onAdd', 'addHref', 'addLabel', 'addLabelShort', 'headingLevel', 'className', 'children'])),
       // href: the cover becomes the link to the product page (no visual change; the link style is not designed yet)
       h(props.href ? 'a' : 'div', props.href ? { className: 'zz-product-card__image', href: props.href, 'aria-labelledby': titleId } : { className: 'zz-product-card__image' },
@@ -1276,11 +1272,9 @@
         h(Button, { hierarchy: 'primary', size: 'large', className: 'zz-filters-layer__apply', onClick: props.onApply,
           suffix: props.applyCount, 'data-layer-apply': '' }, props.applyLabel || 'Apply')));
   }
-  /* `view` (proposal, not in Figma, decision 0105): the card view switch, grouped with the sort on the right, gap 4. */
   function PlpHeader(props) {
-    return h('div', Object.assign({ className: cx('zz-plp-header', props.className) }, omit(props, ['filters', 'sort', 'view', 'className'])),
-      h('div', { className: 'zz-plp-header__controls' }, props.filters,
-        props.view ? h('div', { className: 'zz-plp-header__end' }, props.view, props.sort) : props.sort),
+    return h('div', Object.assign({ className: cx('zz-plp-header', props.className) }, omit(props, ['filters', 'sort', 'className'])),
+      h('div', { className: 'zz-plp-header__controls' }, props.filters, props.sort),
       h('div', { className: 'zz-plp-header__rule', 'aria-hidden': 'true' }));
   }
   /* ── MenuItem / MenuGroup / MenuLayer (mobile menu, Figma page `menu`, proposal 2026-11-12) ──

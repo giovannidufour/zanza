@@ -16,7 +16,6 @@ One markup for both variants; CSS grid places the blocks ([0016](../../../../des
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `device` | `"desktop" \| "mobile"` |  | Omitted → responsive (breakpoint `--mobile` from tokens.json, &lt;768px placeholder). |
-| `layout` | `"compact" \| "large"` |  |  |
 | `state` | `"default" \| "hover"` | `default` | Figma `state`. Pins the hover look in docs/previews only; on the site `:hover` drives it (decisions 0009, 0088). |
 | `image` | `ProductCardImage` |  | Figma `product image`: the cover, square. |
 | `href` | `string` |  | Product page URL: the cover becomes a link to it (no visual change; a designed link style is in open.md). |

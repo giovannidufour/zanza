@@ -441,33 +441,6 @@
     else location.href = href.href;
   });
 
-  /* ---------------------------------------------------------------- card view (trial, decision 0105)
-     PLP header (mobile): "View: Compact | Large" switches every card of the list between the current mobile card and
-     the alternative one (ProductCard layout=large). Remembered per browser; desktop ignores it (CSS is mobile only). */
-  var VIEW_KEY = 'zanza-card-view';
-  var VIEW_LABEL = { compact: 'Compact', large: 'Large' };
-  function initCardView() {
-    var button = document.querySelector('[data-plp-view]');
-    if (!button) return;
-    var view = 'compact';
-    try { if (window.localStorage.getItem(VIEW_KEY) === 'large') view = 'large'; } catch (e) { /* default */ }
-    function apply() {
-      document.querySelectorAll('.plp-list .zz-product-card').forEach(function (card) {
-        if (view === 'large') card.setAttribute('data-layout', 'large'); else card.removeAttribute('data-layout');
-      });
-      var label = button.querySelector('.zz-button__label');
-      var prefix = label && label.querySelector('.zz-button__prefix');
-      if (label) { label.textContent = ''; if (prefix) label.appendChild(prefix); label.appendChild(document.createTextNode(VIEW_LABEL[view])); }
-    }
-    apply();
-    button.hidden = false;
-    button.addEventListener('click', function () {
-      view = view === 'large' ? 'compact' : 'large';
-      try { window.localStorage.setItem(VIEW_KEY, view); } catch (e) { /* this page only */ }
-      apply();
-    });
-  }
-
   function initFilters() {
     var root = document.querySelector('[data-plp-filters]');
     if (!root) return;
@@ -1772,7 +1745,6 @@
       initGallery();
       initSearch();
       initFilters();
-      initCardView();
       initStatus();
       initBag();
       initOffer();
@@ -1825,7 +1797,6 @@
   initGallery();
   initSearch();
   initFilters();
-  initCardView();
   initStatus();
   initBag();
   initOffer();
