@@ -535,7 +535,7 @@ export interface ListingStatusProps extends HTMLAttributes<HTMLDivElement> {
   status: ReactNode;
   /** Figma `details`: when (published / saved / since) and the SKU. */
   details?: ReactNode;
-  /** Figma boolean `unsaved`: true = "Unsaved changes", or a text of its own. */
+  /** Figma boolean `unsaved` (an `alert`, block): true = "Unsaved changes", or a text of its own. */
   unsaved?: boolean | ReactNode;
   /** Figma boolean `shop update`: true = "The shop updates in about 2 minutes.", or a text of its own. */
   shopUpdate?: boolean | ReactNode;

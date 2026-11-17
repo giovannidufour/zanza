@@ -1149,14 +1149,14 @@
   /* ── ListingStatus ──────────────────────────────────────────────────────
      Figma: page `listing form` → `listing status` (2369:23575, decision 0118): the state of a listing at a glance, at the
      top of the Create/Edit side column (mobile: under the page title). Vertical, gap 4: status (label/large, text/strong)
-     · details (body/small, text/moderate: when + SKU) · `unsaved` (label/small, text/strong) · `shop update`
+     · details (body/small, text/moderate: when + SKU) · `unsaved` (an `alert`, block: alert colours, Gio 2026-11-18) · `shop update`
      (body/small, text/moderate). Booleans on in Figma; here a line shows when its prop is given. A live region: a screen
      reader hears the status change after a save. */
   function ListingStatus(props) {
     return h('div', Object.assign({ role: 'status' }, omit(props, ['status', 'details', 'unsaved', 'shopUpdate', 'className']), { className: cx('zz-listing-status', props.className) }),
       h('p', { className: 'zz-listing-status__status label-large' }, props.status),
       props.details ? h('p', { className: 'zz-listing-status__details body-small' }, props.details) : null,
-      props.unsaved ? h('p', { className: 'zz-listing-status__unsaved label-small' }, props.unsaved === true ? 'Unsaved changes' : props.unsaved) : null,
+      props.unsaved ? h(Alert, { className: 'zz-listing-status__unsaved' }, props.unsaved === true ? 'Unsaved changes' : props.unsaved) : null,
       props.shopUpdate ? h('p', { className: 'zz-listing-status__shop body-small' }, props.shopUpdate === true ? 'The shop updates in about 2 minutes.' : props.shopUpdate) : null);
   }
 

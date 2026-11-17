@@ -1030,7 +1030,7 @@
 
     return h('div', { className: 'admin-page admin-page--edit' }, main, side,
       // mobile: the status block scrolls away with the form, so the bar repeats Unsaved changes above the buttons
-      mobile && (publishBtn || draftBtn) ? h(Z.ActionBar, { status: note || (!isNew && dirty ? h('p', { className: 'label-small' }, 'Unsaved changes') : null) }, publishBtn, draftBtn) : null, player);
+      mobile && (publishBtn || draftBtn) ? h(Z.ActionBar, { status: note || (!isNew && dirty ? h(Z.Alert, null, 'Unsaved changes') : null) }, publishBtn, draftBtn) : null, player);
   }
 
   // ── Listings ──────────────────────────────────────────────────────────────
