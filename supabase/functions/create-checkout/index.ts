@@ -1,15 +1,15 @@
-// supabase/functions/create-checkout — the Bag's Checkout button (_context/backend.md → Checkout con hold, migration 0021).
-// POST { ids: [listing uuid], country: "DE" }           → { url } of a Stripe Checkout session, or an error below
-// POST { ids, country, previous: "cs_…" }               → same; the buyer's earlier session is ended first (below)
-// POST { action: "cancel", session: "cs_…" }             → the buyer came back from Stripe without paying (cancel_url,
-//                                                          browser Back, Bag opened again): the session is expired and
-//                                                          its copies are free again at once → { released, paid?, kept? }
-// Steps: hold the copies (all or nothing, 33 min) → minimum order and shipping from the DB with packages/shipping
-// (./shipping.js is a COPY, refreshed by `node supabase/scripts/sync-functions.js`) → Stripe session (expires in 31 min,
-// before the hold ends, so a copy can never be paid after someone else got it) → the hold gets the session id.
-// Prices always come from the DB, never from the browser. Any failure after the hold releases it.
-// Errors: 409 { error: "unavailable", unavailable: [ids] } · 422 { error: "below_minimum", missing_cents } ·
-//         422 { error: "shipping", status } (not-served, too-heavy, not-configured) · 4xx/5xx { error }.
+// supabase/functions/create-checkout — the Bag's Checkout button (_context/backend.md → Checkout, migrations 0021 + 0028).
+// First to pay wins (decision 0116): starting a checkout holds NOTHING. The copies stay available for everyone while
+// the buyer is on Stripe; Stripe only authorizes the payment (capture_method manual) and stripe-webhook captures it
+// if the copies are still free when the session completes (checkout_claim), or cancels the authorization if not.
+// POST { ids: [listing uuid], country: "DE", previous?: "cs_…" } → { url, session } of a Stripe Checkout session
+// POST { action: "cancel", session: "cs_…" }   → the buyer came back without paying (cancel_url, browser Back, Bag
+//                                                opened again): the session is expired on Stripe → { ok, paid? }
+// Steps: copies from the DB (checkout_items: all available or nothing) → minimum order and shipping with
+// packages/shipping (./shipping.js is a COPY, `npm run sync:functions`) → Stripe session (31 min) → checkout_open.
+// Prices always come from the DB, never from the browser.
+// Errors: 409 { error: "unavailable", unavailable: [ids] } · 409 { error: "already_paid" } ·
+//         422 { error: "below_minimum", missing_cents } · 422 { error: "shipping", status } · 4xx/5xx { error }.
 // Called by the browser: deploy with Verify JWT OFF; allowed origins as trade-offer (SHOP_URL, ALLOWED_ORIGINS, pages.dev).
 // Secrets: STRIPE_SECRET_KEY (sk_test_… until launch), SHOP_URL, optional ALLOWED_ORIGINS, MEDIA_BASE_URL
 // (default https://media.rythem-works.com). SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and SUPABASE_ANON_KEY are set by Supabase.
@@ -19,7 +19,6 @@ import "./shipping.js";
 // deno-lint-ignore no-explicit-any
 const Shipping = (globalThis as any).ZanzaShipping;
 const env = (k: string) => Deno.env.get(k) ?? "";
-const HOLD_MINUTES = 33;
 const SESSION_MINUTES = 31;   // Stripe's minimum is 30
 const MAX_RECORDS = 50;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -84,25 +83,24 @@ Deno.serve(async (req) => {
   const pub = createClient(env("SUPABASE_URL"), env("SUPABASE_ANON_KEY"), { auth: { persistSession: false } });
 
   // ── a session of this buyer ends without payment ─────────────────────────
-  // The copies are freed ONLY when Stripe confirms the session can no longer be paid (expired), or does not know it:
-  // a session that is complete (paid, or an async payment still processing) or that we cannot check keeps its hold,
-  // which ends by itself (webhook, or effective_status after 33 min). Never a copy freed while someone can pay it.
-  // deno-lint-ignore no-explicit-any
-  async function endSession(session: string): Promise<{ released: number; paid?: boolean; kept?: boolean }> {
+  // Expired on Stripe so it can't be paid any more (nothing is held: this keeps Stripe and checkout_sessions tidy, and
+  // frees a hold made before 0028 — checkout_release only frees a session Stripe confirms expired).
+  async function endSession(session: string): Promise<{ paid?: boolean; kept?: boolean }> {
     // deno-lint-ignore no-explicit-any
     let s: any;
     try { s = await stripe(`checkout/sessions/${session}`); } catch (e) {
-      if (!/Stripe 404/.test(String(e))) return { released: 0, kept: true };   // Stripe unreachable: keep the hold
-      s = { status: "expired" };   // unknown to Stripe: nothing can be paid
+      if (!/Stripe 404/.test(String(e))) return { kept: true };   // Stripe unreachable
+      s = { status: "expired" };
     }
     if (s.status === "open") {
       try { s = await stripe(`checkout/sessions/${session}/expire`, {}); }
       catch { s = await stripe(`checkout/sessions/${session}`).catch(() => ({ status: "unknown" })); }
     }
-    if (s.status === "complete") return { released: 0, paid: true };
-    if (s.status !== "expired") return { released: 0, kept: true };
-    const { data: n } = await db.rpc("checkout_release", { p_key: session });
-    return { released: n ?? 0 };
+    if (s.status === "complete") return { paid: true };
+    if (s.status !== "expired") return { kept: true };
+    await db.rpc("checkout_end", { p_session: session, p_status: "expired" });
+    await db.rpc("checkout_release", { p_key: session });   // legacy hold (0021), if any
+    return {};
   }
   const SESSION = /^cs_(test|live)_[A-Za-z0-9]+$/;
 
@@ -118,43 +116,42 @@ Deno.serve(async (req) => {
   const country = String(b.country ?? "").toUpperCase();
   if (!ids.length || ids.length > MAX_RECORDS || !/^[A-Z]{2}$/.test(country)) return json({ error: "Bad request." }, 400);
 
-  // the buyer's own earlier session (Checkout pressed again): end it first, so its copies are not "Reserved" for them
+  // the buyer's own earlier session, still open (its end on return failed): end it first, so only one can be paid
   const previous = String(b.previous ?? "");
   if (SESSION.test(previous)) {
     const ended = await endSession(previous);
     if (ended.paid) return json({ error: "already_paid", session: previous }, 409);
   }
 
-  const token = `hold:${crypto.randomUUID()}`;
-  const { data: held, error: holdError } = await db.rpc("checkout_hold", { p_ids: ids, p_token: token, p_minutes: HOLD_MINUTES });
-  if (holdError) return json({ error: "Could not reserve the records." }, 500);
-  if (!held || held.length !== ids.length) {
-    // which ones are gone (sold, reserved by another checkout, no longer public): the Bag marks them
+  const { data: items, error: itemsError } = await db.rpc("checkout_items", { p_ids: ids });
+  if (itemsError) return json({ error: "Could not read the records." }, 500);
+  if (!items || items.length !== ids.length) {
+    // which ones are gone (sold, held by hand, no longer public): the Bag marks them
     const { data: rows } = await pub.from("listing_availability").select("id, status").in("id", ids);
     const free = new Set((rows ?? []).filter((r: { status: string }) => r.status === "available").map((r: { id: string }) => r.id));
     return json({ error: "unavailable", unavailable: ids.filter((id) => !free.has(id)) }, 409);
   }
-  const release = () => db.rpc("checkout_release", { p_key: token });
 
   try {
     // deno-lint-ignore no-explicit-any
-    const copies = held as any[];
+    const copies = items as any[];
     const { data: settings, error: settingsError } = await pub.from("shipping_settings").select("config").single();
     if (settingsError) throw new Error(`shipping_settings: ${settingsError.message}`);
     const config = settings?.config;
     const subtotal = copies.reduce((sum, c) => sum + c.price_cents, 0);
 
     const min = Shipping.minimumOrder(config, subtotal);
-    if (!min.ok) { await release(); return json({ error: "below_minimum", min_cents: min.min_cents, missing_cents: min.missing_cents }, 422); }
+    if (!min.ok) return json({ error: "below_minimum", min_cents: min.min_cents, missing_cents: min.missing_cents }, 422);
 
     const est = Shipping.estimate(config, copies.map((c) => ({ format: c.format, weight_g: c.weight_g })), country);
-    if (est.status !== "ok") { await release(); return json({ error: "shipping", status: est.status }, 422); }
+    if (est.status !== "ok") return json({ error: "shipping", status: est.status }, 422);
     const services = [...new Set(est.parcels.map((p: { rate: { service: string } }) => p.rate.service))].join(" + ");
     const parcels = est.parcels.length > 1 ? ` (${est.parcels.length} parcels)` : "";
 
     const session = await stripe("checkout/sessions", {
       mode: "payment",
-      client_reference_id: token,
+      // authorize only: stripe-webhook captures once checkout_claim got the copies, or cancels (never a double charge)
+      payment_intent_data: { capture_method: "manual" },
       success_url: `${origin}/checkout/thanks/?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/bag/?checkout=cancelled`,
       expires_at: Math.floor(Date.now() / 1000) + SESSION_MINUTES * 60,
@@ -176,18 +173,16 @@ Deno.serve(async (req) => {
       })),
       // the listing ids travel on each line (product metadata): stripe-webhook reads them back from the line items
       metadata: { country },
-    }, token);
+    });
 
-    const { data: attached } = await db.rpc("checkout_attach", { p_token: token, p_session: session.id });
-    if (attached !== copies.length) {
+    const { error: openError } = await db.rpc("checkout_open", { p_session: session.id, p_ids: copies.map((c) => c.id) });
+    if (openError) {   // without the bookkeeping, a rival session could not be expired: don't start this one
       await stripe(`checkout/sessions/${session.id}/expire`, {}).catch(() => {});
-      await release();
-      return json({ error: "unavailable", unavailable: [] }, 409);
+      throw new Error(`checkout_open: ${openError.message}`);
     }
     return json({ url: session.url, session: session.id });
   } catch (e) {
     console.error(e);
-    await release();
     return json({ error: "Could not start the checkout." }, 502);
   }
 });

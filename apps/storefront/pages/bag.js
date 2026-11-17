@@ -47,8 +47,8 @@ function BagLine({ product, url }) {
 // Figma: Bag - desktop (`bag content`: 12-col grid, title row 1 cols 1–12, list cols 1–8, summary cols 9–12) /
 // Bag - mobile (one column). The empty state replaces list and summary.
 // the served note and the not-served one (Figma `note` of each variant); site.js swaps them
-const NOTE = 'You pay on Stripe. Your records are held for 30 minutes once you start checkout.';
-const NOTE_SHIPPING = 'Shipping is an estimate for your country. You enter the address and pay on Stripe. Your records are held for 30 minutes once you start checkout.';
+const NOTE = 'You pay on Stripe. Records aren\u2019t held: if someone pays for one first, you aren\u2019t charged.';
+const NOTE_SHIPPING = 'Shipping is an estimate for your country. You enter the address and pay on Stripe. Records aren\u2019t held: if someone pays for one first, you aren\u2019t charged.';
 const DEFAULT_COUNTRY = 'DE';   // Figma: Ship to → Germany; the first country when Germany is in no zone with rates
 
 function Bag({ products, site, url, shipping, countries }) {
