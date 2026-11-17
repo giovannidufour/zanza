@@ -8,7 +8,7 @@
 - Editable = texts in Gio's own voice. Interface text (buttons, labels, errors, empty states, the grading scale) stays in code: changing it can break flows and the design system owns it.
 - Three groups on the list page, one `content row` per editable block (title, where it shows, last edit, Trade only flag, Edit):
   - **About you** — one structured Profile: name (signature), DJ name, bio (plain text, empty line = new paragraph), links (label + URL, ordered, Add / Remove), Discogs username + card line, Instagram username, Facebook profile link. Message links (Discogs compose, ig.me, m.me) are derived from these, not typed.
-  - **Pages** — one Markdown body per page: Grading, Shipping, Terms, Privacy; How trading works as a list of steps (title + text, `step row`). Page title (H1) and URL are fixed.
+  - **Pages** — Grading, Shipping, Terms, Privacy, How trading works, each edited as a list of sections in the order of the page (`section row`: heading + text, Remove, Add section), so it is clear where each text goes (Gio 2026-11-17). Text: plain, with `**bold**` and `[link](url)` only; no Markdown headings or blocks to learn. Page title (H1) and URL are fixed. How trading works uses the same row for its steps.
   - **Short texts** — plain text fields grouped by shop page: Record page, Bag and order confirmed, Contact, Make an offer (incl. reply days), Newsletter, Coming soon.
 - Editor page per block: `content editor head` (back to Content, title, "Shown on", View on shop, Save); mobile = Save and View on shop in the `action bar` (0089).
 - Save = one save per block, then the shop rebuilds (deploy hook, ~2 min) as Settings (0102). Toast "Saved. The shop updates in about 2 minutes." No drafts, no scheduling, no preview build.
