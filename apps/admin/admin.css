@@ -203,3 +203,19 @@ h1, h2, p { margin: 0; }
 .admin-order__records h2 { margin: 0; }
 .admin-order__details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 16px; }
 @media (--mobile) { .admin-order__details { grid-template-columns: minmax(0, 1fr); gap: 24px; } }
+
+/* Bulk create (#bulk, Figma BACKEND → Bulk, decision 0107): the Memo page's column grammar; rows = BulkRecord (packages/ui).
+   Review: the label photo square (Figma `product image`, 358 on mobile, 480 max on desktop), then Which record. */
+.admin-bulk-page { display: flex; flex-direction: column; gap: 24px; }
+.admin-bulk-page .zz-drop-zone, .admin-bulk-page .zz-bulk-help { max-width: 645px; }
+.admin-bulk-page .admin-status:empty { display: none; }
+.admin-bulk-page__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.admin-bulk-page__head > p { margin: 0; }
+.admin-bulk-page__photo { display: block; width: 480px; max-width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--surface-subtle); }
+.admin-bulk-page--review { gap: 16px; }
+.admin-bulk-page--review .admin-picker { width: 480px; max-width: 100%; }
+.admin-bulk-page--review .admin-picker__list { position: static; max-height: none; }   /* in the flow: Next / Skip stay reachable */
+.admin-bulk-page__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.admin-bulk-page__unsorted { display: flex; flex-direction: column; width: 480px; max-width: 100%; }
+.admin-bulk-page__file { display: flex; flex-direction: column; gap: 8px; padding: 16px 0; }
+@media (--mobile) { .admin-bulk-page__photo, .admin-bulk-page--review .admin-picker, .admin-bulk-page__unsorted { width: auto; } }

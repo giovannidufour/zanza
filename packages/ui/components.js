@@ -987,6 +987,35 @@
         props.onCreate ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onCreate, 'aria-label': (props.createLabel || 'Create listing') + ': ' + name }, props.createLabel || 'Create listing') : null,
         props.onRemove ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onRemove, 'aria-label': (props.removeLabel || 'Remove') + ': ' + name }, props.removeLabel || 'Remove') : null));
   }
+  /* ── Bulk create (Figma BACKEND → Bulk, decision 0107) ──
+     BulkRecord (`bulk record`, device mobile | desktop, state reading | matched | choose | not found | confirmed | skipped,
+     boolean `warning`): one record found in the dropped files, MemoItem grammar. Text column: title body/medium
+     text/strong, meta body/small text/moderate, files body/small, then (reading) a ProgressBar, the status line
+     (support text, body/small text/strong) and the warning (support text, emphasis alert); actions = Review, Remove
+     (secondary small). Row padding 16 / 0, gap 8, bottom border divider/strong; desktop: actions on the right, top.
+     BulkHelp (`bulk naming help`): heading body/medium + lines body/small, example body/small text/moderate; gap 4. */
+  function BulkRecord(props) {
+    var name = typeof props.title === 'string' ? props.title : 'record';
+    var reading = props.state === 'reading';
+    return h('li', Object.assign({}, omit(props, ['title', 'meta', 'files', 'status', 'warning', 'progress', 'state', 'onReview', 'onRemove', 'reviewLabel', 'removeLabel', 'className']),
+      { className: cx('zz-bulk-record', props.className), 'data-state': props.state || undefined }),
+      h('div', { className: 'zz-bulk-record__text' },
+        h('p', { className: 'zz-bulk-record__title body-medium' }, props.title),
+        props.meta ? h('p', { className: 'zz-bulk-record__meta body-small' }, props.meta) : null,
+        props.files ? h('p', { className: 'zz-bulk-record__files body-small' }, props.files) : null,
+        reading ? h(ProgressBar, { className: 'zz-bulk-record__progress', value: props.progress || 0, 'aria-label': 'Reading ' + name }) : null,
+        props.status ? h('p', { className: 'zz-bulk-record__status body-small' }, props.status) : null,
+        props.warning ? h('p', { className: 'zz-bulk-record__warning body-small' }, props.warning) : null),
+      reading ? null : h('div', { className: 'zz-bulk-record__actions' },
+        props.onReview ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onReview, 'aria-label': (props.reviewLabel || 'Review') + ': ' + name }, props.reviewLabel || 'Review') : null,
+        props.onRemove ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onRemove, 'aria-label': (props.removeLabel || 'Remove') + ': ' + name }, props.removeLabel || 'Remove') : null));
+  }
+  function BulkHelp(props) {
+    return h('div', Object.assign({}, omit(props, ['heading', 'lines', 'example', 'className']), { className: cx('zz-bulk-help', props.className) }),
+      h('p', { className: 'zz-bulk-help__heading body-medium' }, props.heading),
+      (props.lines || []).map(function (l, i) { return h('p', { key: i, className: 'zz-bulk-help__line body-small' }, l); }),
+      props.example ? h('p', { className: 'zz-bulk-help__example body-small' }, props.example) : null);
+  }
   /* ── Admin Content (Figma BACKEND → Content, decision 0106) ──
      ContentGroupHead (`content group head`): heading label/medium + help body/small text/moderate, gap 4.
      ContentRow (`content row`, device desktop | mobile, one responsive markup): an <li>, MemoItem grammar: text (title
@@ -1585,6 +1614,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, AdminBar: AdminBar, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, AdminBar: AdminBar, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock,
            SectionHead: SectionHead, GenreLinks: GenreLinks, HomeAbout: HomeAbout };
 });
