@@ -68,6 +68,8 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | ReleaseList | page `Trade` → `release list` | ported (0069) |
 | ChosenRelease | page `Trade` → `chosen release` | ported (0069) |
 | MemoItem | page `Memo` (BACKEND) → `memo item` | ported (0087): device mobile / desktop (responsive), meta + link, note, Create listing / Remove |
+| BulkRecord | page `Bulk` (BACKEND) → `bulk record` | ported (0107): device mobile / desktop (responsive), state reading / matched / choose / not found / confirmed / skipped, warning |
+| BulkHelp | page `Bulk` (BACKEND) → `bulk naming help` | ported (0107) |
 | ContentGroupHead | page `Content` (BACKEND) → `content group head` | ported (0106): heading + help of an admin Content group |
 | ContentRow | page `Content` (BACKEND) → `content row` | ported (0106): device mobile / desktop (responsive), where, edited, condition, Edit link |
 | ContentEditorHead | page `Content` (BACKEND) → `content editor head` | ported (0106): back, title, where, actions (desktop; mobile = ActionBar) |

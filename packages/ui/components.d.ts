@@ -982,6 +982,43 @@ export interface MemoItemProps extends HTMLAttributes<HTMLLIElement> {
 }
 export declare function MemoItem(props: MemoItemProps): JSX.Element;
 
+/** Figma `bulk record` (BACKEND → Bulk, decision 0107): one record found in the files dropped on Bulk create. An <li>: wrap in a <ul>. */
+export interface BulkRecordProps extends HTMLAttributes<HTMLLIElement> {
+  /** "Artist – Title" of the Discogs release, or the file-name prefix */
+  title: ReactNode;
+  /** label · cat no · year · country · format of the release. Omit → none */
+  meta?: ReactNode;
+  /** what was grouped: "3 photos · samples A, B · nooks-hero" */
+  files?: ReactNode;
+  /** Figma `state`. reading shows a ProgressBar and no actions */
+  state?: 'reading' | 'matched' | 'choose' | 'not found' | 'confirmed' | 'skipped';
+  /** 0–100, while reading */
+  progress?: number;
+  /** the status line (support text, neutral) */
+  status?: ReactNode;
+  /** Figma boolean `warning`: a non-blocking problem (support text, alert). Omit → none */
+  warning?: ReactNode;
+  /** Review (opens the one-by-one review at this record). Omit → no button */
+  onReview?: () => void;
+  /** Remove. Omit → no button */
+  onRemove?: () => void;
+  /** Default "Review" */
+  reviewLabel?: string;
+  /** Default "Remove" */
+  removeLabel?: string;
+}
+export declare function BulkRecord(props: BulkRecordProps): JSX.Element;
+
+/** Figma `bulk naming help` (BACKEND → Bulk, decision 0107): the file-naming rule above the drop zone. */
+export interface BulkHelpProps extends HTMLAttributes<HTMLDivElement> {
+  heading: ReactNode;
+  /** one paragraph each (photos, samples) */
+  lines?: ReactNode[];
+  /** Figma boolean `show example`. Omit → none */
+  example?: ReactNode;
+}
+export declare function BulkHelp(props: BulkHelpProps): JSX.Element;
+
 /** Figma `content group head` (BACKEND → Content, decision 0106): heading of a group of texts in the admin Content list. */
 export interface ContentGroupHeadProps extends HTMLAttributes<HTMLDivElement> {
   heading: ReactNode;
