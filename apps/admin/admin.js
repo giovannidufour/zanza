@@ -189,7 +189,7 @@
   }
   // a clip of a sample (Gio 2026-11-17, decision 0110): its first `seconds`, a hard cut (no fade-in nor fade-out, Gio), 128 kbps.
   // source = the File Gio dropped (best quality) or the URL of the file already in storage. onState as uploadFile.
-  var CLIP_FADE_OUT = 0, CLIP_DEFAULT = 45;
+  var CLIP_FADE_OUT = 0, CLIP_LENGTHS = [30, 60, 90];   // the Length options (Gio 2026-11-17: no free field)
   async function clipSample(source, seconds, onState) {
     var report = onState || function () {};
     report({ phase: 'cutting', value: 0 });
@@ -730,33 +730,29 @@
           setMessage({ error: true, text: x.name + ': not cut (' + err.message + ').' });
         });
     }
+    // Length: Full, or Clip 30 / 60 / 90 s (Gio 2026-11-17: ready values, no Duration field)
     function setLength(x, value) {
-      if (value === 'clip') { applyClip(x, x.clipSeconds || CLIP_DEFAULT); return; }
+      var n = parseInt(value, 10);
+      if (n > 0) { if (n !== x.clippedTo) applyClip(x, n); return; }
       if (openId === x.id) stopAudio();
       var full = x.full;
       patchItem('samples', x.id, full ? { key: full.key, url: full.url, duration: full.duration, length: 'full', clippedTo: null } : { length: 'full' });
     }
-    function commitSeconds(x) {
-      var n = parseInt(String(x.clipText != null ? x.clipText : '').trim(), 10);
-      if (x.clipText == null || n === x.clippedTo) return;
-      applyClip(x, n);
-    }
     function overviewSampleItem(s) {
-      var clip = s.length === 'clip';
+      var clip = s.length === 'clip', long = (s.full && s.full.duration) || s.duration;
       return fileItem('samples', Object.assign({}, s, { name: s.duration ? s.name + ' · ' + mmss(s.duration) : s.name }),
         { playing: playing === s.id, onTogglePlay: function () { togglePlay(s); } },
         h(React.Fragment, null,
           h(Z.Input, { id: 'sample-title-' + s.id, 'aria-label': 'Title of ' + s.name, value: sampleTitleOf(s),
             onChange: function (e) { patchItem('samples', s.id, { title: e.target.value }); } }),
           h('div', { className: 'admin-sample-clip' },
-            h(Z.Input, { variant: 'select', id: 'sample-length-' + s.id, label: 'Length', value: clip ? 'clip' : 'full', disabled: s.uploading || locked,
-              onChange: function (e) { setLength(s, e.target.value); } }, opts([['full', 'Full'], ['clip', 'Clip']])),
-            clip ? h(Z.Input, { id: 'sample-seconds-' + s.id, label: 'Duration (s)', inputMode: 'numeric', disabled: s.uploading || locked,
-              value: s.clipText != null ? s.clipText : String(s.clipSeconds || CLIP_DEFAULT),
-              supportText: 'From the start, no fade. Enter to cut again.',
-              onChange: function (e) { patchItem('samples', s.id, { clipText: e.target.value }); },
-              onBlur: function () { commitSeconds(s); },
-              onKeyDown: function (e) { if (e.key === 'Enter') { e.preventDefault(); commitSeconds(s); } } }) : null)));
+            h(Z.Input, { variant: 'select', id: 'sample-length-' + s.id, label: 'Length', value: clip ? String(s.clipSeconds) : 'full',
+              disabled: s.uploading || locked, supportText: clip ? 'The first ' + s.clipSeconds + ' s, no fade.' : null,
+              onChange: function (e) { setLength(s, e.target.value); } },
+              [h('option', { key: 'full', value: 'full' }, 'Full')].concat(CLIP_LENGTHS.map(function (n) {
+                // a clip as long as the file (or longer) would cut nothing
+                return h('option', { key: n, value: String(n), disabled: long ? n >= long : undefined }, 'Clip ' + n + 's');
+              }))))));
     }
     // samples of a line keep the overview order; reorder happens in the overview
     function lineSamples(i) { return f.samples.filter(function (s) { return s.line === i + 1; }); }
