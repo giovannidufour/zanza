@@ -545,6 +545,8 @@ export interface ListingLineProps extends HTMLAttributes<HTMLDivElement> {
   removeLabel?: string;
   /** The sample, below the fields (gap 8). Figma `sample`: uploaded = a FileList with one FileItem, empty = a DropZone (decision 0022). */
   children?: ReactNode;
+  /** Figma boolean `number` + `marker` text: the line number in a Marker before the fields (gap 0). Omit → no marker. */
+  marker?: ReactNode;
 }
 export declare function ListingLine(props: ListingLineProps): JSX.Element;
 
@@ -1242,3 +1244,21 @@ export interface FormSectionNavProps extends HTMLAttributes<HTMLElement> {
   navRef?: { current: HTMLElement | null };
 }
 export declare function FormSectionNav(props: FormSectionNavProps): JSX.Element;
+
+/** Mirrors the Figma component `marker` (page `listing form`, 2026-11-17): a 48px circle that draws the eye to a form block. Decorative (aria-hidden). */
+export interface MarkerProps extends HTMLAttributes<HTMLSpanElement> {
+  /** Figma TEXT `text`: a line number, "€€"… */
+  children?: ReactNode;
+}
+export declare function Marker(props: MarkerProps): JSX.Element;
+
+/** Mirrors the Figma component `price fields` (page `Create`, device=desktop | mobile, 2026-11-17): Marker + Sale type + Price. */
+export interface PriceFieldsProps extends HTMLAttributes<HTMLDivElement> {
+  /** The Marker text. @default "€€" */
+  marker?: ReactNode;
+  /** Sale type select (Input variant select). Desktop: 2 of 8 columns. */
+  saleType?: ReactNode;
+  /** Price Input. Desktop: 2 of 8 columns. */
+  price?: ReactNode;
+}
+export declare function PriceFields(props: PriceFieldsProps): JSX.Element;

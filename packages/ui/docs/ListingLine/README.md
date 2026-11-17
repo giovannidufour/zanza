@@ -26,6 +26,7 @@ One track line of a listing in the admin form: artist, title, "Different spellin
 | `onRemove` | `() => void` |  | Figma `removable=true` (line 2+): shows the remove × in column 8 and narrows the artist to 3 columns. Omit for line 1. |
 | `removeLabel` | `string` |  | Accessible name of the remove button, e.g. "Remove line 2". Default "Remove line". |
 | `children` | `ReactNode` |  | The sample, below the fields (gap 8). Figma `sample`: uploaded = a FileList with one FileItem, empty = a DropZone (decision 0022). |
+| `marker` | `ReactNode` |  | Figma boolean `number` + `marker` text: the line number in a Marker before the fields (gap 0). Omit → no marker. |
 
 `*` required.
 <!-- /api -->

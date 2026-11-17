@@ -457,7 +457,7 @@
 
   // ── Create / edit listing ─────────────────────────────────────────────────
   // Create / Edit listing sections, in form order: [id, heading and section-nav label] (Gio 2026-11-17)
-  var FORM_SECTIONS = [['discogs', 'Discogs'], ['images', 'Images'], ['lines', 'Artist & title'], ['label', 'Label & price'],
+  var FORM_SECTIONS = [['discogs', 'Discogs'], ['images', 'Images'], ['lines', 'Artist & title'], ['label', 'Label'], ['price', 'Price'],
     ['genres', 'Genres & tags'], ['conditions', 'Conditions'], ['description', 'Description'], ['samples', 'Samples']];
   var FORM_SECTION_LABEL = {};
   FORM_SECTIONS.forEach(function (s) { FORM_SECTION_LABEL[s[0]] = s[1]; });
@@ -848,7 +848,7 @@
           f.lines.map(function (l, i) {
             var samples = lineSamples(i);
             // Figma `listing line`: removable = line 2+ (onRemove); the sample is a FileList or a DropZone (0022)
-            return h(Z.ListingLine, { key: l.id,
+            return h(Z.ListingLine, { key: l.id, marker: String(i + 1),
               onRemove: i > 0 ? function () { removeLine(i); } : undefined, removeLabel: 'Remove line ' + (i + 1),
               artist: h(Z.EntityField, { id: 'artist-' + i, label: 'Artist ' + (i + 1), optional: i > 0,
                 placeholder: l.artists.length ? 'Add artist' : (i > 0 ? 'Same as line 1' : 'Search or create'),
@@ -882,9 +882,16 @@
             onChange: function (e) { set({ labelSpelled: e.target.checked }); } }),
           f.labelSpelled ? h(Z.Input, Object.assign({ className: 'span-4', id: 'label-credit', label: 'Label spelled on record' }, bind('labelCredit'))) : null),
         h('div', { className: 'admin-row' },
-          h(Z.Input, Object.assign({ className: 'span-2', id: 'format', label: 'Format', variant: 'select', placeholder: '' }, bind('format')), opts(FORMATS)),
-          h(Z.Input, Object.assign({ className: 'span-2', id: 'section', label: 'Sale type', variant: 'select' }, bind('section')), opts([['sale', 'For sale']].concat(tradeOn !== false || f.section === 'trade' ? [['trade', 'For trade']] : []))),
-          h(Z.Input, Object.assign({ className: 'span-2', id: 'price', label: 'Price', suffix: '€', inputMode: 'decimal', optional: f.section === 'trade' }, bind('price'))))),
+          h(Z.Input, Object.assign({ className: 'span-2', id: 'format', label: 'Format', variant: 'select', placeholder: '' }, bind('format')), opts(FORMATS)))),
+      h(Z.Divider),
+
+      // Gio 2026-11-17: Price is a block of its own, with a "€€" Marker (Figma Create → `price fields`)
+      h('section', sectionProps('price'),
+        h(Z.FormSectionHead, { id: 'section-price-title' }, FORM_SECTION_LABEL['price']),
+        h(Z.PriceFields, {
+          saleType: h(Z.Input, Object.assign({ id: 'section', label: 'Sale type', variant: 'select' }, bind('section')), opts([['sale', 'For sale']].concat(tradeOn !== false || f.section === 'trade' ? [['trade', 'For trade']] : []))),
+          price: h(Z.Input, Object.assign({ id: 'price', label: 'Price', suffix: '€', inputMode: 'decimal', optional: f.section === 'trade' }, bind('price')))
+        })),
       h(Z.Divider),
 
       h('section', sectionProps('genres'),
