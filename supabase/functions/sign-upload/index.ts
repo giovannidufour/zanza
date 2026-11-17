@@ -9,7 +9,8 @@ import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 const ALLOWED_ORIGINS = (Deno.env.get("ADMIN_ORIGINS") ?? "https://store-admin-3k1.pages.dev").split(",").map((s) => s.trim());
 const KINDS: Record<string, { prefix: string; types: Record<string, string>; maxBytes: number }> = {
   photo: { prefix: "photos", types: { "image/webp": "webp", "image/jpeg": "jpg", "image/png": "png" }, maxBytes: 8 * 1024 * 1024 },
-  sample: { prefix: "samples", types: { "audio/mpeg": "mp3" }, maxBytes: 4 * 1024 * 1024 },
+  // sample: up to 30 MB (Gio 2026-11-17: files over 10 MB too); R2 takes a single PUT up to 5 GB
+  sample: { prefix: "samples", types: { "audio/mpeg": "mp3" }, maxBytes: 30 * 1024 * 1024 },
 };
 
 function cors(origin: string | null) {
