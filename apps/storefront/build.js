@@ -246,10 +246,13 @@ const order = new Map(products.map((p, i) => [p, i]));
 const RELATED_COUNT = 10;   // Gio 2026-11-18 (sticky PDP experiment): 10, was 3
 function relatedTo(product) {
   const genres = new Set(product.release.genres || []);
+  // TEST ONLY (Gio 2026-11-18, sticky PDP experiment): always fill the list up to RELATED_COUNT, taking records of
+  // the other section and not available ones after the usual picks. Never merge this to main.
+  const rank = (p) => (p.listing.section === product.listing.section ? 0 : 2) + (p.listing.status === 'available' ? 0 : 1);
   return products
-    .filter(p => p !== product && p.listing.section === product.listing.section && p.listing.status === 'available')
-    .map(p => ({ p, score: (p.release.genres || []).filter(g => genres.has(g)).length }))
-    .sort((a, b) => b.score - a.score || order.get(a.p) - order.get(b.p))
+    .filter(p => p !== product)
+    .map(p => ({ p, rank: rank(p), score: (p.release.genres || []).filter(g => genres.has(g)).length }))
+    .sort((a, b) => a.rank - b.rank || b.score - a.score || order.get(a.p) - order.get(b.p))
     .slice(0, RELATED_COUNT).map(x => x.p);
 }
 for (const product of products) {
