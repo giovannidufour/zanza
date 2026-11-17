@@ -73,6 +73,26 @@ html[data-header-revealing] .pdp-content[data-record-stack] > :is(.pdp-content__
 /* the list is an opaque layer above the record: page ground, so the record disappears under it */
 .pdp-content[data-record-stack] > .pdp-content__related { position: relative; z-index: 1; background: var(--surface-accent); }
 
+/* the "More for sale" title band (top rule + padding 8 + title + the 8 below it) anchors at the same line as the
+   record (small below the visible header) while the cards scroll under it. The component's top rule and top padding
+   move onto the title, so the band is one opaque block; margin-bottom -8 cancels the list gap the band now includes.
+   8 = the component's literal padding/gap (open.md). */
+.pdp-content[data-record-stack] > .pdp-content__related { border-top: 0; padding-top: 0; }
+.pdp-content[data-record-stack] > .pdp-content__related > .zz-related-products__title {
+  position: sticky;
+  top: calc(var(--site-header-visible, 0px) + var(--small));
+  z-index: 1;
+  background: var(--surface-accent);
+  box-shadow: 0 calc(-1 * var(--small)) 0 var(--surface-accent);   /* the small gap above it is opaque too: cards never show through */
+  border-top: 1px solid var(--border-divider-strong);
+  padding: 8px 0;
+  margin-bottom: -8px;
+}
+html[data-header-revealing] .pdp-content[data-record-stack] > .pdp-content__related > .zz-related-products__title { transition: top 200ms ease-out; }
+@media (prefers-reduced-motion: reduce) { html[data-header-revealing] .pdp-content[data-record-stack] > .pdp-content__related > .zz-related-products__title { transition: none; } }
+/* keyboard focus on a card never lands under the band: the page scrolls it below (--pdp-related-band set by site.js) */
+html:has(.pdp-content[data-record-stack]) { scroll-padding-top: calc(var(--site-header-visible, 0px) + var(--small) + var(--pdp-related-band, 0px)); }
+
 /* Figma: button layout=fill, size large (desktop and mobile) */
 .pdp-content__cta { width: 100%; }
 /* Reserved note under the CTA (proposal, Figma PDP page → `reserved + notify me (proposal)`, gap 8 = small) */
@@ -94,4 +114,7 @@ html[data-header-revealing] .pdp-content[data-record-stack] > :is(.pdp-content__
   .pdp-content[data-record-stack] { grid-template-rows: none; }
   .pdp-content[data-record-stack] > .pdp-content__info, .pdp-content[data-record-stack] > .pdp-content__actions { grid-row: auto; position: static; }
   .pdp-content[data-record-stack] > .pdp-content__gallery { position: static; overscroll-behavior: auto; }
+  .pdp-content[data-record-stack] > .pdp-content__related { border-top: 1px solid var(--border-divider-strong); padding-top: 8px; }
+  .pdp-content[data-record-stack] > .pdp-content__related > .zz-related-products__title { position: static; box-shadow: none; border-top: 0; padding: 0; margin-bottom: 0; }
+  html:has(.pdp-content[data-record-stack]) { scroll-padding-top: 0; }
 }

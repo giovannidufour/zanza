@@ -401,6 +401,8 @@
       frame = 0;
       var height = Math.max.apply(null, parts.map(function (el) { return el.offsetHeight; }));
       content.style.setProperty('--pdp-record-height', Math.ceil(height) + 'px');
+      var band = related.querySelector('.zz-related-products__title');
+      if (band) document.documentElement.style.setProperty('--pdp-related-band', Math.ceil(band.offsetHeight) + 'px');
       content.setAttribute('data-record-stack', '');
     }
     function schedule() { if (!frame) frame = window.requestAnimationFrame(measure); }
@@ -415,7 +417,7 @@
     measure();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
     var ro = window.ResizeObserver ? new ResizeObserver(schedule) : null;
-    if (ro) parts.forEach(function (el) { ro.observe(el); });
+    if (ro) parts.concat(related.querySelector('.zz-related-products__title') || []).forEach(function (el) { ro.observe(el); });
     window.addEventListener('resize', schedule);
     content.addEventListener('focusin', onFocusIn);
     recordCleanup = function () {
