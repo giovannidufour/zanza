@@ -7,7 +7,7 @@ const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 
 const { TradeActions } = require('./trade.js');
-const { SECTION_LABEL, tagsOf, tagLinksOf, formatPrice, productName, productNameLinked, releaseInfoLinked, gradingProps, SiteHeader, sampleAttrs, ProductCardFor, imageOf, IMAGE_SIZES } = require('./shell.js');
+const { SECTION_LABEL, tagsOf, tagLinksOf, formatPrice, productName, productNameLinked, smallImageUrl, releaseInfoLinked, gradingProps, SiteHeader, sampleAttrs, ProductCardFor, imageOf, IMAGE_SIZES } = require('./shell.js');
 
 function breadcrumbItems(product, url) {
   const { listing, release } = product;
@@ -33,6 +33,17 @@ function Pdp({ product, related = [], site, url }) {
         className: 'pdp-content__gallery',
         images: [release.cover].concat(copy.photos).filter(Boolean).map((src, i) => imageOf(product, src, url, { sizes: IMAGE_SIZES.gallery, alt: i === 0 ? productName(release) : '' }))
       }),
+      // EXPERIMENT (Gio 2026-11-18, desktop, not in Figma): "back to this record" card, docked at the bottom of the
+      // anchored gallery; it shows once "More for sale" covers the record (scripts/site.js) and scrolls back to it.
+      related.length ? h('div', { className: 'pdp-content__back', 'data-record-back': '' },
+        h('button', { type: 'button', className: 'pdp-back-card', 'aria-label': `Back to ${productName(release)}` },
+          release.cover ? h('img', { className: 'pdp-back-card__thumb', src: smallImageUrl(product, release.cover, 48, url), alt: '' }) : null,
+          h('span', { className: 'pdp-back-card__text' },
+            h('span', { className: 'pdp-back-card__name body-small' }, productName(release)),
+            h('span', { className: 'pdp-back-card__price body-small' }, listing.section === 'sale' ? formatPrice(listing.price) : 'Trade only')),
+          // chevron up: icon-chevron-down-small-thin turned up (1px non-scaling stroke, like the icon set)
+          h('svg', { className: 'pdp-back-card__icon', width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', 'aria-hidden': 'true' },
+            h('path', { d: 'M6 15 12 9 18 15', stroke: 'currentColor', strokeWidth: 1, vectorEffect: 'non-scaling-stroke', strokeLinecap: 'round', strokeLinejoin: 'round' })))) : null,
       h(Z.ProductInfo, {
         className: 'pdp-content__info',
         title: productNameLinked(product, url),

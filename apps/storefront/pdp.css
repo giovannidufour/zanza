@@ -70,10 +70,48 @@ body[data-player-open] .pdp-content[data-record-stack] > .pdp-content__gallery {
    gallery and record step down with it (same pattern and placeholder timing as the PLP filters, plp.css) */
 html[data-header-revealing] .pdp-content[data-record-stack] > :is(.pdp-content__gallery, .pdp-content__info, .pdp-content__actions) { transition: top 200ms ease-out; }
 @media (prefers-reduced-motion: reduce) { html[data-header-revealing] .pdp-content[data-record-stack] > * { transition: none; } }
-/* TEMPORARY (Gio 2026-11-18, test): over a gallery photo the cursor is a red up arrow, the hint that a click scrolls
-   back to the top (scripts/site.js). Placeholder: not a token colour, not in Figma; stroke-based like the icon set. */
-.pdp-content[data-record-stack] > .pdp-content__gallery .zz-gallery__item {
-  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32' fill='none' stroke='%23ff0000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 28V4M6 14 16 4l10 10'/%3E%3C/svg%3E") 16 4, n-resize;
+/* EXPERIMENT "back to this record" card (Gio 2026-11-18, not in Figma: test drawing). A layer on the gallery's
+   grid area, anchored like it and as tall as it (--pdp-gallery-height, site.js); the card docks small inside its
+   bottom edge. Hidden until "More for sale" reaches its anchor (data-visible, site.js), so the record is covered.
+   Card = outlined box on the page ground like the site's buttons: cover 48 | name + price (body-small) | chevron up. */
+.pdp-content__back { display: none; }
+.pdp-content[data-record-stack] > .pdp-content__back {
+  display: block;
+  grid-column: 1 / span 4;
+  grid-row: 1 / span 2;
+  position: sticky;
+  top: calc(var(--site-header-visible, 0px) + var(--small));
+  height: var(--pdp-gallery-height, 0px);
+  z-index: 2;
+  pointer-events: none;   /* the layer never blocks the gallery: only the card takes clicks */
+}
+html[data-header-revealing] .pdp-content[data-record-stack] > .pdp-content__back { transition: top 200ms ease-out; }
+.pdp-back-card {
+  position: absolute;
+  left: var(--small); right: var(--small); bottom: var(--small);
+  display: flex; align-items: center; gap: var(--small);
+  padding: var(--small);
+  margin: 0;
+  border: 1px solid var(--border-divider-strong);
+  background: var(--surface-accent);
+  color: var(--text-strong);
+  font: inherit; text-align: left;
+  cursor: pointer;
+  pointer-events: auto;
+  /* hidden: faded and 8 lower; TODO motion: 200ms ease-out placeholder, as the header */
+  opacity: 0; transform: translateY(var(--small)); visibility: hidden;
+  transition: opacity 200ms ease-out, transform 200ms ease-out, visibility 0s linear 200ms;
+}
+.pdp-content__back[data-visible] .pdp-back-card { opacity: 1; transform: none; visibility: visible; transition: opacity 200ms ease-out, transform 200ms ease-out; }
+.pdp-back-card:hover { background-image: linear-gradient(var(--surface-hover), var(--surface-hover)); }   /* opaque: hover tint over the ground */
+.pdp-back-card:focus-visible { outline: auto; }   /* browser ring: no focus token yet */
+.pdp-back-card__thumb { flex: 0 0 auto; width: 48px; height: 48px; object-fit: cover; display: block; }
+.pdp-back-card__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.pdp-back-card__name { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pdp-back-card__icon { flex: 0 0 auto; }
+@media (prefers-reduced-motion: reduce) {
+  .pdp-back-card, .pdp-content__back[data-visible] .pdp-back-card { transition: none; transform: none; }
+  html[data-header-revealing] .pdp-content[data-record-stack] > .pdp-content__back { transition: none; }
 }
 /* the list is an opaque layer above the record: page ground, so the record disappears under it */
 .pdp-content[data-record-stack] > .pdp-content__related { position: relative; z-index: 1; background: var(--surface-accent); }
@@ -119,6 +157,7 @@ html:has(.pdp-content[data-record-stack]) { scroll-padding-top: calc(var(--site-
   .pdp-content[data-record-stack] { grid-template-rows: none; }
   .pdp-content[data-record-stack] > .pdp-content__info, .pdp-content[data-record-stack] > .pdp-content__actions { grid-row: auto; position: static; }
   .pdp-content[data-record-stack] > .pdp-content__gallery { position: static; overscroll-behavior: auto; }
+  .pdp-content[data-record-stack] > .pdp-content__back { display: none; }
   .pdp-content[data-record-stack] > .pdp-content__related { border-top: 1px solid var(--border-divider-strong); padding-top: 8px; }
   .pdp-content[data-record-stack] > .pdp-content__related > .zz-related-products__title { position: static; box-shadow: none; border-top: 0; padding: 0; margin-bottom: 0; }
   html:has(.pdp-content[data-record-stack]) { scroll-padding-top: 0; }
