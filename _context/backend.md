@@ -91,6 +91,17 @@ available ──► sold / traded diretto (venduto fuori dal sito: fiera, Discog
 - **Bulk** = `admin_bulk_status(ids, publish | unpublish | archive | restore)`, una transazione; ogni copia passa solo se la transizione è ammessa, le altre tornano in `skipped`. L'admin offre Undo (azione inversa sugli id cambiati).
 - **Pulizia R2**: `media_trash` raccoglie anche le foto tolte nel form e i sample rimossi o sostituiti. La Edge Function `purge-media` (chiamata dall'admin all'apertura di Listings) cancella da R2 solo le chiavi in cestino da più di 7 giorni e non più usate da nessun listing o sample. Gli upload abbandonati prima del salvataggio non sono nel DB: restano su R2.
 
+### Checkout: vince chi paga per primo (decisione 0116, migrazione 0028, 2026-11-18)
+Sostituisce l'hold qui sotto. **Avviare il checkout non blocca niente**: il disco resta available per tutti mentre qualcuno è su Stripe.
+1. `create-checkout`: `checkout_items(ids)` (tutti available o niente, nessun update) → minimo e spedizione → sessione Stripe con `payment_intent_data.capture_method = manual` (solo autorizzazione) → `checkout_open(session, ids)` (tabelle `checkout_sessions` + `checkout_session_items`: un disco può stare in più sessioni).
+2. `stripe-webhook` su `completed` / `async_payment_succeeded`: `checkout_claim` blocca le righe e fa tutto o niente.
+   - Preso → ordine + sold, **capture** del pagamento, `checkout_rivals` → le altre sessioni aperte con quei dischi vengono fatte scadere su Stripe. Email come prima.
+   - Perso (venduto un attimo prima) → niente venduto, sessione `lost`, **cancel dell'autorizzazione** (rimborso solo per metodi già addebitati), email al buyer "not charged" + nota a Gio.
+3. Pagina thanks: chiede `checkout_result(session)` (anon: solo `paid` / `lost` / `pending`); su `lost` dice "Order not completed" e rimette i dischi nel bag.
+4. Ritorno senza pagare (Back, cancel_url, bag riaperto): la sessione viene fatta scadere su Stripe (PR #171).
+5. Collisioni: `select count(*) from checkout_sessions where status = 'lost'`. Se diventano frequenti → altra strategia (Embedded Checkout + heartbeat).
+Gli hold creati prima della 0028 finiscono da soli entro 33 min (`checkout_release` resta per loro).
+
 ### Checkout con hold
 Regola (Gio 2026-11-12): **il bag non blocca mai niente**. Un disco è bloccato solo mentre qualcuno è dentro Stripe Checkout (max 30 min) e per gli altri si vede **Reserved**, non sold: resta in PLP, il bottone apre la spiegazione e "Notify me".
 1. Il sito chiama `create-checkout` con gli id dei listing.
