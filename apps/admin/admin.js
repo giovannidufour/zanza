@@ -115,9 +115,9 @@
   async function uploadSizes(key, sizes) {
     for (var i = 0; i < sizes.length; i++) await upload('photo', sizes[i].blob, { of: key, width: sizes[i].width });
   }
-  async function uploadPhoto(file) {
+  async function uploadPhoto(file, onProgress) {
     var photo = await toWebp(file);
-    var key = await upload('photo', photo.blob);
+    var key = await upload('photo', photo.blob, null, onProgress);
     // a copy that fails does not lose the photo: the shop then shows the full photo there, Settings → Photo sizes makes it later
     try { await uploadSizes(key, photo.sizes); } catch (e) { console.warn('photo sizes not uploaded for ' + key + ': ' + e.message); }
     return key;
@@ -145,34 +145,51 @@
     for (var i = 0; i < f32.length; i++) { var v = Math.max(-1, Math.min(1, f32[i])); out[i] = v < 0 ? v * 0x8000 : v * 0x7fff; }
     return out;
   }
-  async function toSampleMp3(file) {
+  // → { blob, converted, note }: note says why a high-bitrate file goes up as it is (shown to Gio, never silent)
+  // onConvert(0–1) while encoding
+  async function toSampleMp3(file, onConvert) {
+    var same = function (note) { return { blob: file, converted: false, note: note || null }; };
     var Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-    if (!Ctx) return file;
+    if (!Ctx) return same('this browser cannot convert audio');
     var audio;
     // decoded at 44.1 kHz whatever the file has, so the encoder always gets a rate it supports
     try { audio = await new Ctx(2, 1, 44100).decodeAudioData(await file.arrayBuffer()); }
-    catch (e) { return file; }   // the browser cannot read it: upload it as it is
+    catch (e) { return same('the browser could not read it to convert it'); }
     var kbps = file.size * 8 / audio.duration / 1000;
-    if (!(kbps > SAMPLE_MAX_KBPS)) return file;
+    if (!(kbps > SAMPLE_MAX_KBPS)) return same();
     var lame;
-    try { lame = await loadLame(); } catch (e) { return file; }   // no encoder (offline, CDN down): the file as it is
+    try { lame = await loadLame(); } catch (e) { return same('the mp3 encoder did not load'); }
     var channels = Math.min(2, audio.numberOfChannels);
     var left = toInt16(audio.getChannelData(0)), right = channels > 1 ? toInt16(audio.getChannelData(1)) : null;
     var enc = new lame.Mp3Encoder(channels, audio.sampleRate, SAMPLE_KBPS), parts = [], STEP = 1152;
     for (var i = 0; i < left.length; i += STEP) {
       var b = right ? enc.encodeBuffer(left.subarray(i, i + STEP), right.subarray(i, i + STEP)) : enc.encodeBuffer(left.subarray(i, i + STEP));
       if (b.length) parts.push(new Uint8Array(b));
-      if (i % (STEP * 400) === 0) await new Promise(function (r) { setTimeout(r, 0); });   // keep the page responsive
+      if (i % (STEP * 400) === 0) {   // keep the page responsive, report progress
+        if (onConvert) onConvert(i / left.length);
+        await new Promise(function (r) { setTimeout(r, 0); });
+      }
     }
     var end = enc.flush();
     if (end.length) parts.push(new Uint8Array(end));
     var out = new Blob(parts, { type: 'audio/mpeg' });
-    return out.size < file.size ? out : file;
+    return out.size < file.size ? { blob: out, converted: true, note: null } : same();
   }
-  // one file of the form or of Bulk → its storage key
-  function uploadFile(kind, file) {
-    return kind === 'photo' ? uploadPhoto(file) : toSampleMp3(file).then(function (blob) { return upload('sample', blob); });
+  // one file of the form or of Bulk → its storage key. onState({ phase: 'converting' | 'uploading', value: 0–100 })
+  // drives the file's ProgressBar: a sample that is converted counts 0–60 converting, 60–100 uploading; anything else
+  // 0–100 uploading. onNote(text) when a high-bitrate sample goes up as it is.
+  function uploadFile(kind, file, onState, onNote) {
+    var report = onState || function () {};
+    report({ phase: kind === 'sample' ? 'converting' : 'uploading', value: 0 });
+    if (kind === 'photo') return uploadPhoto(file, function (f) { report({ phase: 'uploading', value: Math.round(f * 100) }); });
+    return toSampleMp3(file, function (f) { report({ phase: 'converting', value: Math.round(f * 60) }); }).then(function (r) {
+      if (r.note && onNote) onNote(file.name + ' stays at its original bitrate (not 128 kbps): ' + r.note + '.');
+      var base = r.converted ? 60 : 0;
+      report({ phase: 'uploading', value: base });
+      return upload('sample', r.blob, null, function (f) { report({ phase: 'uploading', value: Math.round(base + f * (100 - base)) }); });
+    });
   }
+  var PHASE_TEXT = { converting: 'converting to 128 kbps…', uploading: 'uploading…' };
   // calls an Edge Function; its own { error } text wins over the generic "non-2xx" message
   async function invoke(name, body) {
     var res = await sb.functions.invoke(name, { body: body });
@@ -183,13 +200,25 @@
     }
     return res.data;
   }
-  // sized = { of: photo key, width } for a smaller copy of that photo (decision 0108)
-  async function upload(kind, blob, sized) {
+  // PUT with upload progress (fetch has none): onProgress(0–1)
+  function putWithProgress(url, blob, onProgress) {
+    return new Promise(function (resolve, reject) {
+      var x = new XMLHttpRequest();
+      x.open('PUT', url);
+      x.setRequestHeader('Content-Type', blob.type);
+      if (onProgress) x.upload.onprogress = function (e) { if (e.lengthComputable) onProgress(e.loaded / e.total); };
+      x.onload = function () { resolve({ ok: x.status >= 200 && x.status < 300, status: x.status }); };
+      x.onerror = function () { reject(new Error('network')); };
+      x.send(blob);
+    });
+  }
+  // sized = { of: photo key, width } for a smaller copy of that photo (decision 0108); onProgress(0–1) of this file
+  async function upload(kind, blob, sized, onProgress) {
     var signed = await invoke('sign-upload', Object.assign({ kind: kind, contentType: blob.type, size: blob.size }, sized || {}));
     // a sign-upload older than 0108 ignores { of, width } and signs a random key: upload nothing then
     if (sized && signed.key !== IMG.sizedKey(sized.of, sized.width)) throw new Error('Photo sizes need the new sign-upload function (decision 0108).');
     var put;
-    try { put = await fetch(signed.uploadUrl, { method: 'PUT', headers: { 'Content-Type': blob.type }, body: blob }); }
+    try { put = await putWithProgress(signed.uploadUrl, blob, onProgress); }
     catch (e) { throw new Error('Storage refused the upload without details (R2 sends no CORS headers on errors): check the R2 keys and the bucket CORS policy.'); }
     if (!put.ok) throw new Error('Upload refused by storage (' + put.status + ').');
     return signed.key;
@@ -498,8 +527,9 @@
           var item = { id: nextId(), key: null, name: file.name, url: URL.createObjectURL(file), uploading: true, line: line === undefined ? null : line };
           var listName = kind === 'photo' ? 'images' : 'samples';
           set(function (cur) { var p = {}; p[listName] = cur[listName].concat([item]); return p; });
-          uploadFile(kind, file)
-            .then(function (key) { patchItem(listName, item.id, { key: key, uploading: false }); })
+          uploadFile(kind, file, function (st) { patchItem(listName, item.id, { phase: st.phase, progress: st.value }); },
+            function (note) { setMessage({ error: true, text: note }); })
+            .then(function (key) { patchItem(listName, item.id, { key: key, uploading: false, phase: null, progress: null }); })
             .catch(function (err) {
               set(function (cur) { var p = {}; p[listName] = cur[listName].filter(function (x) { return x.id !== item.id; }); return p; });
               setMessage({ error: true, text: file.name + ': ' + err.message });
@@ -576,11 +606,15 @@
       setMessage({ error: false, text: 'Restored as ' + (STATUS_LABEL[done.to] || done.to).toLowerCase() + '.' });
     }
 
+    // while it uploads (or converts, samples): the phase after the name and a ProgressBar under the row (Gio 2026-11-17,
+    // decision 0108). Real progress: encoding frames, then bytes sent.
     function fileItem(listName, x, extra, children) {
+      var bar = x.uploading ? h(Z.ProgressBar, { key: 'progress', value: x.progress || 0,
+        'aria-label': (x.phase === 'converting' ? 'Converting ' : 'Uploading ') + x.name }) : null;
       return h(Z.FileItem, Object.assign({
-        key: x.id, name: x.uploading ? x.name + ' · uploading…' : x.name,
+        key: x.id, name: x.uploading ? x.name + ' · ' + (PHASE_TEXT[x.phase] || PHASE_TEXT.uploading) : x.name,
         onRemove: removeFrom(listName, x.id)
-      }, extra), children);
+      }, extra), children || bar ? h(React.Fragment, null, children || null, bar) : null);
     }
     function sampleItem(s) {
       return fileItem('samples', s, { playing: playing === s.id, onTogglePlay: function () { togglePlay(s); } });
@@ -2284,6 +2318,12 @@
     return function (fn) { return new Promise(function (resolve, reject) { queue.push({ fn: fn, resolve: resolve, reject: reject }); next(); }); };
   }
   var bulkUploads = limiter(3), bulkReads = limiter(1);
+  // a record's files still going up, as one number for its ProgressBar (files waiting their turn count as 0); null = none
+  function uploadProgressOf(r) {
+    var up = r.photos.concat(r.samples).filter(function (x) { return x.uploading; });
+    if (!up.length) return null;
+    return Math.round(up.reduce(function (a, x) { return a + (x.progress || 0); }, 0) / up.length);
+  }
   function photoSort(a, b) {
     function rank(p) { var n = parseInt(p.role, 10); return isNaN(n) ? 2e6 : n; }
     return rank(a) - rank(b) || a.name.localeCompare(b.name);
@@ -2291,10 +2331,11 @@
   function filesText(r) {
     var photos = r.photos.length, sides = r.samples.map(function (x) { return /^[ab]\d*$/.test(x.role) ? x.role.toUpperCase() : 'extra'; });
     var up = r.photos.concat(r.samples).filter(function (x) { return x.uploading; }).length;
+    var converting = r.samples.filter(function (x) { return x.uploading && x.phase === 'converting'; }).length;
     var failed = r.photos.concat(r.samples).filter(function (x) { return x.error; }).length;
     return [photos ? photos + (photos === 1 ? ' photo' : ' photos') : 'no photos',
             sides.length ? (sides.length === 1 ? 'sample ' : 'samples ') + sides.join(', ') : 'no samples',
-            r.prefix, up ? 'uploading ' + up : null, failed ? failed + ' not uploaded' : null].filter(Boolean).join(' · ');
+            r.prefix, converting ? 'converting ' + converting + ' to 128 kbps' : null, up - converting ? 'uploading ' + (up - converting) : null, failed ? failed + ' not uploaded' : null].filter(Boolean).join(' · ');
   }
   function bulkWarnings(r) {
     var w = [], seen = {};
@@ -2304,7 +2345,7 @@
       else seen[x.role] = x.name;
     });
     if (!r.photos.length) w.push('No photos: the draft has none.');
-    r.photos.concat(r.samples).forEach(function (x) { if (x.error) w.push(x.name + ': ' + x.error); });
+    r.photos.concat(r.samples).forEach(function (x) { if (x.error) w.push(x.name + ': ' + x.error); if (x.note) w.push(x.note); });
     return w.join(' ');
   }
   var BULK_STATUS = {
@@ -2351,7 +2392,8 @@
     }
     function startUpload(recId, item) {
       bulkUploads(function () {
-        return uploadFile(item.kind, item.file);
+        return uploadFile(item.kind, item.file, function (st) { patchFile(recId, item.id, { phase: st.phase, progress: st.value }); },
+          function (note) { patchFile(recId, item.id, { note: note }); });
       }).then(function (key) { patchFile(recId, item.id, { key: key, uploading: false }); })
         .catch(function (err) { patchFile(recId, item.id, { uploading: false, error: err.message }); });
     }
@@ -2577,7 +2619,7 @@
       })) : null,
       records.length ? h('ul', { className: 'admin-memo__items', 'aria-label': 'Records found' }, records.map(function (x, i) {
         var warn = [bulkWarnings(x), x.saveError ? 'Not saved: ' + x.saveError : ''].filter(Boolean).join(' ');
-        return h(Z.BulkRecord, { key: x.id, state: x.state, progress: x.progress,
+        return h(Z.BulkRecord, { key: x.id, state: x.state, progress: x.progress, uploadProgress: uploadProgressOf(x),
           title: x.release && x.state !== 'skipped' ? x.release.title : x.prefix,
           meta: x.release && x.state !== 'skipped' ? x.release.meta : undefined,
           files: filesText(x),
