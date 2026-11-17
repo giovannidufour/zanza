@@ -71,13 +71,65 @@ function creditNodes(text, artists, url, k) {
   out.push(entityLink(url, 'artist', artists[artists.length - 1], rest, `${k}-last`));
   return out;
 }
-// the product name with the artists as links; a custom title stays plain text (no credits to link).
+// a custom title with the release's artists as links (decision 0111): each artist entity is found by its name, and
+// a line's printed credit by its text (the credit of a single artist; a shared credit cut at its join texts as in
+// creditNodes). Whole words, case-insensitive, longest first, each artist once; the rest stays text (`plain`).
+function customTitleNodes(title, release, url, plain) {
+  const found = [];
+  const add = (text, ref) => { const t = String(text || '').trim(); if (t && ref) found.push({ text: t, ref }); };
+  linesOf(release).forEach((l) => {
+    const artists = lineArtists(l);
+    artists.forEach((a) => add(a.name, a));
+    if (artists.length === 1) add(l.artist, artists[0]);
+    else if (artists.length > 1 && l.artist) {
+      let rest = l.artist;
+      artists.forEach((a, i) => {
+        const join = (a.join || '').trim();
+        const at = i < artists.length - 1 && join ? rest.toLowerCase().indexOf(' ' + join.toLowerCase() + ' ') : -1;
+        if (i === artists.length - 1) add(rest, a);
+        else if (at > 0) { add(rest.slice(0, at), a); rest = rest.slice(at + join.length + 2); }
+      });
+    }
+  });
+  found.sort((a, b) => b.text.length - a.text.length);
+  const lower = title.toLowerCase();
+  const isWord = (c) => !!c && /[\p{L}\p{N}]/u.test(c);
+  const taken = [];   // [start, end, ref]
+  const linked = new Set();
+  found.forEach(({ text, ref }) => {
+    if (linked.has(ref.slug)) return;
+    const t = text.toLowerCase();
+    for (let at = lower.indexOf(t); at >= 0; at = lower.indexOf(t, at + 1)) {
+      const end = at + t.length;
+      if (isWord(title[at - 1]) || isWord(title[end])) continue;
+      if (taken.some(([s, e]) => at < e && end > s)) continue;
+      taken.push([at, end, ref]); linked.add(ref.slug); break;
+    }
+  });
+  if (!taken.length) return plain(title, 'p');
+  taken.sort((a, b) => a[0] - b[0]);
+  // the separators around an artist (" - ", " / ", " & ") stay text, as in the release name
+  const text = (seg, k) => {
+    const m = /^([\s\-–—\/&,.:]*)([\s\S]*?)([\s\-–—\/&,.:]*)$/.exec(seg);
+    return [m[1], m[2] ? plain(m[2], k) : '', m[3]].filter((x) => x !== '');
+  };
+  const out = [];
+  let pos = 0;
+  taken.forEach(([s, e, ref], i) => {
+    if (s > pos) out.push(...text(title.slice(pos, s), `p${i}`));
+    out.push(entityLink(url, 'artist', ref, title.slice(s, e), `a${i}`));
+    pos = e;
+  });
+  if (pos < title.length) out.push(...text(title.slice(pos), 'p-last'));
+  return out;
+}
+// the product name with the artists as links (in a custom title too, decision 0111).
 // pdpHref (cards only, decision 0040): the record title part links to the product page. It is out of the tab order:
 // the card's cover link (named by the whole title) is the keyboard / screen reader way in.
 function productNameLinked(product, url, pdpHref) {
   const { listing, release } = product;
   const toPdp = (text, k) => pdpHref ? h('a', { key: k, className: 'site-inline-link', href: pdpHref, tabIndex: -1 }, text) : text;
-  if (listing.custom_title) return toPdp(productName(release), 'p');
+  if (listing.custom_title) return customTitleNodes(productName(release), release, url, toPdp);
   const lines = linesOf(release);
   const first = lines[0];
   const credit = (l, i) => creditNodes(l.artist || first.artist, l.artist ? lineArtists(l) : lineArtists(first), url, `a${i}`);

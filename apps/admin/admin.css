@@ -46,6 +46,9 @@ h1, h2, p { margin: 0; }
 .admin-page--edit > .admin-main, .admin-page--edit > .admin-side { position: relative; min-height: 0; overflow-y: auto; margin: -4px -4px 0; padding: 4px 4px 24px; }
 
 .admin-section { display: flex; flex-direction: column; gap: 16px; }
+/* Figma Create → `custom title` (0111): field, then From Discogs at its own width, gap 16 */
+.admin-custom-title { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+.admin-custom-title > :first-child { align-self: stretch; }
 .admin-stack { display: flex; flex-direction: column; gap: 24px; }           /* Figma: Frame 1 / list, gap 24 */
 
 .admin-row { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 16px; align-items: start; }

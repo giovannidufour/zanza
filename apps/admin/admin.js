@@ -636,6 +636,25 @@
       setFetching(false);
     }
 
+    // From Discogs (0111): Custom title = the release as Discogs titles it, "Artist - Title" (the artist as printed).
+    // Only the title changes; the shop links the release's artists found in it.
+    var tt = useState(false), titling = tt[0], setTitling = tt[1];
+    async function titleFromDiscogs() {
+      var id = discogsId(fRef.current.discogs);
+      if (id === null || titling) return;
+      setTitling(true);
+      try {
+        var d = await invoke('discogs-lookup', { releaseId: id });
+        var title = [d.artistCredit || d.artist, d.title].filter(Boolean).join(' - ');
+        if (!title) throw new Error('the release has no title');
+        set({ customTitle: title });
+        setMessage({ error: false, text: 'Custom title from Discogs: ' + title + '.' });
+      } catch (err) {
+        setMessage({ error: true, text: 'Discogs: ' + err.message });
+      }
+      setTitling(false);
+    }
+
     // manual status changes (admin_set_status): sold elsewhere, held for someone, unpublished, undo
     var nt = useState(''), statusNote = nt[0], setStatusNote = nt[1];
     async function setStatus(status) {
@@ -744,8 +763,12 @@
       h('h1', { className: 'label-extra-large' }, isNew ? 'Create listing' : 'Edit listing'),
 
       h('section', { className: 'admin-section' },
-        h(Z.Input, Object.assign({ id: 'custom-title', label: 'Custom title', optional: true,
-          supportText: 'Replaces "Artist - Title" in the shop.' }, bind('customTitle'))),
+        // Figma Create → `custom title` (0111): From Discogs under the field, only while Discogs match holds a release
+        h('div', { className: 'admin-custom-title' },
+          h(Z.Input, Object.assign({ id: 'custom-title', label: 'Custom title', optional: true,
+            supportText: 'Replaces "Artist - Title" in the shop. Artist names in it link to their records.' }, bind('customTitle'))),
+          discogsId(f.discogs) !== null ? h(Z.Button, { hierarchy: 'secondary', disabled: locked || titling,
+            'aria-busy': titling || undefined, onClick: titleFromDiscogs }, 'From Discogs') : null),
         h(Z.Input, Object.assign({ id: 'discogs', label: 'Discogs match', optional: true, variant: 'search',
           placeholder: 'Release URL or number', supportText: errors.discogs ? undefined : 'Paste the release link, then Fetch Discogs.' }, bind('discogs'))),
         // Figma 2104:20728: secondary button right under Discogs match (gap 16)
