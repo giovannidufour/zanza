@@ -414,13 +414,15 @@
       var over = bottom + gap - related.getBoundingClientRect().top;
       if (over > 0) window.scrollBy(0, -over);
     }
-    // a click on a gallery photo scrolls smoothly back to the top of the page (Gio 2026-11-18). Mouse shortcut only:
+    // a click on a gallery photo scrolls smoothly back to the top of the page, and the gallery to its first photo (Gio 2026-11-18). Mouse shortcut only:
     // the cursor stays the default arrow (no link look), keyboard users have Home. Desktop only (anchored layout).
     function onGalleryClick(e) {
       if (!e.target.closest || !e.target.closest('.pdp-content__gallery .zz-gallery__item')) return;
       if (getComputedStyle(parts[0]).position !== 'sticky') return;
       var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+      var g = e.target.closest('.pdp-content__gallery');   // the gallery goes back to its first photo too, together
+      if (g.scrollTo) g.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }); else g.scrollTop = 0;
     }
     measure();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
