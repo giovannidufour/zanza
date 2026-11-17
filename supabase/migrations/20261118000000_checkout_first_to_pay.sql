@@ -105,7 +105,7 @@ begin
      and not (public.effective_status(l.status, l.reserved_until) = 'available'
               or (l.status = 'reserved' and l.stripe_session_id = p_session));
   if (select count(*) from public.listings where id = any (v_ids)) <> array_length(v_ids, 1) then
-    v_lost := coalesce(v_lost, '{}') || '(deleted)';
+    v_lost := coalesce(v_lost, '{}') || '(deleted)'::text;
   end if;
   if v_lost is not null then
     insert into public.checkout_sessions (session_id, status, lost, ended_at) values (p_session, 'lost', v_lost, now())
