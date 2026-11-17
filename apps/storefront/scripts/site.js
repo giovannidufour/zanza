@@ -384,8 +384,8 @@
   }
 
   /* -- PDP sticky record (EXPERIMENT, pdp.css data-record-stack) ---------
-     --pdp-record-height = the taller of info and actions (row 1 keeps the height it had before they spanned 2 rows);
-     --pdp-record-top = the record's top in the window at scroll 0 (where it stays still). Focus moving into a record
+     --pdp-record-height = the taller of info and actions (row 1 keeps the height it had before they spanned 2 rows).
+     Focus moving into a record
      covered by the list scrolls the page back until the record shows (WCAG 2.4.11, focus not obscured). */
   var recordCleanup = null;
   function initRecordStack() {
@@ -400,9 +400,7 @@
     function measure() {
       frame = 0;
       var height = Math.max.apply(null, parts.map(function (el) { return el.offsetHeight; }));
-      var top = content.getBoundingClientRect().top + window.scrollY + (parseFloat(getComputedStyle(content).paddingTop) || 0);
       content.style.setProperty('--pdp-record-height', Math.ceil(height) + 'px');
-      content.style.setProperty('--pdp-record-top', Math.round(top) + 'px');
       content.setAttribute('data-record-stack', '');
     }
     function schedule() { if (!frame) frame = window.requestAnimationFrame(measure); }
