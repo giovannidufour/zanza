@@ -31,7 +31,7 @@ body[data-player-open] .pdp-content__gallery { --zz-gallery-max-height: calc(100
 .pdp-content__actions { grid-column: 9 / span 4; grid-row: 1; }
 
 /* EXPERIMENT (Gio 2026-11-18, desktop only, not in Figma): gallery and record (info + actions) move up with the page
-   until they reach medium-small (16px) below the visible part of the site header (the top of the window when it is
+   until they reach small (8px) below the visible part of the site header (the top of the window when it is
    hidden), then stay anchored there; "More for sale" starts
    where it always did, keeps scrolling, covers the record, and uncovers it on the way back. The gallery, anchored,
    scrolls only inside, under the pointer (overscroll-behavior: its end does not hand the wheel to the page); its
@@ -47,15 +47,15 @@ body[data-player-open] .pdp-content__gallery { --zz-gallery-max-height: calc(100
 .pdp-content[data-record-stack] > .pdp-content__actions {
   grid-row: 1 / span 2;
   position: sticky;
-  top: min(calc(var(--site-header-visible, 0px) + var(--medium-small)), calc(100dvh - var(--pdp-record-height, 0px) - var(--page-margin-desktop)));
+  top: min(calc(var(--site-header-visible, 0px) + var(--small)), calc(100dvh - var(--pdp-record-height, 0px) - var(--page-margin-desktop)));
 }
 body[data-player-open] .pdp-content[data-record-stack] > .pdp-content__info,
 body[data-player-open] .pdp-content[data-record-stack] > .pdp-content__actions {
-  top: min(calc(var(--site-header-visible, 0px) + var(--medium-small)), calc(100dvh - var(--pdp-record-height, 0px) - var(--site-player-height, 0px) - var(--page-margin-desktop)));
+  top: min(calc(var(--site-header-visible, 0px) + var(--small)), calc(100dvh - var(--pdp-record-height, 0px) - var(--site-player-height, 0px) - var(--page-margin-desktop)));
 }
 .pdp-content[data-record-stack] > .pdp-content__gallery {
   position: sticky;
-  top: calc(var(--site-header-visible, 0px) + var(--medium-small));
+  top: calc(var(--site-header-visible, 0px) + var(--small));
   overscroll-behavior: contain;
 }
 /* the anchor sits medium-small below the visible part of the site header: when the header comes back on scroll up,
