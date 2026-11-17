@@ -1123,10 +1123,10 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-action-panel > .zz-button { width: 100%; }
 
 /* ── ListingStatus (Figma: `listing form` → `listing status`, 0118) ── vertical, gap 4; status text/strong,
-   details and shop update text/moderate, unsaved text/strong. */
+   details and shop update text/moderate, unsaved = Alert (block). */
 .zz-listing-status { display: flex; flex-direction: column; gap: 4px; }
 .zz-listing-status > p { margin: 0; }
-.zz-listing-status__status, .zz-listing-status__unsaved { color: var(--text-strong); }
+.zz-listing-status__status { color: var(--text-strong); }
 .zz-listing-status__details, .zz-listing-status__shop { color: var(--text-moderate); }
 
 /* ── ListingLine (Figma: `listing form` → `listing line`) ──
