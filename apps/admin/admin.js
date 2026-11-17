@@ -951,7 +951,7 @@
       var title = previewName(f), tags = previewTags(f);
       var previewCover = f.sleeveType !== 'none' && f.sleeveCondition ? 'Cover: ' + f.sleeveCondition : null;
       var previewNote = f.conditionNotes.trim() ? '(' + f.conditionNotes.trim() + ')' : null;
-      var images = f.images.slice(0, 2).map(function (x, i) { return { src: x.url, alt: i === 0 ? title : '' }; });
+      var images = f.images.map(function (x, i) { return { src: x.url, alt: i === 0 ? title : '' }; });
       return h('section', { className: 'admin-section admin-preview', 'aria-labelledby': 'admin-preview-title' },
         h('h2', { id: 'admin-preview-title', className: 'label-medium' }, 'Preview'),
         h('div', { className: 'admin-preview__shop', 'data-theme': 'frontend' },

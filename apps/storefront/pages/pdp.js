@@ -27,10 +27,11 @@ function Pdp({ product, related = [], site, url }) {
 
     // Figma: `pdp content` — 12-col grid (desktop) / 4-col (mobile), gap gutter-small, padding-y small
     h('main', { className: 'pdp-content' },
-      // Figma: `product image` ×2 / `mobile gallery` — images: cover + first copy photo
+      // Figma: `product image` ×2 / `mobile gallery` — every photo, cover first (Gio 2026-11-17: no cap, the gallery
+      // scrolls on desktop and swipes on mobile)
       h(Z.Gallery, {
         className: 'pdp-content__gallery',
-        images: [release.cover, copy.photos[0]].filter(Boolean).map((src, i) => imageOf(product, src, url, { sizes: IMAGE_SIZES.gallery, alt: i === 0 ? productName(release) : '' }))
+        images: [release.cover].concat(copy.photos).filter(Boolean).map((src, i) => imageOf(product, src, url, { sizes: IMAGE_SIZES.gallery, alt: i === 0 ? productName(release) : '' }))
       }),
       h(Z.ProductInfo, {
         className: 'pdp-content__info',
