@@ -987,6 +987,53 @@
         props.onCreate ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onCreate, 'aria-label': (props.createLabel || 'Create listing') + ': ' + name }, props.createLabel || 'Create listing') : null,
         props.onRemove ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onRemove, 'aria-label': (props.removeLabel || 'Remove') + ': ' + name }, props.removeLabel || 'Remove') : null));
   }
+  /* ── Admin Content (Figma BACKEND → Content, decision 0106) ──
+     ContentGroupHead (`content group head`): heading label/medium + help body/small text/moderate, gap 4.
+     ContentRow (`content row`, device desktop | mobile, one responsive markup): an <li>, MemoItem grammar: text (title
+     body/medium · where body/small text/moderate · edited body/small · condition body/small, booleans `has edited`,
+     `has condition`) + Edit (Button secondary small, a link). Padding 16 / 0, gap 16, bottom border divider/strong;
+     mobile: stacked, gap 8.
+     ContentEditorHead (`content editor head`): back link (body/small, underlined) · title row (h1 label-extra-large,
+     the admin page title, + actions: View on shop secondary, Save primary; the actions hide on mobile, where the page
+     puts them in an ActionBar) · where (body/small text/moderate). Gap 8, title row gap 16.
+     LinkRow (`link row`, layout inline | stacked): Label + Link (two Inputs) + Remove; inline = label 160, link fills.
+     SectionRow (`section row`): heading Input + text Input (text area) + Remove, gap 8. Also the steps of How trading works. */
+  function ContentGroupHead(props) {
+    var Tag = 'h' + (props.headingLevel || 2);
+    return h('div', Object.assign({}, omit(props, ['heading', 'help', 'headingLevel', 'className']), { className: cx('zz-content-group-head', props.className) }),
+      h(Tag, { className: 'label-medium', id: props.headingId }, props.heading),
+      props.help ? h('p', { className: 'zz-content-group-head__help body-small' }, props.help) : null);
+  }
+  function ContentRow(props) {
+    var name = typeof props.title === 'string' ? props.title : 'text';
+    return h('li', Object.assign({}, omit(props, ['title', 'where', 'edited', 'condition', 'href', 'editLabel', 'className']), { className: cx('zz-content-row', props.className) }),
+      h('div', { className: 'zz-content-row__text' },
+        h('p', { className: 'body-medium' }, props.title),
+        props.where ? h('p', { className: 'zz-content-row__where body-small' }, props.where) : null,
+        props.edited ? h('p', { className: 'body-small' }, props.edited) : null,
+        props.condition ? h('p', { className: 'body-small' }, props.condition) : null),
+      h(Button, { hierarchy: 'secondary', size: 'small', href: props.href, 'aria-label': (props.editLabel || 'Edit') + ': ' + name }, props.editLabel || 'Edit'));
+  }
+  function ContentEditorHead(props) {
+    return h('div', Object.assign({}, omit(props, ['backHref', 'backLabel', 'title', 'where', 'actions', 'className']), { className: cx('zz-content-editor-head', props.className) }),
+      h('a', { className: 'zz-content-editor-head__back body-small', href: props.backHref }, '\u2190 ', props.backLabel || 'Content'),
+      h('div', { className: 'zz-content-editor-head__title-row' },
+        h('h1', { className: 'label-extra-large' }, props.title),
+        props.actions ? h('div', { className: 'zz-content-editor-head__actions' }, props.actions) : null),
+      props.where ? h('p', { className: 'zz-content-editor-head__where body-small' }, props.where) : null);
+  }
+  function LinkRow(props) {
+    return h('div', Object.assign({}, omit(props, ['label', 'link', 'onRemove', 'removeLabel', 'layout', 'className']),
+      { className: cx('zz-link-row', props.className), 'data-layout': props.layout || 'inline' }),
+      h('div', { className: 'zz-link-row__label' }, props.label),
+      h('div', { className: 'zz-link-row__link' }, props.link),
+      props.onRemove ? h(Button, { hierarchy: 'secondary', size: 'small', type: 'button', onClick: props.onRemove }, props.removeLabel || 'Remove') : null);
+  }
+  function SectionRow(props) {
+    return h('div', Object.assign({}, omit(props, ['heading', 'text', 'onRemove', 'removeLabel', 'className']), { className: cx('zz-section-row', props.className) }),
+      props.heading, props.text,
+      props.onRemove ? h('div', null, h(Button, { hierarchy: 'secondary', size: 'small', type: 'button', onClick: props.onRemove }, props.removeLabel || 'Remove')) : null);
+  }
   /* ── ProgressBar (Figma BACKEND → Memo → `progress bar`, decision 0091) ──
      Determinate bar: track surface/subtle, value action/primary/background/default, 4px high, square ends.
      value 0–100. role=progressbar + aria-valuenow; the visible status text stays next to it. */
@@ -1538,6 +1585,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, ProgressBar: ProgressBar, AdminBar: AdminBar, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, AdminBar: AdminBar, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock,
            SectionHead: SectionHead, GenreLinks: GenreLinks, HomeAbout: HomeAbout };
 });

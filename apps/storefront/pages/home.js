@@ -8,7 +8,7 @@
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
-const { SiteHeader, ProductCardFor, plpHref } = require('./shell.js');
+const { SiteHeader, ProductCardFor, plpHref, identityOn } = require('./shell.js');
 
 const JUST_IN_COUNT = 8;
 
@@ -44,7 +44,8 @@ function Home({ products, site, url }) {
           hasSamples ? btn('Play all', { type: 'button', 'data-play-all': '' }) : null,
           btn('See all', { href: url('/catalog/') })) }),
         justIn.length ? list(justIn) : h('p', { className: 'body-medium home-empty' }, 'No records right now.')),
-      h(Z.HomeAbout, { id: 'home-about', href: url('/about/'), className: 'home-about',
+      // Who I am off (decision 0106): owner = the Store profile (no Discogs), the link speaks of the shop
+      h(Z.HomeAbout, { id: 'home-about', href: url('/about/'), className: 'home-about', linkLabel: identityOn(site) ? undefined : 'More about the shop',
         discogs: discogs.username ? { handle: discogs.username, stats: discogs.stats, href: discogs.href } : undefined },
         owner.bio)));
 }

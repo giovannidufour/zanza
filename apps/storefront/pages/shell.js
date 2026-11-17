@@ -3,6 +3,7 @@
 'use strict';
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
+const Content = require('../../../packages/content/content.js');
 const h = React.createElement;
 
 // catalog = every record, sale and trade mixed (/catalog/, reached only from the home's "See all", decision 0085)
@@ -90,6 +91,19 @@ const productHref = (product, url) => url(`/products/${product.listing.slug}/`);
 // the trade switch (admin → Settings, migration 0023, decision 0102), set by build.js from the database. Off = no
 // trade link, tab, menu item or mention on any page. Undefined (a page rendered outside build.js) = on, as before.
 const tradeOn = (site) => !site || site.tradeEnabled !== false;
+// Who I am (admin → Settings, decision 0106): off = the Store profile, no name, no personal profiles, no trade
+const identityOn = (site) => !site || site.identityEnabled !== false;
+// a text Gio edits in the admin (page Content, decision 0106): site.texts (build.js) or, without it, today's text;
+// {{#trade}}…{{/trade}} already applied
+const DEFAULT_TEXTS = Content.defaults({});
+function textOf(site, key, field) {
+  const saved = ((site && site.texts) || {})[key];
+  const v = saved && saved[field] !== undefined ? saved[field] : (DEFAULT_TEXTS[key] || {})[field];
+  return typeof v === 'string' ? Content.applyFlags(v, { trade: tradeOn(site) }) : v;
+}
+// a textarea's paragraphs (an empty line = a new paragraph) as <p>s
+const Paragraphs = ({ text, className = 'body-medium' }) => h(React.Fragment, null,
+  Content.paragraphs(text).map((p, i) => h('p', { key: i, className }, p)));
 
 // Figma: `header` (device=desktop | mobile), the same on every page.
 // `section` = the active tab (none on /bag/). `current = 'home'` → the store name is lit (decision 0085). `current = 'bag'` → the Bag button is the current page (state active,
@@ -162,8 +176,11 @@ function SiteFooter({ site, url }) {
   const owner = site.owner || {};
   const nl = site.newsletter || {};
   const link = (label, href) => ({ label, href: url(href) });
-  const social = [owner.instagram && owner.instagram.href && { label: 'Instagram', href: owner.instagram.href },
-    owner.discogs && owner.discogs.href && { label: 'Discogs', href: owner.discogs.href }].filter(Boolean);
+  // Who I am off (decision 0106): the Store profile's own links instead of Gio's Instagram and Discogs
+  const social = identityOn(site)
+    ? [owner.instagram && owner.instagram.href && { label: 'Instagram', href: owner.instagram.href },
+      owner.discogs && owner.discogs.href && { label: 'Discogs', href: owner.discogs.href }].filter(Boolean)
+    : (owner.links || []).map((l) => ({ label: l.label, href: l.href }));
   return h(Z.Footer, {
     className: 'site-footer',
     newsletter: nl.action ? h(Z.FooterNewsletter, { action: nl.action, endpoint: nl.endpoint || undefined,
@@ -239,4 +256,4 @@ function ProductCardFor({ product, url, headingLevel }) {
   });
 }
 
-module.exports = { tradeOn, SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor };
+module.exports = { tradeOn, identityOn, textOf, Paragraphs, SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor };

@@ -68,6 +68,11 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | ReleaseList | page `Trade` → `release list` | ported (0069) |
 | ChosenRelease | page `Trade` → `chosen release` | ported (0069) |
 | MemoItem | page `Memo` (BACKEND) → `memo item` | ported (0087): device mobile / desktop (responsive), meta + link, note, Create listing / Remove |
+| ContentGroupHead | page `Content` (BACKEND) → `content group head` | ported (0106): heading + help of an admin Content group |
+| ContentRow | page `Content` (BACKEND) → `content row` | ported (0106): device mobile / desktop (responsive), where, edited, condition, Edit link |
+| ContentEditorHead | page `Content` (BACKEND) → `content editor head` | ported (0106): back, title, where, actions (desktop; mobile = ActionBar) |
+| LinkRow | page `Content` (BACKEND) → `link row` | ported (0106): layout inline / stacked, Remove |
+| SectionRow | page `Content` (BACKEND) → `section row` | ported (0106): heading + text + Remove (page sections, trade steps) |
 | ProgressBar | page `Memo` (BACKEND) → `progress bar` | ported (0091): value 0–100, role=progressbar |
 | AdminBar | page `admin` → `admin bar` | ported (0089): device desktop / mobile (responsive); mobile opens a MenuLayer dialog |
 | ListingRow | page `admin` → `listing row` | ported (0089): admin list row on mobile (Listings, Attributes), select, meta, price |

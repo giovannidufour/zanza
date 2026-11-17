@@ -140,25 +140,45 @@ async function fromSupabase(env, site, fetchImpl = fetch) {
   return rows.sort(byListingOrder).map((row) => toProduct(row, mediaUrl));
 }
 
-// shop-wide switches (migration 0023, decision 0102): shop_settings in the database is the single source of truth.
-// tradeEnabled = false → the build leaves out every trade page, link, record and mention. Local JSON: on, unless
-// `--trade=off` (to try the shop without trade). A database without the table yet (migration not applied) = on, as before.
+// shop-wide switches (migration 0023, decision 0102; migration 0025, decision 0106): shop_settings in the database is
+// the single source of truth. tradeEnabled = false → the build leaves out every trade page, link, record and mention
+// (trade_enabled is the effective value: off too while identity is off). identityEnabled = false → the Store profile and
+// no trace of Gio. Local JSON: both on, unless `--trade=off` / `--identity=off`. A database without the table or the
+// column yet (migration not applied) = on, as before. select=* so a missing column is not an error.
 async function settingsFromSupabase(env, fetchImpl = fetch) {
-  const res = await fetchImpl(`${env.SUPABASE_URL.replace(/\/$/, '')}/rest/v1/shop_settings?select=trade_enabled`, {
+  const res = await fetchImpl(`${env.SUPABASE_URL.replace(/\/$/, '')}/rest/v1/shop_settings?select=*`, {
     headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, Accept: 'application/json' }
   });
-  if (res.status === 404) return { tradeEnabled: true };   // PGRST205: no shop_settings table yet
+  if (res.status === 404) return { tradeEnabled: true, identityEnabled: true };   // PGRST205: no shop_settings table yet
   if (!res.ok) throw new Error(`Supabase shop_settings: ${res.status} ${await res.text()}`);
   const row = (await res.json())[0];
-  return { tradeEnabled: !row || row.trade_enabled !== false };
+  return { tradeEnabled: !row || row.trade_enabled !== false, identityEnabled: !row || row.identity_enabled !== false };
 }
 
-async function loadSettings({ source, trade } = {}) {
+// the texts Gio saved in the admin (page Content, migration 0025, decision 0106): [{ key, value, updated_at }].
+// No table yet = none: the shop uses the texts in the repo (packages/content/content.js defaults).
+async function textsFromSupabase(env, fetchImpl = fetch) {
+  const res = await fetchImpl(`${env.SUPABASE_URL.replace(/\/$/, '')}/rest/v1/site_texts?select=key,value,updated_at`, {
+    headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, Accept: 'application/json' }
+  });
+  if (res.status === 404) return [];
+  if (!res.ok) throw new Error(`Supabase site_texts: ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
+async function loadSettings({ source, trade, identity } = {}) {
   const env = readEnv();
-  const fromDb = source === 'supabase' ? await settingsFromSupabase(env) : { tradeEnabled: true };
+  const fromDb = source === 'supabase' ? await settingsFromSupabase(env) : { tradeEnabled: true, identityEnabled: true };
+  if (identity === 'off') fromDb.identityEnabled = false;
+  if (identity === 'on') fromDb.identityEnabled = true;
   if (trade === 'off') fromDb.tradeEnabled = false;
   if (trade === 'on') fromDb.tradeEnabled = true;
+  if (!fromDb.identityEnabled) fromDb.tradeEnabled = false;   // trade relies on who Gio is (decision 0106)
   return fromDb;
+}
+
+async function loadTexts({ source } = {}) {
+  return source === 'supabase' ? textsFromSupabase(readEnv()) : [];
 }
 
 async function loadProducts(site, { source } = {}) {
@@ -169,4 +189,4 @@ async function loadProducts(site, { source } = {}) {
   return { products, source: useDb ? 'supabase' : 'json' };
 }
 
-module.exports = { loadProducts, loadSettings, settingsFromSupabase, readEnv, effectiveStatus, toProduct, nameOf, byListingOrder, mediaUrlFor, fromSupabase };
+module.exports = { loadProducts, loadSettings, loadTexts, settingsFromSupabase, textsFromSupabase, readEnv, effectiveStatus, toProduct, nameOf, byListingOrder, mediaUrlFor, fromSupabase };
