@@ -974,8 +974,8 @@
 
   /* checkout (migration 0021, _context/backend.md → Checkout con hold): Checkout posts the AVAILABLE ids of the bag and
      the country to create-checkout, which holds the copies for 33 min and answers the Stripe Checkout URL. The session
-     and its ids are remembered ('zanza-checkout'): back on /bag/?checkout=cancelled the session is expired at once (the
-     copies are free again for others); on the thanks page ([data-checkout-thanks]) the bought ids leave the bag.
+     and its ids are remembered ('zanza-checkout'): back on the bag (cancel link or browser Back) the session is expired at
+     once and the copies are free again, for the buyer too (checkoutReturn); on the thanks page ([data-checkout-thanks]) the bought ids leave the bag.
      TODO Figma: Button has no loading state; while the request runs Checkout is aria-disabled and ignores clicks,
      with no visual change (a disabled Button is struck through = unavailable, decision 0058). */
   var CHECKOUT_KEY = 'zanza-checkout';
@@ -996,7 +996,8 @@
     announce('Starting checkout\u2026');
     function done() { checkoutBusy = false; btn.removeAttribute('aria-disabled'); }
     fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: ids, country: select ? select.value : '' }) })
+      // previous: a session of ours that is still open (its end on return failed): the server ends it before holding
+      body: JSON.stringify({ ids: ids, country: select ? select.value : '', previous: (readCheckout() || {}).session }) })
       .then(function (res) { return res.json().catch(function () { return {}; }).then(function (b) { return { status: res.status, body: b }; }); })
       .then(function (r) {
         var b = r.body || {};
@@ -1006,7 +1007,13 @@
           return;
         }
         done();
-        if (b.error === 'unavailable') {
+        if (b.error === 'already_paid') {
+          var paid = readCheckout();
+          if (paid && Array.isArray(paid.ids)) writeBag(readBag().filter(function (id) { return paid.ids.indexOf(id) === -1; }));
+          forgetCheckout();
+          readLive(true);
+          checkoutMessage('Your previous checkout is already paid. You\u2019ll get a confirmation email.');
+        } else if (b.error === 'unavailable') {
           readLive(true);   // the lines that were just taken turn Sold out / Reserved
           checkoutMessage('Some records were just taken. Your bag is updated: check it and try again.');
         } else if (b.error === 'below_minimum') {
@@ -1030,18 +1037,42 @@
       forgetCheckout();
       return;
     }
-    if (!document.querySelector('[data-bag-page]') || !/[?&]checkout=cancelled\b/.test(window.location.search)) return;
-    try { window.history.replaceState(window.history.state, '', window.location.pathname); } catch (e) { /* ignore */ }
+    if (!document.querySelector('[data-bag-page]')) return;
+    var cancelled = /[?&]checkout=cancelled\b/.test(window.location.search);
+    if (cancelled) { try { window.history.replaceState(window.history.state, '', window.location.pathname); } catch (e) { /* ignore */ } }
+    // Back on the bag with a checkout of ours still open: Stripe's cancel link, the browser's Back (no ?checkout=, often
+    // from the back-forward cache) or the bag opened again. The buyer is not paying in this tab any more: the session is
+    // expired and its copies are free again at once, for them and for everyone (otherwise their own records read
+    // "Reserved" for up to 33 min). The server frees them only once Stripe confirms the session can't be paid.
     var btn = document.querySelector('[data-bag-checkout]');
     var endpoint = btn && btn.getAttribute('data-endpoint');
-    forgetCheckout();
     if (pending && pending.session && endpoint && window.fetch) {
       fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'cancel', session: pending.session }) })
-        .then(function () { readLive(true); }).catch(function () { /* the hold ends by itself within 33 min */ });
-    }
-    checkoutMessage('Checkout cancelled. Your records are still in your bag.');
+        .then(function (res) { return res.json().catch(function () { return {}; }); })
+        .then(function (r) {
+          if (r.paid) {   // paid meanwhile (another tab): as on the thanks page
+            if (Array.isArray(pending.ids)) writeBag(readBag().filter(function (id) { return pending.ids.indexOf(id) === -1; }));
+            forgetCheckout();
+            checkoutMessage('Your order is paid. You\u2019ll get a confirmation email.');
+          } else if (r.ok && !r.kept) {
+            forgetCheckout();
+            if (!cancelled) checkoutMessage('Checkout cancelled. Your records are still in your bag.');
+          }   // kept (Stripe not reachable): remembered, Checkout ends it first (startCheckout sends it as previous)
+          readLive(true);
+        }).catch(function () { /* offline: remembered, ended by the next Checkout or by itself within 33 min */ });
+    } else if (pending) forgetCheckout();
+    if (cancelled) checkoutMessage('Checkout cancelled. Your records are still in your bag.');
   }
+  // the browser's Back from Stripe can restore the bag from the back-forward cache: no script runs again, Checkout is
+  // still aria-disabled from the click that left the page. Reset it and end the checkout as above.
+  window.addEventListener('pageshow', function (e) {
+    if (!e.persisted) return;
+    checkoutBusy = false;
+    var btn = document.querySelector('[data-bag-checkout]');
+    if (btn) btn.removeAttribute('aria-disabled');
+    checkoutReturn();
+  });
 
   // a copy already in the bag: its Add buttons become "In bag" (owner 2026-11-12, decision 0058, replaces "Remove" of
   // 0054). Same Button: hierarchy secondary (the PDP CTA drops from primary), leading icon = tick (Figma `leading icon`
