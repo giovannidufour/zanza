@@ -1,6 +1,6 @@
 # 0116 — Checkout holds nothing: first to pay wins, the others are never charged
 
-`2026-11-18` · accepted (Gio, "mi piace il punto 2") · replaces the checkout hold of 0059 (the manual hold and "Reserved" stay) · Figma: TODO page Checkout → "order not completed"
+`2026-11-18` · accepted (Gio, "mi piace il punto 2") · replaces the checkout hold of 0059 (the manual hold and "Reserved" stay) · Figma: page Checkout → `Checkout not completed - desktop / mobile` (`order thanks`: new boolean `show note`), Bag → `bag summary` note
 
 **Context.** Starting a checkout reserved the copies for 33 min (0021, 0059). A buyer who left Stripe with the browser's Back saw their own records "Reserved" (fixed in PR #171), and a closed tab on Stripe blocked them for everyone for 30 min: Stripe can't tell us the page was left, and a session lasts at least 30 min.
 **Decision.** Nothing is held. While someone is on Stripe the copy stays available to everyone. Stripe only **authorizes** the payment (manual capture). When a session completes, the copies are claimed all or nothing: free → sold, payment captured, every other open session with those copies expired on Stripe; sold meanwhile → nothing sold, authorization cancelled (refund only for a method that can't be authorized), email to the buyer, note to Gio. The thanks page asks the result and says "Order not completed" in that case. Collisions are counted (`checkout_sessions.status = 'lost'`): if they become frequent, Gio picks another strategy (e.g. Embedded Checkout with a heartbeat).
