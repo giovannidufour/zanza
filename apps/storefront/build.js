@@ -241,9 +241,9 @@ write('js/newsletter.js', newsletterJs);
 for (const f of fs.readdirSync(path.join(APP, 'public'))) write('assets/' + f, fs.readFileSync(path.join(APP, 'public', f)));
 
 const order = new Map(products.map((p, i) => [p, i]));
-// "More for sale" (PDP): up to 3 other available products of the same section, most shared genres first, then
+// "More for sale" (PDP): up to RELATED_COUNT other available products of the same section, most shared genres first, then
 // listing order. Placeholder logic until the backend provides recommendations.
-const RELATED_COUNT = 3;
+const RELATED_COUNT = 10;   // Gio 2026-11-18 (sticky PDP experiment): 10, was 3
 function relatedTo(product) {
   const genres = new Set(product.release.genres || []);
   return products
