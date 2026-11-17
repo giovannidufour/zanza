@@ -388,6 +388,7 @@
      Focus moving into a record
      covered by the list scrolls the page back until the record shows (WCAG 2.4.11, focus not obscured). */
   var recordCleanup = null;
+  var scrollTopAnimation = null;   // the running gallery-click scroll to the top, if any
   function initRecordStack() {
     if (recordCleanup) recordCleanup();
     recordCleanup = null;
@@ -419,10 +420,31 @@
     function onGalleryClick(e) {
       if (!e.target.closest || !e.target.closest('.pdp-content__gallery .zz-gallery__item')) return;
       if (getComputedStyle(parts[0]).position !== 'sticky') return;
+      var g = e.target.closest('.pdp-content__gallery');   // the gallery goes back to its first photo too
       var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
-      var g = e.target.closest('.pdp-content__gallery');   // the gallery goes back to its first photo too, together
-      if (g.scrollTo) g.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }); else g.scrollTop = 0;
+      if (reduce) { window.scrollTo(0, 0); g.scrollTop = 0; return; }
+      // one animation drives both, so page and gallery start and land together whatever their distances (Gio
+      // 2026-11-18). Native smooth scroll picks its own duration per distance, so it is not used here.
+      // TODO motion: no duration/easing in Figma - 600ms ease-in-out is a placeholder.
+      var DURATION = 600, page0 = window.scrollY, gallery0 = g.scrollTop, start = 0;
+      if (scrollTopAnimation) scrollTopAnimation.stop();
+      function ease(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+      function step(now) {
+        if (!start) start = now;
+        var k = 1 - ease(Math.min(1, (now - start) / DURATION));
+        window.scrollTo(0, page0 * k);
+        g.scrollTop = gallery0 * k;
+        if (k > 0) frameId = window.requestAnimationFrame(step); else stop();
+      }
+      // the user takes over (wheel, touch, keys): the animation stops where it is
+      function stop() {
+        window.cancelAnimationFrame(frameId);
+        ['wheel', 'touchstart', 'keydown'].forEach(function (t) { window.removeEventListener(t, stop); });
+        scrollTopAnimation = null;
+      }
+      var frameId = window.requestAnimationFrame(step);
+      ['wheel', 'touchstart', 'keydown'].forEach(function (t) { window.addEventListener(t, stop, { passive: true }); });
+      scrollTopAnimation = { stop: stop };
     }
     measure();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
@@ -436,6 +458,7 @@
       window.removeEventListener('resize', schedule);
       content.removeEventListener('focusin', onFocusIn);
       content.removeEventListener('click', onGalleryClick);
+      if (scrollTopAnimation) scrollTopAnimation.stop();
       if (frame) window.cancelAnimationFrame(frame);
     };
   }
