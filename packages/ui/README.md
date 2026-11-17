@@ -60,6 +60,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | Alert | page `Bag` → `alert` | ported (0077): red box, used by BagSummary `minimumNote` and `soldOutNote` |
 | Divider | page `divider` → `divider` | ported |
 | ActionPanel | page `listing form` → `action panel` | ported |
+| ListingStatus | page `listing form` → `listing status` | ported |
 | ListingLine | page `listing form` → `listing line` | ported: removable, sample empty / uploaded, artist on label, marker (number, 0114) |
 | TradeNote | page `Trade` → `trade note` | ported (0068): title, body, signature |
 | DiscogsCard | page `Trade` → `discogs card` | ported (0068): label, handle, stats, link |

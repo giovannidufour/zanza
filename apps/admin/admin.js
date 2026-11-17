@@ -281,7 +281,7 @@
   // ── empty form ────────────────────────────────────────────────────────────
   function emptyForm() {
     return {
-      listingId: null, sku: null, status: 'draft', slug: null, checkoutUntil: null, soldAt: null,
+      listingId: null, sku: null, status: 'draft', slug: null, checkoutUntil: null, soldAt: null, publishedAt: null, createdAt: null,
       customTitle: '', discogs: '', catNo: '',
       lines: [newLine()],
       label: [], labelCredit: '', labelSpelled: false, preRelease: false, country: '', year: '', format: '', section: 'sale', price: '',
@@ -298,7 +298,7 @@
     var lineIdToPos = {};
     lines.forEach(function (l) { lineIdToPos[l.id] = l.position; });
     f.listingId = row.id; f.sku = row.sku; f.status = effectiveStatus(row); f.slug = row.slug;
-    f.checkoutUntil = checkoutUntil(row); f.soldAt = row.sold_at;
+    f.checkoutUntil = checkoutUntil(row); f.soldAt = row.sold_at; f.publishedAt = row.published_at; f.createdAt = row.created_at;
     f.customTitle = row.custom_title || ''; f.discogs = r.discogs_release_id ? String(r.discogs_release_id) : '';
     f.catNo = r.cat_no || '';
     // the field shows the official name; the stored text is the credit (Different spelling when it differs)
@@ -457,6 +457,21 @@
 
   // ── Create / edit listing ─────────────────────────────────────────────────
   // Create / Edit listing sections, in form order: [id, heading] (Gio 2026-11-17)
+  /* decision 0118: what the form would save, to tell "Unsaved changes". Leaves out what the database sets (status, SKU,
+     dates) and what only the page needs (local ids, preview URLs, upload progress). */
+  var META_KEYS = { listingId: 1, sku: 1, status: 1, slug: 1, checkoutUntil: 1, soldAt: 1, publishedAt: 1, createdAt: 1 };
+  var VOLATILE_KEYS = { id: 1, url: 1, uploading: 1, progress: 1, phase: 1, duration: 1 };
+  function formSnapshot(f) {
+    var o = {};
+    Object.keys(f).forEach(function (k) { if (!META_KEYS[k]) o[k] = f[k]; });
+    return JSON.stringify(o, function (k, v) { return VOLATILE_KEYS[k] ? undefined : v; });
+  }
+  function whenText(t) {
+    return new Date(t).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+  function dayText(t) { return new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+  function timeText(t) { return new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); }
+  var SHOP_UPDATE_MS = 150000;   // the shop rebuilds about 2 minutes after a change (_context/backend.md → Pubblicazione)
   var FORM_SECTIONS = [['discogs', 'Discogs'], ['images', 'Images'], ['lines', 'Artist & title'], ['label', 'Label'], ['price', 'Price'],
     ['genres', 'Genres & tags'], ['conditions', 'Conditions'], ['description', 'Description'], ['samples', 'Samples']];
   var FORM_SECTION_LABEL = {};
@@ -468,6 +483,15 @@
     var er = useState({}), errors = er[0], setErrors = er[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
     var sv = useState(false), saving = sv[0], setSaving = sv[1];
+    // decision 0118: the last saved form (Unsaved changes), when it was saved in this visit, when the shop was asked to update
+    var baseline = useRef(null); if (baseline.current === null) baseline.current = formSnapshot(props.initial);
+    var sa = useState(null), savedAt = sa[0], setSavedAt = sa[1];
+    var sh = useState(null), shopAt = sh[0], setShopAt = sh[1];
+    useEffect(function () {
+      if (!shopAt) return;
+      var t = setTimeout(function () { setShopAt(null); }, Math.max(0, shopAt + SHOP_UPDATE_MS - Date.now()));
+      return function () { clearTimeout(t); };
+    }, [shopAt]);
     var pl = useState(null), playing = pl[0], setPlaying = pl[1];
     // the shop's Player docked at the bottom (Gio 2026-11-17): opens on the first play, its native audio element plays
     var op = useState(null), openId = op[0], setOpenId = op[1];
@@ -605,18 +629,23 @@
       setSaving(true); setMessage(null);
       var res = await sb.rpc('admin_save_listing', { payload: payloadOf(cur, status) });
       setSaving(false);
-      if (res.error) { setMessage({ error: true, text: 'Not saved: ' + res.error.message }); return; }
-      var d = res.data;
-      set({ listingId: d.listing_id, sku: d.sku, status: d.status, slug: d.slug });
+      if (res.error) { setMessage({ error: true, text: (status === 'available' ? 'Not published: ' : 'Not saved: ') + res.error.message }); return; }
+      var d = res.data, now = Date.now(), wasPublic = cur.status !== 'draft';
+      baseline.current = formSnapshot(cur);
+      setSavedAt(now);
+      set(function (x) { return { listingId: d.listing_id, sku: d.sku, status: d.status, slug: d.slug,
+        publishedAt: x.publishedAt || (d.status === 'available' ? new Date(now).toISOString() : null),
+        createdAt: x.createdAt || new Date(now).toISOString() }; });
+      if (d.status !== 'draft' || wasPublic) setShopAt(now);
       if (fromMemo && !tookOff.current) {
         tookOff.current = true;
         sb.from('memos').delete().eq('id', fromMemo.id).then(function (r) {
           toast(r.error ? 'Still on Memo: ' + r.error.message : 'Taken off Memo.');
         });
       }
-      setMessage({ error: false, text: d.status === 'available'
-        ? 'Published · SKU ' + d.sku + '. The shop updates in about 2 minutes.'
-        : 'Saved as draft · SKU ' + d.sku + '.' });
+      // decision 0118: the result in a toast; the status block at the top of the side column says the new state
+      toast(d.status === 'available' ? (wasPublic ? 'Updated' : 'Published') + ' · SKU ' + d.sku + '. The shop updates in about 2 minutes.'
+        : d.status === 'draft' ? 'Draft saved · SKU ' + d.sku + '.' : 'Saved · SKU ' + d.sku + '.');
       if (!cur.listingId) history.replaceState(null, '', '#edit-' + d.listing_id);
     }
 
@@ -667,9 +696,10 @@
       var res = await sb.rpc('admin_set_status', { p_listing_id: f.listingId, p_status: status, p_note: statusNote || null });
       setSaving(false);
       if (res.error) { setMessage({ error: true, text: 'Status not changed: ' + res.error.message }); return; }
-      set({ status: res.data.status, soldAt: res.data.sold_at, checkoutUntil: null });
-      setStatusNote('');
-      setMessage({ error: false, text: STATUS_DONE[res.data.status] + ' The shop updates in about 2 minutes.' });
+      set(function (x) { return { status: res.data.status, soldAt: res.data.sold_at, checkoutUntil: null,
+        publishedAt: x.publishedAt || (res.data.status === 'available' ? new Date().toISOString() : null) }; });
+      setStatusNote(''); setShopAt(Date.now());
+      toast(STATUS_DONE[res.data.status] + ' The shop updates in about 2 minutes.');
     }
     // archived copies come back only through admin_bulk_status (0009), to the status they had
     async function restore() {
@@ -679,8 +709,8 @@
       var done = !res.error && res.data.done[0];
       if (!done) { setMessage({ error: true, text: 'Not restored: ' + (res.error ? res.error.message : 'it is no longer archived.') }); return; }
       set({ status: done.to });
-      setStatusNote('');
-      setMessage({ error: false, text: 'Restored as ' + (STATUS_LABEL[done.to] || done.to).toLowerCase() + '.' });
+      setStatusNote(''); setShopAt(Date.now());
+      toast('Restored as ' + (STATUS_LABEL[done.to] || done.to).toLowerCase() + '.');
     }
 
     // while it uploads (or converts, samples): the phase after the name and a ProgressBar under the row (Gio 2026-11-17,
@@ -763,8 +793,26 @@
     var isNew = !f.listingId;
     var locked = f.status === 'reserved' || f.status === 'sold' || f.status === 'traded' || f.status === 'archived';
 
+    /* decision 0118 (Figma `listing status`, Create / Edit side · states): the listing at a glance, at the top of the side
+       column (mobile: under the page title). Status · when + SKU · Unsaved changes · the shop update after a change. */
+    var dirty = !locked && formSnapshot(f) !== baseline.current;
+    var sku = f.sku ? 'SKU ' + f.sku : null;
+    var details = isNew ? 'The SKU is assigned on the first save.'
+      : f.status === 'draft' ? [savedAt ? 'Saved ' + whenText(savedAt) : f.createdAt ? 'Created ' + whenText(f.createdAt) : null, sku]
+      : f.status === 'available' ? [f.publishedAt ? 'Published ' + whenText(f.publishedAt) : null, savedAt ? 'Updated ' + timeText(savedAt) : null, sku]
+      : f.status === 'reserved' ? [f.checkoutUntil ? 'Checkout in progress until ' + timeText(f.checkoutUntil) : 'Held until you release it', sku]
+      : f.status === 'sold' || f.status === 'traded' ? [f.soldAt ? dayText(f.soldAt) : null, sku, 'No longer editable']
+      : [sku, 'Restore it to edit'];
+    var listingStatus = h(Z.ListingStatus, {
+      status: isNew ? 'Not saved yet' : f.status === 'available' ? 'Published' : STATUS_LABEL[f.status] || f.status,
+      details: typeof details === 'string' ? details : details.filter(Boolean).join(' · '),
+      unsaved: !isNew && dirty,
+      shopUpdate: !!shopAt
+    });
+
     var main = h('div', { className: 'admin-main' },
       h('h1', { className: 'label-extra-large' }, isNew ? 'Create listing' : 'Edit listing'),
+      mobile ? listingStatus : null,
 
       // Gio 2026-11-17 (Figma Create → `form section head`): every block has a heading; Discogs match first, then the
       // images (Fetch from label reads them)
@@ -885,23 +933,24 @@
         h(Z.DropZone, { label: 'Browse sample', accept: 'audio/mpeg', multiple: true, onFiles: addFiles('sample', null) })));
 
     var shopUrl = f.slug && f.status !== 'draft' && f.status !== 'archived' && CFG.storefrontUrl ? CFG.storefrontUrl.replace(/\/$/, '') + '/products/' + f.slug + '/' : null;
-    var publishBtn = h(Z.Button, { key: 'publish', hierarchy: 'primary', disabled: saving || locked, onClick: function () { save('available'); } }, f.status === 'available' ? 'Update' : 'Publish now');
-    var draftBtn = h(Z.Button, { key: 'draft', hierarchy: 'secondary', disabled: saving || locked || f.status === 'available', onClick: function () { save('draft'); } }, 'Save draft');
+    var published = f.status === 'available';
+    // decision 0118: Update only when something changed; a published copy leaves Save draft (Unpublish is under Change status);
+    // a reserved, sold, traded or archived copy has no save at all
+    var publishBtn = locked ? null : h(Z.Button, { key: 'publish', hierarchy: 'primary', disabled: saving || (published && !dirty), onClick: function () { save('available'); } }, published ? 'Update' : 'Publish now');
+    var draftBtn = locked || published ? null : h(Z.Button, { key: 'draft', hierarchy: 'secondary', disabled: saving, onClick: function () { save('draft'); } }, 'Save draft');
     var shopBtn = shopUrl ? h(Z.Button, { key: 'shop', hierarchy: 'secondary', href: shopUrl, target: '_blank', rel: 'noopener' }, 'View in store') : null;
-    var statusLine = h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '');
-    // mobile (decision 0089): Publish / Save draft in the ActionBar at the bottom of the viewport, with the save result
-    // above them; View in store stays in the side content, which follows the form
+    // errors stay in an Alert under the buttons until the next save; other notes (Discogs, Memo) in a line of text
+    var note = message ? (message.error ? h(Z.Alert, { role: 'alert' }, message.text) : h('p', { className: 'admin-status body-small', role: 'status' }, message.text)) : null;
+    var panelButtons = [publishBtn, draftBtn, shopBtn].filter(Boolean);
+    // mobile (decision 0089): Publish / Save draft in the ActionBar at the bottom of the viewport, with the note above
+    // them; the status under the title; View in store and Change status in the side content, which follows the form
     var side = h('aside', { className: 'admin-side' },
-      mobile ? shopBtn : h(Z.ActionPanel, null, publishBtn, draftBtn, shopBtn),
-      mobile ? null : statusLine,
-      h(Z.Input, { id: 'sku', label: 'Sku', readOnly: true, value: f.sku ? String(f.sku) : '', placeholder: 'On first save', supportText: 'Automatic-generated' }),
-      shopPreview(),
-      locked ? h('p', { className: 'body-small' }, 'This copy is ' + f.status + ': it can no longer be edited here.') : null,
-      isNew ? null : statusPanel());
+      mobile ? null : listingStatus,
+      mobile ? shopBtn : panelButtons.length ? h(Z.ActionPanel, null, panelButtons) : null,
+      mobile ? null : note,
+      isNew ? null : statusPanel(),
+      shopPreview());
 
-    /* Figma BACKEND → Create › side › preview (2133:933, Gio 2026-11-10, decision 0030): the PDP - mobile content
-       (gallery + product info, no header, no Add to bag) in the shop theme, filled in while the form is typed.
-       Same components as the shop; empty parts are left out. Its sample buttons play through the admin audio. */
     function shopPreview() {
       var title = previewName(f), tags = previewTags(f);
       var previewCover = f.sleeveType !== 'none' && f.sleeveCondition ? 'Cover: ' + f.sleeveCondition : null;
@@ -939,6 +988,7 @@
         toast('New listing, SKU ' + twin.sku + ': a draft of the same record. Check condition, price and photos, then publish.');
       }, function (err) { setSaving(false); setMessage({ error: true, text: 'Not created: ' + err.message }); });
     }
+    // Figma `change status` (decision 0118): the manual status changes for the current status, with an optional note
     function statusPanel() {
       var closing = f.section === 'sale' ? 'sold' : 'traded';
       var actions = {
@@ -949,18 +999,18 @@
         traded: [['available', 'Make available again']],
         archived: [['restore', 'Restore']]
       }[f.status] || [];
-      var support = f.checkoutUntil ? 'Checkout in progress until ' + f.checkoutUntil.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '.'
-        : f.soldAt && (f.status === 'sold' || f.status === 'traded') ? 'Since ' + new Date(f.soldAt).toLocaleDateString() + '.' : undefined;
-      return h('section', { className: 'admin-section' },
-        h(Z.Input, { id: 'status', label: 'Status', readOnly: true, value: STATUS_LABEL[f.status] || f.status, supportText: support }),
-        actions.length ? h(Z.Input, { id: 'status-note', label: 'Status note', optional: true, value: statusNote,
-          supportText: 'Kept in the history, e.g. "sold at the fair".', onChange: function (e) { setStatusNote(e.target.value); } }) : null,
+      var closed = f.status === 'sold' || f.status === 'traded';
+      if (!actions.length && !closed) return null;
+      return h('section', { className: 'admin-section admin-change-status', 'aria-labelledby': 'change-status-title' },
+        h(Z.FormSectionHead, { id: 'change-status-title' }, 'Change status'),
+        actions.length ? h(Z.Input, { id: 'status-note', label: 'Status note', optional: true, value: statusNote, placeholder: 'e.g. sold at the fair',
+          supportText: 'Kept in the history of this listing.', onChange: function (e) { setStatusNote(e.target.value); } }) : null,
         actions.map(function (a) {
           return h(Z.Button, { key: a[0], hierarchy: 'secondary', disabled: saving || !!f.checkoutUntil, onClick: function () { a[0] === 'restore' ? restore() : setStatus(a[0]); } }, a[1]);
         }),
         // decision 0100: a twin of a sold copy (new SKU, same record), as a draft
-        f.status === 'sold' || f.status === 'traded' ? h(Z.Button, { key: 'again', hierarchy: 'secondary', disabled: saving, onClick: again }, 'Sell again') : null,
-        f.status === 'sold' || f.status === 'traded' ? h('p', { className: 'body-small' }, 'Sell again: a new draft listing of the same record (new SKU, same details, photos and samples). This one stays ' + f.status + '.') : null);
+        closed ? h(Z.Button, { key: 'again', hierarchy: 'secondary', disabled: saving, onClick: again }, 'Sell again') : null,
+        closed ? h('p', { className: 'body-small' }, 'Sell again: a new draft listing of the same record (new SKU, same details, photos and samples). This one stays ' + f.status + '.') : null);
     }
 
     // the Player as in the shop: cover, sample title, "Artist - Title", previous / next through the samples
@@ -979,7 +1029,8 @@
       }));
 
     return h('div', { className: 'admin-page admin-page--edit' }, main, side,
-      mobile ? h(Z.ActionBar, { status: statusLine }, publishBtn, draftBtn) : null, player);
+      // mobile: the status block scrolls away with the form, so the bar repeats Unsaved changes above the buttons
+      mobile && (publishBtn || draftBtn) ? h(Z.ActionBar, { status: note || (!isNew && dirty ? h('p', { className: 'label-small' }, 'Unsaved changes') : null) }, publishBtn, draftBtn) : null, player);
   }
 
   // ── Listings ──────────────────────────────────────────────────────────────
