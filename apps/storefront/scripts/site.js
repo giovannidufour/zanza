@@ -1068,7 +1068,7 @@
   // First to pay wins (decision 0116): Stripe sends every buyer here, but stripe-webhook may find that someone paid for a
   // record a moment earlier ('lost': the authorization is cancelled, nothing charged). Ask checkout_result (migration
   // 0028) a few times; on 'lost' the page says so and the records go back in the bag (they read Sold out there).
-  // TODO Figma: page Checkout has no "order not completed" frame; same layout as Thank you, title and message swapped.
+  // Figma: page Checkout → Checkout not completed - desktop / mobile (`order thanks` with message override, show note off).
   function thanksResult(pending) {
     var m = /[?&]session_id=(cs_(?:test|live)_[A-Za-z0-9]+)/.exec(window.location.search);
     var base = document.querySelector('meta[name="zz-supabase-url"]');
