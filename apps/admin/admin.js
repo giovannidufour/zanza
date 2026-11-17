@@ -456,7 +456,7 @@
   function previewTags(f) { return (f.genres || []).concat(f.tags || []).map(function (t) { return t.name; }); }
 
   // ── Create / edit listing ─────────────────────────────────────────────────
-  // Create / Edit listing sections, in form order: [id, heading and section-nav label] (Gio 2026-11-17)
+  // Create / Edit listing sections, in form order: [id, heading] (Gio 2026-11-17)
   var FORM_SECTIONS = [['discogs', 'Discogs'], ['images', 'Images'], ['lines', 'Artist & title'], ['label', 'Label'], ['price', 'Price'],
     ['genres', 'Genres & tags'], ['conditions', 'Conditions'], ['description', 'Description'], ['samples', 'Samples']];
   var FORM_SECTION_LABEL = {};
@@ -757,53 +757,8 @@
     // samples of a line keep the overview order; reorder happens in the overview
     function lineSamples(i) { return f.samples.filter(function (s) { return s.line === i + 1; }); }
 
-    // ── section nav (Gio 2026-11-17, Figma Create → `section nav` device=desktop|mobile) ──
-    // one Button per section; state=active = the section at the top of the form while scrolling. The form scrolls in
-    // .admin-main on desktop and with the page on mobile: a capturing scroll listener follows both.
+    // every block is a section with a FormSectionHead (Gio 2026-11-17, decision 0113; the section nav was removed, 0117)
     function sectionProps(id) { return { id: 'section-' + id, className: 'admin-section', 'aria-labelledby': 'section-' + id + '-title' }; }
-    var cs = useState(FORM_SECTIONS[0][0]), currentSection = cs[0], setCurrentSection = cs[1];
-    var navRef = useRef(null);
-    // after a press the nav keeps that section lit while the page scrolls there (a section near the end may never
-    // reach the line); the lock ends once the scroll has been still for 200 ms
-    var jumpRef = useRef(null);
-    useEffect(function () {
-      var frame = 0, still = 0;
-      function update() {
-        frame = 0;
-        if (jumpRef.current) { setCurrentSection(jumpRef.current); return; }
-        var nav = navRef.current;
-        // the line a section must have passed: under the sticky nav on mobile, the top of the scrolling column on desktop
-        var line = mobile ? (nav ? nav.getBoundingClientRect().bottom : 0) + 8
-          : (document.querySelector('.admin-page--edit > .admin-main') || document.body).getBoundingClientRect().top + 8;
-        var cur = FORM_SECTIONS[0][0];
-        FORM_SECTIONS.forEach(function (s) { var el = document.getElementById('section-' + s[0]); if (el && el.getBoundingClientRect().top <= line) cur = s[0]; });
-        // scrolled to the end: the last sections may never reach the line
-        var main = document.querySelector('.admin-page--edit > .admin-main');
-        var atEnd = mobile ? window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2
-          : main && main.scrollTop + main.clientHeight >= main.scrollHeight - 2;
-        if (atEnd) cur = FORM_SECTIONS[FORM_SECTIONS.length - 1][0];
-        setCurrentSection(cur);
-      }
-      function onScroll() {
-        if (jumpRef.current) { clearTimeout(still); still = setTimeout(function () { jumpRef.current = null; }, 200); }
-        if (!frame) frame = requestAnimationFrame(update);
-      }
-      document.addEventListener('scroll', onScroll, true);
-      window.addEventListener('resize', onScroll);
-      update();
-      return function () { document.removeEventListener('scroll', onScroll, true); window.removeEventListener('resize', onScroll); if (frame) cancelAnimationFrame(frame); clearTimeout(still); };
-    }, [mobile]);
-    function goToSection(id) {
-      var el = document.getElementById('section-' + id);
-      if (!el) return;
-      jumpRef.current = id; setCurrentSection(id);
-      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
-      var head = document.getElementById('section-' + id + '-title');
-      if (head) head.focus({ preventScroll: true });
-    }
-    var sectionNav = h(Z.FormSectionNav, { navRef: navRef, className: 'admin-section-nav', label: 'Form sections', current: currentSection,
-      items: FORM_SECTIONS.map(function (s) { return { id: s[0], label: s[1] }; }), onSelect: goToSection });
 
     var isNew = !f.listingId;
     var locked = f.status === 'reserved' || f.status === 'sold' || f.status === 'traded' || f.status === 'archived';
@@ -811,8 +766,8 @@
     var main = h('div', { className: 'admin-main' },
       h('h1', { className: 'label-extra-large' }, isNew ? 'Create listing' : 'Edit listing'),
 
-      // Gio 2026-11-17 (Figma Create → `section head`, `section nav`): every block has a heading and an anchor in the
-      // section nav; Discogs match first, then the images (Fetch from label reads them)
+      // Gio 2026-11-17 (Figma Create → `form section head`): every block has a heading; Discogs match first, then the
+      // images (Fetch from label reads them)
       h('section', sectionProps('discogs'),
         h(Z.FormSectionHead, { id: 'section-discogs-title' }, FORM_SECTION_LABEL['discogs']),
         h(Z.Input, Object.assign({ id: 'discogs', label: 'Discogs match', optional: true, variant: 'search',
@@ -1023,7 +978,7 @@
         onClose: closePlayer
       }));
 
-    return h('div', { className: 'admin-page admin-page--edit admin-page--sections' }, sectionNav, main, side,
+    return h('div', { className: 'admin-page admin-page--edit' }, main, side,
       mobile ? h(Z.ActionBar, { status: statusLine }, publishBtn, draftBtn) : null, player);
   }
 

@@ -1528,16 +1528,8 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-home-about__bio { margin: 0; }
 .zz-home-about__link { align-self: flex-start; }
 
-/* ── FormSectionHead / FormSectionNav (Figma BACKEND → Create, `form section head`, `form section nav`, Gio 2026-11-17) ── */
+/* ── FormSectionHead (Figma BACKEND → Create, `form section head`, Gio 2026-11-17) ── */
 .zz-form-section-head { margin: 0; color: var(--text-strong); }
-.zz-form-section-head:focus { outline: none; }   /* programmatic focus target after a jump (decision 0043) */
-.zz-form-section-nav { display: flex; flex-direction: column; gap: 8px; }
-.zz-form-section-nav > .zz-button { width: 100%; }
-@media (--mobile) {
-  .zz-form-section-nav { flex-direction: row; overflow-x: auto; scrollbar-width: none; }
-  .zz-form-section-nav::-webkit-scrollbar { display: none; }
-  .zz-form-section-nav > .zz-button { width: auto; flex: none; }
-}
 
 /* ── Marker / PriceFields (Figma `marker`, `price fields`, Gio 2026-11-17) ── */
 .zz-marker {
