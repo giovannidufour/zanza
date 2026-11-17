@@ -1002,6 +1002,8 @@ export interface BulkRecordProps extends HTMLAttributes<HTMLLIElement> {
   state?: 'reading' | 'matched' | 'choose' | 'not found' | 'confirmed' | 'skipped';
   /** 0–100, while reading */
   progress?: number;
+  /** Files of the record still converting or uploading, 0–100 (decision 0108): a ProgressBar under the files line, any state but reading. Omitted / null = none. */
+  uploadProgress?: number | null;
   /** the status line (support text, neutral) */
   status?: ReactNode;
   /** Figma boolean `warning`: a non-blocking problem (support text, alert). Omit → none */

@@ -997,13 +997,16 @@
   function BulkRecord(props) {
     var name = typeof props.title === 'string' ? props.title : 'record';
     var reading = props.state === 'reading';
-    return h('li', Object.assign({}, omit(props, ['title', 'meta', 'files', 'status', 'warning', 'progress', 'state', 'onReview', 'onRemove', 'reviewLabel', 'removeLabel', 'className']),
+    var uploading = !reading && props.uploadProgress != null;
+    return h('li', Object.assign({}, omit(props, ['title', 'meta', 'files', 'status', 'warning', 'progress', 'uploadProgress', 'state', 'onReview', 'onRemove', 'reviewLabel', 'removeLabel', 'className']),
       { className: cx('zz-bulk-record', props.className), 'data-state': props.state || undefined }),
       h('div', { className: 'zz-bulk-record__text' },
         h('p', { className: 'zz-bulk-record__title body-medium' }, props.title),
         props.meta ? h('p', { className: 'zz-bulk-record__meta body-small' }, props.meta) : null,
         props.files ? h('p', { className: 'zz-bulk-record__files body-small' }, props.files) : null,
         reading ? h(ProgressBar, { className: 'zz-bulk-record__progress', value: props.progress || 0, 'aria-label': 'Reading ' + name }) : null,
+        // files still converting / uploading (decision 0108): the same bar, under the files line
+        uploading ? h(ProgressBar, { className: 'zz-bulk-record__progress', value: props.uploadProgress, 'aria-label': 'Uploading the files of ' + name }) : null,
         props.status ? h('p', { className: 'zz-bulk-record__status body-small' }, props.status) : null,
         props.warning ? h('p', { className: 'zz-bulk-record__warning body-small' }, props.warning) : null),
       reading ? null : h('div', { className: 'zz-bulk-record__actions' },
