@@ -17,6 +17,7 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 
 - **Button loading state ([0098](decisions/0098-checkout-thanks-and-returns.md)).** Checkout waits ~1 s for create-checkout: today aria-disabled with no visual change (disabled = struck through = unavailable, 0058). Options: a `loading` variant (label "Checkout…", no strike), or keep as is.
 - **Header with trade off ([0102](decisions/0102-trade-switch.md)).** The section tabs keep a single tab, For sale. Alternatives: no tabs at all (then /sale/ is reached only from the home and the menu on desktop), or a plain link. Not drawn in Figma.
+- **Admin Content ([0106](decisions/0106-admin-content.md)).** Lists inside a section text (Terms is a bulleted list today): `- ` lines kept, or one section per item? Emails (order, offer, notify) and the coming-soon page out of v1. Rows on mobile keep the Edit button (memo pattern); alternative = whole row as a link.
 - **Player track number.** Figma shows "1" next to the title and "1 of 3" in the controls; code maps the first to the track position on the record (A, B) — to confirm.
 - **ProductCard link style.** Cover and record title link to the product page ([0040](decisions/0040-card-title-links-to-pdp.md)); not drawn in Figma: hover / focus of the cover and of inline links (today: underline on hover, code only) to design.
 - **ProductCard hover ([0088](decisions/0088-product-card-hover.md)).** Padding stays as it is (Gio): the tint is flush with the text and the Add button. Not drawn in Figma: the sold-out cover back to normal on card hover (blend/saturation can't follow a variant). The whole card darkens but only cover, title, tags and buttons are clickable.
@@ -78,6 +79,7 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 
 ## Figma to fix
 
+- `_input-master` › value text wraps on several lines in single-line fields (a long URL grows the field); code inputs scroll. Proposal: truncate to one line in sizes medium/compact. `size=multiline, state=filled` added 2026-11-17 (0106); the multiline variants overlapped row 1 of the grid, moved to row 5.
 - Variables: `white-0/4/8/16/24` → `white-a*` · `border divider/strong` → `border/divider/strong` · `small`, `medium-small` → `space/*`.
 - `_button-sizes`: `size` options ordered large, medium, extra small, small → order by size. Unported `prefix` / `suffix` slots and single-value `active` axis.
 - `icon button`: no instance-swap property on the icon · `state=disabled` background bound to `…/default` instead of `…/disabled`.
