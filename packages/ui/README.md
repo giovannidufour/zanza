@@ -79,8 +79,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | AdminBar | page `admin` → `admin bar` | ported (0089): device desktop / mobile (responsive); mobile opens a MenuLayer dialog |
 | ListingRow | page `admin` → `listing row` | ported (0089): admin list row on mobile (Listings, Attributes), select, meta, price |
 | OrderBlock | page `Orders` (BACKEND) → `order block` | ported (0100): title, body (line breaks kept), optional action |
-| FormSectionHead | page `Create` (BACKEND) → `form section head` | ported (0113): heading of a Create / Edit listing section, focus target of the nav |
-| FormSectionNav | page `Create` (BACKEND) → `form section nav` | ported (0113): in-page section anchors, desktop column / mobile sticky row, state=active = section in view |
+| FormSectionHead | page `Create` (BACKEND) → `form section head` | ported (0113): heading of a Create / Edit listing section |
 | Marker | page `listing form` → `marker` | ported (0114): 48px circle before a form block (line number, €€), aria-hidden |
 | PriceFields | page `Create` (BACKEND) → `price fields` | ported (0114): Marker + Sale type + Price, desktop grid / mobile stacked |
 | ActionBar | page `admin` → `action bar` | ported (0089): form actions sticky at the bottom on mobile, optional status line |

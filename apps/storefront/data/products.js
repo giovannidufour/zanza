@@ -57,8 +57,7 @@ function effectiveStatus(row) {
 }
 
 // one DB row (listing + embedded release, its lines and samples) → the storefront contract.
-// Featured image = first photo: it is the release `cover`, the rest are the copy photos
-// (a single photo is both, as in the JSON test content).
+// Featured image = first photo: it is the release `cover`, the rest are the copy photos (none when there is one photo).
 function toProduct(row, mediaUrl) {
   const r = row.release;
   const lines = (r.lines || []).slice().sort((a, b) => a.position - b.position);
@@ -108,7 +107,7 @@ function toProduct(row, mediaUrl) {
       condition_sleeve: row.condition_sleeve,
       condition_notes: row.condition_notes,
       notes: row.notes,
-      photos: photos.length > 1 ? photos.slice(1) : photos
+      photos: photos.slice(1)
     },
     samples: (r.samples || []).slice().sort((a, b) => a.sort - b.sort).map((s) => ({
       track_position: s.track_position,
