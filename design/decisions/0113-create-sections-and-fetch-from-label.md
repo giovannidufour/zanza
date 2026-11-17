@@ -1,4 +1,4 @@
-# 0112 — Create listing: section nav, section headings, Discogs + images first, Fetch from label
+# 0113 — Create listing: section nav, section headings, Discogs + images first, Fetch from label
 
 `2026-11-17` · accepted · Figma: BACKEND → Create → `form section head` (2357:3262), `form section nav` (2357:5320, device=desktop | mobile), `discogs actions` boolean `fetch from label`; screens "Create listing - desktop · section nav" (2357:4296) and "Create listing - mobile · viewport · section nav (sticky)" (2357:5321)
 

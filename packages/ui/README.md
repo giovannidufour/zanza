@@ -60,7 +60,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | Alert | page `Bag` → `alert` | ported (0077): red box, used by BagSummary `minimumNote` and `soldOutNote` |
 | Divider | page `divider` → `divider` | ported |
 | ActionPanel | page `listing form` → `action panel` | ported |
-| ListingLine | page `listing form` → `listing line` | ported: removable, sample empty / uploaded, artist on label |
+| ListingLine | page `listing form` → `listing line` | ported: removable, sample empty / uploaded, artist on label, marker (number, 0114) |
 | TradeNote | page `Trade` → `trade note` | ported (0068): title, body, signature |
 | DiscogsCard | page `Trade` → `discogs card` | ported (0068): label, handle, stats, link |
 | TradeStep | page `Trade` → `trade step` | ported (0068) |
@@ -79,8 +79,10 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | AdminBar | page `admin` → `admin bar` | ported (0089): device desktop / mobile (responsive); mobile opens a MenuLayer dialog |
 | ListingRow | page `admin` → `listing row` | ported (0089): admin list row on mobile (Listings, Attributes), select, meta, price |
 | OrderBlock | page `Orders` (BACKEND) → `order block` | ported (0100): title, body (line breaks kept), optional action |
-| FormSectionHead | page `Create` (BACKEND) → `form section head` | ported (0112): heading of a Create / Edit listing section, focus target of the nav |
-| FormSectionNav | page `Create` (BACKEND) → `form section nav` | ported (0112): in-page section anchors, desktop column / mobile sticky row, state=active = section in view |
+| FormSectionHead | page `Create` (BACKEND) → `form section head` | ported (0113): heading of a Create / Edit listing section, focus target of the nav |
+| FormSectionNav | page `Create` (BACKEND) → `form section nav` | ported (0113): in-page section anchors, desktop column / mobile sticky row, state=active = section in view |
+| Marker | page `listing form` → `marker` | ported (0114): 48px circle before a form block (line number, €€), aria-hidden |
+| PriceFields | page `Create` (BACKEND) → `price fields` | ported (0114): Marker + Sale type + Price, desktop grid / mobile stacked |
 | ActionBar | page `admin` → `action bar` | ported (0089): form actions sticky at the bottom on mobile, optional status line |
 | Checkbox | page `controls` → `checkbox` | ported: state default / active (= checked) / indeterminate, `label` boolean (hideLabel), native input |
 | Dialog | page `dialog` → `dialog` | ported: native `<dialog>` + showModal, surface-base, backdrop surface-scrim, `choices` (radio group) |

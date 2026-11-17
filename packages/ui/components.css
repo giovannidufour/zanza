@@ -1126,7 +1126,8 @@ a.zz-product-card__image { display: block; color: inherit; }
    line: fields + sample, gap 8. fields: 8-column grid, column gap 16, row gap 8 (Figma grid auto layout, 0012).
    removable=false: artist 1–4, title 5–8. removable=true: artist 1–3, title 4–7, remove × in 8.
    Row 2: spelling under the artist, credit under the title. Sample: gap 16 (Figma `sample`). */
-.zz-listing-line { display: flex; flex-direction: column; gap: 8px; }
+.zz-listing-line { display: flex; align-items: flex-start; }                     /* Marker + body, gap 0 (Figma, wanted) */
+.zz-listing-line__body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .zz-listing-line__fields { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px 16px; align-items: start; }
 .zz-listing-line__fields > * { display: flex; flex-direction: column; min-width: 0; }   /* cells blockify their field, as direct grid items would */
 .zz-listing-line__artist   { grid-row: 1; grid-column: 1 / span 4; }
@@ -1536,4 +1537,18 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
   .zz-form-section-nav { flex-direction: row; overflow-x: auto; scrollbar-width: none; }
   .zz-form-section-nav::-webkit-scrollbar { display: none; }
   .zz-form-section-nav > .zz-button { width: auto; flex: none; }
+}
+
+/* ── Marker / PriceFields (Figma `marker`, `price fields`, Gio 2026-11-17) ── */
+.zz-marker {
+  flex: none; box-sizing: border-box; width: 48px; height: 48px; padding: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border-divider-strong); border-radius: 50%; color: var(--text-strong);
+}
+.zz-price-fields { display: flex; align-items: flex-start; }
+.zz-price-fields__row { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.zz-price-fields__field { grid-column: span 2; display: flex; flex-direction: column; min-width: 0; }
+@media (--mobile) {
+  .zz-price-fields__row { grid-template-columns: minmax(0, 1fr); }
+  .zz-price-fields__field { grid-column: auto; }
 }

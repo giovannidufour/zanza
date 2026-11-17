@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"OrderItem"},{"name":"OrderRow"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"},{"name":"FormSectionHead"},{"name":"FormSectionNav"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"OrderItem"},{"name":"OrderRow"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"},{"name":"FormSectionHead"},{"name":"FormSectionNav"},{"name":"Marker"},{"name":"PriceFields"}]} */
 /* packages/ui/components.js — the ONE implementation of the rythem-works components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
@@ -1155,17 +1155,38 @@
   function ListingLine(props) {
     var removable = !!props.onRemove;
     function cell(name, node) { return node ? h('div', { className: 'zz-listing-line__' + name }, node) : null; }
-    return h('div', Object.assign({}, omit(props, ['artist', 'title', 'spelling', 'credit', 'onRemove', 'removeLabel', 'className', 'children']), {
+    var hasMarker = props.marker !== undefined && props.marker !== null && props.marker !== false;
+    return h('div', Object.assign({}, omit(props, ['artist', 'title', 'spelling', 'credit', 'onRemove', 'removeLabel', 'marker', 'className', 'children']), {
       className: cx('zz-listing-line', props.className), 'data-removable': removable ? 'true' : 'false'
     }),
-      h('div', { className: 'zz-listing-line__fields' },
-        cell('artist', props.artist),
-        cell('title', props.title),
-        removable ? h('div', { className: 'zz-listing-line__remove' },
-          h(IconButton, { icon: h(CloseIcon), 'aria-label': props.removeLabel || 'Remove line', onClick: props.onRemove })) : null,
-        cell('spelling', props.spelling),
-        cell('credit', props.credit)),
-      props.children ? h('div', { className: 'zz-listing-line__sample' }, props.children) : null);
+      // Figma `listing line` boolean `number` (Gio 2026-11-17): a Marker with the line number before the fields, gap 0
+      hasMarker ? h(Marker, null, props.marker) : null,
+      h('div', { className: 'zz-listing-line__body' },
+        h('div', { className: 'zz-listing-line__fields' },
+          cell('artist', props.artist),
+          cell('title', props.title),
+          removable ? h('div', { className: 'zz-listing-line__remove' },
+            h(IconButton, { icon: h(CloseIcon), 'aria-label': props.removeLabel || 'Remove line', onClick: props.onRemove })) : null,
+          cell('spelling', props.spelling),
+          cell('credit', props.credit)),
+        props.children ? h('div', { className: 'zz-listing-line__sample' }, props.children) : null));
+  }
+
+  /* ── Marker (Figma page `listing form` → `marker`, Gio 2026-11-17) ──
+     A circle that draws the eye to a block of the listing form: the line number in ListingLine, "€€" in PriceFields.
+     48 × 48, border 1 border-divider/strong, body/extra-large text/strong, centred. Decorative (aria-hidden): the
+     fields next to it carry their own labels. Sits 0 from the fields (wanted). */
+  function Marker(props) {
+    return h('span', Object.assign({ 'aria-hidden': 'true' }, omit(props, ['className', 'children']), { className: cx('zz-marker body-extra-large', props.className) }), props.children);
+  }
+  /* ── PriceFields (Figma page `Create` → `price fields`, device=desktop | mobile, Gio 2026-11-17) ──
+     Marker ("€€") + Sale type + Price. desktop: an 8-column grid gap 16, each field 2 columns; mobile: stacked, gap 16. */
+  function PriceFields(props) {
+    return h('div', Object.assign({}, omit(props, ['marker', 'saleType', 'price', 'className']), { className: cx('zz-price-fields', props.className) }),
+      h(Marker, null, props.marker === undefined ? '€€' : props.marker),
+      h('div', { className: 'zz-price-fields__row' },
+        props.saleType ? h('div', { className: 'zz-price-fields__field' }, props.saleType) : null,
+        props.price ? h('div', { className: 'zz-price-fields__field' }, props.price) : null));
   }
 
   /* ── Checkbox ───────────────────────────────────────────────────────────
@@ -1647,6 +1668,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, AdminBar: AdminBar, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, FormSectionNav: FormSectionNav,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, AdminBar: AdminBar, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, FormSectionNav: FormSectionNav, Marker: Marker, PriceFields: PriceFields,
            SectionHead: SectionHead, GenreLinks: GenreLinks, HomeAbout: HomeAbout };
 });
