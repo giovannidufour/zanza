@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"OrderItem"},{"name":"OrderRow"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"OrderItem"},{"name":"OrderRow"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"},{"name":"FormSectionHead"},{"name":"FormSectionNav"}]} */
 /* packages/ui/components.js — the ONE implementation of the rythem-works components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
@@ -74,7 +74,7 @@
     // state="active" (Figma _button-states state=active, 2026-11-10): the button stands for the page you are on
     // (header Bag on /bag/). A real state, not doc-only: it stays a focusable link with aria-current="page", never
     // `disabled`, so keyboard and screen readers still reach it and hear "current page" (decision 0045).
-    if (props.state === 'active') attrs['aria-current'] = 'page';
+    if (props.state === 'active') attrs['aria-current'] = props['aria-current'] || 'page';   // in-page anchors pass "true"
     // icon-only (no children): Figma hides the label container; aria-label is required by the consumer
     var hasLabel = props.children !== undefined && props.children !== null && props.children !== false;
     var typeClass = (size === 'small' || size === 'extra-small') ? 'label-extra-small' : 'label-medium';   // Figma text style per size
@@ -1579,6 +1579,36 @@
       support ? h('p', { id: supportId, className: 'zz-input__support body-small' }, support) : null);
   }
 
+  /* ── Create / Edit listing sections (Figma BACKEND → Create, Gio 2026-11-17) ──
+     FormSectionHead (`form section head`): the heading of a form section, label/medium text/strong (like the old
+       "Images" title). tabIndex -1: the section nav moves focus here after scrolling.
+     FormSectionNav (`form section nav`, device=desktop | mobile): one secondary small Button per section, state=active
+       = the section in view (aria-current="true", an in-page location, not a page). desktop: a column, Buttons fill,
+       gap 8. mobile (--mobile): one row, gap 8, Buttons hug, scrolls sideways (the row is cut at the edge, as the
+       status tabs); the page makes it sticky. The current one is scrolled into view in the row. */
+  function FormSectionHead(props) {
+    var Tag = 'h' + (props.headingLevel || 2);
+    return h(Tag, Object.assign({ tabIndex: -1 }, omit(props, ['headingLevel', 'className', 'children']), { className: cx('zz-form-section-head label-medium', props.className) }), props.children);
+  }
+  function FormSectionNav(props) {
+    var items = props.items || [];
+    var own = React.useRef(null), ref = props.navRef || own;
+    React.useEffect(function () {
+      var nav = ref.current, btn = nav && nav.querySelector('[aria-current]');
+      if (!nav || !btn || nav.scrollWidth <= nav.clientWidth) return;
+      var l = btn.offsetLeft - nav.offsetLeft, r = l + btn.offsetWidth;
+      if (l < nav.scrollLeft) nav.scrollLeft = l;
+      else if (r > nav.scrollLeft + nav.clientWidth) nav.scrollLeft = r - nav.clientWidth;
+    }, [props.current]);
+    return h('nav', Object.assign({}, omit(props, ['items', 'current', 'onSelect', 'label', 'navRef', 'className']),
+      { ref: ref, className: cx('zz-form-section-nav', props.className), 'aria-label': props.label || 'Sections' }),
+      items.map(function (it) {
+        var on = it.id === props.current;
+        return h(Button, { key: it.id, hierarchy: 'secondary', size: 'small', state: on ? 'active' : undefined, 'aria-current': on ? 'true' : undefined,
+          onClick: function () { if (props.onSelect) props.onSelect(it.id); } }, it.label);
+      }));
+  }
+
   /* ── Home (Figma page `Home`, 2026-11-14) ────────────────────────────────
      SectionHead: `section head` — divider on top (boolean `divider`), then a row: title body/large text/strong, actions on
        the right (gap small): `play` ("Play all") and `see all`, secondary Buttons; gap medium-small.
@@ -1617,6 +1647,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, AdminBar: AdminBar, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, AdminBar: AdminBar, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, FormSectionNav: FormSectionNav,
            SectionHead: SectionHead, GenreLinks: GenreLinks, HomeAbout: HomeAbout };
 });
