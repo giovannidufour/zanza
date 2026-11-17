@@ -1,0 +1,9 @@
+# 0111 — Custom title: From Discogs, artists linked inside it
+
+`2026-11-17` · accepted · Figma: BACKEND → Create → `custom title` (2351:3767), placed in the three Create screens
+
+**Context.** Gio: when a listing already has a Discogs release, a "From Discogs" button under Custom title should fill it with the Discogs title, keeping the links to the artists in the database. Until now a custom title was plain text in the shop (no credits to link).
+**Decision.** Component `custom title` = the Custom title field + secondary button **From Discogs** (gap 16), boolean `from discogs` (default on; off when Discogs match holds no release). The admin shows the button only while Discogs match holds a valid release; pressing it reads the release (`discogs-lookup`) and sets Custom title to `Artist - Title` as Discogs titles it, the artist as printed (anv). Nothing else in the form changes. In the shop, a custom title links the release's artists it contains: each artist entity by its name, and each line's printed credit (a shared credit cut at its join texts, as in the release name); whole words, case-insensitive, longest first, each artist once; separators stay text, the rest links to the product page on cards as before. No new data: the title stays text, the links come from the release's artist entities at build time.
+**Rule.** A custom title is free text; links inside it are derived from the release's artists, never stored in the title.
+**Where.** `apps/admin/admin.js` (ListingForm: titleFromDiscogs, the `admin-custom-title` block), `apps/admin/admin.css`, `apps/storefront/pages/shell.js` (customTitleNodes, productNameLinked).
+Also: existing custom titles that contain an artist's name now link it. An artist written differently from both the entity name and the printed credit (an alias only) is not found.
