@@ -14,7 +14,7 @@
    4. PDP gallery
       - tracks the gallery's top in the window (--pdp-gallery-top), so pdp.css keeps its bottom at the window bottom
       - EXPERIMENT sticky record (desktop): measures the record (info + actions) for pdp.css, and brings it back from
-        under "More for sale" when keyboard focus moves into it
+        under "More for sale" when keyboard focus moves into it; a click on a gallery photo scrolls smoothly to the top
    5. PLP filters
       - ticking an option filters the list (OR inside a block, AND between blocks), updates the counts, the URL and
         the breadcrumbs, and announces the number of records
@@ -414,16 +414,26 @@
       var over = bottom + gap - related.getBoundingClientRect().top;
       if (over > 0) window.scrollBy(0, -over);
     }
+    // a click on a gallery photo scrolls smoothly back to the top of the page (Gio 2026-11-18). Mouse shortcut only:
+    // the cursor stays the default arrow (no link look), keyboard users have Home. Desktop only (anchored layout).
+    function onGalleryClick(e) {
+      if (!e.target.closest || !e.target.closest('.pdp-content__gallery .zz-gallery__item')) return;
+      if (getComputedStyle(parts[0]).position !== 'sticky') return;
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+    }
     measure();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
     var ro = window.ResizeObserver ? new ResizeObserver(schedule) : null;
     if (ro) parts.concat(related.querySelector('.zz-related-products__title') || []).forEach(function (el) { ro.observe(el); });
     window.addEventListener('resize', schedule);
     content.addEventListener('focusin', onFocusIn);
+    content.addEventListener('click', onGalleryClick);
     recordCleanup = function () {
       if (ro) ro.disconnect();
       window.removeEventListener('resize', schedule);
       content.removeEventListener('focusin', onFocusIn);
+      content.removeEventListener('click', onGalleryClick);
       if (frame) window.cancelAnimationFrame(frame);
     };
   }
