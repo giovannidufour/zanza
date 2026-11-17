@@ -50,6 +50,18 @@ body[data-player-open] .pdp-content[data-record-stack] > .pdp-content__info,
 body[data-player-open] .pdp-content[data-record-stack] > .pdp-content__actions {
   top: min(var(--pdp-record-top, 0px), calc(100dvh - var(--pdp-record-height, 0px) - var(--site-player-height, 0px) - var(--page-margin-desktop)));
 }
+/* the gallery stays still too (Gio 2026-11-18): it does not move with the page, it scrolls only inside, under the
+   pointer. Same top as the record; it ends page-margin above the window bottom (and the open player); reaching
+   its end does not hand the wheel over to the page (overscroll-behavior). Replaces the --pdp-gallery-top tracking. */
+.pdp-content[data-record-stack] > .pdp-content__gallery {
+  position: sticky;
+  top: var(--pdp-record-top, 0px);
+  overscroll-behavior: contain;
+  --zz-gallery-max-height: calc(100dvh - var(--pdp-record-top, 0px) - var(--page-margin-desktop));
+}
+body[data-player-open] .pdp-content[data-record-stack] > .pdp-content__gallery {
+  --zz-gallery-max-height: calc(100dvh - var(--pdp-record-top, 0px) - var(--site-player-height, 0px) - var(--page-margin-desktop));
+}
 /* the list is an opaque layer above the record: page ground, so the record disappears under it */
 .pdp-content[data-record-stack] > .pdp-content__related { position: relative; z-index: 1; background: var(--surface-accent); }
 
@@ -73,4 +85,5 @@ body[data-player-open] .pdp-content[data-record-stack] > .pdp-content__actions {
   /* the sticky record experiment is desktop only */
   .pdp-content[data-record-stack] { grid-template-rows: none; }
   .pdp-content[data-record-stack] > .pdp-content__info, .pdp-content[data-record-stack] > .pdp-content__actions { grid-row: auto; position: static; }
+  .pdp-content[data-record-stack] > .pdp-content__gallery { position: static; overscroll-behavior: auto; }
 }
