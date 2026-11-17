@@ -35,7 +35,7 @@ body[data-player-open] .pdp-content__gallery { --zz-gallery-max-height: calc(100
    hidden), then stay anchored there; "More for sale" starts
    where it always did, keeps scrolling, covers the record, and uncovers it on the way back. The gallery, anchored,
    scrolls only inside, under the pointer (overscroll-behavior: its end does not hand the wheel to the page); its
-   max height still follows --pdp-gallery-top (decision 0036), so anchored it ends page-margin above the window bottom.
+   bottom stays page-margin above the window bottom, and it stops growing once anchored.
    Info and actions span rows 1-2 so sticky holds them down the whole list (a grid item sticks only inside its grid
    area); row 1 keeps its height from --pdp-record-height (the taller of the two, set by scripts/site.js), so the list
    starts exactly where it did. A record taller than the window anchors higher, so Add to bag stays reachable.
@@ -57,6 +57,14 @@ body[data-player-open] .pdp-content[data-record-stack] > .pdp-content__actions {
   position: sticky;
   top: calc(var(--site-header-visible, 0px) + var(--small));
   overscroll-behavior: contain;
+  /* height from the window bottom to its top (0036), but its top never counts as higher than the anchor: at the end
+     of the list the grid pushes the gallery up, and a height that kept growing as it rose would uncover the last
+     photo (Gio 2026-11-18: the gallery scrolls only inside, never with the page) */
+  --pdp-gallery-anchor: calc(var(--site-header-visible, 0px) + var(--small));
+  --zz-gallery-max-height: calc(100dvh - max(var(--pdp-gallery-top, 0px), var(--pdp-gallery-anchor)) - var(--page-margin-desktop));
+}
+body[data-player-open] .pdp-content[data-record-stack] > .pdp-content__gallery {
+  --zz-gallery-max-height: calc(100dvh - max(var(--pdp-gallery-top, 0px), var(--pdp-gallery-anchor)) - var(--site-player-height, 0px) - var(--page-margin-desktop));
 }
 /* the anchor sits small below the visible part of the site header: when the header comes back on scroll up,
    gallery and record step down with it (same pattern and placeholder timing as the PLP filters, plp.css) */
