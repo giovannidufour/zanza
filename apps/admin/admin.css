@@ -222,3 +222,16 @@ h1, h2, p { margin: 0; }
 /* Samples overview → Length + Duration of a sample (decision 0110; not in Figma yet, design/open.md): side by side, gap 16 like the sample row */
 .admin-sample-clip { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
 .admin-sample-clip > * { flex: 0 1 200px; min-width: 0; }
+
+/* sample player (Gio 2026-11-17): the shop's Player (packages/ui), docked to the bottom of the viewport as in the shop
+   (apps/storefront/base.css .site-player, same placeholder motion). While it is open the page reserves its height and
+   the mobile ActionBar sits right above it (--admin-player-height, set by admin.js). */
+.admin-player {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  transform: translateY(100%); visibility: hidden;
+  transition: transform 200ms ease-out, visibility 0s linear 200ms;
+}
+.admin-player[data-open] { transform: none; visibility: visible; transition: transform 200ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .admin-player, .admin-player[data-open] { transition: none; } }
+body[data-player-open] { padding-bottom: var(--admin-player-height, 0px); }
+body[data-player-open] .zz-action-bar { bottom: var(--admin-player-height, 0px); }
