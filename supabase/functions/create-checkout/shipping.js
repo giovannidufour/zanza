@@ -14,7 +14,7 @@
                                                                               available records' subtotal, shipping
                                                                               excluded; null / 0 = no minimum
      }
-   Rules (Gio 2026-11-12: "ogni mailer deve avere un massimo di dischi per formato"):
+   Rules (owner 2026-11-12: "ogni mailer deve avere un massimo di dischi per formato"):
    · a parcel is full when Σ (records of a format / that format's max) reaches 1, so a mixed order shares the space
      (max 10 × 7" and 5 × LP: 2 LP + 5 × 7" = 0.4 + 0.5 = 0.9 → fits)
    · weight of a parcel = its records (the listing's own weight_g, else its format's) + the package's weight
@@ -98,7 +98,7 @@
     return { status: 'ok', zone: zone, price_cents: best.price_cents, parcels: best.parcels };
   }
 
-  /* minimum order (decision 0072, Gio 2026-11-13): the subtotal of the records being bought (available lines only,
+  /* minimum order (decision 0072, owner 2026-11-13): the subtotal of the records being bought (available lines only,
      shipping excluded) must reach config.min_order_cents. Not a shipping rule, but it lives in the same settings row
      (one admin page, one Save, one rebuild) and must be checked by the same code in the bag and in create-checkout.
      → { min_cents, missing_cents, ok } — min_cents 0 = no minimum, always ok. */

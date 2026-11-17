@@ -103,7 +103,7 @@
     headerCleanup = function () { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', apply); stopLogoFit(); };
   }
 
-  // Logo only when everything fits (Gio, 2026-11-15; Figma `header` boolean `logo`): on screens too narrow for
+  // Logo only when everything fits (owner, 2026-11-15; Figma `header` boolean `logo`): on screens too narrow for
   // menu + logo + store name + Bag in one row (desktop: + tabs + search + Account) (e.g. 375px with "rythem-works"), the logo goes and the name stays.
   // Measured, not a breakpoint: the room depends on the store name and on the Bag count. Min gap = the row's 8px gap.
   function fitHeaderLogo(header) {
@@ -144,7 +144,7 @@
   function current() { return queue[index] || null; }
 
   function sampleFrom(btn) {
-    // the copy's status at build time travels with the sample (Gio 2026-11-15): the player keeps playing across pages,
+    // the copy's status at build time travels with the sample (owner 2026-11-15): the player keeps playing across pages,
     // where that copy may not be on the page, and its "Add to bag" must still read "Sold out" for a sold copy
     var id = btn.getAttribute('data-listing-id');
     if (id && btn.getAttribute('data-listing-status')) heard[id] = btn.getAttribute('data-listing-status');
@@ -446,7 +446,7 @@
     if (!root) return;
     var items = Array.prototype.slice.call(document.querySelectorAll('.plp-item'));
     var list = items.length ? items[0].parentNode : null;
-    // "Show sold out" (Gio 2026-11-12): not a facet. Ticked by default; unticked = ?sold=hide. It never counts as an
+    // "Show sold out" (owner 2026-11-12): not a facet. Ticked by default; unticked = ?sold=hide. It never counts as an
     // applied filter and Reset ticks it again.
     var soldBox = root.querySelector('input[data-show-sold]');
     var boxes = Array.prototype.slice.call(root.querySelectorAll('input[type="checkbox"]')).filter(function (b) { return b !== soldBox; });
@@ -522,7 +522,7 @@
         if (count) count.textContent = n;
         b.closest('.zz-filter').hidden = n === 0 && !b.checked;
       });
-      // a block shows only when something in the current view can be picked (Gio, 2026-11-10)
+      // a block shows only when something in the current view can be picked (owner, 2026-11-10)
       Array.prototype.forEach.call(scope.querySelectorAll('.zz-filter-block'), function (block) {
         block.setAttribute('data-empty', block.querySelector('.zz-filter:not([hidden])') ? 'false' : 'true');
         if (scope === root) block.hidden = block.getAttribute('data-empty') === 'true';
@@ -536,7 +536,7 @@
     }
     var LINK_LABEL = { genre: 'Genre', tag: 'Tag' };
     // the row's chips: the hidden-facet chips, else the linked genre / tag while still ticked. A genre / tag chip shows
-    // only the value ("Street Soul", Gio 2026-11-14, decision 0073); the type stays in the remove button's name.
+    // only the value ("Street Soul", owner 2026-11-14, decision 0073); the type stays in the remove button's name.
     function rowChipsOf(s) {
       var out = chipsOf(s);
       if (linked && s[linked.key] && s[linked.key].indexOf(linked.value) !== -1) {
@@ -716,7 +716,7 @@
         currentFacet = key;
         panel.setAttribute('data-level', key ? 'facet' : 'main');
         var row = key && rows.filter(function (r) { return r.getAttribute('data-facet') === key; })[0];
-        title.textContent = key ? row.getAttribute('data-facet-label') : 'Filter';   // Gio 2026-11-10: "Filter", as the trigger
+        title.textContent = key ? row.getAttribute('data-facet-label') : 'Filter';   // owner 2026-11-10: "Filter", as the trigger
         back.hidden = !key;
         layer.querySelector('[data-layer-facets]').hidden = !!key;
         var soldRow = layer.querySelector('[data-layer-sold]'); if (soldRow) soldRow.hidden = !!key;
@@ -813,7 +813,7 @@
     if (!id) return;
     var ids = readBag();
     if (ids.indexOf(id) === -1) { ids.push(id); writeBag(ids); }
-    // a toast too (Gio, decision 0050), even if the button and the header count already change: View bag = the header
+    // a toast too (owner, decision 0050), even if the button and the header count already change: View bag = the header
     // Bag link (soft navigation keeps the player), so the toast closes after 6 s like a text-only one
     if (window.ZanzaToast) {
       window.ZanzaToast.show({ message: 'Added to bag.', actionLabel: 'View bag', actionElsewhere: true, onAction: function () {
@@ -858,7 +858,7 @@
       else { held++; if (holdKind && holdKind[id] === 'manual') heldByHand++; }
     });
     // sold and reserved lines are not in the order: say it above Checkout, in full sentences, so a partial checkout
-    // is explicit (decisions 0064, 0065; Gio 2026-11-12). A checkout hold ends within 30 min; a hold by hand has no end.
+    // is explicit (decisions 0064, 0065; owner 2026-11-12). A checkout hold ends within 30 min; a hold by hand has no end.
     var soldNote = root.querySelector('[data-bag-sold-out]');
     if (soldNote) {
       var notes = [];
@@ -1043,7 +1043,7 @@
     checkoutMessage('Checkout cancelled. Your records are still in your bag.');
   }
 
-  // a copy already in the bag: its Add buttons become "In bag" (Gio 2026-11-12, decision 0058, replaces "Remove" of
+  // a copy already in the bag: its Add buttons become "In bag" (owner 2026-11-12, decision 0058, replaces "Remove" of
   // 0054). Same Button: hierarchy secondary (the PDP CTA drops from primary), leading icon = tick (Figma `leading icon`
   // on, icon-tick-large-thin), label "In bag", accessible name "In bag, view bag". Pressing it opens the bag: taking a
   // copy out happens only in the bag. Never disabled: struck through means unavailable (sold). The defaults are kept
@@ -1059,7 +1059,7 @@
     if (!btn.hasAttribute('data-label-default')) btn.setAttribute('data-label-default', text.nodeValue);
     if (!btn.hasAttribute('data-hierarchy-default')) btn.setAttribute('data-hierarchy-default', btn.getAttribute('data-hierarchy') || 'primary');
     var st = id ? statusFor(id) : 'available';
-    // sold (Gio 2026-11-12, Figma page `Search`): "Sold out", disabled — struck through = unavailable (decision 0058)
+    // sold (owner 2026-11-12, Figma page `Search`): "Sold out", disabled — struck through = unavailable (decision 0058)
     var sold = st === 'sold' || st === 'traded';
     var reserved = !sold && st === 'reserved';
     var inBag = !sold && !reserved && !!id && (ids || readBag()).indexOf(id) !== -1;
@@ -1076,7 +1076,7 @@
     setTrailingIcon(btn, reserved ? 'zz-icon-envelope' : null);
   }
   // "(Reserved) Notify me" (decision 0065): Button prefix "(Reserved)" + label "Notify me". On mobile only "Reserved"
-  // shows (Gio 2026-11-12): the brackets and "Notify me" are spans that base.css hides at the mobile breakpoint, so the
+  // shows (owner 2026-11-12): the brackets and "Notify me" are spans that base.css hides at the mobile breakpoint, so the
   // label follows the viewport without JS. The label's own text node is left empty meanwhile.
   function setReservedLabel(label, text, on) {
     var cur = label.querySelector('[data-reserved-label]');
@@ -1171,7 +1171,7 @@
   // Reserved -> the "Reserved" dialog (proposal, design/open.md): explains the hold and offers "Notify me" (one email
   // when the copy is available again, migration 0016). Without Supabase on the page: the explanation in a toast.
   // two kinds of hold (listing_availability.checkout_hold, migration 0016): a checkout (ends within 30 min) or a manual
-  // one (Gio holds it for someone, no end). Without the column (before 0016) a hold reads as a checkout.
+  // one (owner holds it for someone, no end). Without the column (before 0016) a hold reads as a checkout.
   var RESERVED_TEXT = {
     checkout: 'Someone is checking out this record. If they don\u2019t buy it, it\u2019s back within 30 minutes.',
     manual: 'This record is on hold for someone. If it falls through, it\u2019s back in the shop.'
@@ -1624,7 +1624,7 @@
         return { record: val(r, 'record'), release: val(r, 'release'), media: val(r, 'media'), sleeve: val(r, 'sleeve') };
       });
       check(form.querySelector('[name="about"]'), !!val(form, 'about'));
-      // Discogs, plus Instagram or Facebook (Gio 2026-11-13): only to prove who they are; we talk by email
+      // Discogs, plus Instagram or Facebook (owner 2026-11-13): only to prove who they are; we talk by email
       check(form.querySelector('[name="discogs"]'), !!val(form, 'discogs'));
       var hasSocial = !!(val(form, 'instagram') || val(form, 'facebook'));
       check(form.querySelector('[name="instagram"]'), hasSocial);
