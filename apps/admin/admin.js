@@ -187,9 +187,9 @@
     if (end.length) parts.push(new Uint8Array(end));
     return new Blob(parts, { type: 'audio/mpeg' });
   }
-  // a clip of a sample (Gio 2026-11-17, decision 0110): its first `seconds`, 1 s fade-out (no fade-in), 128 kbps.
+  // a clip of a sample (Gio 2026-11-17, decision 0110): its first `seconds`, a hard cut (no fade-in nor fade-out, Gio), 128 kbps.
   // source = the File Gio dropped (best quality) or the URL of the file already in storage. onState as uploadFile.
-  var CLIP_FADE_OUT = 1, CLIP_DEFAULT = 45;
+  var CLIP_FADE_OUT = 0, CLIP_DEFAULT = 45;
   async function clipSample(source, seconds, onState) {
     var report = onState || function () {};
     report({ phase: 'cutting', value: 0 });
@@ -455,9 +455,6 @@
   // PDP: one tag group, genres then tags
   function previewTags(f) { return (f.genres || []).concat(f.tags || []).map(function (t) { return t.name; }); }
 
-  // ── audio preview (one at a time) ─────────────────────────────────────────
-  var audio = new Audio();
-
   // ── Create / edit listing ─────────────────────────────────────────────────
   function ListingForm(props) {
     var mobile = useIsMobile();
@@ -467,6 +464,26 @@
     var ms = useState(null), message = ms[0], setMessage = ms[1];
     var sv = useState(false), saving = sv[0], setSaving = sv[1];
     var pl = useState(null), playing = pl[0], setPlaying = pl[1];
+    // the shop's Player docked at the bottom (Gio 2026-11-17): opens on the first play, its native audio element plays
+    var op = useState(null), openId = op[0], setOpenId = op[1];
+    var audioRef = useRef(null), openRef = useRef(null), loadedUrl = useRef(null), playerRef = useRef(null);
+    openRef.current = openId;
+    function stopAudio() { if (audioRef.current) audioRef.current.pause(); }
+    useEffect(function () {   // the play buttons follow the audio element, also when it is paused from its own controls
+      var a = audioRef.current;
+      if (!a) return;
+      function on() { setPlaying(openRef.current); }
+      function off() { setPlaying(null); }
+      a.addEventListener('play', on); a.addEventListener('pause', off); a.addEventListener('ended', off);
+      return function () { a.removeEventListener('play', on); a.removeEventListener('pause', off); a.removeEventListener('ended', off); stopAudio(); };
+    }, []);
+    useEffect(function () {   // while it is open, the page and the mobile ActionBar keep clear of it
+      var root = document.documentElement;
+      if (!openId || !playerRef.current) { root.style.removeProperty('--admin-player-height'); document.body.removeAttribute('data-player-open'); return; }
+      root.style.setProperty('--admin-player-height', playerRef.current.offsetHeight + 'px');
+      document.body.setAttribute('data-player-open', '');
+    }, [openId, mobile]);
+    useEffect(function () { return function () { document.documentElement.style.removeProperty('--admin-player-height'); document.body.removeAttribute('data-player-open'); }; }, []);
     var fRef = useRef(f); fRef.current = f;
     var fd = useState(false), fetching = fd[0], setFetching = fd[1];
     var pf = useState(null), photoFound = pf[0], setPhotoFound = pf[1];   // releases from a photo of the label (0092)
@@ -528,18 +545,26 @@
     }
     function removeFrom(listName, id) {
       return function () {
-        if (playing === id) { audio.pause(); setPlaying(null); }
+        if (openId === id) closePlayer();
         set(function (cur) { var p = {}; p[listName] = cur[listName].filter(function (x) { return x.id !== id; }); return p; });
       };
     }
     function patchItem(listName, id, patch) {
       set(function (cur) { var p = {}; p[listName] = cur[listName].map(function (x) { return x.id === id ? Object.assign({}, x, patch) : x; }); return p; });
     }
+    function playable() { return f.samples.filter(function (x) { return x.url && !x.uploading; }); }
     function togglePlay(s) {
-      if (!s.url) return;
-      if (playing === s.id) { audio.pause(); setPlaying(null); return; }
-      audio.src = s.url; audio.play().catch(function () {}); setPlaying(s.id);
-      audio.onended = function () { setPlaying(null); };
+      var a = audioRef.current;
+      if (!s || !s.url || !a) return;
+      if (openId === s.id && !a.paused) { a.pause(); return; }
+      if (loadedUrl.current !== s.url) { a.src = s.url; loadedUrl.current = s.url; }
+      openRef.current = s.id; setOpenId(s.id);
+      a.play().catch(function () {});
+    }
+    function closePlayer() {
+      stopAudio(); setOpenId(null); setPlaying(null);
+      if (audioRef.current) { audioRef.current.removeAttribute('src'); audioRef.current.load(); }
+      loadedUrl.current = null;
     }
     function addFiles(kind, line) {
       return function (files) {
@@ -675,7 +700,7 @@
     }
     // ── clip a sample (Gio 2026-11-17, decision 0110) ──
     // Length Full = the file as uploaded; Clip = its first N seconds (default 45), cut here as soon as it is chosen, with
-    // a 1 s fade-out, and uploaded as a new file (the play button then plays the clip). Back to Full restores the file it
+    // no fade (Gio), and uploaded as a new file (the play button then plays the clip). Back to Full restores the file it
     // was cut from. The database keeps only the file in use; a replaced one goes to the media trash on save.
     useEffect(function () {   // how long each sample is, for the row and the Clip check
       f.samples.forEach(function (x) {
@@ -690,7 +715,7 @@
       var full = x.full || { key: x.key, url: x.url, duration: x.duration, file: x.file };
       if (!(seconds > 0)) { setMessage({ error: true, text: x.name + ': the clip length is a number of seconds, like 45.' }); return; }
       if (full.duration && seconds >= full.duration) { setMessage({ error: true, text: x.name + ' is ' + mmss(full.duration) + ' long: nothing to cut at ' + seconds + ' s.' }); return; }
-      if (playing === x.id) { audio.pause(); setPlaying(null); }
+      if (openId === x.id) stopAudio();
       patchItem('samples', x.id, { full: full, length: 'clip', clipSeconds: seconds, uploading: true, phase: 'cutting', progress: 0 });
       clipSample(full.file || full.url, seconds, function (st) { patchItem('samples', x.id, { phase: st.phase, progress: st.value }); })
         .then(function (r) {
@@ -702,7 +727,7 @@
     }
     function setLength(x, value) {
       if (value === 'clip') { applyClip(x, x.clipSeconds || CLIP_DEFAULT); return; }
-      if (playing === x.id) { audio.pause(); setPlaying(null); }
+      if (openId === x.id) stopAudio();
       var full = x.full;
       patchItem('samples', x.id, full ? { key: full.key, url: full.url, duration: full.duration, length: 'full', clippedTo: null } : { length: 'full' });
     }
@@ -723,7 +748,7 @@
               onChange: function (e) { setLength(s, e.target.value); } }, opts([['full', 'Full'], ['clip', 'Clip']])),
             clip ? h(Z.Input, { id: 'sample-seconds-' + s.id, label: 'Duration (s)', inputMode: 'numeric', disabled: s.uploading || locked,
               value: s.clipText != null ? s.clipText : String(s.clipSeconds || CLIP_DEFAULT),
-              supportText: 'From the start, 1 s fade-out. Enter to cut again.',
+              supportText: 'From the start, no fade. Enter to cut again.',
               onChange: function (e) { patchItem('samples', s.id, { clipText: e.target.value }); },
               onBlur: function () { commitSeconds(s); },
               onKeyDown: function (e) { if (e.key === 'Enter') { e.preventDefault(); commitSeconds(s); } } }) : null)));
@@ -922,8 +947,23 @@
         f.status === 'sold' || f.status === 'traded' ? h('p', { className: 'body-small' }, 'Sell again: a new draft listing of the same record (new SKU, same details, photos and samples). This one stays ' + f.status + '.') : null);
     }
 
+    // the Player as in the shop: cover, sample title, "Artist - Title", previous / next through the samples
+    var queue = playable(), cur = openId ? f.samples.filter(function (x) { return x.id === openId; })[0] : null;
+    var at = cur ? queue.indexOf(cur) : -1, cover = f.images[0];
+    var player = h('div', { className: 'admin-player', ref: playerRef, 'data-open': cur ? '' : undefined, 'aria-hidden': cur ? undefined : 'true' },
+      h(Z.Player, {
+        image: cover && cover.url ? { src: cover.url } : undefined,
+        sampleTitle: cur ? sampleTitleOf(cur) || cur.name : '',
+        productName: previewName(f) || 'Untitled',
+        index: Math.max(at + 1, 1), total: queue.length, playing: !!cur && playing === cur.id, audioRef: audioRef,
+        onPrevious: function () { togglePlay(queue[at - 1]); },
+        onNext: function () { togglePlay(queue[at + 1]); },
+        onTogglePlay: function () { if (cur) togglePlay(cur); },
+        onClose: closePlayer
+      }));
+
     return h('div', { className: 'admin-page admin-page--edit' }, main, side,
-      mobile ? h(Z.ActionBar, { status: statusLine }, publishBtn, draftBtn) : null);
+      mobile ? h(Z.ActionBar, { status: statusLine }, publishBtn, draftBtn) : null, player);
   }
 
   // ── Listings ──────────────────────────────────────────────────────────────
