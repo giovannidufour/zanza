@@ -85,6 +85,8 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 
 ## Figma to fix
 
+- `action bar` (BACKEND): no `status` slot above the buttons; code shows the error or "Unsaved changes" there on mobile (0118). Add a text slot + boolean.
+- Create / Edit (0118): the mobile `listing line` still overlaps fields with 2 lines (Artist 2, Artist name on label) in the viewport frame; old frames "(old, before 0113)" to delete when Gio agrees.
 - `_input-master` › value text wraps on several lines in single-line fields (a long URL grows the field); code inputs scroll. Proposal: truncate to one line in sizes medium/compact. `size=multiline, state=filled` added 2026-11-17 (0106); the multiline variants overlapped row 1 of the grid, moved to row 5.
 - Variables: `white-0/4/8/16/24` → `white-a*` · `border divider/strong` → `border/divider/strong` · `small`, `medium-small` → `space/*`.
 - `_button-sizes`: `size` options ordered large, medium, extra small, small → order by size. Unported `prefix` / `suffix` slots and single-value `active` axis.

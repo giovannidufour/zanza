@@ -528,6 +528,20 @@ export interface ActionPanelProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function ActionPanel(props: ActionPanelProps): JSX.Element;
 
+/** Mirrors the Figma component `listing status` (page `listing form`, decision 0118): the state of a listing at a glance,
+ *  at the top of the Create/Edit side column. A live region (role="status"). */
+export interface ListingStatusProps extends HTMLAttributes<HTMLDivElement> {
+  /** Figma `status`: Not saved yet | Draft | Published | Reserved | Sold | Traded | Archived. */
+  status: ReactNode;
+  /** Figma `details`: when (published / saved / since) and the SKU. */
+  details?: ReactNode;
+  /** Figma boolean `unsaved`: true = "Unsaved changes", or a text of its own. */
+  unsaved?: boolean | ReactNode;
+  /** Figma boolean `shop update`: true = "The shop updates in about 2 minutes.", or a text of its own. */
+  shopUpdate?: boolean | ReactNode;
+}
+export declare function ListingStatus(props: ListingStatusProps): JSX.Element;
+
 /** Mirrors the Figma component `listing line` (page `listing form`): one track line of a listing and its sample.
  *  The fields are slots placed on an 8-column grid; the page owns their state. */
 export interface ListingLineProps extends HTMLAttributes<HTMLDivElement> {

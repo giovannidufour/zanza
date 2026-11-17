@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"OrderItem"},{"name":"OrderRow"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"},{"name":"FormSectionHead"},{"name":"Marker"},{"name":"PriceFields"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"OrderItem"},{"name":"OrderRow"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"},{"name":"FormSectionHead"},{"name":"Marker"},{"name":"PriceFields"},{"name":"ListingStatus"}]} */
 /* packages/ui/components.js — the ONE implementation of the rythem-works components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
@@ -1146,6 +1146,20 @@
     return h('div', Object.assign({}, omit(props, ['className', 'children']), { className: cx('zz-action-panel', props.className) }), props.children);
   }
 
+  /* ── ListingStatus ──────────────────────────────────────────────────────
+     Figma: page `listing form` → `listing status` (2369:23575, decision 0118): the state of a listing at a glance, at the
+     top of the Create/Edit side column (mobile: under the page title). Vertical, gap 4: status (label/large, text/strong)
+     · details (body/small, text/moderate: when + SKU) · `unsaved` (label/small, text/strong) · `shop update`
+     (body/small, text/moderate). Booleans on in Figma; here a line shows when its prop is given. A live region: a screen
+     reader hears the status change after a save. */
+  function ListingStatus(props) {
+    return h('div', Object.assign({ role: 'status' }, omit(props, ['status', 'details', 'unsaved', 'shopUpdate', 'className']), { className: cx('zz-listing-status', props.className) }),
+      h('p', { className: 'zz-listing-status__status label-large' }, props.status),
+      props.details ? h('p', { className: 'zz-listing-status__details body-small' }, props.details) : null,
+      props.unsaved ? h('p', { className: 'zz-listing-status__unsaved label-small' }, props.unsaved === true ? 'Unsaved changes' : props.unsaved) : null,
+      props.shopUpdate ? h('p', { className: 'zz-listing-status__shop body-small' }, props.shopUpdate === true ? 'The shop updates in about 2 minutes.' : props.shopUpdate) : null);
+  }
+
   /* ── ListingLine ────────────────────────────────────────────────────────
      Figma: page `listing form` → `listing line` (2026-11-10): one track line of a listing and its sample.
      `fields` = 8-column grid, gap 8 × 16. removable=false (line 1): artist 4 + title 4. removable=true (line 2+,
@@ -1641,7 +1655,7 @@
   return { Button: Button, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, ActiveFilter: ActiveFilter, Tag: Tag, TagGroup: TagGroup,
            PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, BagItem: BagItem, OrderItem: OrderItem, OrderRow: OrderRow, BagSummary: BagSummary, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
            Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, ChevronDownLargeIcon: ChevronDownLargeIcon, DragHandleIcon: DragHandleIcon,
-           Checkbox: Checkbox, Alert: Alert, Divider: Divider, ActionPanel: ActionPanel, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog, Toast: Toast, ToastRegion: ToastRegion,
+           Checkbox: Checkbox, Alert: Alert, Divider: Divider, ActionPanel: ActionPanel, ListingStatus: ListingStatus, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog, Toast: Toast, ToastRegion: ToastRegion,
            EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon, TickLargeThinIcon: TickLargeThinIcon, ClockCounterClockwiseIcon: ClockCounterClockwiseIcon, EnvelopeIcon: EnvelopeIcon,
            Radio: Radio, RadioGroup: RadioGroup, RadioEmptyIcon: RadioEmptyIcon, RadioDotIcon: RadioDotIcon,
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
