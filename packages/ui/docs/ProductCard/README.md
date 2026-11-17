@@ -40,6 +40,8 @@ One markup for both variants; CSS grid places the blocks ([0016](../../../../des
 | --- | --- | --- | --- |
 | `src` | `string` |  | Cover URL. Omitted → the empty square (surface/support-1). |
 | `alt` | `string` |  | Alt text; empty = decorative (the title already names the release). |
+| `srcSet` | `string` |  | Optional `srcset`: the same photo in smaller files, the browser picks one (decision 0108). |
+| `sizes` | `string` |  | Optional `sizes`: how wide the image is drawn. Fixed-size images (BagItem, OrderRow 96px) default to their size; a ProductCard's depends on the page grid, so the page passes it. |
 
 `*` required.
 <!-- /api -->

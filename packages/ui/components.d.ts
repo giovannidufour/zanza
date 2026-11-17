@@ -165,8 +165,8 @@ export declare function IconButton(props: IconButtonProps): JSX.Element;
 export interface PlayerProps extends HTMLAttributes<HTMLElement> {
   /** Omitted → responsive (breakpoint `--mobile` from tokens.json). */
   device?: "desktop" | "mobile";
-  /** Cover of the product, 48 × 48. Figma: `product image`. */
-  image?: { src: string; alt?: string };
+  /** Cover of the product, 48 × 48. Figma: `product image`. `srcSet`: optional smaller files (decision 0108); `sizes` defaults to 48px. */
+  image?: { src: string; alt?: string; srcSet?: string; sizes?: string };
   /** The sample title, e.g. "Vocal". Figma: first `product name` text. */
   sampleTitle: ReactNode;
   /** "Artist - Title". Figma: second `product name` text. */
@@ -229,6 +229,10 @@ export interface ProductCardImage {
   src?: string;
   /** Alt text; empty = decorative (the title already names the release). */
   alt?: string;
+  /** Optional `srcset`: the same photo in smaller files, the browser picks one (decision 0108). */
+  srcSet?: string;
+  /** Optional `sizes`: how wide the image is drawn. Fixed-size images (BagItem, OrderRow 96px) default to their size; a ProductCard's depends on the page grid, so the page passes it. */
+  sizes?: string;
 }
 export interface ProductCardProps extends HTMLAttributes<HTMLElement> {
   /** Omitted → responsive (breakpoint `--mobile` from tokens.json, <768px placeholder). */
@@ -389,6 +393,10 @@ export interface GalleryImage {
   src: string;
   /** Alt text; empty = decorative. */
   alt?: string;
+  /** Optional `srcset` (decision 0108). */
+  srcSet?: string;
+  /** Optional `sizes`: the gallery width depends on the page, so the page passes it. */
+  sizes?: string;
 }
 export interface GalleryProps extends HTMLAttributes<HTMLDivElement> {
   /** Omitted → responsive (breakpoint `--mobile` from tokens.json, <768px placeholder). */

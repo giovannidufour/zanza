@@ -40,13 +40,14 @@ Rimandato (con il Trade, Q2): `proposals`, `proposal_messages`. Preferiti: non n
 
 ## Storage (R2)
 ```
-photos/<uuid>.webp     (foto del listing, la prima è la featured)
+photos/<uuid>.webp     (foto del listing, la prima è la featured; lato lungo 1600)
+photos/<uuid>-w200.webp, -w400.webp, -w800.webp   (copie più piccole della stessa foto, decisione 0108)
 samples/<uuid>.mp3     (sample; lato e ordine stanno nel DB)
 ```
 Chiavi casuali e immutabili (2026-11-10): l'upload avviene prima che il listing esista, e un file non viene mai sovrascritto (cache sicura).
 - L'upload va dall'admin **direttamente su R2** con un URL firmato rilasciato da una Edge Function (`sign-upload`, solo per l'admin).
-- Immagini ridimensionate nel browser prima dell'upload (webp, lato lungo ~1600 px). *Le dimensioni effettive dipendono dal design PDP: da Figma.*
-- Sample: mp3 128 kbps, 30–60 s, già tagliati da Gio (es. Audacity). Tagliarli dentro l'admin si può aggiungere dopo.
+- Immagini ridimensionate nel browser prima dell'upload (webp, lato lungo 1600 px) **più tre copie** a 200, 400 e 800 px (decisione 0108, larghezze in `packages/images/images.js`). Il negozio usa `srcset`/`sizes` solo per le foto di cui il build trova le copie (un HEAD sull'ultima, `-w800`); senza copie resta il file unico. Foto caricate prima del 2026-11-17: admin → Settings → *Make photo sizes* (serve `GET` nella CORS policy del bucket R2). `purge-media` cancella le copie con la foto.
+- Sample: mp3 128 kbps, 30–60 s, già tagliati da Gio (es. Audacity). Un mp3 sopra ~160 kbps (es. 320) viene ricodificato a 128 kbps nel browser prima dell'upload (lamejs, decisione 0108); uno a 128 resta com'è. Tagliarli dentro l'admin si può aggiungere dopo.
 
 ## Flussi
 

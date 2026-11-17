@@ -4,10 +4,31 @@
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const Content = require('../../../packages/content/content.js');
+const Images = require('../../../packages/images/images.js');
+const { queries } = require('../../../packages/ui/media.js');
 const h = React.createElement;
 
 // catalog = every record, sale and trade mixed (/catalog/, reached only from the home's "See all", decision 0085)
 const SECTION_LABEL = { sale: 'For sale', trade: 'For trade', catalog: 'Catalog' };
+
+// ── photo sizes (decision 0108) ──
+// How wide each spot draws a photo, for <img sizes>: measured on the page grids (card = 2 of 12 columns, 96 px on
+// mobile; PDP gallery = 4 of 12 columns, full width on mobile). Fixed-size spots (bag 96, player 48) need none here.
+const IMAGE_SIZES = {
+  card: `${queries.mobile} 96px, 16vw`,
+  gallery: `${queries.mobile} 100vw, 33vw`
+};
+// a photo of `product` as a component image: + srcset when its smaller copies exist (data/products.js → markSized)
+function imageOf(product, src, url, { sizes, alt = '' } = {}) {
+  if (!src) return null;
+  const sized = (product.sized || []).includes(src);
+  return { src: url(src), alt, srcSet: sized ? Images.srcSet(url(src)) : undefined, sizes: sized ? sizes : undefined };
+}
+// one file for a small fixed spot (player 48, offer 80): the smallest copy at least px × 2 wide (sharp on 2× screens)
+function smallImageUrl(product, src, px, url) {
+  if (!src) return undefined;
+  return url((product.sized || []).includes(src) ? Images.smallest(src, px * 2) : src);
+}
 
 // ── data → text (mapping confirmed 2026-11-07) ──
 const formatPrice = (p) => `${p.amount % 100 === 0 ? p.amount / 100 : (p.amount / 100).toFixed(2)}€`;
@@ -202,7 +223,7 @@ function sampleAttrs(product, s, url) {
     'data-sample-src': s.audio_url ? url(s.audio_url) : undefined,
     'data-sample-title': s.title,
     'data-product-name': productName(release),
-    'data-product-image': release.cover ? url(release.cover) : undefined,
+    'data-product-image': smallImageUrl(product, release.cover, 48, url),   // the player's 48 px cover
     'data-product-href': productHref(product, url),
     'data-listing-id': product.listing.id,   // the player's "Add to bag" adds the playing product
     'data-listing-section': product.listing.section,   // trade listings: no Add to bag in the player
@@ -236,7 +257,7 @@ function ProductCardFor({ product, url, headingLevel }) {
     'data-listing-status': listing.status,   // status at build time; site.js updates it live (Reserved)
     'data-listing-section': listing.section,
     href: productHref(product, url),
-    image: release.cover ? { src: url(release.cover), alt: '' } : null,
+    image: imageOf(product, release.cover, url, { sizes: IMAGE_SIZES.card }),
     title: productNameLinked(product, url, productHref(product, url)),
     headingLevel,
     releaseInfo: releaseInfoLinked(release, url),
@@ -256,4 +277,4 @@ function ProductCardFor({ product, url, headingLevel }) {
   });
 }
 
-module.exports = { tradeOn, identityOn, textOf, Paragraphs, SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor };
+module.exports = { IMAGE_SIZES, imageOf, smallImageUrl, tradeOn, identityOn, textOf, Paragraphs, SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor };

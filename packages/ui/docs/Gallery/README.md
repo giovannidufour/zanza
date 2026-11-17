@@ -22,6 +22,8 @@ The product images, two per product. Mirrors the PDP frames in Figma (`gallery` 
 | --- | --- | --- | --- |
 | `src` * | `string` |  | Image URL. |
 | `alt` | `string` |  | Alt text; empty = decorative. |
+| `srcSet` | `string` |  | Optional `srcset` (decision 0108). |
+| `sizes` | `string` |  | Optional `sizes`: the gallery width depends on the page, so the page passes it. |
 
 `*` required.
 <!-- /api -->

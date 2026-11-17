@@ -337,7 +337,7 @@
                     'actions', 'onPrevious', 'onNext', 'onTogglePlay', 'onClose', 'audioRef', 'className', 'aria-label'])),
       // Figma: `now playing` — image 48 + title row (sample number · sample title / product name)
       h('div', { className: 'zz-player__now' },
-        h('div', { className: 'zz-player__image' }, img.src ? h('img', { src: img.src, alt: img.alt || '', width: 48, height: 48 }) : null),
+        h('div', { className: 'zz-player__image' }, img.src ? h('img', { src: img.src, srcSet: img.srcSet, sizes: img.srcSet ? img.sizes || '48px' : undefined, alt: img.alt || '', width: 48, height: 48 }) : null),
         h('p', { className: 'zz-player__title body-medium', 'aria-live': 'polite' },
           // sample number = position of the sample in the queue, as on the sample buttons (decision 0056)
           h('span', { className: 'zz-player__number' }, props.index || 1),
@@ -423,7 +423,7 @@
                     'onAdd', 'addHref', 'addLabel', 'addLabelShort', 'headingLevel', 'className', 'children'])),
       // href: the cover becomes the link to the product page (no visual change; the link style is not designed yet)
       h(props.href ? 'a' : 'div', props.href ? { className: 'zz-product-card__image', href: props.href, 'aria-labelledby': titleId } : { className: 'zz-product-card__image' },
-        img && img.src ? h('img', { src: img.src, alt: img.alt || '', loading: 'lazy' }) : null),
+        img && img.src ? h('img', { src: img.src, srcSet: img.srcSet, sizes: img.srcSet ? img.sizes : undefined, alt: img.alt || '', loading: 'lazy' }) : null),
       h('div', { className: 'zz-product-card__info' },
         h('div', { className: 'zz-product-card__title-block' },
           h('h' + (props.headingLevel || 2), { id: titleId, className: cx('zz-product-card__name', t.head) }, props.title),
@@ -479,7 +479,7 @@
     }, omit(props, ['device', 'status', 'notice', 'image', 'href', 'title', 'releaseInfo', 'price', 'grading', 'cover', 'conditions',
                     'samples', 'onRemove', 'removeLabel', 'headingLevel', 'className', 'children'])),
       h(props.href ? 'a' : 'div', props.href ? { className: 'zz-bag-item__image', href: props.href, tabIndex: -1, 'aria-hidden': 'true' } : { className: 'zz-bag-item__image' },
-        img && img.src ? h('img', { src: img.src, alt: img.alt || '', loading: 'lazy' }) : null),
+        img && img.src ? h('img', { src: img.src, srcSet: img.srcSet, sizes: img.srcSet ? img.sizes || '96px' : undefined, alt: img.alt || '', loading: 'lazy' }) : null),
       h('div', { className: 'zz-bag-item__info' },
         h('div', { className: 'zz-bag-item__title-block' },
           h('h' + (props.headingLevel || 2), { id: titleId, className: cx('zz-bag-item__name', t.head) },
@@ -520,7 +520,7 @@
       'aria-label': props.label
     }, omit(props, ['device', 'image', 'href', 'label', 'title', 'date', 'count', 'status', 'total', 'viewLabel', 'className', 'children'])),
       h('span', { className: 'zz-bag-item__image zz-order-row__image' },
-        img && img.src ? h('img', { src: img.src, alt: '', loading: 'lazy' }) : null),
+        img && img.src ? h('img', { src: img.src, srcSet: img.srcSet, sizes: img.srcSet ? img.sizes || '96px' : undefined, alt: '', loading: 'lazy' }) : null),
       h('span', { className: 'zz-bag-item__info' },
         h('span', { className: 'zz-bag-item__title-block' },
           h('span', { className: cx('zz-order-row__title', t.head) }, props.title),
@@ -602,7 +602,7 @@
     }, omit(props, ['images', 'device', 'className', 'aria-label'])),
       images.map(function (img, i) {
         return h('div', { key: i, className: 'zz-gallery__item' },
-          img && img.src ? h('img', { src: img.src, alt: img.alt || '', loading: i === 0 ? 'eager' : 'lazy' }) : null);
+          img && img.src ? h('img', { src: img.src, srcSet: img.srcSet, sizes: img.srcSet ? img.sizes : undefined, alt: img.alt || '', loading: i === 0 ? 'eager' : 'lazy' }) : null);
       }));
   }
 

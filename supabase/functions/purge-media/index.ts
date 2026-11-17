@@ -2,9 +2,14 @@
 // Admin only (the caller's session must belong to public.admins). The admin calls it when the Listings page opens.
 // What to delete is decided by the database (admin_media_to_purge): trashed more than 7 days ago AND referenced by no
 // listing photo and no sample. A key R2 answers 204 or 404 for is gone: it leaves the trash (admin_media_purged).
+// A photo goes with its smaller copies (decision 0108, images.js = packages/images/images.js): they are deleted first,
+// and the photo leaves the trash only when they are gone too.
 // Secrets: the same as sign-upload (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET).
 import { AwsClient } from "npm:aws4fetch@1.0.20";
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+import "./images.js";
+
+const Images = (globalThis as any).ZanzaImages;
 
 const ALLOWED_ORIGINS = (Deno.env.get("ADMIN_ORIGINS") ?? "https://store-admin-3k1.pages.dev").split(",").map((s) => s.trim());
 
@@ -42,9 +47,13 @@ Deno.serve(async (req) => {
   const purged: string[] = [], failed: { key: string; status: number }[] = [];
   for (const key of keys as string[]) {
     if (!/^(photos|samples)\/[\w.-]+$/.test(key)) { failed.push({ key, status: 0 }); continue; }   // never anything else
-    const res = await r2.fetch(`https://${accountId}.r2.cloudflarestorage.com/${bucket}/${key}`, { method: "DELETE" });
-    if (res.status === 204 || res.status === 200 || res.status === 404) purged.push(key);
-    else failed.push({ key, status: res.status });
+    let status = 204;
+    for (const k of [...Images.sizedKeys(key), key]) {
+      const res = await r2.fetch(`https://${accountId}.r2.cloudflarestorage.com/${bucket}/${k}`, { method: "DELETE" });
+      if (!(res.status === 204 || res.status === 200 || res.status === 404)) { status = res.status; break; }
+    }
+    if (status === 204) purged.push(key);
+    else failed.push({ key, status });
   }
   if (purged.length) {
     const { error: doneError } = await supabase.rpc("admin_media_purged", { p_keys: purged });
