@@ -67,7 +67,8 @@
       "basePath": "",
       "outputDir": "",
       "noindex": true,
-      "note": "noindex = every page answers X-Robots-Tag: noindex (_headers), while the shop is on staging and rythem-works.com shows the coming-soon page (build-coming-soon.js). Set to false at launch. Cloudflare Pages (npm run build:pages): served from the web root. The top-level values are the GoDaddy staging (gio-d.xyz/zanza)."
+      "editLinks": "https://admin.rythem-works.com/",
+      "note": "noindex = every page answers X-Robots-Tag: noindex (_headers), while the shop is on staging and rythem-works.com shows the coming-soon page (build-coming-soon.js). Set to false at launch. editLinks = admin URL for the staging ✎ bar (links to the Content editors of the texts on each page, decision 0106); shown only while noindex is true. Cloudflare Pages (npm run build:pages): served from the web root. The top-level values are the GoDaddy staging (gio-d.xyz/zanza)."
     }
   },
   "comingSoon": {

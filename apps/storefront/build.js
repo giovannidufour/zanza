@@ -108,6 +108,25 @@ let liveMeta = '';
 let footerCache;
 const footerHtml = () => footerCache || (footerCache = renderToStaticMarkup(React.createElement(require('./pages/shell.js').SiteFooter, { site, url })));
 const withFooter = (body) => (body.startsWith('<div class="zz-page"') && body.endsWith('</div>') ? body.slice(0, -6) + footerHtml() + '</div>' : body);
+// the staging edit bar goes first inside .zz-page (above the header, scrolls away with the page)
+const withEditBar = (body, bar) => (bar && body.startsWith('<div class="zz-page"') ? body.replace(/^<div class="zz-page"[^>]*>/, m => m + bar) : body);
+
+// Staging only (decision 0106): a strip of ✎ links at the top of the page, to the admin editors of the texts on this
+// page, opened in a new tab. site.json → targets.pages → editLinks = the admin URL; shown only while the shop is noindex (staging), so
+// it disappears at launch even if editLinks stays set. Inside .zz-page, so the soft navigation swaps it with the page.
+const pencil = () => React.createElement('svg', { viewBox: '0 0 16 16', fill: 'none', stroke: 'currentColor', strokeWidth: 1, 'aria-hidden': true },
+  React.createElement('path', { vectorEffect: 'non-scaling-stroke', d: 'M10.5 2.5l3 3L5 14H2v-3zM9 4l3 3' }));
+function editBar(keys) {
+  if (!site.editLinks || !site.noindex || !keys || !keys.length) return '';
+  const items = keys.map(k => Content.blockOf(k)).filter(Boolean).map(b => renderToStaticMarkup(React.createElement(Z.Button, {
+    hierarchy: 'secondary', size: 'small', href: `${site.editLinks}#content/${b.key}`, target: '_blank', rel: 'noopener',
+    leadingIcon: pencil(),
+    'aria-label': `Edit ${b.title} in the admin (new tab)`
+  }, b.title)));
+  return items.length ? `<nav class="staging-edit" aria-label="Edit this page's texts (staging only)">${items.join('')}</nav>` : '';
+}
+// the blocks a page shows (packages/content/content.js → BLOCKS)
+const aboutKey = () => (site.identityEnabled ? 'profile' : 'store_profile');
 
 // Favicon = the logo illustration (Gio 2026-11-15, decision 0097): files in public/, served from /assets/
 const faviconLinks = [
@@ -116,7 +135,7 @@ const faviconLinks = [
   `<link rel="apple-touch-icon" href="${url('/assets/apple-touch-icon.png')}">`
 ].join('\n');
 
-function page({ title: t, body }) {
+function page({ title: t, body, edit }) {
   return `<!doctype html>
 <html lang="${site.lang}">
 <head>
@@ -142,7 +161,7 @@ ${faviconLinks}
 <script src="${newsletterJsHref}" defer></script>
 ${liveMeta}</head>
 <body>
-${withFooter(body)}
+${withEditBar(withFooter(body), editBar(edit))}
 ${playerHtml}
 ${toastRegionHtml}
 ${notifyDialogHtml}
@@ -235,7 +254,7 @@ function relatedTo(product) {
 }
 for (const product of products) {
   const body = renderToStaticMarkup(React.createElement(Pdp, { product, related: relatedTo(product), site, url }));
-  write(`products/${product.listing.slug}/index.html`, page({ title: title(product), body }));
+  write(`products/${product.listing.slug}/index.html`, page({ title: title(product), body, edit: product.listing.section === 'trade' ? ['short.trade', aboutKey()] : null }));
 }
 
 // PLP: the listing of the "For sale" section (Figma: PLP - desktop); "For trade" has no products yet.
@@ -253,12 +272,12 @@ if (site.tradeEnabled) write('trade/index.html', page({ title: Plp.title('trade'
 const catalog = products.filter(p => forSale.includes(p) || forTrade.includes(p));
 write('catalog/index.html', page({ title: Plp.title('catalog'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'catalog', products: catalog, allProducts: products, site, url })) }));
 for (const product of forTrade.filter(p => p.listing.status === 'available')) {
-  write(`products/${product.listing.slug}/offer/index.html`, page({ title: `Make an offer · ${title(product)}`, body: renderToStaticMarkup(React.createElement(Trade.Offer, { product, site, url })) }));
+  write(`products/${product.listing.slug}/offer/index.html`, page({ title: `Make an offer · ${title(product)}`, body: renderToStaticMarkup(React.createElement(Trade.Offer, { product, site, url })), edit: ['short.trade', aboutKey()] }));
 }
 // trade off: no /trade/, no offer pages (forTrade is empty), no How trading works. A Pages deploy replaces the whole
 // site, so the pages of the previous build are gone too.
-if (site.tradeEnabled) write('how-trading-works/index.html', page({ title: 'How trading works', body: renderToStaticMarkup(React.createElement(Trade.HowTrading, { site, url })) }));
-write('about/index.html', page({ title: 'About', body: renderToStaticMarkup(React.createElement(Trade.About, { site, url })) }));
+if (site.tradeEnabled) write('how-trading-works/index.html', page({ title: 'How trading works', body: renderToStaticMarkup(React.createElement(Trade.HowTrading, { site, url })), edit: ['page.how_trading'] }));
+write('about/index.html', page({ title: 'About', body: renderToStaticMarkup(React.createElement(Trade.About, { site, url })), edit: [aboutKey()] }));
 
 // Search results (Figma page `Search`, 2026-11-12): /search/?q=… is a PLP of the same copies, matched in the browser
 // (scripts/site.js) against each card's data-search text. Static and client-side: fine at hundreds of copies
@@ -270,7 +289,7 @@ write('search/index.html', page({ title: 'Search', body: renderToStaticMarkup(Re
 const bagProducts = products.filter(p => p.listing.section === 'sale');
 write('bag/index.html', page({ title: Bag.title, body: renderToStaticMarkup(React.createElement(Bag.Bag, { products: bagProducts, site, url, shipping, countries: shippingData.countries(shipping) })) }));
 // after a paid Stripe Checkout (migration 0021, Figma page `Checkout`): site.js takes the paid records out of the bag
-write('checkout/thanks/index.html', page({ title: Checkout.title, body: renderToStaticMarkup(React.createElement(Checkout.Thanks, { site, url })) }));
+write('checkout/thanks/index.html', page({ title: Checkout.title, body: renderToStaticMarkup(React.createElement(Checkout.Thanks, { site, url })), edit: ['short.order'] }));
 
 // Customer account (decision 0101, Figma page `Account`): sign in with an email code, then the orders bought with that
 // email (scripts/account.js reads them from Supabase). Static shells: nothing personal is in the HTML.
@@ -283,16 +302,16 @@ write('account/details/index.html', page({ title: Account.TITLE.details, body: r
 for (const p of Legal.PAGES) {
   const md = Content.markdownFromSections(site.pageTitles[p], site.texts[`page.${p}`].sections);
   const { title: t, body, missing } = Legal.legalPage(p, { site, url, shipping, countries: shippingData.countries(shipping), md });
-  write(`${p}/index.html`, page({ title: t, body: renderToStaticMarkup(body) }));
+  write(`${p}/index.html`, page({ title: t, body: renderToStaticMarkup(body), edit: [`page.${p}`] }));
   if (missing.length) console.log(`    to fill: ${missing.join(' · ')}`);
 }
 // Contact (decision 0093): email + form, in place of an Impressum (Gio sells privately)
-write('contact/index.html', page({ title: 'Contact', body: renderToStaticMarkup(React.createElement(ContactPage.Contact, { site, url })) }));
+write('contact/index.html', page({ title: 'Contact', body: renderToStaticMarkup(React.createElement(ContactPage.Contact, { site, url })), edit: ['short.contact'] }));
 // the link in the newsletter confirmation email lands here (decision 0103)
 write('newsletter/confirm/index.html', page({ title: Newsletter.title, body: renderToStaticMarkup(React.createElement(Newsletter.ShopConfirm, { site, url })) }));
 
 // Home (Figma page `Home`, decision 0085): Just in, Genres, About
-write('index.html', page({ title: Home.title, body: renderToStaticMarkup(React.createElement(Home.Home, { products, site, url })) }));
+write('index.html', page({ title: Home.title, body: renderToStaticMarkup(React.createElement(Home.Home, { products, site, url })), edit: [aboutKey()] }));
 // Cloudflare Pages response headers (target pages only). Until launch the shop lives on staging.rythem-works.com
 // (behind Cloudflare Access) and store-front-6fx.pages.dev: neither may be indexed (site.json → noindex).
 if (targetArg === 'pages' && site.noindex) write('_headers', '/*\n  X-Robots-Tag: noindex\n');
