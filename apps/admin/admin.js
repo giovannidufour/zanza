@@ -186,6 +186,8 @@
   // sized = { of: photo key, width } for a smaller copy of that photo (decision 0108)
   async function upload(kind, blob, sized) {
     var signed = await invoke('sign-upload', Object.assign({ kind: kind, contentType: blob.type, size: blob.size }, sized || {}));
+    // a sign-upload older than 0108 ignores { of, width } and signs a random key: upload nothing then
+    if (sized && signed.key !== IMG.sizedKey(sized.of, sized.width)) throw new Error('Photo sizes need the new sign-upload function (decision 0108).');
     var put;
     try { put = await fetch(signed.uploadUrl, { method: 'PUT', headers: { 'Content-Type': blob.type }, body: blob }); }
     catch (e) { throw new Error('Storage refused the upload without details (R2 sends no CORS headers on errors): check the R2 keys and the bucket CORS policy.'); }
