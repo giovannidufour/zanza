@@ -1218,3 +1218,27 @@ export interface HomeAboutProps extends HTMLAttributes<HTMLElement> {
   linkLabel?: ReactNode;
 }
 export declare function HomeAbout(props: HomeAboutProps): JSX.Element;
+
+/** Mirrors the Figma component `form section head` (BACKEND → Create, 2026-11-17): the heading of a Create / Edit listing section. */
+export interface FormSectionHeadProps extends HTMLAttributes<HTMLHeadingElement> {
+  /** Heading level. @default 2 */
+  headingLevel?: 2 | 3 | 4;
+  /** The id the section's aria-labelledby and the section nav point at. */
+  id?: string;
+}
+export declare function FormSectionHead(props: FormSectionHeadProps): JSX.Element;
+
+/** Mirrors the Figma component `form section nav` (BACKEND → Create, device=desktop | mobile, 2026-11-17): in-page anchors to the form sections. */
+export interface FormSectionNavProps extends HTMLAttributes<HTMLElement> {
+  /** One secondary small Button per section, in form order. */
+  items: { id: string; label: ReactNode }[];
+  /** The section in view: Button state=active, aria-current="true". */
+  current?: string;
+  /** A Button was pressed: the page scrolls to that section. */
+  onSelect?: (id: string) => void;
+  /** Accessible name of the nav. @default "Sections" */
+  label?: string;
+  /** A ref to the <nav> (the page measures it to place the scroll line under it). */
+  navRef?: { current: HTMLElement | null };
+}
+export declare function FormSectionNav(props: FormSectionNavProps): JSX.Element;

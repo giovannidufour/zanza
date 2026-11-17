@@ -456,6 +456,11 @@
   function previewTags(f) { return (f.genres || []).concat(f.tags || []).map(function (t) { return t.name; }); }
 
   // ── Create / edit listing ─────────────────────────────────────────────────
+  // Create / Edit listing sections, in form order: [id, heading and section-nav label] (Gio 2026-11-17)
+  var FORM_SECTIONS = [['discogs', 'Discogs'], ['images', 'Images'], ['lines', 'Artist & title'], ['label', 'Label & price'],
+    ['genres', 'Genres & tags'], ['conditions', 'Conditions'], ['description', 'Description'], ['samples', 'Samples']];
+  var FORM_SECTION_LABEL = {};
+  FORM_SECTIONS.forEach(function (s) { FORM_SECTION_LABEL[s[0]] = s[1]; });
   function ListingForm(props) {
     var mobile = useIsMobile();
     var tradeOn = useTradeEnabled();   // trade off (Settings, decision 0102): "For trade" only for a listing that already is one
@@ -756,25 +761,69 @@
     // samples of a line keep the overview order; reorder happens in the overview
     function lineSamples(i) { return f.samples.filter(function (s) { return s.line === i + 1; }); }
 
+    // ── section nav (Gio 2026-11-17, Figma Create → `section nav` device=desktop|mobile) ──
+    // one Button per section; state=active = the section at the top of the form while scrolling. The form scrolls in
+    // .admin-main on desktop and with the page on mobile: a capturing scroll listener follows both.
+    function sectionProps(id) { return { id: 'section-' + id, className: 'admin-section', 'aria-labelledby': 'section-' + id + '-title' }; }
+    var cs = useState(FORM_SECTIONS[0][0]), currentSection = cs[0], setCurrentSection = cs[1];
+    var navRef = useRef(null);
+    // after a press the nav keeps that section lit while the page scrolls there (a section near the end may never
+    // reach the line); the lock ends once the scroll has been still for 200 ms
+    var jumpRef = useRef(null);
+    useEffect(function () {
+      var frame = 0, still = 0;
+      function update() {
+        frame = 0;
+        if (jumpRef.current) { setCurrentSection(jumpRef.current); return; }
+        var nav = navRef.current;
+        // the line a section must have passed: under the sticky nav on mobile, the top of the scrolling column on desktop
+        var line = mobile ? (nav ? nav.getBoundingClientRect().bottom : 0) + 8
+          : (document.querySelector('.admin-page--edit > .admin-main') || document.body).getBoundingClientRect().top + 8;
+        var cur = FORM_SECTIONS[0][0];
+        FORM_SECTIONS.forEach(function (s) { var el = document.getElementById('section-' + s[0]); if (el && el.getBoundingClientRect().top <= line) cur = s[0]; });
+        // scrolled to the end: the last sections may never reach the line
+        var main = document.querySelector('.admin-page--edit > .admin-main');
+        var atEnd = mobile ? window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2
+          : main && main.scrollTop + main.clientHeight >= main.scrollHeight - 2;
+        if (atEnd) cur = FORM_SECTIONS[FORM_SECTIONS.length - 1][0];
+        setCurrentSection(cur);
+      }
+      function onScroll() {
+        if (jumpRef.current) { clearTimeout(still); still = setTimeout(function () { jumpRef.current = null; }, 200); }
+        if (!frame) frame = requestAnimationFrame(update);
+      }
+      document.addEventListener('scroll', onScroll, true);
+      window.addEventListener('resize', onScroll);
+      update();
+      return function () { document.removeEventListener('scroll', onScroll, true); window.removeEventListener('resize', onScroll); if (frame) cancelAnimationFrame(frame); clearTimeout(still); };
+    }, [mobile]);
+    function goToSection(id) {
+      var el = document.getElementById('section-' + id);
+      if (!el) return;
+      jumpRef.current = id; setCurrentSection(id);
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      var head = document.getElementById('section-' + id + '-title');
+      if (head) head.focus({ preventScroll: true });
+    }
+    var sectionNav = h(Z.FormSectionNav, { navRef: navRef, className: 'admin-section-nav', label: 'Form sections', current: currentSection,
+      items: FORM_SECTIONS.map(function (s) { return { id: s[0], label: s[1] }; }), onSelect: goToSection });
+
     var isNew = !f.listingId;
     var locked = f.status === 'reserved' || f.status === 'sold' || f.status === 'traded' || f.status === 'archived';
 
     var main = h('div', { className: 'admin-main' },
       h('h1', { className: 'label-extra-large' }, isNew ? 'Create listing' : 'Edit listing'),
 
-      h('section', { className: 'admin-section' },
-        // Figma Create → `custom title` (0111): From Discogs under the field, only while Discogs match holds a release
-        h('div', { className: 'admin-custom-title' },
-          h(Z.Input, Object.assign({ id: 'custom-title', label: 'Custom title', optional: true,
-            supportText: 'Replaces "Artist - Title" in the shop. Artist names in it link to their records.' }, bind('customTitle'))),
-          discogsId(f.discogs) !== null ? h(Z.Button, { hierarchy: 'secondary', disabled: locked || titling,
-            'aria-busy': titling || undefined, onClick: titleFromDiscogs }, 'From Discogs') : null),
+      // Gio 2026-11-17 (Figma Create → `section head`, `section nav`): every block has a heading and an anchor in the
+      // section nav; Discogs match first, then the images (Fetch from label reads them)
+      h('section', sectionProps('discogs'),
+        h(Z.FormSectionHead, { id: 'section-discogs-title' }, FORM_SECTION_LABEL['discogs']),
         h(Z.Input, Object.assign({ id: 'discogs', label: 'Discogs match', optional: true, variant: 'search',
           placeholder: 'Release URL or number', supportText: errors.discogs ? undefined : 'Paste the release link, then Fetch Discogs.' }, bind('discogs'))),
-        // Figma 2104:20728: secondary button right under Discogs match (gap 16)
-        // Figma Create → `discogs actions` (0092): Fetch Discogs + Photo of the label; picking a release found from
-        // the photo puts its link in Discogs match and fetches it
-        h(PhotoField, { disabled: locked, pickHint: 'Pick the pressing to fetch it.', onFound: setPhotoFound,
+        // Figma Create → `discogs actions` (0092): Fetch Discogs + Photo of the label + Fetch from label (only with
+        // images, Gio 2026-11-17); picking a release found from a photo puts its link in Discogs match and fetches it
+        h(PhotoField, { disabled: locked, images: f.images.filter(function (x) { return x.url; }).map(function (x) { return x.url; }), pickHint: 'Pick the pressing to fetch it.', onFound: setPhotoFound,
           actions: h(Z.Button, { hierarchy: 'secondary', disabled: locked, 'aria-busy': fetching || undefined, onClick: function () { fetchDiscogs(); } }, 'Fetch Discogs') }),
         photoFound ? h(Z.ReleaseList, { listId: 'photo-releases', label: 'Releases on Discogs',
             message: photoFound.results.length ? undefined : 'No match on Discogs for what the photo shows. Paste the release link instead.' },
@@ -783,9 +832,22 @@
             return h(Z.ReleaseOption, { key: r.id, id: 'photo-release-' + i, title: r.title, meta: r.meta, thumb: r.thumb, tabIndex: 0,
               onClick: pick, onKeyDown: function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } } });
           })) : null),
+      h('section', sectionProps('images'),
+        h(Z.FormSectionHead, { id: 'section-images-title' }, FORM_SECTION_LABEL['images']),
+        f.images.length ? h(Z.FileList, { onMove: moveIn('images') }, f.images.map(function (x, i) {
+          return fileItem('images', x, { image: { src: x.url }, featured: i === 0 });
+        })) : null,
+        h(Z.DropZone, { label: 'Browse image', accept: 'image/jpeg,image/png,image/webp', multiple: true, onFiles: addFiles('photo') })),
       h(Z.Divider),
 
-      h('section', { className: 'admin-section' },
+      h('section', sectionProps('lines'),
+        h(Z.FormSectionHead, { id: 'section-lines-title' }, FORM_SECTION_LABEL['lines']),
+        // Figma Create → `custom title` (0111): From Discogs under the field, only while Discogs match holds a release
+        h('div', { className: 'admin-custom-title' },
+          h(Z.Input, Object.assign({ id: 'custom-title', label: 'Custom title', optional: true,
+            supportText: 'Replaces "Artist - Title" in the shop. Artist names in it link to their records.' }, bind('customTitle'))),
+          discogsId(f.discogs) !== null ? h(Z.Button, { hierarchy: 'secondary', disabled: locked || titling,
+            'aria-busy': titling || undefined, onClick: titleFromDiscogs }, 'From Discogs') : null),
         h('div', { className: 'admin-stack' },
           f.lines.map(function (l, i) {
             var samples = lineSamples(i);
@@ -810,7 +872,8 @@
         h('div', null, h(Z.Button, { hierarchy: 'secondary', onClick: addLine }, 'Add line'))),
       h(Z.Divider),
 
-      h('section', { className: 'admin-section' },
+      h('section', sectionProps('label'),
+        h(Z.FormSectionHead, { id: 'section-label-title' }, FORM_SECTION_LABEL['label']),
         h('div', { className: 'admin-row admin-row--tight' },
           h(Z.EntityField, { className: 'span-4', id: 'label', label: 'Label', multiple: false, placeholder: 'Search or create',
             options: entities && entities.labels, value: f.label, error: errors.label, onChange: setLabel }),
@@ -828,7 +891,8 @@
           h(Z.Input, Object.assign({ className: 'span-2', id: 'price', label: 'Price', suffix: '€', inputMode: 'decimal', optional: f.section === 'trade' }, bind('price'))))),
       h(Z.Divider),
 
-      h('section', { className: 'admin-section' },
+      h('section', sectionProps('genres'),
+        h(Z.FormSectionHead, { id: 'section-genres-title' }, FORM_SECTION_LABEL['genres']),
         // Figma 2126:1404: Macro genre + Genres (Discogs styles, 0048), then the shop's own Tags on their own row
         h('div', { className: 'admin-row' },
           h(Z.Input, Object.assign({ className: 'span-4', id: 'macro-genre', label: 'Macro genre', variant: 'select', placeholder: '' }, bind('macroGenre')), opts(MACRO_GENRES)),
@@ -839,7 +903,8 @@
             options: entities && entities.tags, value: f.tags, onChange: function (chips) { set({ tags: chips }); } }))),
       h(Z.Divider),
 
-      h('section', { className: 'admin-section' },
+      h('section', sectionProps('conditions'),
+        h(Z.FormSectionHead, { id: 'section-conditions-title' }, FORM_SECTION_LABEL['conditions']),
         // Figma 2095:20560: media graded per side (side B optional, migration 0013), comment on its own row
         h('div', { className: 'admin-row' },
           h(Z.Input, Object.assign({ className: 'span-4', id: 'condition', label: 'Side A conditions', variant: 'select', placeholder: '' }, bind('condition')), opts(GRADES)),
@@ -851,20 +916,13 @@
           f.sleeveType !== 'none' ? h(Z.Input, Object.assign({ className: 'span-4', id: 'sleeve-condition', label: 'Cover conditions', optional: true, variant: 'select', placeholder: '' }, bind('sleeveCondition')), opts(GRADES)) : null)),
       h(Z.Divider),
 
-      h('section', { className: 'admin-section' },
+      h('section', sectionProps('description'),
+        h(Z.FormSectionHead, { id: 'section-description-title' }, FORM_SECTION_LABEL['description']),
         h(Z.Input, Object.assign({ id: 'notes', label: 'Description / comment', optional: true }, bind('notes')))),
       h(Z.Divider),
 
-      h('section', { className: 'admin-section' },
-        h('h2', { className: 'label-medium' }, 'Images'),
-        f.images.length ? h(Z.FileList, { onMove: moveIn('images') }, f.images.map(function (x, i) {
-          return fileItem('images', x, { image: { src: x.url }, featured: i === 0 });
-        })) : null,
-        h(Z.DropZone, { label: 'Browse image', accept: 'image/jpeg,image/png,image/webp', multiple: true, onFiles: addFiles('photo') })),
-      h(Z.Divider),
-
-      h('section', { className: 'admin-section' },
-        h('h2', { className: 'label-medium' }, 'Samples overview'),
+      h('section', sectionProps('samples'),
+        h(Z.FormSectionHead, { id: 'section-samples-title' }, FORM_SECTION_LABEL['samples']),
         f.samples.length ? h(Z.FileList, { className: 'admin-samples', onMove: moveIn('samples') }, f.samples.map(overviewSampleItem)) : null,
         h(Z.DropZone, { label: 'Browse sample', accept: 'audio/mpeg', multiple: true, onFiles: addFiles('sample', null) })));
 
@@ -962,7 +1020,7 @@
         onClose: closePlayer
       }));
 
-    return h('div', { className: 'admin-page admin-page--edit' }, main, side,
+    return h('div', { className: 'admin-page admin-page--edit admin-page--sections' }, sectionNav, main, side,
       mobile ? h(Z.ActionBar, { status: statusLine }, publishBtn, draftBtn) : null, player);
   }
 
@@ -2302,6 +2360,17 @@
       img.src = url;
     });
   }
+  // an image of the listing (a local blob or the media URL) → the same base64 JPEG as shrinkPhoto. Media URLs are read
+  // with CORS (the photo-sizes backfill reads them the same way); an own query string skips a non-CORS cached copy.
+  async function imageToBase64(src) {
+    var blob = /^blob:/.test(src);
+    var img = await loadImage(blob ? src : src + (src.indexOf('?') < 0 ? '?' : '&') + 'read=1', !blob);
+    var k = Math.min(1, PHOTO_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+    var c = document.createElement('canvas');
+    c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.85).split(',')[1];
+  }
   function PhotoField(props) {
     var ss = useState({ state: 'default', text: '' }), st = ss[0], setSt = ss[1];
     var ps = useState(0), progress = ps[0], setProgress = ps[1];
@@ -2321,30 +2390,49 @@
       var file = e.target.files && e.target.files[0];
       e.target.value = '';                       // the same photo can be taken again
       if (!file) return;
-      var n = ++seq.current;
-      setProgress(3);
-      setSt({ state: 'reading', text: 'Reading the label…' });
-      creep(85, 10);
-      try {
-        var image = await shrinkPhoto(file);
-        var got = await invoke('read-label', { image: image });
-        if (n !== seq.current) return;
-        if (!got.read) { stopAt(0); setSt({ state: 'not read', text: 'Couldn’t read the label. Try closer, flat and with more light, or type it.' }); return; }
-        var r = got.read;
-        var said = [r.artist, r.title, [r.label, r.catno].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
-        if (props.onText) props.onText(got.query);
-        setSt({ state: 'reading', text: 'Looking for it on Discogs…' });
-        creep(97, 3);
-        var found = await invoke('discogs-lookup', { fields: r });
-        if (n !== seq.current) return;
-        stopAt(100);
-        props.onFound({ results: found.results || [] });
-        setSt({ state: 'read', text: 'Read from the photo: ' + said + '. ' + (props.pickHint || 'Pick your pressing in the list, or fix the text.') });
-      } catch (err) {
-        if (n !== seq.current) return;
-        stopAt(0);
-        setSt({ state: 'not read', text: 'Not read: ' + err.message });
+      readAll([function () { return shrinkPhoto(file); }]);
+    }
+    /* Fetch from label (Gio 2026-11-17, Figma Create → `discogs actions` boolean `fetch from label`): the listing's own
+       images, read one by one in list order; the first one that finds releases on Discogs gives the list. */
+    function fromImages() {
+      readAll((props.images || []).map(function (src) { return function () { return imageToBase64(src); }; }));
+    }
+    // sources: functions that give the base64 JPEG of a photo. Each is read with read-label, then looked up on Discogs.
+    async function readAll(sources) {
+      var n = ++seq.current, many = sources.length > 1, lastRead = null;
+      for (var i = 0; i < sources.length; i++) {
+        setProgress(3);
+        setSt({ state: 'reading', text: many ? 'Reading image ' + (i + 1) + ' of ' + sources.length + '…' : 'Reading the label…' });
+        creep(85, 10);
+        try {
+          var image = await sources[i]();
+          var got = await invoke('read-label', { image: image });
+          if (n !== seq.current) return;
+          if (!got.read) continue;
+          var r = got.read;
+          var said = [r.artist, r.title, [r.label, r.catno].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
+          if (props.onText) props.onText(got.query);
+          setSt({ state: 'reading', text: 'Looking for it on Discogs…' });
+          creep(97, 3);
+          var found = await invoke('discogs-lookup', { fields: r });
+          if (n !== seq.current) return;
+          lastRead = { said: said, results: found.results || [] };
+          if (lastRead.results.length) break;
+        } catch (err) {
+          if (n !== seq.current) return;
+          if (!many) { stopAt(0); setSt({ state: 'not read', text: 'Not read: ' + err.message }); return; }
+        }
       }
+      if (n !== seq.current) return;
+      if (!lastRead) {
+        stopAt(0);
+        setSt({ state: 'not read', text: many ? 'Couldn’t read a label in the images. Add a closer photo of the label, or type it.'
+          : 'Couldn’t read the label. Try closer, flat and with more light, or type it.' });
+        return;
+      }
+      stopAt(100);
+      props.onFound({ results: lastRead.results });
+      setSt({ state: 'read', text: 'Read from the photo: ' + lastRead.said + '. ' + (props.pickHint || 'Pick your pressing in the list, or fix the text.') });
     }
     var reading = st.state === 'reading';
     // full: one full-width button (Memo); otherwise the button sits in a row after props.actions (Create, 0092)
@@ -2354,7 +2442,9 @@
     return h('div', { className: 'admin-memo__photo' },
       h('input', { ref: input, type: 'file', accept: 'image/*', capture: 'environment', className: 'zz-visually-hidden',
         tabIndex: -1, 'aria-hidden': 'true', onChange: onFile }),
-      props.full ? button : h('div', { className: 'admin-photo-actions' }, props.actions, button),
+      props.full ? button : h('div', { className: 'admin-photo-actions' }, props.actions, button,
+        props.images && props.images.length ? h(Z.Button, { type: 'button', hierarchy: 'secondary', disabled: props.disabled,
+          'aria-busy': reading || undefined, onClick: function () { if (!reading) fromImages(); } }, 'Fetch from label') : null),
       reading ? h(Z.ProgressBar, { value: progress, 'aria-label': 'Reading the photo' }) : null,
       h('p', { className: 'body-small admin-memo__photo-status', role: 'status' }, st.text));
   }
