@@ -247,3 +247,6 @@ h1, h2, p { margin: 0; }
 @media (prefers-reduced-motion: reduce) { .admin-player, .admin-player[data-open] { transition: none; } }
 body[data-player-open] { padding-bottom: var(--admin-player-height, 0px); }
 body[data-player-open] .zz-action-bar { bottom: var(--admin-player-height, 0px); }
+/* backend theme: surface/accent is black-a4 (translucent), so the player gets the admin's bar ground, like the
+   ActionBar and the bulk bar (decision 0099: bars and dialogs stay surface/base) */
+.admin-player .zz-player { background: var(--surface-base); }
