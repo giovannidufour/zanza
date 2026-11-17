@@ -110,9 +110,10 @@ function block(b, key, { url, shipping, countries }) {
 
 // Figma `legal section`: heading (label-small) + text; Figma `legal content`: title, divider, sections
 // `header` replaces the shop header (the coming-soon site has no shop to navigate to: build-coming-soon.js)
-function legalPage(page, { site, url, shipping, countries, header }) {
+// `md` = the page text (the admin's sections joined back into Markdown, decision 0106); default = the file in content/legal
+function legalPage(page, { site, url, shipping, countries, header, md }) {
   const missing = new Set();
-  const { title, sections } = parse(fill(read(page), site, missing));
+  const { title, sections } = parse(fill(md || read(page), site, missing));
   const body = h('div', { className: 'zz-page' },
     header || h(SiteHeader, { site, url, current: page }),
     h('main', { className: 'legal-content' },

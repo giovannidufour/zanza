@@ -36,6 +36,14 @@ const config = {
 // tokens.css is generated: make sure it is fresh
 require('child_process').execFileSync(process.execPath, [path.join(UI, 'build-tokens.js')], { stdio: 'ignore' });
 
+function contentDefaults() {
+  const Content = require(path.join(ROOT, 'packages/content/content.js'));
+  const site = JSON.parse(fs.readFileSync(path.join(ROOT, 'apps/storefront/site.json'), 'utf8'));
+  const legal = {};
+  for (const b of Content.BLOCKS) if (b.page) legal[b.page] = fs.readFileSync(path.join(ROOT, 'apps/storefront/content/legal', `${b.page}.md`), 'utf8');
+  return `\nwindow.ZanzaContent.DEFAULTS = ${JSON.stringify(Content.defaults({ owner: site.owner, legal }))};\n` +
+    `window.ZanzaContent.PAGE_TITLES = ${JSON.stringify(Content.pageTitles(legal))};\n`;
+}
 const hash = (s) => require('crypto').createHash('md5').update(s).digest('hex').slice(0, 8);
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
@@ -46,6 +54,8 @@ const files = {
   'components.js': fs.readFileSync(path.join(UI, 'components.js'), 'utf8'),
   'toast.js': fs.readFileSync(path.join(UI, 'toast.js'), 'utf8'),
   'shipping.js': fs.readFileSync(path.join(ROOT, 'packages/shipping/shipping.js'), 'utf8'),   // decision 0057
+  // the texts of page Content (decision 0106): the blocks + today's texts as defaults (site.json → owner, legal Markdown)
+  'content.js': fs.readFileSync(path.join(ROOT, 'packages/content/content.js'), 'utf8') + contentDefaults(),
   'config.js': `window.ADMIN_CONFIG = ${JSON.stringify(config, null, 2)};\n`,
   'admin.js': fs.readFileSync(path.join(APP, 'admin.js'), 'utf8')
 };

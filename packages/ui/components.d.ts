@@ -982,6 +982,78 @@ export interface MemoItemProps extends HTMLAttributes<HTMLLIElement> {
 }
 export declare function MemoItem(props: MemoItemProps): JSX.Element;
 
+/** Figma `content group head` (BACKEND → Content, decision 0106): heading of a group of texts in the admin Content list. */
+export interface ContentGroupHeadProps extends HTMLAttributes<HTMLDivElement> {
+  heading: ReactNode;
+  /** Figma boolean `has help`: one line on where the texts appear. Omit → none */
+  help?: ReactNode;
+  /** id of the heading, for aria-labelledby */
+  headingId?: string;
+  /** @default 2 */
+  headingLevel?: 2 | 3;
+}
+export declare function ContentGroupHead(props: ContentGroupHeadProps): JSX.Element;
+
+/** Figma `content row` (BACKEND → Content, device desktop | mobile, one responsive markup, decision 0106). An <li>: wrap in a <ul>. */
+export interface ContentRowProps extends HTMLAttributes<HTMLLIElement> {
+  /** what the block is (Profile, Shipping, Contact…) */
+  title: ReactNode;
+  /** the shop pages that show it */
+  where?: ReactNode;
+  /** Figma boolean `has edited`: "Edited 15 Nov 2026". Omit → none (never saved) */
+  edited?: ReactNode;
+  /** Figma boolean `has condition`: when the shop shows it ("Trade only: …", "Shown while “Show who I am” is on"). Omit → none */
+  condition?: ReactNode;
+  /** the editor (Edit is a link) */
+  href: string;
+  /** @default "Edit" */
+  editLabel?: string;
+}
+export declare function ContentRow(props: ContentRowProps): JSX.Element;
+
+/** Figma `content editor head` (BACKEND → Content, decision 0106): top of a Content editor. On mobile the actions hide:
+ *  the page shows them in an ActionBar. */
+export interface ContentEditorHeadProps extends HTMLAttributes<HTMLDivElement> {
+  backHref: string;
+  /** @default "Content" */
+  backLabel?: ReactNode;
+  /** the page's h1 (Figma `admin page title`, exposed) */
+  title: ReactNode;
+  /** "Shown on: …" */
+  where?: ReactNode;
+  /** View on shop + Save (Buttons), desktop only */
+  actions?: ReactNode;
+}
+export declare function ContentEditorHead(props: ContentEditorHeadProps): JSX.Element;
+
+/** Figma `link row` (BACKEND → Content, layout inline | stacked, decision 0106): a label + link pair with Remove. */
+export interface LinkRowProps extends HTMLAttributes<HTMLDivElement> {
+  /** the Label Input */
+  label: ReactNode;
+  /** the Link Input */
+  link: ReactNode;
+  /** Remove. Omit → no button */
+  onRemove?: () => void;
+  /** @default "Remove" */
+  removeLabel?: string;
+  /** inline = label 160 + link, side by side (stacked below the breakpoint anyway). @default "inline" */
+  layout?: 'inline' | 'stacked';
+}
+export declare function LinkRow(props: LinkRowProps): JSX.Element;
+
+/** Figma `section row` (BACKEND → Content, decision 0106): one section of a page (heading + text) or one step, with Remove. */
+export interface SectionRowProps extends HTMLAttributes<HTMLDivElement> {
+  /** the heading (or step title) Input */
+  heading: ReactNode;
+  /** the text Input (text area) */
+  text: ReactNode;
+  /** Remove. Omit → no button */
+  onRemove?: () => void;
+  /** @default "Remove" */
+  removeLabel?: string;
+}
+export declare function SectionRow(props: SectionRowProps): JSX.Element;
+
 /** Mirrors the Figma component `progress bar` (BACKEND → Memo): a determinate bar, 4px, track surface/subtle,
  *  value action/primary/background/default. role="progressbar"; pass aria-label (or aria-labelledby). Decision 0091. */
 export interface ProgressBarProps extends HTMLAttributes<HTMLDivElement> {

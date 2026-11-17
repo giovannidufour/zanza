@@ -9,13 +9,13 @@
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
-const { SiteHeader, productName, releaseInfo, grading, coverGrading, productHref } = require('./shell.js');
+const { SiteHeader, productName, releaseInfo, grading, coverGrading, productHref, textOf, identityOn, Paragraphs } = require('./shell.js');
 
 // Gio's grading scale (Q8, table public.grades; the same list as apps/admin/admin.js GRADES)
 const GRADES = ['M', 'NM', 'NM-', 'EX+', 'EX', 'EX-', 'VG+', 'VG', 'VG-', 'G+', 'G', 'G-', 'F'];
 const offerHref = (product, url) => url(`/products/${product.listing.slug}/offer/`);
-// no shipping rule on the site (Gio 2026-11-12): the deal is found in the conversation
-const PITCH = 'Not for sale. Convince me with a trade: show me what you\u2019ve got, and who you are.';
+// Gio's texts (admin → Content → Trade: record page and offer, decision 0106; no shipping rule on the site, Gio 2026-11-12)
+const T = (site, field) => textOf(site, 'short.trade', field);
 
 // Figma `discogs card`, filled from site.json → owner.discogs
 const OwnerDiscogs = ({ site, label }) => {
@@ -34,8 +34,7 @@ function TradeActions({ product, site, url }) {
         ? h(Z.Button, { hierarchy: 'primary', size: 'large', className: 'pdp-content__cta', href: offerHref(product, url) }, 'Make an offer')
         : h(Z.Button, { hierarchy: 'primary', size: 'large', className: 'pdp-content__cta', disabled: true },
             listing.status === 'traded' ? 'Traded' : 'Reserved'),
-      h('p', { className: 'body-small' }, open ? PITCH
-        : listing.status === 'traded' ? 'This one found a new home.' : 'I’ve accepted an offer for this record. If it falls through, it’s open again.'),
+      h('p', { className: 'body-small' }, T(site, open ? 'pitch' : listing.status === 'traded' ? 'traded' : 'reserved')),
       h('a', { className: 'trade-link trade-actions__link body-small', href: url('/how-trading-works/') }, 'How trading works')),
     copy.notes ? h(Z.TradeNote, { signature: `— ${(site.owner || {}).name || ''}` }, copy.notes) : null,
     h(OwnerDiscogs, { site, label: 'Who you’re trading with' }));
@@ -89,7 +88,7 @@ function verifyLinks(owner) {
 
 function Offer({ product, site, url }) {
   const owner = site.owner || {};
-  const days = (site.trade || {}).replyDays || 3;
+  const days = T(site, 'replyDays') || (site.trade || {}).replyDays || 3;
   const search = (site.trade || {}).searchEndpoint || '';
   return h('div', { className: 'zz-page' },
     h(SiteHeader, { site, url, section: 'trade' }),
@@ -109,7 +108,7 @@ function Offer({ product, site, url }) {
         // both profiles are theirs by sending Gio a short phrase from each (decision 0070)
         h('div', { className: 'trade-col trade-col--3 trade-form__intro', role: 'group', 'aria-labelledby': 'offer-intro-title' }, h(Z.Divider),
           h('h2', { id: 'offer-intro-title', className: 'label-small' }, 'Introduce yourself'),
-          h('p', { className: 'body-small' }, 'I don\u2019t trade with strangers. Tell me who you are and where I can see your records and your trades: that\u2019s how I learn to trust you.'),
+          h('p', { className: 'body-small' }, T(site, 'introduce')),
           h(Z.Input, { variant: 'text-area', label: 'About you', name: 'about', required: true, maxLength: 2000,
             placeholder: 'Who you are, what you collect, trades you\u2019ve done\u2026' }),
           h(Z.Input, { label: 'Discogs username', name: 'discogs', required: true, autoComplete: 'off', placeholder: 'username' }),
@@ -122,7 +121,7 @@ function Offer({ product, site, url }) {
           // honeypot: hidden from people, bots fill it (the function drops those offers)
           h('div', { className: 'zz-visually-hidden', 'aria-hidden': 'true' },
             h('label', null, 'Website', h('input', { type: 'text', name: 'website', tabIndex: -1, autoComplete: 'off' }))),
-          h('p', { className: 'body-small' }, 'Nothing is agreed until we both say yes. How, when and who ships, we work out together.'),
+          h('p', { className: 'body-small' }, T(site, 'agreement')),
           h('p', { className: 'trade-form__error body-small', role: 'alert', hidden: true, 'data-offer-error': '' }),
           h(Z.Button, { type: 'submit', hierarchy: 'primary', className: 'trade-form__send', 'data-offer-send': '' }, 'Send offer'))),
       // Figma `offer sent`: shown by site.js after a successful send. First the proof (decision 0070): the phrase the
@@ -141,22 +140,16 @@ function Offer({ product, site, url }) {
         h(Z.Button, { hierarchy: 'secondary', href: url('/trade/') }, 'More records for trade'))));
 }
 
-// Gio 2026-11-12: generic, no shipping rule: trust comes from introductions and the conversation
-const STEPS = [
-  ['You make an offer', 'Pick the records you\u2019d give and tell me why I should take them. No account needed.'],
-  ['You introduce yourself', 'Who you are, your Discogs and your Instagram or Facebook: there I can see who we know in common. I don\u2019t trade with strangers: convince me I can trust you.'],
-  ['You show me it\u2019s you', 'After sending, you get our password, a couple of words: send them to me from your Discogs and from your Instagram or Facebook. That\u2019s how I know the profiles are yours.'],
-  ['We talk', 'I answer you personally by email within 3 days. You can look at my profiles too.'],
-  ['We find an agreement', 'Videos of the records, how and when we swap, or we meet in person. Nothing is agreed until we both say yes.'],
-  ['We trade', 'And if it went well, we both say so where we talked.']
-];
+// Gio 2026-11-12: generic, no shipping rule: trust comes from introductions and the conversation.
+// The steps are Gio's (admin → Content → How trading works, decision 0106).
 function HowTrading({ site, url }) {
   return h('div', { className: 'zz-page' },
     h(SiteHeader, { site, url, section: 'trade' }),
     h('main', { className: 'trade-content' },
       h('h1', { className: 'trade-content__title body-large' }, 'How trading works'),
       h('div', { className: 'trade-col trade-col--steps' }, h(Z.Divider),
-        h('ol', { className: 'trade-steps' }, STEPS.map(([t, b], i) => h(Z.TradeStep, { key: i, number: i + 1, title: t }, b)))),
+        h('ol', { className: 'trade-steps' }, (textOf(site, 'page.how_trading', 'steps') || []).map((s, i) =>
+          h(Z.TradeStep, { key: i, number: i + 1, title: s.title }, s.text)))),
       h('div', { className: 'trade-col trade-col--3' }, h(Z.Divider),
         h(OwnerDiscogs, { site, label: 'Who you’re trading with' }),
         h(Z.Button, { hierarchy: 'secondary', href: url('/about/') }, 'About me'),
@@ -171,12 +164,13 @@ function About({ site, url }) {
       h('h1', { className: 'trade-content__title body-large' }, 'About'),
       h('div', { className: 'trade-col trade-col--1' }, h(Z.Divider),
         h('div', { className: 'about-intro' },
-          h('h2', { className: 'body-extra-large body-large--mobile' }, o.djName),
-          h('p', { className: 'body-medium' }, o.bio),
+          // Who I am off (decision 0106): the store's name and the Store profile's text, no Discogs card
+          h('h2', { className: 'body-extra-large body-large--mobile' }, identityOn(site) ? o.djName : site.storeName),
+          h(Paragraphs, { text: o.bio }),
           h('div', { className: 'about-intro__links' }, (o.links || []).map((l) => h(Z.Button, { key: l.href + l.label, hierarchy: 'secondary', href: l.href,
             target: '_blank', rel: 'noopener' }, l.label, h('span', { 'aria-hidden': 'true' }, ' ↗'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')))))),
       // Gio 2026-11-12: no gigs anywhere; the Discogs card moves up to the second column
-      h('div', { className: 'trade-col trade-col--2' }, h(Z.Divider), h(OwnerDiscogs, { site }))));
+      identityOn(site) ? h('div', { className: 'trade-col trade-col--2' }, h(Z.Divider), h(OwnerDiscogs, { site })) : null));
 }
 
 module.exports = { TradeActions, Offer, HowTrading, About, offerHref };

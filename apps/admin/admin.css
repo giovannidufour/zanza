@@ -77,6 +77,16 @@ h1, h2, p { margin: 0; }
 .admin-bulk__actions, .admin-bulk__message { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
 .admin-bulk__message[hidden] { display: none; }
 
+/* Figma BACKEND → Content (decision 0106): list = groups (gap 24; head + rows, gap 8); editor form column 480
+   (Memo), 640 for the page sections (Content - desktop · Shipping); links gap 16, sections gap 24 */
+.admin-content { gap: 24px; }
+.admin-content__group { display: flex; flex-direction: column; gap: 8px; }
+.admin-content__form { display: flex; flex-direction: column; gap: 16px; max-width: 480px; }
+.admin-content__form:has(.admin-content__sections) { max-width: 640px; }
+.admin-content__list { display: flex; flex-direction: column; gap: 16px; }
+.admin-content__sections { gap: 24px; }
+.admin-content__problems { margin: 0; padding-left: 20px; }
+
 @media (--mobile) {
   /* Figma page `admin` (decision 0089): the AdminBar bleeds to the screen edges, the page content keeps 16 */
   .admin { padding: 0 16px 16px; }

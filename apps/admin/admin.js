@@ -1416,18 +1416,171 @@
       h('div', null, h(Z.Button, { hierarchy: 'primary', type: 'submit', disabled: state && state.sending }, 'Send link')));
   }
 
+  // ── Content ───────────────────────────────────────────────────────────────
+  /* Figma BACKEND → Content (2337:4277, decision 0106): the shop's texts in Gio's own voice. The blocks, their fields
+     and today's texts (the defaults) come from packages/content/content.js (window.ZanzaContent, built by build.js).
+     A block = one row of public.site_texts (migration 0025); Save = admin_set_text, which also rebuilds the shop.
+     Routes: #content (the list), #content/<key> (an editor). */
+  var CT = window.ZanzaContent;
+  var CONDITION = {
+    'identity-on': 'Shown while \u201cShow who I am\u201d is on',
+    'identity-off': 'Shown while \u201cShow who I am\u201d is off',
+    trade: 'Trade only: hidden on the shop while trade is off'
+  };
+  function editedText(at) {
+    if (!at) return undefined;
+    try { return 'Edited ' + new Date(at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return undefined; }
+  }
+  function shopHref(path) { return CFG.storefrontUrl ? CFG.storefrontUrl.replace(/\/$/, '') + path : null; }
+  function copyOf(v) { return JSON.parse(JSON.stringify(v)); }
+
+  function Content() {
+    var rs = useState(null), rows = rs[0], setRows = rs[1];
+    var es = useState(null), error = es[0], setError = es[1];
+    useEffect(function () {
+      sb.from('site_texts').select('key,updated_at').then(function (res) {
+        if (res.error) setError(res.error.message); else setRows(res.data || []);
+      });
+    }, []);
+    var edited = {};
+    (rows || []).forEach(function (r) { edited[r.key] = r.updated_at; });
+    return h('div', { className: 'admin-section admin-content' },
+      h('h1', { className: 'label-extra-large' }, 'Content'),
+      h('p', { className: 'body-small' }, 'The texts of the shop, in your words. Saving a text rebuilds the shop: live in about 2 minutes.'),
+      error ? h('p', { className: 'body-small admin-status--error', role: 'alert' }, 'Could not read the saved texts: ' + error + '. Is migration 0025 (site texts) applied? The list shows today\u2019s texts.') : null,
+      !rows && !error ? h('p', { className: 'body-small' }, 'Loading…') : CT.GROUPS.map(function (g) {
+        return h('section', { key: g.id, className: 'admin-content__group', 'aria-labelledby': 'content-' + g.id },
+          h(Z.ContentGroupHead, { heading: g.title, headingId: 'content-' + g.id, help: g.help }),
+          h('ul', { className: 'admin-rows' }, CT.BLOCKS.filter(function (b) { return b.group === g.id; }).map(function (b) {
+            return h(Z.ContentRow, { key: b.key, title: b.title, where: b.where, edited: editedText(edited[b.key]),
+              condition: CONDITION[b.shows], href: '#content/' + b.key });
+          })));
+      }));
+  }
+
+  function ContentEditor(props) {
+    var key = props.blockKey, block = CT.blockOf(key);
+    var mobile = useIsMobile();
+    var vs = useState(null), value = vs[0], setValue = vs[1];
+    var ss = useState(null), saved = ss[0], setSaved = ss[1];      // JSON of the last saved (or loaded) value
+    var ps = useState([]), problems = ps[0], setProblems = ps[1];
+    var ls = useState(null), loadError = ls[0], setLoadError = ls[1];
+    var bs = useState(false), busy = bs[0], setBusy = bs[1];
+    useEffect(function () {
+      if (!block) return;
+      sb.from('site_texts').select('value').eq('key', key).maybeSingle().then(function (res) {
+        if (res.error) setLoadError(res.error.message);
+        var v = copyOf(CT.DEFAULTS[key] || {});
+        var row = res.data && res.data.value;
+        if (row) block.fields.forEach(function (f) { if (row[f.name] !== undefined && row[f.name] !== null) v[f.name] = row[f.name]; });
+        setValue(v); setSaved(JSON.stringify(v));
+      });
+    }, [key]);
+    if (!block) return h('p', { className: 'body-medium' }, 'This text does not exist. ', h('a', { href: '#content' }, 'Back to Content'));
+    if (!value) return h('p', { className: 'body-small' }, 'Loading…');
+
+    var dirty = JSON.stringify(value) !== saved;
+    function set(name, v) { setValue(function (cur) { var n = Object.assign({}, cur); n[name] = v; return n; }); setProblems([]); }
+    async function save() {
+      if (busy) return;
+      if (!dirty) { toast('Nothing to save.'); return; }
+      var clean = copyOf(value);
+      block.fields.forEach(function (f) {
+        if (f.kind === 'text' || f.kind === 'textarea') clean[f.name] = String(clean[f.name] || '').trim();
+        if (f.kind === 'links') clean[f.name] = (clean[f.name] || []).map(function (l) { return { label: String(l.label || '').trim(), href: String(l.href || '').trim() }; })
+          .filter(function (l) { return l.label || l.href; });
+        if (f.kind === 'sections') clean[f.name] = (clean[f.name] || []).map(function (x) { return { heading: String(x.heading || '').trim(), text: String(x.text || '').trim() }; })
+          .filter(function (x) { return x.heading || x.text; });
+        if (f.kind === 'steps') clean[f.name] = (clean[f.name] || []).map(function (x) { return { title: String(x.title || '').trim(), text: String(x.text || '').trim() }; })
+          .filter(function (x) { return x.title || x.text; });
+        if (f.kind === 'number') clean[f.name] = /^\d+$/.test(String(clean[f.name]).trim()) ? parseInt(clean[f.name], 10) : clean[f.name];
+      });
+      var found = CT.problems(key, clean);
+      if (found.length) { setProblems(found); return; }
+      setBusy(true);
+      var res = await sb.rpc('admin_set_text', { p_key: key, p_value: clean });
+      setBusy(false);
+      if (res.error) { setProblems(['Not saved: ' + res.error.message]); return; }
+      setValue(clean); setSaved(JSON.stringify(clean));
+      toast('Saved. The shop updates in about 2 minutes.');
+    }
+
+    var view = block.path && shopHref(block.path);
+    var viewBtn = view ? h(Z.Button, { key: 'view', hierarchy: 'secondary', href: view, target: '_blank', rel: 'noopener' }, 'View on shop',
+      h('span', { 'aria-hidden': 'true' }, ' \u2197'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')) : null;
+    var saveBtn = h(Z.Button, { key: 'save', hierarchy: 'primary', 'aria-busy': busy || undefined, onClick: save }, 'Save');
+    var status = problems.length ? h('ul', { className: 'body-small admin-status--error admin-content__problems', role: 'alert' },
+      problems.map(function (p, i) { return h('li', { key: i }, p); })) : null;
+    var shownSection = {};
+
+    return h('div', { className: 'admin-section admin-content admin-content-editor' },
+      h(Z.ContentEditorHead, { backHref: '#content', title: block.title, where: 'Shown on: ' + block.where + (block.shows ? ' \u00b7 ' + CONDITION[block.shows].toLowerCase() : ''),
+        actions: mobile ? null : h(React.Fragment, null, viewBtn, saveBtn) }),
+      loadError ? h('p', { className: 'body-small admin-status--error', role: 'alert' }, 'Could not read the saved text (' + loadError + '): showing today\u2019s text.') : null,
+      mobile ? null : status,
+      h('div', { className: 'admin-content__form' }, block.fields.map(function (f) {
+        var head = f.section && !shownSection[f.section] ? (shownSection[f.section] = true, h(Z.ContentGroupHead, { key: 'h-' + f.name, heading: f.section, help: f.sectionHelp, headingLevel: 2 })) : null;
+        return h(React.Fragment, { key: f.name }, head, h(ContentField, { field: f, value: value[f.name], onChange: function (v) { set(f.name, v); }, blockKey: key }));
+      })),
+      mobile ? h(Z.ActionBar, { status: status }, saveBtn, viewBtn) : null);
+  }
+
+  function ContentField(props) {
+    var f = props.field, v = props.value, id = 'content-' + props.blockKey.replace('.', '-') + '-' + f.name;
+    function list(items, make) { return (items || []).map(make); }
+    function update(items, i, patch) { var n = (items || []).slice(); n[i] = Object.assign({}, n[i], patch); props.onChange(n); }
+    function removeAt(items, i) { var n = (items || []).slice(); n.splice(i, 1); props.onChange(n); }
+    if (f.kind === 'text') return h(Z.Input, { id: id, label: f.label, value: v || '', supportText: f.help, onChange: function (e) { props.onChange(e.target.value); } });
+    if (f.kind === 'textarea') return h(Z.Input, { id: id, variant: 'text-area', label: f.label, value: v || '', supportText: f.help, rows: 4, onChange: function (e) { props.onChange(e.target.value); } });
+    if (f.kind === 'number') return h(Z.Input, { id: id, label: f.label, value: v === undefined || v === null ? '' : String(v), inputMode: 'numeric', supportText: f.help, onChange: function (e) { props.onChange(e.target.value); } });
+    if (f.kind === 'links') return h('div', { className: 'admin-content__list', role: 'group', 'aria-labelledby': id + '-head' },
+      h(Z.ContentGroupHead, { heading: f.label, headingId: id + '-head', help: f.help }),
+      list(v, function (l, i) {
+        return h(Z.LinkRow, { key: i, layout: 'stacked', onRemove: function () { removeAt(v, i); },
+          label: h(Z.Input, { id: id + '-' + i + '-label', label: 'Label', value: l.label || '', onChange: function (e) { update(v, i, { label: e.target.value }); } }),
+          link: h(Z.Input, { id: id + '-' + i + '-href', label: 'Link', type: 'url', value: l.href || '', placeholder: 'https://…', onChange: function (e) { update(v, i, { href: e.target.value }); } }) });
+      }),
+      h('div', null, h(Z.Button, { hierarchy: 'secondary', type: 'button', onClick: function () { props.onChange((v || []).concat([{ label: '', href: '' }])); } }, 'Add link')));
+    if (f.kind === 'sections' || f.kind === 'steps') {
+      var steps = f.kind === 'steps';
+      return h('div', { className: 'admin-content__list admin-content__sections' },
+        h('p', { className: 'body-small' }, steps ? 'The steps in the order the page numbers them.'
+          : 'The page is shown in this order, top to bottom: one box per section. The page title stays fixed. **bold** and [link](/contact/) work in the text; lines starting with “- ” make a list.'),
+        list(v, function (x, i) {
+          var n = i + 1;
+          return h(Z.SectionRow, { key: i, onRemove: (v || []).length > 1 ? function () { removeAt(v, i); } : undefined,
+            heading: h(Z.Input, { id: id + '-' + i + '-h', label: steps ? 'Step ' + n : 'Section ' + n + ' \u00b7 heading', optional: !steps && i === 0,
+              value: (steps ? x.title : x.heading) || '', onChange: function (e) { update(v, i, steps ? { title: e.target.value } : { heading: e.target.value }); } }),
+            text: h(Z.Input, { id: id + '-' + i + '-t', variant: 'text-area', rows: 5, label: steps ? 'Text' : 'Section ' + n + ' \u00b7 text', value: x.text || '',
+              supportText: /\{\{|\[\[p:/.test(x.text || '') ? 'Keep {{…}} as it is: the shop fills it in. [[p:…]] = a value still to confirm.' : undefined,
+              onChange: function (e) { update(v, i, { text: e.target.value }); } }) });
+        }),
+        h('div', null, h(Z.Button, { hierarchy: 'secondary', type: 'button', onClick: function () {
+          props.onChange((v || []).concat([steps ? { title: '', text: '' } : { heading: '', text: '' }]));
+        } }, steps ? 'Add step' : 'Add section')));
+    }
+    return null;
+  }
+
   // ── Settings ──────────────────────────────────────────────────────────────
   /* Figma BACKEND → Settings (2324:1064, decision 0102): switches for the whole shop. Trade = public.shop_settings
      (migration 0023), the single source of truth: off = the shop shows no trace of trade (pages, links, records,
      legal passages) and the server refuses offers. Save = admin_set_trade_enabled, which also rebuilds the shop.
      Route: #settings */
   var tradeSetting = null;   // one read per admin session, shared by Settings and the listing form
+  // shop_settings (select * : works before and after migration 0025). trade = effective (off while identity is off),
+  // tradeWanted = the Trade tick, identity = Who I am (decision 0106)
+  function loadShopSettings() {
+    return sb.from('shop_settings').select('*').maybeSingle().then(function (res) {
+      if (res.error) throw res.error;
+      var d = res.data || {};
+      return { trade: d.trade_enabled !== false, tradeWanted: d.trade_wanted !== undefined ? d.trade_wanted !== false : d.trade_enabled !== false,
+               identity: d.identity_enabled !== false, hasIdentity: d.identity_enabled !== undefined };
+    });
+  }
   function loadTradeEnabled(force) {
     if (!tradeSetting || force) {
-      tradeSetting = sb.from('shop_settings').select('trade_enabled').maybeSingle().then(function (res) {
-        if (res.error) throw res.error;
-        return !res.data || res.data.trade_enabled !== false;
-      });
+      tradeSetting = loadShopSettings().then(function (st) { return st.trade; });
       tradeSetting.catch(function () { tradeSetting = null; });
     }
     return tradeSetting;
@@ -1440,27 +1593,31 @@
   }
 
   function Settings() {
-    var ss = useState(null), saved = ss[0], setSaved = ss[1];     // what the database says
-    var ts = useState(null), trade = ts[0], setTrade = ts[1];     // the checkbox
+    var ss = useState(null), saved = ss[0], setSaved = ss[1];     // what the database says: { tradeWanted, identity, hasIdentity }
+    var ts = useState(null), trade = ts[0], setTrade = ts[1];     // the Trade tick
+    var is = useState(null), identity = is[0], setIdentity = is[1];   // the Who I am tick (decision 0106)
     var er = useState(null), error = er[0], setError = er[1];
     var ps = useState(null), problem = ps[0], setProblem = ps[1];
     var bs = useState(false), busy = bs[0], setBusy = bs[1];
 
     useEffect(function () {
-      loadTradeEnabled(true).then(function (on) { setSaved(on); setTrade(on); }, function (e) { setError(e.message || String(e)); });
+      loadShopSettings().then(function (st) { setSaved(st); setTrade(st.tradeWanted); setIdentity(st.identity); }, function (e) { setError(e.message || String(e)); });
     }, []);
     if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' },
       'Could not load the settings: ' + error + '. Is migration 0023 (trade switch) applied?');
     if (saved === null) return h('p', { className: 'body-medium' }, 'Loading…');
 
     async function save() {
-      if (trade === saved) { toast('Nothing to save.'); return; }
+      var identityChanged = identity !== saved.identity, tradeChanged = trade !== saved.tradeWanted;
+      if (!identityChanged && !tradeChanged) { toast('Nothing to save.'); return; }
       setBusy(true);
-      var res = await sb.rpc('admin_set_trade_enabled', { p_enabled: trade });
+      var res = identityChanged ? await sb.rpc('admin_set_identity_enabled', { p_enabled: identity }) : { error: null };
+      if (!res.error && tradeChanged) res = await sb.rpc('admin_set_trade_enabled', { p_enabled: trade });
       setBusy(false);
-      if (res.error) { setProblem('Nothing saved: ' + res.error.message); return; }
-      setProblem(null); setSaved(trade); tradeSetting = Promise.resolve(trade);
-      toast(trade ? 'Trade is on. The shop updates in about 2 minutes.' : 'Trade is off. The shop updates in about 2 minutes.');
+      if (res.error) { setProblem('Not saved: ' + res.error.message); loadShopSettings().then(setSaved, function () {}); return; }
+      var next = { tradeWanted: trade, identity: identity, hasIdentity: saved.hasIdentity };
+      setProblem(null); setSaved(next); tradeSetting = Promise.resolve(trade && identity);
+      toast((identityChanged ? (identity ? 'The shop shows who you are.' : 'The shop no longer shows who you are, nor trade.') : (trade ? 'Trade is on.' : 'Trade is off.')) + ' It updates in about 2 minutes.');
     }
 
     return h('div', { className: 'admin-section admin-shipping admin-settings' },
@@ -1469,10 +1626,17 @@
         h('p', { className: 'body-small admin-shipping__intro' }, 'Switches for the whole shop.'),
         h(Z.Button, { hierarchy: 'secondary', 'aria-busy': busy || undefined, onClick: busy ? undefined : save }, 'Save')),
       problem ? h('p', { className: 'body-small admin-status--error', role: 'alert' }, problem) : null,
+      // Figma BACKEND → Settings → `identity setting` (decision 0106). Hidden until migration 0025 is applied.
+      saved.hasIdentity ? h('section', { className: 'admin-shipping__section', 'aria-labelledby': 'settings-identity' },
+        h('h2', { id: 'settings-identity', className: 'label-medium' }, 'Who I am'),
+        h('p', { className: 'body-small', id: 'settings-identity-help' }, 'Off: the shop shows the Store profile and no trace of you: no name, DJ name, bio or signature, no Discogs card, no Instagram, Discogs or Facebook links (About, home, footer). Trade needs who you are, so it switches off too. Your texts stay in Content: switch on again and they are back. Saving rebuilds the shop, live in about 2 minutes.'),
+        h('div', null, h(Z.Checkbox, { label: 'Show who I am on the shop', checked: identity, 'aria-describedby': 'settings-identity-help',
+          onChange: function (e) { setIdentity(e.target.checked); setProblem(null); } }))) : null,
       // Figma BACKEND → Settings → `trade setting` (2324:1066)
       h('section', { className: 'admin-shipping__section', 'aria-labelledby': 'settings-trade' },
         h('h2', { id: 'settings-trade', className: 'label-medium' }, 'Trade'),
-        h('p', { className: 'body-small', id: 'settings-trade-help' }, 'Off: the shop shows no trace of trade. The For trade section and its records, the offer form, How trading works and every mention (menus, footer, home, legal pages) disappear, and the server refuses offers. Trade listings stay here in the admin as they are: switch trade on again and they are back. Saving rebuilds the shop, live in about 2 minutes.'),
+        h('p', { className: 'body-small', id: 'settings-trade-help' }, 'Off: the shop shows no trace of trade. The For trade section and its records, the offer form, How trading works and every mention (menus, footer, home, legal pages) disappear, and the server refuses offers. Trade listings stay here in the admin as they are: switch trade on again and they are back. Saving rebuilds the shop, live in about 2 minutes.' +
+          (identity ? '' : ' While “Show who I am” is off, trade stays off whatever this says.')),
         h('div', null, h(Z.Checkbox, { label: 'Show trade on the shop', checked: trade, 'aria-describedby': 'settings-trade-help',
           onChange: function (e) { setTrade(e.target.checked); setProblem(null); } }))));
   }
@@ -1988,6 +2152,8 @@
     else if (/^#attributes/.test(hash)) body = h(Attributes, { key: 'attributes', kind: hash.split('/')[1] || 'artist' });
     else if (hash === '#shipping') body = h(Shipping, { key: 'shipping-' + route.visit });
     else if (hash === '#settings') body = h(Settings, { key: 'settings-' + route.visit });
+    else if (hash === '#content') body = h(Content, { key: 'content-' + route.visit });
+    else if (/^#content\/[a-z_.]+$/.test(hash)) body = h(ContentEditor, { key: hash + route.visit, blockKey: hash.slice(9) });
     else if (hash === '#orders') body = h(Orders, { key: 'orders-' + route.visit });
     else if (/^#orders\/[^/]+$/.test(hash)) body = h(OrderDetail, { key: hash + route.visit, id: hash.split('/')[1] });
     else if (hash === '#memo') body = h(Memo, { key: 'memo-' + route.visit });
@@ -2002,13 +2168,14 @@
   /* Admin navigation (Figma page `admin`, decision 0089): AdminBar (desktop buttons / mobile Menu · title · Create)
      + the mobile menu, a full-screen native modal <dialog> with a MenuLayer, like the shop's (0060): Esc, × or
      following a link closes it, focus goes back to the Menu button. */
-  var SECTIONS = [['listings', 'Listings', '#'], ['orders', 'Orders', '#orders'], ['memo', 'Memo', '#memo'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings']];
+  var SECTIONS = [['listings', 'Listings', '#'], ['orders', 'Orders', '#orders'], ['memo', 'Memo', '#memo'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings'], ['content', 'Content', '#content']];
   function sectionOf(hash) {
     if (/^#orders/.test(hash)) return 'orders';
     if (/^#memo/.test(hash)) return 'memo';
     if (/^#attributes/.test(hash)) return 'attributes';
     if (hash === '#shipping') return 'shipping';
     if (hash === '#settings') return 'settings';
+    if (/^#content/.test(hash)) return 'content';
     if (/^#new/.test(hash)) return null;   // Create: no section is current (the Create button is the way in)
     return 'listings';                        // list and #edit-<id>
   }

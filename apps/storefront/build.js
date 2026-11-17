@@ -161,18 +161,33 @@ function write(rel, content) {
 }
 
 // products, in listing order
-const { loadProducts, loadSettings, readEnv } = require('./data/products.js');
+const { loadProducts, loadSettings, loadTexts, readEnv } = require('./data/products.js');
 const shippingData = require('./data/shipping.js');
 const sourceArg = (process.argv.find(a => a.startsWith('--source=')) || '').split('=')[1];
 const tradeArg = (process.argv.find(a => a.startsWith('--trade=')) || '').split('=')[1];   // on | off: try the shop either way
+const identityArg = (process.argv.find(a => a.startsWith('--identity=')) || '').split('=')[1];   // on | off: the same for Who I am
+const Content = require('../../packages/content/content.js');
 
 async function main() {
 const loaded = await loadProducts(site, { source: sourceArg });
 const source = loaded.source;
 // the trade switch (admin → Settings, migration 0023, decision 0102): off = no trade anywhere. The pages read
 // site.tradeEnabled; the trade copies leave the build here (Supabase already hides them while trade is off: RLS)
-const settings = await loadSettings({ source, trade: tradeArg });
+// Who I am (migration 0025, decision 0106): off = the Store profile and no trace of Gio; trade is off with it
+const settings = await loadSettings({ source, trade: tradeArg, identity: identityArg });
 site.tradeEnabled = settings.tradeEnabled;
+site.identityEnabled = settings.identityEnabled;
+// the texts Gio edits in the admin (page Content, decision 0106): saved rows over today's texts (the defaults: site.json →
+// owner, content/legal/*.md, packages/content). The pages read site.texts; `owner` keeps its old shape (Profile, or
+// while Who I am is off only the Store profile's about + links: no name, no profiles).
+const legalMd = Object.fromEntries(Legal.PAGES.map((p) => [p, fs.readFileSync(path.join(APP, 'content/legal', `${p}.md`), 'utf8')]));
+const resolved = Content.resolve(Content.defaults({ owner: siteFile.owner, legal: legalMd }), await loadTexts({ source }));
+site.texts = resolved.texts;
+site.pageTitles = Content.pageTitles(legalMd);
+const store = site.texts.store_profile;
+site.owner = site.identityEnabled ? Content.ownerFromProfile(site.texts.profile) : { bio: store.about, links: store.links || [] };
+if (resolved.updated['page.privacy']) site.legal = Object.assign({}, site.legal, { updated: String(resolved.updated['page.privacy']).slice(0, 10) });
+console.log(`texts: ${Object.keys(resolved.updated).length} saved in the admin · who I am ${site.identityEnabled ? 'on' : 'off'}`);
 const products = site.tradeEnabled ? loaded.products : loaded.products.filter(p => p.listing.section !== 'trade');
 console.log(`products: ${products.length} from ${source} · trade ${site.tradeEnabled ? 'on' : 'off'}`);
 if (source === 'supabase') {
@@ -266,7 +281,8 @@ write('account/details/index.html', page({ title: Account.TITLE.details, body: r
 // Legal pages (decision 0079, Figma page `Legal`): content/legal/<page>.md → /<page>/. What Gio still has to fill
 // (site.json → legal, [[TO FILL]] in the text) is listed here, so a build never hides a placeholder.
 for (const p of Legal.PAGES) {
-  const { title: t, body, missing } = Legal.legalPage(p, { site, url, shipping, countries: shippingData.countries(shipping) });
+  const md = Content.markdownFromSections(site.pageTitles[p], site.texts[`page.${p}`].sections);
+  const { title: t, body, missing } = Legal.legalPage(p, { site, url, shipping, countries: shippingData.countries(shipping), md });
   write(`${p}/index.html`, page({ title: t, body: renderToStaticMarkup(body) }));
   if (missing.length) console.log(`    to fill: ${missing.join(' · ')}`);
 }

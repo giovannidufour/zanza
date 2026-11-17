@@ -12,6 +12,9 @@ on:
       - 'apps/admin/**'
       - 'packages/ui/**'
       - 'packages/shipping/**'
+      - 'packages/content/**'
+      - 'apps/storefront/site.json'
+      - 'apps/storefront/content/legal/**'
       - '.github/workflows/deploy-admin.yml'
   workflow_dispatch:
 

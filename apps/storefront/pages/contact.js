@@ -6,7 +6,7 @@
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
-const { SiteHeader, tradeOn } = require('./shell.js');
+const { SiteHeader, textOf, Paragraphs } = require('./shell.js');
 
 function Contact({ site, url }) {
   const email = (site.legal || {}).email || '';
@@ -17,7 +17,7 @@ function Contact({ site, url }) {
       h('h1', { className: 'legal-content__title body-large', 'data-contact-title': '' }, 'Contact'),
       h('div', { className: 'legal-text' }, h(Z.Divider),
         h('section', { className: 'legal-text__section' },
-          h('p', { className: 'body-medium' }, `Questions about a record, an order${tradeOn(site) ? ' or a trade' : ''}? Write to me by email or with the form, and I answer by email.`),
+          h(Paragraphs, { text: textOf(site, 'short.contact', 'intro') }),   // admin → Content → Contact (decision 0106)
           h('p', { className: 'body-medium' }, 'Email: ', email ? h('a', { href: `mailto:${email}` }, email) : '[Contact email]')),
         // Figma `contact form`: Name (optional), Email, Message, Send; error line above the button
         h('form', { className: 'contact-form', noValidate: true, 'data-contact-form': '', 'data-endpoint': endpoint },
@@ -32,7 +32,7 @@ function Contact({ site, url }) {
           h('p', { className: 'contact-form__error body-small', role: 'alert', hidden: true, 'data-contact-error': '' }),
           h(Z.Button, { type: 'submit', hierarchy: 'primary', className: 'contact-form__send', 'data-contact-send': '' }, 'Send')),
         h('section', { className: 'legal-text__section', hidden: true, 'data-contact-sent': '' },
-          h('p', { className: 'body-medium' }, 'Thanks, your message is on its way. I answer by email, usually within a few days.')))));
+          h(Paragraphs, { text: textOf(site, 'short.contact', 'sent') })))));
 }
 
 module.exports = { Contact };

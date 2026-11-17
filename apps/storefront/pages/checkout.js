@@ -7,11 +7,10 @@
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
-const { SiteHeader } = require('./shell.js');
+const { SiteHeader, textOf, Paragraphs } = require('./shell.js');
 
-// Figma `order thanks` text properties
+// Figma `order thanks` text properties (the note is Gio's: admin → Content → Order confirmed, decision 0106)
 const MESSAGE = 'Your order is confirmed. The confirmation is on its way to your email.';
-const NOTE = 'I pack every record by hand and write to you with the tracking number when it ships.';
 
 function Thanks({ site, url }) {
   return h('div', { className: 'zz-page' },
@@ -22,7 +21,7 @@ function Thanks({ site, url }) {
       h('div', { className: 'bag-empty' },
         h(Z.Divider),
         h('p', { className: 'body-medium' }, MESSAGE),
-        h('p', { className: 'body-medium' }, NOTE),
+        h(Paragraphs, { text: textOf(site, 'short.order', 'note') }),
         h(Z.Button, { hierarchy: 'secondary', size: 'medium', href: url('/sale/'), className: 'bag-empty__browse', 'data-device': 'desktop' }, 'Browse records for sale'),
         h(Z.Button, { hierarchy: 'secondary', size: 'large', href: url('/sale/'), className: 'bag-empty__browse', 'data-device': 'mobile' }, 'Browse records for sale'))));
 }
