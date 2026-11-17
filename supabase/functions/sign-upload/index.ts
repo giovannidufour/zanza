@@ -1,10 +1,15 @@
 // supabase/functions/sign-upload — returns a short-lived URL to PUT one file straight into R2 (bucket store-media).
 // Admin only: the caller's Supabase session must belong to a row of public.admins.
 // Keys are random and immutable (never overwritten): photos/<uuid>.<ext>, samples/<uuid>.<ext>.
+// A smaller copy of a photo (decision 0108, images.js = packages/images/images.js, copied by sync-functions.js):
+// { kind: "photo", of: "photos/<uuid>.webp", width: 400 } signs photos/<uuid>-w400.webp, next to its photo.
 // The database stores only the key; the public base URL lives in config (backend.md → Storage).
 // Secrets (Supabase → Edge Functions → Secrets): R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET.
 import { AwsClient } from "npm:aws4fetch@1.0.20";
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+import "./images.js";
+
+const Images = (globalThis as any).ZanzaImages;
 
 const ALLOWED_ORIGINS = (Deno.env.get("ADMIN_ORIGINS") ?? "https://store-admin-3k1.pages.dev").split(",").map((s) => s.trim());
 const KINDS: Record<string, { prefix: string; types: Record<string, string>; maxBytes: number }> = {
@@ -40,7 +45,7 @@ Deno.serve(async (req) => {
   const { data: isAdmin, error: adminError } = await supabase.rpc("is_admin");
   if (adminError || isAdmin !== true) return json({ error: "Not allowed." }, 403, headers);
 
-  let body: { kind?: string; contentType?: string; size?: number };
+  let body: { kind?: string; contentType?: string; size?: number; of?: string; width?: number };
   try { body = await req.json(); } catch { return json({ error: "Send JSON: { kind, contentType, size }." }, 400, headers); }
   const kind = KINDS[body.kind ?? ""];
   if (!kind) return json({ error: "kind must be photo or sample." }, 400, headers);
@@ -58,7 +63,12 @@ Deno.serve(async (req) => {
     return json({ error: `Storage keys look wrong: R2_ACCESS_KEY_ID must be the 32-character Access Key ID and R2_SECRET_ACCESS_KEY the 64-character Secret Access Key (now ${accessKeyId.length} and ${secretAccessKey.length}).` }, 500, headers);
   }
 
-  const key = `${kind.prefix}/${crypto.randomUUID()}.${ext}`;
+  let key = `${kind.prefix}/${crypto.randomUUID()}.${ext}`;
+  if (body.of !== undefined) {
+    const sized = body.kind === "photo" && ext === "webp" && /^photos\//.test(body.of) ? Images.sizedKey(body.of, body.width) : null;
+    if (!sized) return json({ error: `No smaller copy for ${body.of} at width ${body.width} (widths: ${Images.WIDTHS.join(", ")}).` }, 400, headers);
+    key = sized;
+  }
   const r2 = new AwsClient({ accessKeyId, secretAccessKey, service: "s3", region: "auto" });
   const target = new URL(`https://${accountId}.r2.cloudflarestorage.com/${bucket}/${key}`);
   target.searchParams.set("X-Amz-Expires", "600");

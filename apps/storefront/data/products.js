@@ -8,6 +8,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const Images = require('../../../packages/images/images.js');
 
 const APP = path.resolve(__dirname, '..');
 const ENV_FILE = path.join(APP, '.supabase.env');   // git-ignored: SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY
@@ -181,12 +182,38 @@ async function loadTexts({ source } = {}) {
   return source === 'supabase' ? textsFromSupabase(readEnv()) : [];
 }
 
+// Photo sizes (decision 0108): which photos have their smaller copies in storage. One HEAD per photo, on the copy the
+// admin uploads last (images.js → lastKey): when it is there, they all are. A photo without them (uploaded before
+// 2026-11-17 and not yet made in admin → Settings → Photo sizes) keeps its single file: never a broken image.
+// Sets product.sized = the photo URLs that have copies (pages/shell.js → imageOf).
+async function markSized(products, fetchImpl = fetch) {
+  const urls = [...new Set(products.flatMap((p) => [p.release.cover, ...p.copy.photos]).filter(Images.hasSizes))];
+  const found = new Set();
+  let next = 0, failed = 0;
+  async function worker() {
+    while (next < urls.length) {
+      const u = urls[next++];
+      try {
+        const res = await fetchImpl(Images.sizedKey(u, Images.WIDTHS[Images.WIDTHS.length - 1]), { method: 'HEAD', signal: AbortSignal.timeout(8000) });
+        if (res.ok) found.add(u);
+      } catch (e) { failed++; }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(8, urls.length) }, worker));
+  for (const p of products) p.sized = [p.release.cover, ...p.copy.photos].filter((u) => found.has(u));
+  return { photos: urls.length, sized: found.size, failed };
+}
+
 async function loadProducts(site, { source } = {}) {
   const env = readEnv();
   const useDb = source !== 'json' && env.SUPABASE_URL && env.SUPABASE_PUBLISHABLE_KEY;
   if (source === 'supabase' && !useDb) throw new Error(`--source=supabase needs ${path.relative(process.cwd(), ENV_FILE)}`);
   const products = useDb ? await fromSupabase(env, site) : fromJson();
+  if (useDb) {
+    const m = await markSized(products);
+    console.log(`photo sizes: ${m.sized} of ${m.photos} photos have smaller copies` + (m.failed ? ` (${m.failed} not reachable)` : ''));
+  }
   return { products, source: useDb ? 'supabase' : 'json' };
 }
 
-module.exports = { loadProducts, loadSettings, loadTexts, settingsFromSupabase, textsFromSupabase, readEnv, effectiveStatus, toProduct, nameOf, byListingOrder, mediaUrlFor, fromSupabase };
+module.exports = { loadProducts, markSized, loadSettings, loadTexts, settingsFromSupabase, textsFromSupabase, readEnv, effectiveStatus, toProduct, nameOf, byListingOrder, mediaUrlFor, fromSupabase };

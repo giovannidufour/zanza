@@ -15,7 +15,7 @@
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
-const { formatPrice, productName, productNameLinked, releaseInfo, gradingProps, productHref, SiteHeader, sampleAttrs } = require('./shell.js');
+const { formatPrice, productName, productNameLinked, releaseInfo, gradingProps, productHref, SiteHeader, sampleAttrs, imageOf } = require('./shell.js');
 
 // the BagItem status of a listing status (Figma `bag item` status); `reserved` = held by a checkout or by hand
 const BAG_STATUS = { available: 'available', sold: 'sold', traded: 'sold' };
@@ -31,7 +31,7 @@ function BagLine({ product, url }) {
     h(Z.BagItem, {
       status: BAG_STATUS[listing.status] || 'reserved',
       href: productHref(product, url),
-      image: release.cover ? { src: url(release.cover), alt: '' } : null,
+      image: imageOf(product, release.cover, url),   // BagItem: 96 px (its default sizes)
       title: productName(release),
       releaseInfo: releaseInfo(release),
       price: listing.price ? formatPrice(listing.price) : null,

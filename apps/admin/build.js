@@ -54,6 +54,7 @@ const files = {
   'components.js': fs.readFileSync(path.join(UI, 'components.js'), 'utf8'),
   'toast.js': fs.readFileSync(path.join(UI, 'toast.js'), 'utf8'),
   'shipping.js': fs.readFileSync(path.join(ROOT, 'packages/shipping/shipping.js'), 'utf8'),   // decision 0057
+  'images.js': fs.readFileSync(path.join(ROOT, 'packages/images/images.js'), 'utf8'),   // decision 0108
   // the texts of page Content (decision 0106): the blocks + today's texts as defaults (site.json → owner, legal Markdown)
   'content.js': fs.readFileSync(path.join(ROOT, 'packages/content/content.js'), 'utf8') + contentDefaults(),
   'config.js': `window.ADMIN_CONFIG = ${JSON.stringify(config, null, 2)};\n`,

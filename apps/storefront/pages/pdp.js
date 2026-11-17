@@ -7,7 +7,7 @@ const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 
 const { TradeActions } = require('./trade.js');
-const { SECTION_LABEL, tagsOf, tagLinksOf, formatPrice, productName, productNameLinked, releaseInfoLinked, gradingProps, SiteHeader, sampleAttrs, ProductCardFor } = require('./shell.js');
+const { SECTION_LABEL, tagsOf, tagLinksOf, formatPrice, productName, productNameLinked, releaseInfoLinked, gradingProps, SiteHeader, sampleAttrs, ProductCardFor, imageOf, IMAGE_SIZES } = require('./shell.js');
 
 function breadcrumbItems(product, url) {
   const { listing, release } = product;
@@ -30,7 +30,7 @@ function Pdp({ product, related = [], site, url }) {
       // Figma: `product image` ×2 / `mobile gallery` — images: cover + first copy photo
       h(Z.Gallery, {
         className: 'pdp-content__gallery',
-        images: [release.cover, copy.photos[0]].filter(Boolean).map((src, i) => ({ src: url(src), alt: i === 0 ? productName(release) : '' }))
+        images: [release.cover, copy.photos[0]].filter(Boolean).map((src, i) => imageOf(product, src, url, { sizes: IMAGE_SIZES.gallery, alt: i === 0 ? productName(release) : '' }))
       }),
       h(Z.ProductInfo, {
         className: 'pdp-content__info',

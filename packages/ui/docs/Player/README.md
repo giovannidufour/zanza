@@ -12,7 +12,7 @@ The sample player docked at the bottom of the site: now playing (cover, track po
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `device` | `"desktop" \| "mobile"` |  | Omitted → responsive (breakpoint `--mobile` from tokens.json). |
-| `image` | `{ src: string; alt?: string }` |  | Cover of the product, 48 × 48. Figma: `product image`. |
+| `image` | `{ src: string; alt?: string; srcSet?: string; sizes?: string }` |  | Cover of the product, 48 × 48. Figma: `product image`. `srcSet`: optional smaller files (decision 0108); `sizes` defaults to 48px. |
 | `sampleTitle` * | `ReactNode` |  | The sample title, e.g. "Vocal". Figma: first `product name` text. |
 | `productName` * | `ReactNode` |  | "Artist - Title". Figma: second `product name` text. |
 | `index` | `number` | `1` | 1-based position of the sample in the queue. Shown as the sample number (Figma: `sample number`) and in "1 of 3". Previous is disabled at 1. |

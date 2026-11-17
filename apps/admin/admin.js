@@ -73,21 +73,105 @@
   }
 
   // ── uploads ───────────────────────────────────────────────────────────────
-  // images: resized in the browser to webp, long side 1600 (backend.md → Storage)
-  function toWebp(file) {
+  // images: resized in the browser to webp, long side 1600 (backend.md → Storage), plus the smaller copies the shop
+  // shows in cards, bag and player (packages/images/images.js, decision 0108)
+  var IMG = window.ZanzaImages;
+  function loadImage(src, crossOrigin) {
     return new Promise(function (resolve, reject) {
-      var img = new Image(), url = URL.createObjectURL(file);
-      img.onload = function () {
-        var scale = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
-        var c = document.createElement('canvas');
-        c.width = Math.round(img.naturalWidth * scale); c.height = Math.round(img.naturalHeight * scale);
-        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        URL.revokeObjectURL(url);
-        c.toBlob(function (b) { b ? resolve(b) : reject(new Error('Could not convert ' + file.name + '.')); }, 'image/webp', 0.86);
-      };
-      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error(file.name + ' is not a readable image.')); };
-      img.src = url;
+      var img = new Image();
+      if (crossOrigin) img.crossOrigin = 'anonymous';
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { reject(new Error('unreadable')); };
+      img.src = src;
     });
+  }
+  // one webp, long side `long` px at most (never enlarged)
+  function webpOf(img, long, name) {
+    var scale = Math.min(1, long / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
+    var c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round((img.naturalWidth || img.width) * scale)); c.height = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
+    var g = c.getContext('2d');
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    g.drawImage(img, 0, 0, c.width, c.height);
+    return new Promise(function (resolve, reject) {
+      c.toBlob(function (b) { b ? resolve({ blob: b, canvas: c }) : reject(new Error('Could not convert ' + name + '.')); }, 'image/webp', 0.86);
+    });
+  }
+  // the smaller copies of one photo, from `img` (the 1600 canvas, or the photo read back from storage)
+  async function sizedCopies(img, name) {
+    var out = [];
+    for (var i = 0; i < IMG.WIDTHS.length; i++) out.push({ width: IMG.WIDTHS[i], blob: (await webpOf(img, IMG.WIDTHS[i], name)).blob });
+    return out;
+  }
+  async function toWebp(file) {
+    var url = URL.createObjectURL(file), img;
+    try { img = await loadImage(url); }
+    catch (e) { throw new Error(file.name + ' is not a readable image.'); }
+    finally { URL.revokeObjectURL(url); }
+    var full = await webpOf(img, IMG.FULL, file.name);
+    return { blob: full.blob, sizes: await sizedCopies(full.canvas, file.name) };
+  }
+  // the copies go up smallest first, after their photo: the last one existing means they all do (images.js → lastKey)
+  async function uploadSizes(key, sizes) {
+    for (var i = 0; i < sizes.length; i++) await upload('photo', sizes[i].blob, { of: key, width: sizes[i].width });
+  }
+  async function uploadPhoto(file) {
+    var photo = await toWebp(file);
+    var key = await upload('photo', photo.blob);
+    // a copy that fails does not lose the photo: the shop then shows the full photo there, Settings → Photo sizes makes it later
+    try { await uploadSizes(key, photo.sizes); } catch (e) { console.warn('photo sizes not uploaded for ' + key + ': ' + e.message); }
+    return key;
+  }
+
+  // samples: an mp3 above ~160 kbps (a 320) is encoded again at 128 kbps in the browser (Gio 2026-11-17, decision 0108),
+  // with lamejs (LGPL, loaded only when needed). A 128 stays as it is: encoding it again would only lose quality.
+  var SAMPLE_KBPS = 128, SAMPLE_MAX_KBPS = 160;
+  var LAME_SRC = 'https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js';
+  var LAME_SRI = 'sha384-xuasJXVcyv3hZq0eYpelEkBC8l4yufatZXDsKuyCU2rqfhDCb+ftuE/mSfZAteiK';
+  var lameLoading = null;
+  function loadLame() {
+    if (window.lamejs) return Promise.resolve(window.lamejs);
+    if (!lameLoading) lameLoading = new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = LAME_SRC; s.integrity = LAME_SRI; s.crossOrigin = 'anonymous';
+      s.onload = function () { window.lamejs ? resolve(window.lamejs) : reject(new Error('mp3 encoder missing')); };
+      s.onerror = function () { lameLoading = null; reject(new Error('Could not load the mp3 encoder')); };
+      document.head.appendChild(s);
+    });
+    return lameLoading;
+  }
+  function toInt16(f32) {
+    var out = new Int16Array(f32.length);
+    for (var i = 0; i < f32.length; i++) { var v = Math.max(-1, Math.min(1, f32[i])); out[i] = v < 0 ? v * 0x8000 : v * 0x7fff; }
+    return out;
+  }
+  async function toSampleMp3(file) {
+    var Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!Ctx) return file;
+    var audio;
+    // decoded at 44.1 kHz whatever the file has, so the encoder always gets a rate it supports
+    try { audio = await new Ctx(2, 1, 44100).decodeAudioData(await file.arrayBuffer()); }
+    catch (e) { return file; }   // the browser cannot read it: upload it as it is
+    var kbps = file.size * 8 / audio.duration / 1000;
+    if (!(kbps > SAMPLE_MAX_KBPS)) return file;
+    var lame;
+    try { lame = await loadLame(); } catch (e) { return file; }   // no encoder (offline, CDN down): the file as it is
+    var channels = Math.min(2, audio.numberOfChannels);
+    var left = toInt16(audio.getChannelData(0)), right = channels > 1 ? toInt16(audio.getChannelData(1)) : null;
+    var enc = new lame.Mp3Encoder(channels, audio.sampleRate, SAMPLE_KBPS), parts = [], STEP = 1152;
+    for (var i = 0; i < left.length; i += STEP) {
+      var b = right ? enc.encodeBuffer(left.subarray(i, i + STEP), right.subarray(i, i + STEP)) : enc.encodeBuffer(left.subarray(i, i + STEP));
+      if (b.length) parts.push(new Uint8Array(b));
+      if (i % (STEP * 400) === 0) await new Promise(function (r) { setTimeout(r, 0); });   // keep the page responsive
+    }
+    var end = enc.flush();
+    if (end.length) parts.push(new Uint8Array(end));
+    var out = new Blob(parts, { type: 'audio/mpeg' });
+    return out.size < file.size ? out : file;
+  }
+  // one file of the form or of Bulk → its storage key
+  function uploadFile(kind, file) {
+    return kind === 'photo' ? uploadPhoto(file) : toSampleMp3(file).then(function (blob) { return upload('sample', blob); });
   }
   // calls an Edge Function; its own { error } text wins over the generic "non-2xx" message
   async function invoke(name, body) {
@@ -99,8 +183,11 @@
     }
     return res.data;
   }
-  async function upload(kind, blob) {
-    var signed = await invoke('sign-upload', { kind: kind, contentType: blob.type, size: blob.size });
+  // sized = { of: photo key, width } for a smaller copy of that photo (decision 0108)
+  async function upload(kind, blob, sized) {
+    var signed = await invoke('sign-upload', Object.assign({ kind: kind, contentType: blob.type, size: blob.size }, sized || {}));
+    // a sign-upload older than 0108 ignores { of, width } and signs a random key: upload nothing then
+    if (sized && signed.key !== IMG.sizedKey(sized.of, sized.width)) throw new Error('Photo sizes need the new sign-upload function (decision 0108).');
     var put;
     try { put = await fetch(signed.uploadUrl, { method: 'PUT', headers: { 'Content-Type': blob.type }, body: blob }); }
     catch (e) { throw new Error('Storage refused the upload without details (R2 sends no CORS headers on errors): check the R2 keys and the bucket CORS policy.'); }
@@ -411,8 +498,7 @@
           var item = { id: nextId(), key: null, name: file.name, url: URL.createObjectURL(file), uploading: true, line: line === undefined ? null : line };
           var listName = kind === 'photo' ? 'images' : 'samples';
           set(function (cur) { var p = {}; p[listName] = cur[listName].concat([item]); return p; });
-          (kind === 'photo' ? toWebp(file) : Promise.resolve(file))
-            .then(function (blob) { return upload(kind, blob); })
+          uploadFile(kind, file)
             .then(function (key) { patchItem(listName, item.id, { key: key, uploading: false }); })
             .catch(function (err) {
               set(function (cur) { var p = {}; p[listName] = cur[listName].filter(function (x) { return x.id !== item.id; }); return p; });
@@ -1659,7 +1745,48 @@
         h('p', { className: 'body-small', id: 'settings-trade-help' }, 'Off: the shop shows no trace of trade. The For trade section and its records, the offer form, How trading works and every mention (menus, footer, home, legal pages) disappear, and the server refuses offers. Trade listings stay here in the admin as they are: switch trade on again and they are back. Saving rebuilds the shop, live in about 2 minutes.' +
           (identity ? '' : ' While “Show who I am” is off, trade stays off whatever this says.')),
         h('div', null, h(Z.Checkbox, { label: 'Show trade on the shop', checked: trade, 'aria-describedby': 'settings-trade-help',
-          onChange: function (e) { setTrade(e.target.checked); setProblem(null); } }))));
+          onChange: function (e) { setTrade(e.target.checked); setProblem(null); } }))),
+      h(PhotoSizes));
+  }
+
+  /* Settings → Photo sizes (decision 0108; not in Figma yet, design/open.md): makes the smaller copies of the photos
+     uploaded before 2026-11-17, once. A photo whose last copy (images.js → lastKey) already loads is skipped; the
+     others are read back from storage (needs GET in the R2 CORS policy), resized here and uploaded next to the photo.
+     Nothing changes in the database: the shop finds the copies at its next rebuild. */
+  function PhotoSizes() {
+    var ss = useState(null), state = ss[0], setState = ss[1];   // null | { running, done, total, made, failed, error }
+    async function run() {
+      setState({ running: true, done: 0, total: 0, made: 0, failed: 0 });
+      var res = await sb.from('listings').select('photo_keys');
+      if (res.error) { setState({ error: 'Could not read the listings: ' + res.error.message }); return; }
+      var keys = [];
+      res.data.forEach(function (r) { (r.photo_keys || []).forEach(function (k) { if (IMG.hasSizes(k) && keys.indexOf(k) < 0) keys.push(k); }); });
+      var made = 0, failed = 0, corsBlocked = false;
+      for (var i = 0; i < keys.length; i++) {
+        setState({ running: true, done: i, total: keys.length, made: made, failed: failed });
+        var has = await loadImage(mediaUrl(IMG.lastKey(keys[i]))).then(function () { return true; }, function () { return false; });
+        if (has) continue;
+        var img;
+        // own query string: the browser may hold this photo from an earlier, non-CORS load
+        try { img = await loadImage(mediaUrl(keys[i]) + '?sizes=1', true); }
+        catch (e) { failed++; if (made === 0 && failed >= 3) { corsBlocked = true; break; } continue; }
+        try { await uploadSizes(keys[i], await sizedCopies(img, keys[i])); made++; }
+        catch (e) { failed++; }
+      }
+      setState({ running: false, done: keys.length, total: keys.length, made: made, failed: failed,
+                 error: corsBlocked ? 'Storage does not let the admin read the photos back. In Cloudflare → R2 → store-media → Settings → CORS policy, add "GET" to AllowedMethods, then try again.' : null });
+    }
+    var st = state || {};
+    return h('section', { className: 'admin-shipping__section', 'aria-labelledby': 'settings-photo-sizes' },
+      h('h2', { id: 'settings-photo-sizes', className: 'label-medium' }, 'Photo sizes'),
+      h('p', { className: 'body-small', id: 'settings-photo-sizes-help' }, 'Every photo you upload gets smaller copies (' + IMG.WIDTHS.join(', ') + ' px), so cards, bag and player load light images. Photos uploaded before 17 November 2026 have none: make them here, once. The shop uses them from its next update (any listing you save or publish).'),
+      st.error ? h('p', { className: 'body-small admin-status--error', role: 'alert' }, st.error) : null,
+      h('p', { className: 'body-small', role: 'status' },
+        st.running ? (st.total ? 'Checking photo ' + (st.done + 1) + ' of ' + st.total + '… ' + st.made + ' done.' : 'Reading the listings…')
+        : state && !st.error && st.total !== undefined ? (st.made ? st.made + (st.made === 1 ? ' photo' : ' photos') + ' now have their sizes. ' : 'Every photo already has its sizes. ') + (st.failed ? st.failed + ' could not be read.' : '')
+        : ''),
+      h('div', null, h(Z.Button, { hierarchy: 'secondary', 'aria-busy': st.running || undefined, 'aria-describedby': 'settings-photo-sizes-help',
+        onClick: st.running ? undefined : run }, 'Make photo sizes')));
   }
 
   // ── Shipping ──────────────────────────────────────────────────────────────
@@ -2224,7 +2351,7 @@
     }
     function startUpload(recId, item) {
       bulkUploads(function () {
-        return (item.kind === 'photo' ? toWebp(item.file) : Promise.resolve(item.file)).then(function (blob) { return upload(item.kind, blob); });
+        return uploadFile(item.kind, item.file);
       }).then(function (key) { patchFile(recId, item.id, { key: key, uploading: false }); })
         .catch(function (err) { patchFile(recId, item.id, { uploading: false, error: err.message }); });
     }

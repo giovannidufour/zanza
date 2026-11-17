@@ -9,7 +9,7 @@
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
-const { SiteHeader, productName, releaseInfo, grading, coverGrading, productHref, textOf, identityOn, Paragraphs } = require('./shell.js');
+const { SiteHeader, productName, releaseInfo, grading, coverGrading, productHref, textOf, identityOn, Paragraphs, smallImageUrl } = require('./shell.js');
 
 // Gio's grading scale (Q8, table public.grades; the same list as apps/admin/admin.js GRADES)
 const GRADES = ['M', 'NM', 'NM-', 'EX+', 'EX', 'EX-', 'VG+', 'VG', 'VG-', 'G+', 'G', 'G-', 'F'];
@@ -45,7 +45,7 @@ function OfferTarget({ product, url, label = 'You want' }) {
   const { release, copy } = product;
   const grades = [grading(copy), coverGrading(copy)].filter(Boolean).join(' · ');
   return h('div', { className: 'offer-target' },
-    release.cover ? h('img', { className: 'offer-target__image', src: url(release.cover), alt: '', width: 80, height: 80 }) : null,
+    release.cover ? h('img', { className: 'offer-target__image', src: smallImageUrl(product, release.cover, 80, url), alt: '', width: 80, height: 80 }) : null,
     h('div', { className: 'offer-target__text' },
       h('p', { className: 'offer-target__label body-small' }, label),
       h('p', { className: 'body-large' }, productName(release)),
