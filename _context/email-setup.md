@@ -2,12 +2,23 @@
 
 Come sono configurate le email del negozio e **come rifare tutto da zero** con nome, dominio o email nuovi (nome **rythem-works** e dominio **rythem-works.com** dal 2026-11-15; prima "Zanza" su `gio-d.xyz`). Seconda: **offerte di scambio** (decisione 0068, funzione `trade-offer`: email a Gio con Reply-To del trader; secret in più `OFFER_TO` = indirizzo di Gio, Verify JWT **off**, chiamata dal browser, origini ammesse = `SHOP_URL` + anteprime Pages + `ALLOWED_ORIGINS`). Prima email in uso: **Notify me** (decisione 0059, migrazione 0016, funzione `notify-back-in-stock`). Le prossime (conferma ordine) useranno lo stesso account e dominio.
 
+## Nome del mittente: RYTHEM-WORKS (Gio, 2026-11-16)
+
+Ogni email in uscita mostra come mittente **RYTHEM-WORKS** (maiuscolo). Il nome nel testo delle email (`STORE_NAME`) resta `rythem-works`. Dove si imposta:
+
+| Dove | Campo |
+|---|---|
+| Supabase → Edge Functions → Secrets | `MAIL_FROM` = `RYTHEM-WORKS <gio@rythem-works.com>` (ordini, offerte, contatti, Notify me, conferma newsletter) |
+| Supabase → Authentication → Emails → SMTP Settings | Sender name = `RYTHEM-WORKS` (codice di login dei clienti) |
+| Buttondown → Settings → Email | Author name = `RYTHEM-WORKS` (newsletter) |
+| Gmail della casella del negozio → Impostazioni → Account → Invia messaggio come → modifica info | Nome = `RYTHEM-WORKS` (risposte di Gio ai clienti) |
+
 ## Caselle (Gio, 2026-11-15)
 
 | Casella | A cosa serve |
 |---|---|
 | `gio@rythem-works.com` | **l'unico indirizzo pubblico**: sito, Privacy, mittente delle email, "Rispondi a" della newsletter. Non è una casella: Cloudflare Email Routing la inoltra |
-| `gio.rythem.works@gmail.com` | **casella del negozio**: vendite, scambi, offerte, contatti. Invia come `gio@rythem-works.com` (Gmail → Impostazioni → Account → "Invia messaggio come", SMTP `smtp.resend.com:465` SSL, utente `resend`, password = chiave Resend `gmail-smtp-2`). Non va mai mostrata in pubblico |
+| `gio.rythem.works@gmail.com` | **casella del negozio**: vendite, scambi, offerte, contatti. Invia come `gio@rythem-works.com` (Gmail → Impostazioni → Account → "Invia messaggio come", SMTP `smtp.resend.com:465` SSL, utente `resend`, password = chiave Resend `gmail-smtp-3`). Non va mai mostrata in pubblico |
 | Gmail personale di Gio | **solo login e gestione degli account** dei servizi (Cloudflare, Supabase, GitHub, Resend, Stripe, Figma). Non deve mai comparire a clienti o iscritti |
 
 Eccezione voluta: l'account **Buttondown** ha come email `gio@rythem-works.com`, perché Buttondown usa l'email dell'account come "Rispondi a" (senza dominio di invio a pagamento non si separano). Il login resta con Google sul Gmail personale.
@@ -20,8 +31,8 @@ Eccezione voluta: l'account **Buttondown** ha come email `gio@rythem-works.com`,
 |---|---|
 | Account Resend | login Google con il Gmail personale |
 | Dominio di invio | `rythem-works.com` (DNS su Cloudflare, regione Resend **eu-west-1**) · `gio-d.xyz` rimosso da Resend e dal DNS il 2026-11-15 |
-| Chiavi API | `rythem-works-site` (Sending access, solo rythem-works.com) = secret `RESEND_API_KEY` · `gmail-smtp-2` (Sending access) = password SMTP del "Invia come" nella casella del negozio · `zanza-notify` (vecchia) cancellata il 2026-11-15 |
-| Mittente (`MAIL_FROM`) | `rythem-works <gio@rythem-works.com>` |
+| Chiavi API | `rythem-works-site` (Sending access, solo rythem-works.com) = secret `RESEND_API_KEY` · `gmail-smtp-3` (Sending access, creata il 2026-11-16 al posto di `gmail-smtp-2`, che non era mai stata usata) = password SMTP del "Invia come" nella casella del negozio · `supabase-auth-staging` = password SMTP di Supabase Auth (codici di login) · `zanza-notify` (vecchia) cancellata il 2026-11-15 |
+| Mittente (`MAIL_FROM`) | `RYTHEM-WORKS <gio@rythem-works.com>` (nome mittente in maiuscolo, Gio 2026-11-16) |
 | Nome nel testo (`STORE_NAME`) | `rythem-works` |
 | Link nel testo (`SHOP_URL`) | `https://rythem-works.com` (oggi è la pagina coming soon: va bene finché il negozio non è aperto) |
 | Destinatario offerte (`OFFER_TO`) | `gio.rythem.works@gmail.com` |
@@ -36,7 +47,7 @@ Nessun nome, dominio o indirizzo è scritto nel codice: stanno tutti nei secrets
 
 ## Pezzi e dove stanno
 
-1. **Resend** → Domains: il dominio con 3 record DNS (sotto). → API keys: `rythem-works-site` (funzioni) e `gmail-smtp-2` (Gmail), *Sending access*, solo sul dominio.
+1. **Resend** → Domains: il dominio con 3 record DNS (sotto). → API keys: `rythem-works-site` (funzioni) e `gmail-smtp-3` (Gmail), *Sending access*, solo sul dominio.
 2. **Cloudflare** → DNS del dominio: i 3 record di Resend (*DNS only*, non proxied).
 3. **Supabase** (`store-staging`) → Edge Functions → `notify-back-in-stock`: *Verify JWT* **off** (la chiama un job senza login; il controllo è `NOTIFY_SECRET`).
 4. **Supabase** → Edge Functions → Secrets: `RESEND_API_KEY`, `NOTIFY_SECRET`, `MAIL_FROM`, `SHOP_URL`, `STORE_NAME`, `OFFER_TO` (offerte di scambio).
