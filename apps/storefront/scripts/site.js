@@ -13,6 +13,8 @@
       - anything unexpected (error, other origin, page without .zz-page) falls back to a normal page load
    4. PDP gallery
       - tracks the gallery's top in the window (--pdp-gallery-top), so pdp.css keeps its bottom at the window bottom
+      - EXPERIMENT sticky record (desktop): measures the record (info + actions) for pdp.css, and brings it back from
+        under "More for sale" when keyboard focus moves into it
    5. PLP filters
       - ticking an option filters the list (OR inside a block, AND between blocks), updates the counts, the URL and
         the breadcrumbs, and announces the number of records
@@ -377,6 +379,51 @@
     galleryCleanup = function () {
       window.removeEventListener('resize', schedule);
       window.removeEventListener('scroll', schedule);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }
+
+  /* -- PDP sticky record (EXPERIMENT, pdp.css data-record-stack) ---------
+     --pdp-record-height = the taller of info and actions (row 1 keeps the height it had before they spanned 2 rows);
+     --pdp-record-top = the record's top in the window at scroll 0 (where it stays still). Focus moving into a record
+     covered by the list scrolls the page back until the record shows (WCAG 2.4.11, focus not obscured). */
+  var recordCleanup = null;
+  function initRecordStack() {
+    if (recordCleanup) recordCleanup();
+    recordCleanup = null;
+    var content = document.querySelector('.pdp-content');
+    var related = content && content.querySelector('.pdp-content__related');
+    if (!related) return;
+    var parts = Array.prototype.filter.call(content.querySelectorAll('.pdp-content__info, .pdp-content__actions'), function (el) { return el.parentNode === content; });
+    if (!parts.length) return;
+    var frame = 0;
+    function measure() {
+      frame = 0;
+      var height = Math.max.apply(null, parts.map(function (el) { return el.offsetHeight; }));
+      var top = content.getBoundingClientRect().top + window.scrollY + (parseFloat(getComputedStyle(content).paddingTop) || 0);
+      content.style.setProperty('--pdp-record-height', Math.ceil(height) + 'px');
+      content.style.setProperty('--pdp-record-top', Math.round(top) + 'px');
+      content.setAttribute('data-record-stack', '');
+    }
+    function schedule() { if (!frame) frame = window.requestAnimationFrame(measure); }
+    function onFocusIn(e) {
+      if (!e.target.closest || !e.target.closest('.pdp-content__info, .pdp-content__actions')) return;
+      if (getComputedStyle(parts[0]).position !== 'sticky') return;   // mobile: normal flow
+      var bottom = Math.max.apply(null, parts.map(function (el) { return el.getBoundingClientRect().bottom; }));
+      var gap = parseFloat(getComputedStyle(content).rowGap) || 0;
+      var over = bottom + gap - related.getBoundingClientRect().top;
+      if (over > 0) window.scrollBy(0, -over);
+    }
+    measure();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
+    var ro = window.ResizeObserver ? new ResizeObserver(schedule) : null;
+    if (ro) parts.forEach(function (el) { ro.observe(el); });
+    window.addEventListener('resize', schedule);
+    content.addEventListener('focusin', onFocusIn);
+    recordCleanup = function () {
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', schedule);
+      content.removeEventListener('focusin', onFocusIn);
       if (frame) window.cancelAnimationFrame(frame);
     };
   }
@@ -1774,6 +1821,7 @@
       initHeader();
       initMenu();
       initGallery();
+      initRecordStack();
       initSearch();
       initFilters();
       initStatus();
@@ -1826,6 +1874,7 @@
   initHeader();
   initMenu();
   initGallery();
+  initRecordStack();
   initSearch();
   initFilters();
   initStatus();

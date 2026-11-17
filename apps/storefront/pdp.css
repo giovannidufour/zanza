@@ -30,6 +30,29 @@ body[data-player-open] .pdp-content__gallery { --zz-gallery-max-height: calc(100
 .pdp-content__info    { grid-column: 5 / span 4; grid-row: 1; }
 .pdp-content__actions { grid-column: 9 / span 4; grid-row: 1; }
 
+/* EXPERIMENT (Gio 2026-11-18, desktop only, not in Figma): the record (info + actions) stays still while the page
+   scrolls; "More for sale" starts where it always did, scrolls up over it until it covers it, and uncovers it on the
+   way back. The two blocks span rows 1-2 so sticky can hold them down the whole related list (a grid item sticks
+   only inside its grid area); row 1 keeps its height from --pdp-record-height (the taller of the two, set by
+   scripts/site.js), so the list starts exactly where it did. Sticky top = where the record sits at scroll 0
+   (--pdp-record-top), or higher when the record is taller than the window, so Add to bag is always reachable.
+   data-record-stack is set by site.js only when there is a related list: without JS the page is the old layout. */
+.pdp-content[data-record-stack] {
+  grid-template-rows: minmax(max(calc((100cqw - 11 * var(--gutter-small)) / 3 + 3 * var(--gutter-small)), var(--pdp-record-height, 0px)), auto) auto;
+}
+.pdp-content[data-record-stack] > .pdp-content__info,
+.pdp-content[data-record-stack] > .pdp-content__actions {
+  grid-row: 1 / span 2;
+  position: sticky;
+  top: min(var(--pdp-record-top, 0px), calc(100dvh - var(--pdp-record-height, 0px) - var(--page-margin-desktop)));
+}
+body[data-player-open] .pdp-content[data-record-stack] > .pdp-content__info,
+body[data-player-open] .pdp-content[data-record-stack] > .pdp-content__actions {
+  top: min(var(--pdp-record-top, 0px), calc(100dvh - var(--pdp-record-height, 0px) - var(--site-player-height, 0px) - var(--page-margin-desktop)));
+}
+/* the list is an opaque layer above the record: page ground, so the record disappears under it */
+.pdp-content[data-record-stack] > .pdp-content__related { position: relative; z-index: 1; background: var(--surface-accent); }
+
 /* Figma: button layout=fill, size large (desktop and mobile) */
 .pdp-content__cta { width: 100%; }
 /* Reserved note under the CTA (proposal, Figma PDP page → `reserved + notify me (proposal)`, gap 8 = small) */
@@ -47,4 +70,7 @@ body[data-player-open] .pdp-content__gallery { --zz-gallery-max-height: calc(100
   .pdp-content__related { margin-top: calc(24px - var(--small)); }
   /* Figma PDP - mobile: the gallery scroller bleeds into both page margins (image 2 peeks; swiped images exit at the edge, the resting one keeps the margin) */
   .pdp-content__gallery { --zz-gallery-bleed: var(--page-margin-mobile); }
+  /* the sticky record experiment is desktop only */
+  .pdp-content[data-record-stack] { grid-template-rows: none; }
+  .pdp-content[data-record-stack] > .pdp-content__info, .pdp-content[data-record-stack] > .pdp-content__actions { grid-row: auto; position: static; }
 }
