@@ -1,0 +1,19 @@
+# 0106 — Admin Content: Gio edits the shop's texts in his own voice
+
+`2026-11-17` · proposed · Figma: page `Content` (BACKEND, after Settings): components `content group head`, `content row`, `content editor head`, `link row`, `step row`, `admin page intro`; screens Content - desktop / mobile, Content - desktop · Profile, Content - desktop · Shipping, Content - mobile · Contact; note "content behaviour"
+
+**Context.** Gio (2026-11-17): today every text change on the shop goes through Claude; he wants an admin section to manage his info and the small texts himself. Today these texts live in `site.json` (owner, comingSoon), `content/legal/*.md` and as constants in `pages/*.js` (trade pitch, How trading works steps, contact, bag and checkout notes, newsletter messages).
+**Decision (proposal, design only: no code, no migration yet).**
+- New admin section **Content** (`#content`), in the bar and the menu after Settings.
+- Editable = texts in Gio's own voice. Interface text (buttons, labels, errors, empty states, the grading scale) stays in code: changing it can break flows and the design system owns it.
+- Three groups on the list page, one `content row` per editable block (title, where it shows, last edit, Trade only flag, Edit):
+  - **About you** — one structured Profile: name (signature), DJ name, bio (plain text, empty line = new paragraph), links (label + URL, ordered, Add / Remove), Discogs username + card line, Instagram username, Facebook profile link. Message links (Discogs compose, ig.me, m.me) are derived from these, not typed.
+  - **Pages** — one Markdown body per page: Grading, Shipping, Terms, Privacy; How trading works as a list of steps (title + text, `step row`). Page title (H1) and URL are fixed.
+  - **Short texts** — plain text fields grouped by shop page: Record page, Bag and order confirmed, Contact, Make an offer (incl. reply days), Newsletter, Coming soon.
+- Editor page per block: `content editor head` (back to Content, title, "Shown on", View on shop, Save); mobile = Save and View on shop in the `action bar` (0089).
+- Save = one save per block, then the shop rebuilds (deploy hook, ~2 min) as Settings (0102). Toast "Saved. The shop updates in about 2 minutes." No drafts, no scheduling, no preview build.
+- Placeholders: `{{…}}` are filled by the shop (countries, email) and must survive a save (refused inline otherwise); `[[p:…]]` marks a value still to confirm; `{{#trade}}…{{/trade}}` works in every text, as in the legal pages.
+- Trade-only blocks stay editable while trade is off; the row says "Trade only: hidden on the shop while trade is off".
+- Storage (to confirm at implementation): one table of texts by key in Supabase, read at build like `shop_settings`; the current values from the repo are the seed and the fallback when the table is missing.
+**Rule.** A new text in Gio's voice goes in Content (a field of an existing block, or a new row) instead of a constant in a page; interface text stays in code. Every Content text follows the trade switch through `{{#trade}}…{{/trade}}` or a Trade only block.
+**Open.** Markdown vs a small formatting toolbar for Pages; emails (order, offer, notify) not in v1; the coming-soon page reads Content only if its build can reach Supabase. See [`../open.md`](../open.md).
