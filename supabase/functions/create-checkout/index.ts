@@ -1,7 +1,9 @@
 // supabase/functions/create-checkout — the Bag's Checkout button (_context/backend.md → Checkout con hold, migration 0021).
 // POST { ids: [listing uuid], country: "DE" }           → { url } of a Stripe Checkout session, or an error below
-// POST { action: "cancel", session: "cs_…" }             → the buyer came back from Stripe without paying: the session
-//                                                          is expired and its copies are free again at once
+// POST { ids, country, previous: "cs_…" }               → same; the buyer's earlier session is ended first (below)
+// POST { action: "cancel", session: "cs_…" }             → the buyer came back from Stripe without paying (cancel_url,
+//                                                          browser Back, Bag opened again): the session is expired and
+//                                                          its copies are free again at once → { released, paid?, kept? }
 // Steps: hold the copies (all or nothing, 33 min) → minimum order and shipping from the DB with packages/shipping
 // (./shipping.js is a COPY, refreshed by `node supabase/scripts/sync-functions.js`) → Stripe session (expires in 31 min,
 // before the hold ends, so a copy can never be paid after someone else got it) → the hold gets the session id.
@@ -81,23 +83,47 @@ Deno.serve(async (req) => {
   // privileges to service_role by default (migration 20261112020000), only the checkout_* functions
   const pub = createClient(env("SUPABASE_URL"), env("SUPABASE_ANON_KEY"), { auth: { persistSession: false } });
 
-  // ── back from Stripe without paying ──────────────────────────────────────
+  // ── a session of this buyer ends without payment ─────────────────────────
+  // The copies are freed ONLY when Stripe confirms the session can no longer be paid (expired), or does not know it:
+  // a session that is complete (paid, or an async payment still processing) or that we cannot check keeps its hold,
+  // which ends by itself (webhook, or effective_status after 33 min). Never a copy freed while someone can pay it.
+  // deno-lint-ignore no-explicit-any
+  async function endSession(session: string): Promise<{ released: number; paid?: boolean; kept?: boolean }> {
+    // deno-lint-ignore no-explicit-any
+    let s: any;
+    try { s = await stripe(`checkout/sessions/${session}`); } catch (e) {
+      if (!/Stripe 404/.test(String(e))) return { released: 0, kept: true };   // Stripe unreachable: keep the hold
+      s = { status: "expired" };   // unknown to Stripe: nothing can be paid
+    }
+    if (s.status === "open") {
+      try { s = await stripe(`checkout/sessions/${session}/expire`, {}); }
+      catch { s = await stripe(`checkout/sessions/${session}`).catch(() => ({ status: "unknown" })); }
+    }
+    if (s.status === "complete") return { released: 0, paid: true };
+    if (s.status !== "expired") return { released: 0, kept: true };
+    const { data: n } = await db.rpc("checkout_release", { p_key: session });
+    return { released: n ?? 0 };
+  }
+  const SESSION = /^cs_(test|live)_[A-Za-z0-9]+$/;
+
+  // ── back from Stripe without paying (cancel_url, the browser's Back, or the Bag opened again) ──
   if (b.action === "cancel") {
     const session = String(b.session ?? "");
-    if (!/^cs_(test|live)_[A-Za-z0-9]+$/.test(session)) return json({ error: "Bad session." }, 400);
-    try {
-      const s = await stripe(`checkout/sessions/${session}`);
-      if (s.status === "open") await stripe(`checkout/sessions/${session}/expire`, {});
-      if (s.status === "complete") return json({ ok: true, released: 0, paid: true });
-    } catch { /* unknown session: nothing of ours to free */ }
-    const { data: n } = await db.rpc("checkout_release", { p_key: session });
-    return json({ ok: true, released: n ?? 0 });
+    if (!SESSION.test(session)) return json({ error: "Bad session." }, 400);
+    return json({ ok: true, ...(await endSession(session)) });
   }
 
   // ── new checkout ─────────────────────────────────────────────────────────
   const ids: string[] = [...new Set<string>((Array.isArray(b.ids) ? b.ids : []).map(String))].filter((id) => UUID.test(id));
   const country = String(b.country ?? "").toUpperCase();
   if (!ids.length || ids.length > MAX_RECORDS || !/^[A-Z]{2}$/.test(country)) return json({ error: "Bad request." }, 400);
+
+  // the buyer's own earlier session (Checkout pressed again): end it first, so its copies are not "Reserved" for them
+  const previous = String(b.previous ?? "");
+  if (SESSION.test(previous)) {
+    const ended = await endSession(previous);
+    if (ended.paid) return json({ error: "already_paid", session: previous }, 409);
+  }
 
   const token = `hold:${crypto.randomUUID()}`;
   const { data: held, error: holdError } = await db.rpc("checkout_hold", { p_ids: ids, p_token: token, p_minutes: HOLD_MINUTES });
