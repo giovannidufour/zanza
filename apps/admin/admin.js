@@ -2253,7 +2253,7 @@
      does, reads each record's label photo with the AI of Memo (read-label → discogs-lookup { fields }), then shows an
      overview (BulkRecord rows) and a one-by-one review (Which record, Next / Skip). "Create N drafts" saves one draft per
      record through admin_save_listing; drafts may lack grading, format and price (migration 0026).
-     Roles: photos _1 _2 … (gallery order), _label (the photo read; kept in the gallery after the numbered ones), any
+     Roles: photos _1 _2 … (gallery order; photo 1 is the one the AI reads, Gio 2026-11-17), any
      other word = a photo at the end; samples _a _b (sides) or _a1 _b2 (tracks) = the line with that Discogs position,
      anything else = an additional sample. A file without <record>_ is "not recognised": an image is read by the AI and
      joins the record with the same release; the rest waits for Gio to pick its record (or stays out).
@@ -2285,7 +2285,7 @@
   }
   var bulkUploads = limiter(3), bulkReads = limiter(1);
   function photoSort(a, b) {
-    function rank(p) { var n = parseInt(p.role, 10); return isNaN(n) ? (p.role === 'label' ? 1e6 : 2e6) : n; }
+    function rank(p) { var n = parseInt(p.role, 10); return isNaN(n) ? 2e6 : n; }
     return rank(a) - rank(b) || a.name.localeCompare(b.name);
   }
   function filesText(r) {
@@ -2370,7 +2370,7 @@
     function readRecord(id) {
       var r = recRef.current.filter(function (x) { return x.id === id; })[0];
       if (!r) return Promise.resolve();
-      var photo = r.photos.filter(function (p) { return p.role === 'label'; })[0] || r.photos.slice().sort(photoSort)[0];
+      var photo = r.photos.slice().sort(photoSort)[0];   // photo 1 (Gio: the AI reads image 1, nothing else)
       if (!photo) { patchRecord(id, { state: 'not found', found: { results: [] } }); return Promise.resolve(); }
       patchRecord(id, { progress: 10 });
       return bulkReads(function () { patchRecord(id, { progress: 40 }); return readPhoto(photo.file); }).then(function (res) {
@@ -2521,15 +2521,15 @@
     // ── render ──
     var statusLine = h('p', { className: 'body-small admin-status' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '');
     var help = h(Z.BulkHelp, { heading: 'Name the files record_role, one prefix per record:',
-      lines: ['Photos: _1, _2, _3… in gallery order. _label is the photo read to find it on Discogs (also kept in the gallery).',
+      lines: ['Photos: _1, _2, _3… in gallery order. Photo _1 is read to find the record on Discogs: make it the label.',
               'Samples: _a and _b for the A and B side. On an LP _a1, _a2, _b1… Anything else becomes an additional sample.'],
-      example: 'e.g. nooks-hero_1.jpg · nooks-hero_label.jpg · nooks-hero_a.mp3 · nooks-hero_b.mp3' });
+      example: 'e.g. nooks-hero_1.jpg · nooks-hero_2.jpg · nooks-hero_a.mp3 · nooks-hero_b.mp3' });
     var drop = h(Z.DropZone, { label: records.length ? 'Add more files' : 'Browse photos and samples', multiple: true,
       accept: 'image/jpeg,image/png,image/webp,image/heic,audio/mpeg,.mp3', disabled: busy, onFiles: onFiles });
 
     if (view.name === 'review' && records[view.at]) {
       var r = records[view.at], at = view.at;
-      var photo = r.photos.filter(function (p) { return p.role === 'label'; })[0] || r.photos.slice().sort(photoSort)[0];
+      var photo = r.photos.slice().sort(photoSort)[0];   // photo 1 (Gio: the AI reads image 1, nothing else)
       function next() {
         var cur = recRef.current[at];
         if (!cur.release) { setMessage({ error: true, text: 'Pick a release, or Skip.' }); return; }
