@@ -219,3 +219,6 @@ h1, h2, p { margin: 0; }
 .admin-bulk-page__unsorted { display: flex; flex-direction: column; width: 480px; max-width: 100%; }
 .admin-bulk-page__file { display: flex; flex-direction: column; gap: 8px; padding: 16px 0; }
 @media (--mobile) { .admin-bulk-page__photo, .admin-bulk-page--review .admin-picker, .admin-bulk-page__unsorted { width: auto; } }
+/* Samples overview → Length + Duration of a sample (decision 0110; not in Figma yet, design/open.md): side by side, gap 16 like the sample row */
+.admin-sample-clip { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+.admin-sample-clip > * { flex: 0 1 200px; min-width: 0; }

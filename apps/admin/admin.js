@@ -157,23 +157,49 @@
     catch (e) { return same('the browser could not read it to convert it'); }
     var kbps = file.size * 8 / audio.duration / 1000;
     if (!(kbps > SAMPLE_MAX_KBPS)) return same();
-    var lame;
-    try { lame = await loadLame(); } catch (e) { return same('the mp3 encoder did not load'); }
-    var channels = Math.min(2, audio.numberOfChannels);
-    var left = toInt16(audio.getChannelData(0)), right = channels > 1 ? toInt16(audio.getChannelData(1)) : null;
+    var out;
+    try { out = await encodeMp3(audio, audio.length, 0, onConvert); } catch (e) { return same('the mp3 encoder did not load'); }
+    return out.size < file.size ? { blob: out, converted: true, note: null } : same();
+  }
+  // the first `frames` of a decoded AudioBuffer → mp3 128 kbps; fadeOut = seconds of fade at the end (a clip, 0 = none)
+  async function encodeMp3(audio, frames, fadeOut, onProgress) {
+    var lame = await loadLame();
+    var channels = Math.min(2, audio.numberOfChannels), n = Math.min(frames, audio.length);
+    var fade = Math.min(n, Math.round(fadeOut * audio.sampleRate));
+    function pcm(ch) {
+      var f32 = audio.getChannelData(ch).subarray(0, n);
+      if (!fade) return toInt16(f32);
+      var g = new Float32Array(f32);
+      for (var i = 0; i < fade; i++) g[n - fade + i] *= 1 - i / fade;
+      return toInt16(g);
+    }
+    var left = pcm(0), right = channels > 1 ? pcm(1) : null;
     var enc = new lame.Mp3Encoder(channels, audio.sampleRate, SAMPLE_KBPS), parts = [], STEP = 1152;
     for (var i = 0; i < left.length; i += STEP) {
       var b = right ? enc.encodeBuffer(left.subarray(i, i + STEP), right.subarray(i, i + STEP)) : enc.encodeBuffer(left.subarray(i, i + STEP));
       if (b.length) parts.push(new Uint8Array(b));
       if (i % (STEP * 400) === 0) {   // keep the page responsive, report progress
-        if (onConvert) onConvert(i / left.length);
+        if (onProgress) onProgress(i / left.length);
         await new Promise(function (r) { setTimeout(r, 0); });
       }
     }
     var end = enc.flush();
     if (end.length) parts.push(new Uint8Array(end));
-    var out = new Blob(parts, { type: 'audio/mpeg' });
-    return out.size < file.size ? { blob: out, converted: true, note: null } : same();
+    return new Blob(parts, { type: 'audio/mpeg' });
+  }
+  // a clip of a sample (Gio 2026-11-17, decision 0110): its first `seconds`, 1 s fade-out (no fade-in), 128 kbps.
+  // source = the File Gio dropped (best quality) or the URL of the file already in storage. onState as uploadFile.
+  var CLIP_FADE_OUT = 1, CLIP_DEFAULT = 45;
+  async function clipSample(source, seconds, onState) {
+    var report = onState || function () {};
+    report({ phase: 'cutting', value: 0 });
+    var data = source instanceof Blob ? await source.arrayBuffer() : await (await fetch(source)).arrayBuffer();
+    var Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    var audio = await new Ctx(2, 1, 44100).decodeAudioData(data);
+    var blob = await encodeMp3(audio, Math.round(seconds * audio.sampleRate), CLIP_FADE_OUT, function (f) { report({ phase: 'cutting', value: Math.round(f * 60) }); });
+    report({ phase: 'uploading', value: 60 });
+    var key = await upload('sample', blob, null, function (f) { report({ phase: 'uploading', value: Math.round(60 + f * 40) }); });
+    return { key: key, blob: blob, duration: Math.min(seconds, audio.duration) };
   }
   // one file of the form or of Bulk → its storage key. onState({ phase: 'converting' | 'uploading', value: 0–100 })
   // drives the file's ProgressBar: a sample that is converted counts 0–60 converting, 60–100 uploading; anything else
@@ -189,7 +215,8 @@
       return upload('sample', r.blob, null, function (f) { report({ phase: 'uploading', value: Math.round(base + f * (100 - base)) }); });
     });
   }
-  var PHASE_TEXT = { converting: 'converting to 128 kbps…', uploading: 'uploading…' };
+  var PHASE_TEXT = { converting: 'converting to 128 kbps…', cutting: 'cutting…', uploading: 'uploading…' };
+  function mmss(sec) { var t = Math.round(sec); return Math.floor(t / 60) + ':' + ('0' + (t % 60)).slice(-2); }
   // calls an Edge Function; its own { error } text wins over the generic "non-2xx" message
   async function invoke(name, body) {
     var res = await sb.functions.invoke(name, { body: body });
@@ -524,7 +551,8 @@
           wanted = wanted.slice(0, 1);
         }
         wanted.forEach(function (file) {
-          var item = { id: nextId(), key: null, name: file.name, url: URL.createObjectURL(file), uploading: true, line: line === undefined ? null : line };
+          var item = { id: nextId(), key: null, name: file.name, url: URL.createObjectURL(file), uploading: true, line: line === undefined ? null : line,
+                       file: kind === 'sample' ? file : undefined };   // a sample keeps its original: a clip is cut from it (0110)
           var listName = kind === 'photo' ? 'images' : 'samples';
           set(function (cur) { var p = {}; p[listName] = cur[listName].concat([item]); return p; });
           uploadFile(kind, file, function (st) { patchItem(listName, item.id, { phase: st.phase, progress: st.value }); },
@@ -626,10 +654,60 @@
       var l = s.line ? f.lines[s.line - 1] : null;
       return l ? l.title || '' : '';
     }
+    // ── clip a sample (Gio 2026-11-17, decision 0110) ──
+    // Length Full = the file as uploaded; Clip = its first N seconds (default 45), cut here as soon as it is chosen, with
+    // a 1 s fade-out, and uploaded as a new file (the play button then plays the clip). Back to Full restores the file it
+    // was cut from. The database keeps only the file in use; a replaced one goes to the media trash on save.
+    useEffect(function () {   // how long each sample is, for the row and the Clip check
+      f.samples.forEach(function (x) {
+        if (x.duration != null || !x.url || x.uploading) return;
+        var a = new Audio(); a.preload = 'metadata';
+        a.onloadedmetadata = function () { patchItem('samples', x.id, { duration: a.duration }); };
+        a.onerror = function () { patchItem('samples', x.id, { duration: 0 }); };
+        a.src = x.url;
+      });
+    }, [f.samples.map(function (x) { return x.id + (x.url || '') + (x.uploading ? 1 : 0); }).join()]);
+    function applyClip(x, seconds) {
+      var full = x.full || { key: x.key, url: x.url, duration: x.duration, file: x.file };
+      if (!(seconds > 0)) { setMessage({ error: true, text: x.name + ': the clip length is a number of seconds, like 45.' }); return; }
+      if (full.duration && seconds >= full.duration) { setMessage({ error: true, text: x.name + ' is ' + mmss(full.duration) + ' long: nothing to cut at ' + seconds + ' s.' }); return; }
+      if (playing === x.id) { audio.pause(); setPlaying(null); }
+      patchItem('samples', x.id, { full: full, length: 'clip', clipSeconds: seconds, uploading: true, phase: 'cutting', progress: 0 });
+      clipSample(full.file || full.url, seconds, function (st) { patchItem('samples', x.id, { phase: st.phase, progress: st.value }); })
+        .then(function (r) {
+          patchItem('samples', x.id, { key: r.key, url: URL.createObjectURL(r.blob), duration: r.duration, clippedTo: seconds, uploading: false, phase: null, progress: null });
+        }, function (err) {
+          patchItem('samples', x.id, { key: full.key, url: full.url, duration: full.duration, length: 'full', uploading: false, phase: null, progress: null });
+          setMessage({ error: true, text: x.name + ': not cut (' + err.message + ').' });
+        });
+    }
+    function setLength(x, value) {
+      if (value === 'clip') { applyClip(x, x.clipSeconds || CLIP_DEFAULT); return; }
+      if (playing === x.id) { audio.pause(); setPlaying(null); }
+      var full = x.full;
+      patchItem('samples', x.id, full ? { key: full.key, url: full.url, duration: full.duration, length: 'full', clippedTo: null } : { length: 'full' });
+    }
+    function commitSeconds(x) {
+      var n = parseInt(String(x.clipText != null ? x.clipText : '').trim(), 10);
+      if (x.clipText == null || n === x.clippedTo) return;
+      applyClip(x, n);
+    }
     function overviewSampleItem(s) {
-      return fileItem('samples', s, { playing: playing === s.id, onTogglePlay: function () { togglePlay(s); } },
-        h(Z.Input, { id: 'sample-title-' + s.id, 'aria-label': 'Title of ' + s.name, value: sampleTitleOf(s),
-          onChange: function (e) { patchItem('samples', s.id, { title: e.target.value }); } }));
+      var clip = s.length === 'clip';
+      return fileItem('samples', Object.assign({}, s, { name: s.duration ? s.name + ' · ' + mmss(s.duration) : s.name }),
+        { playing: playing === s.id, onTogglePlay: function () { togglePlay(s); } },
+        h(React.Fragment, null,
+          h(Z.Input, { id: 'sample-title-' + s.id, 'aria-label': 'Title of ' + s.name, value: sampleTitleOf(s),
+            onChange: function (e) { patchItem('samples', s.id, { title: e.target.value }); } }),
+          h('div', { className: 'admin-sample-clip' },
+            h(Z.Input, { variant: 'select', id: 'sample-length-' + s.id, label: 'Length', value: clip ? 'clip' : 'full', disabled: s.uploading || locked,
+              onChange: function (e) { setLength(s, e.target.value); } }, opts([['full', 'Full'], ['clip', 'Clip']])),
+            clip ? h(Z.Input, { id: 'sample-seconds-' + s.id, label: 'Duration (s)', inputMode: 'numeric', disabled: s.uploading || locked,
+              value: s.clipText != null ? s.clipText : String(s.clipSeconds || CLIP_DEFAULT),
+              supportText: 'From the start, 1 s fade-out. Enter to cut again.',
+              onChange: function (e) { patchItem('samples', s.id, { clipText: e.target.value }); },
+              onBlur: function () { commitSeconds(s); },
+              onKeyDown: function (e) { if (e.key === 'Enter') { e.preventDefault(); commitSeconds(s); } } }) : null)));
     }
     // samples of a line keep the overview order; reorder happens in the overview
     function lineSamples(i) { return f.samples.filter(function (s) { return s.line === i + 1; }); }
