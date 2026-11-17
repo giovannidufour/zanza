@@ -58,7 +58,7 @@ body[data-player-open] .pdp-content[data-record-stack] > .pdp-content__actions {
   top: calc(var(--site-header-visible, 0px) + var(--small));
   overscroll-behavior: contain;
 }
-/* the anchor sits medium-small below the visible part of the site header: when the header comes back on scroll up,
+/* the anchor sits small below the visible part of the site header: when the header comes back on scroll up,
    gallery and record step down with it (same pattern and placeholder timing as the PLP filters, plp.css) */
 html[data-header-revealing] .pdp-content[data-record-stack] > :is(.pdp-content__gallery, .pdp-content__info, .pdp-content__actions) { transition: top 200ms ease-out; }
 @media (prefers-reduced-motion: reduce) { html[data-header-revealing] .pdp-content[data-record-stack] > * { transition: none; } }
