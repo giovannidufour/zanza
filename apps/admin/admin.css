@@ -46,12 +46,6 @@ h1, h2, p { margin: 0; }
 .admin-page--edit > .admin-main, .admin-page--edit > .admin-side { position: relative; min-height: 0; overflow-y: auto; margin: -4px -4px 0; padding: 4px 4px 24px; }
 
 .admin-section { display: flex; flex-direction: column; gap: 16px; }
-/* Create / Edit with the section nav (Figma BACKEND → Create, "Create listing - desktop · section nav", Gio 2026-11-17):
-   nav 2 columns + main 7 + side 3. The nav sits still while main and side scroll. Mobile: the nav is a row stuck to
-   the top of the viewport, on the page ground, 8 above and below; section heads stop under it. */
-.admin-page--sections > .admin-section-nav { grid-column: span 2; }
-.admin-page--sections > .admin-main { grid-column: span 7; }
-.admin-page--sections > .admin-side { grid-column: span 3; }
 /* Figma Create → `custom title` (0111): field, then From Discogs at its own width, gap 16 */
 .admin-custom-title { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
 .admin-custom-title > :first-child { align-self: stretch; }
@@ -121,9 +115,6 @@ h1, h2, p { margin: 0; }
   .admin:has(.admin-page--edit) { height: auto; padding-bottom: 16px; }
   .admin-page--edit { grid-template-rows: none; }
   .admin-page--edit > .admin-main, .admin-page--edit > .admin-side { overflow: visible; margin: 0; padding: 0; }
-  .admin-page--sections > .admin-section-nav, .admin-page--sections > .admin-main, .admin-page--sections > .admin-side { grid-column: auto; }
-  .admin-page--sections > .admin-section-nav { position: sticky; top: 0; z-index: 2; margin: 0 -16px; padding: 8px 0 8px 16px; background: var(--surface-page); }
-  .admin-page--sections .admin-section { scroll-margin-top: 56px; }   /* the stuck nav (8 + 32 + 8) + 8 */
   .admin-row { grid-template-columns: minmax(0, 1fr); }
   .admin-row > *, .admin-row > .row-start { grid-column: 1 / -1; }   /* .row-start (1 / span 4) would add implicit columns to the 1-column grid and squeeze Label next to Country */
 }
