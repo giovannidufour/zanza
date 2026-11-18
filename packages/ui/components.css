@@ -853,7 +853,10 @@ a.zz-product-card__image { display: block; color: inherit; }
   padding-inline: var(--zz-gallery-bleed, 0px);
   scroll-padding-inline: var(--zz-gallery-bleed, 0px);
 }
-.zz-gallery[data-device="mobile"] .zz-gallery__item { flex: 0 0 100%; scroll-snap-align: start; }
+/* the next photo peeks in (Gio 2026-11-18, decision 0121): each photo is medium-small narrower than the column, so with
+   the bleed the next one shows medium-small + the page margin at the right edge. A single photo fills the column. */
+.zz-gallery[data-device="mobile"] .zz-gallery__item { flex: 0 0 calc(100% - var(--medium-small)); scroll-snap-align: start; }
+.zz-gallery[data-device="mobile"] .zz-gallery__item:only-child { flex-basis: 100%; }
 
 @media (--mobile) {
   .zz-gallery[data-device="responsive"] {
@@ -874,7 +877,8 @@ a.zz-product-card__image { display: block; color: inherit; }
     padding-inline: var(--zz-gallery-bleed, 0px);
     scroll-padding-inline: var(--zz-gallery-bleed, 0px);
   }
-  .zz-gallery[data-device="responsive"] .zz-gallery__item { flex: 0 0 100%; scroll-snap-align: start; }
+  .zz-gallery[data-device="responsive"] .zz-gallery__item { flex: 0 0 calc(100% - var(--medium-small)); scroll-snap-align: start; }
+  .zz-gallery[data-device="responsive"] .zz-gallery__item:only-child { flex-basis: 100%; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -1082,6 +1086,11 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-dialog__body { margin: 0; }
 .zz-dialog__body p { margin: 0; }
 .zz-dialog__actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+/* newsletter dialog (Figma `newsletter dialog`, decision 0121): head row = title + close icon button, top-aligned, gap 8 */
+.zz-newsletter-dialog__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.zz-newsletter-dialog .zz-footer-newsletter__note a { color: inherit; text-decoration: underline; }
+.zz-newsletter-dialog .zz-footer-newsletter__row { flex-wrap: wrap; }
+.zz-newsletter-dialog .zz-footer-newsletter__input { min-width: 200px; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    EntityField + EntityChip (Figma: BACKEND → Create, "DRAFT · entity chips" 2106:676; decision 0020)
@@ -1622,9 +1631,14 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-product-tile[data-device="desktop"] .zz-product-tile__counter,
 .zz-product-tile[data-device="responsive"] .zz-product-tile__photo + .zz-product-tile__photo,
 .zz-product-tile[data-device="responsive"] .zz-product-tile__counter { display: none; }
+/* mobile swipe gallery = the PDP's (decision 0121): it bleeds into the page margins (--zz-gallery-bleed, set by the
+   page), each photo is medium-small narrower than the tile so the next one peeks in; a single photo fills the tile */
 .zz-product-tile[data-device="mobile"] .zz-product-tile__gallery {
   overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  margin-inline: calc(-1 * var(--zz-gallery-bleed, 0px)); padding-inline: var(--zz-gallery-bleed, 0px); scroll-padding-inline: var(--zz-gallery-bleed, 0px);
 }
+.zz-product-tile[data-device="mobile"] .zz-product-tile__photo { flex-basis: calc(100% - var(--medium-small)); }
+.zz-product-tile[data-device="mobile"] .zz-product-tile__photo:only-child { flex-basis: 100%; }
 .zz-product-tile[data-device="mobile"] .zz-product-tile__gallery::-webkit-scrollbar { display: none; }
 .zz-product-tile[data-device="mobile"] .zz-product-tile__photo { scroll-snap-align: start; }
 @media (--mobile) {
@@ -1632,7 +1646,10 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
   .zz-product-tile[data-device="responsive"] .zz-product-tile__counter { display: inline-flex; }
   .zz-product-tile[data-device="responsive"] .zz-product-tile__gallery {
     overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    margin-inline: calc(-1 * var(--zz-gallery-bleed, 0px)); padding-inline: var(--zz-gallery-bleed, 0px); scroll-padding-inline: var(--zz-gallery-bleed, 0px);
   }
+  .zz-product-tile[data-device="responsive"] .zz-product-tile__photo { flex-basis: calc(100% - var(--medium-small)); }
+  .zz-product-tile[data-device="responsive"] .zz-product-tile__photo:only-child { flex-basis: 100%; }
   .zz-product-tile[data-device="responsive"] .zz-product-tile__gallery::-webkit-scrollbar { display: none; }
   .zz-product-tile[data-device="responsive"] .zz-product-tile__photo { scroll-snap-align: start; }
 }

@@ -1207,6 +1207,21 @@ export interface ActionBarProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function ActionBar(props: ActionBarProps): JSX.Element;
 
+/** Figma `newsletter dialog` (page dialog, decision 0121): the newsletter signup as a modal. A native <dialog>, rendered closed; the page opens it. */
+export interface NewsletterDialogProps extends HTMLAttributes<HTMLDialogElement> {
+  /** id of the <dialog> (its title and body ids derive from it). @default "zz-newsletter-dialog" */
+  id?: string;
+  /** Figma `title`. @default "Get new records first" */
+  title?: ReactNode;
+  /** Figma `body`. @default "Get them in your inbox as they’re listed." */
+  body?: ReactNode;
+  /** Accessible name of the close icon button. @default "Close" */
+  closeLabel?: string;
+  /** The form: a FooterNewsletter with `hideLabel`. */
+  children?: ReactNode;
+}
+export declare function NewsletterDialog(props: NewsletterDialogProps): JSX.Element;
+
 /** Figma `section head` (page Home, decision 0120): heading of a home section. Divider on top, title + inline meta, actions on the right. */
 export interface SectionHeadProps extends HTMLAttributes<HTMLDivElement> {
   /** Figma `title` (body/medium, text/strong). */

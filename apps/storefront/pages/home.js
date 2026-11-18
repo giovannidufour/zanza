@@ -43,6 +43,7 @@ function TileFor({ product, url }) {
       key: s.track_position,
       'aria-label': `${productName(release)}, sample ${i + 1}: ${s.title}`
     }, sampleAttrs(product, s, url)), String(i + 1))) : null,
+    counter: false,   // Gio 2026-11-18 (0121): the next photo peeks in, no "1/3" needed
     action: h(Z.Button, { hierarchy: 'secondary', 'data-add-to-bag': listing.id, 'data-listing-status': listing.status }, 'Add to bag')
   });
 }
