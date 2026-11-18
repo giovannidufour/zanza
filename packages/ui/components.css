@@ -1122,6 +1122,13 @@ a.zz-product-card__image { display: block; color: inherit; }
 .zz-action-panel { display: flex; flex-direction: column; gap: 8px; padding: 16px; background: var(--surface-subtle); }
 .zz-action-panel > .zz-button { width: 100%; }
 
+/* ── ListingStatus (Figma: `listing form` → `listing status`, 0118) ── vertical, gap 4; status text/strong,
+   details and shop update text/moderate, unsaved = Alert (block). */
+.zz-listing-status { display: flex; flex-direction: column; gap: 4px; }
+.zz-listing-status > p { margin: 0; }
+.zz-listing-status__status { color: var(--text-strong); }
+.zz-listing-status__details, .zz-listing-status__shop { color: var(--text-moderate); }
+
 /* ── ListingLine (Figma: `listing form` → `listing line`) ──
    line: fields + sample, gap 8. fields: 8-column grid, column gap 16, row gap 8 (Figma grid auto layout, 0012).
    removable=false: artist 1–4, title 5–8. removable=true: artist 1–3, title 4–7, remove × in 8.
@@ -1528,16 +1535,8 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-home-about__bio { margin: 0; }
 .zz-home-about__link { align-self: flex-start; }
 
-/* ── FormSectionHead / FormSectionNav (Figma BACKEND → Create, `form section head`, `form section nav`, Gio 2026-11-17) ── */
+/* ── FormSectionHead (Figma BACKEND → Create, `form section head`, Gio 2026-11-17) ── */
 .zz-form-section-head { margin: 0; color: var(--text-strong); }
-.zz-form-section-head:focus { outline: none; }   /* programmatic focus target after a jump (decision 0043) */
-.zz-form-section-nav { display: flex; flex-direction: column; gap: 8px; }
-.zz-form-section-nav > .zz-button { width: 100%; }
-@media (--mobile) {
-  .zz-form-section-nav { flex-direction: row; overflow-x: auto; scrollbar-width: none; }
-  .zz-form-section-nav::-webkit-scrollbar { display: none; }
-  .zz-form-section-nav > .zz-button { width: auto; flex: none; }
-}
 
 /* ── Marker / PriceFields (Figma `marker`, `price fields`, Gio 2026-11-17) ── */
 .zz-marker {

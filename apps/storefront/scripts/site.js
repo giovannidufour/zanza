@@ -1052,7 +1052,7 @@
     } else shipping.textContent = 'Not available';
     if (totalRow) totalRow.hidden = !served;
     if (note) note.textContent = served
-      ? 'Shipping is an estimate for your country. You enter the address and pay on Stripe. Your records are held for 30 minutes once you start checkout.'
+      ? 'Shipping is an estimate for your country. You enter the address and pay on Stripe. Records aren\u2019t held: if someone pays for one first, you aren\u2019t charged.'
       : est.status === 'not-served' ? 'We don\u2019t ship to ' + name + ' yet.'
       : 'This bag is too big for one parcel. Remove a few records to check out.';
     return served;
@@ -1144,6 +1144,7 @@
     if (document.querySelector('[data-checkout-thanks]')) {
       if (pending && Array.isArray(pending.ids)) writeBag(readBag().filter(function (id) { return pending.ids.indexOf(id) === -1; }));
       forgetCheckout();
+      thanksResult(pending);
       return;
     }
     if (!document.querySelector('[data-bag-page]')) return;
@@ -1173,6 +1174,35 @@
     } else if (pending) forgetCheckout();
     if (cancelled) checkoutMessage('Checkout cancelled. Your records are still in your bag.');
   }
+  // First to pay wins (decision 0116): Stripe sends every buyer here, but stripe-webhook may find that someone paid for a
+  // record a moment earlier ('lost': the authorization is cancelled, nothing charged). Ask checkout_result (migration
+  // 0028) a few times; on 'lost' the page says so and the records go back in the bag (they read Sold out there).
+  // Figma: page Checkout → Checkout not completed - desktop / mobile (`order thanks` with message override, show note off).
+  function thanksResult(pending) {
+    var m = /[?&]session_id=(cs_(?:test|live)_[A-Za-z0-9]+)/.exec(window.location.search);
+    var base = document.querySelector('meta[name="zz-supabase-url"]');
+    var key = document.querySelector('meta[name="zz-supabase-key"]');
+    if (!m || !base || !key || !window.fetch) return;
+    var tries = 0;
+    (function ask() {
+      fetch(base.content + '/rest/v1/rpc/checkout_result', { method: 'POST',
+        headers: { apikey: key.content, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_session: m[1] }) })
+        .then(function (res) { return res.ok ? res.json() : null; })
+        .then(function (r) {
+          if (r === 'pending' && ++tries < 10) { window.setTimeout(ask, 2000); return; }
+          if (r !== 'lost') return;
+          var main = document.querySelector('[data-checkout-thanks]');
+          var title = main.querySelector('h1');
+          var msg = main.querySelector('.bag-empty > p');
+          if (title) title.textContent = 'Order not completed';
+          if (msg) msg.textContent = 'Sorry: someone else bought a record in your order a moment before you. You were not charged, and nothing was sold to you.';
+          Array.prototype.forEach.call(main.querySelectorAll('.bag-empty > p ~ *:not(.zz-button)'), function (el) { el.hidden = true; });
+          if (pending && Array.isArray(pending.ids)) writeBag(readBag().concat(pending.ids.filter(function (id) { return readBag().indexOf(id) === -1; })));
+          announce(msg ? msg.textContent : 'Order not completed');
+        }).catch(function () { /* the email tells them */ });
+    })();
+  }
+
   // the browser's Back from Stripe can restore the bag from the back-forward cache: no script runs again, Checkout is
   // still aria-disabled from the click that left the page. Reset it and end the checkout as above.
   window.addEventListener('pageshow', function (e) {

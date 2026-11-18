@@ -528,6 +528,20 @@ export interface ActionPanelProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function ActionPanel(props: ActionPanelProps): JSX.Element;
 
+/** Mirrors the Figma component `listing status` (page `listing form`, decision 0118): the state of a listing at a glance,
+ *  at the top of the Create/Edit side column. A live region (role="status"). */
+export interface ListingStatusProps extends HTMLAttributes<HTMLDivElement> {
+  /** Figma `status`: Not saved yet | Draft | Published | Reserved | Sold | Traded | Archived. */
+  status: ReactNode;
+  /** Figma `details`: when (published / saved / since) and the SKU. */
+  details?: ReactNode;
+  /** Figma boolean `unsaved` (an `alert`, block): true = "Unsaved changes", or a text of its own. */
+  unsaved?: boolean | ReactNode;
+  /** Figma boolean `shop update`: true = "The shop updates in about 2 minutes.", or a text of its own. */
+  shopUpdate?: boolean | ReactNode;
+}
+export declare function ListingStatus(props: ListingStatusProps): JSX.Element;
+
 /** Mirrors the Figma component `listing line` (page `listing form`): one track line of a listing and its sample.
  *  The fields are slots placed on an 8-column grid; the page owns their state. */
 export interface ListingLineProps extends HTMLAttributes<HTMLDivElement> {
@@ -1225,25 +1239,11 @@ export declare function HomeAbout(props: HomeAboutProps): JSX.Element;
 export interface FormSectionHeadProps extends HTMLAttributes<HTMLHeadingElement> {
   /** Heading level. @default 2 */
   headingLevel?: 2 | 3 | 4;
-  /** The id the section's aria-labelledby and the section nav point at. */
+  /** The id the section's aria-labelledby points at. */
   id?: string;
 }
 export declare function FormSectionHead(props: FormSectionHeadProps): JSX.Element;
 
-/** Mirrors the Figma component `form section nav` (BACKEND → Create, device=desktop | mobile, 2026-11-17): in-page anchors to the form sections. */
-export interface FormSectionNavProps extends HTMLAttributes<HTMLElement> {
-  /** One secondary small Button per section, in form order. */
-  items: { id: string; label: ReactNode }[];
-  /** The section in view: Button state=active, aria-current="true". */
-  current?: string;
-  /** A Button was pressed: the page scrolls to that section. */
-  onSelect?: (id: string) => void;
-  /** Accessible name of the nav. @default "Sections" */
-  label?: string;
-  /** A ref to the <nav> (the page measures it to place the scroll line under it). */
-  navRef?: { current: HTMLElement | null };
-}
-export declare function FormSectionNav(props: FormSectionNavProps): JSX.Element;
 
 /** Mirrors the Figma component `marker` (page `listing form`, 2026-11-17): a 48px circle that draws the eye to a form block. Decorative (aria-hidden). */
 export interface MarkerProps extends HTMLAttributes<HTMLSpanElement> {
