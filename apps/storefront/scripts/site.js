@@ -39,6 +39,9 @@
         (email, migration 0016). The bag line shows the notice "Reserved".
         sold: the Add buttons read "Sold out", disabled (decision 0061); the bag line: "SOLD OUT" in a red box + struck price (0064, 0078)
 
+   7b. Home (decision 0120)
+      - the view toggle switches the shelves between tiles (grid) and product cards (list), remembered in this browser
+      - the counter of a tile's mobile gallery ("2/3") follows the photo in view
    8. SelectButton focus (decision 0081)
       - the ring of a native select shows for keyboard focus only, not after a mouse pick (focus stays on the select)
 
@@ -277,12 +280,13 @@
     load(i, true);
   }
 
-  // "Play all" (home, decision 0085): every playable sample of its section ([data-play-scope]) becomes the queue,
+  // "Play all" (home, decisions 0085, 0120): every playable sample of its section ([data-play-scope]) becomes the queue,
   // in page order, from the first one
   function onPlayAll(btn) {
     var scope = btn.closest('[data-play-scope]') || document;
+    // only the samples on screen: a home shelf renders both views (tiles and cards), one of them hidden (0120)
     var items = Array.prototype.slice.call(scope.querySelectorAll('[data-sample-src]'))
-      .filter(function (b) { return !b.disabled; }).map(sampleFrom);
+      .filter(function (b) { return !b.disabled && b.getClientRects().length > 0; }).map(sampleFrom);
     if (!items.length) return;
     lastTrigger = btn;
     queue = items;
@@ -1920,6 +1924,7 @@
       initBag();
       initOffer();
       initContact();
+      initHome();
       if (window.ZanzaAccount) window.ZanzaAccount.init();   // customer account (scripts/account.js, decision 0101)
       if (player && audio) render();
       // screen readers and keyboard: start from the new page's main heading, like a full load would
@@ -1941,6 +1946,42 @@
     history.replaceState({ soft: true }, '', location.href);
     window.addEventListener('popstate', function () { navigate(location.href, false); });
   }
+
+  /* ---------------------------------------------------------------- 7b. home (decision 0120) */
+
+  // grid | list: the view toggle flips .home-content[data-view] (home.css shows one view); the choice is remembered in
+  // this browser (a convenience: storage may be blocked, then every visit starts in grid). Desktop only (mobile = tiles).
+  var HOME_VIEW_KEY = 'zz-home-view';
+  function initHome() {
+    var home = document.querySelector('.home-content[data-view]');
+    if (!home) return;
+    var saved = null;
+    try { saved = window.localStorage.getItem(HOME_VIEW_KEY); } catch (e) { /* storage blocked */ }
+    if (saved === 'grid' || saved === 'list') home.setAttribute('data-view', saved);
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest && e.target.closest('[data-home-toggle]');
+    if (!t) return;
+    var home = t.closest('.home-content');
+    if (!home) return;
+    var view = t.getAttribute('data-home-toggle');
+    home.setAttribute('data-view', view);
+    try { window.localStorage.setItem(HOME_VIEW_KEY, view); } catch (err) { /* storage blocked */ }
+    // the pressed button is now hidden: keep the keyboard on the toggle that replaced it
+    var other = home.querySelector('[data-home-toggle="' + (view === 'grid' ? 'list' : 'grid') + '"]');
+    if (other) other.focus();
+  });
+  // ProductTile mobile gallery: the counter follows the photo snapped in view ("2/3"). Scroll does not bubble: one
+  // capturing listener on the document serves every tile, also after a soft navigation.
+  document.addEventListener('scroll', function (e) {
+    var g = e.target;
+    if (!g || !g.hasAttribute || !g.hasAttribute('data-tile-gallery')) return;
+    var counter = g.parentNode.querySelector('[data-tile-counter]');
+    if (!counter) return;
+    var total = g.children.length;
+    var i = Math.min(total, Math.max(1, Math.round(g.scrollLeft / Math.max(1, g.clientWidth)) + 1));
+    counter.textContent = i + '/' + total;
+  }, true);
 
   /* ---------------------------------------------------------------- 8. select button focus (decision 0081) */
 
@@ -1973,6 +2014,7 @@
   initBag();
   initOffer();
   initContact();
+  initHome();
   if (window.ZanzaAccount) window.ZanzaAccount.init();
   initSelectFocus();
 })();

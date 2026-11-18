@@ -105,9 +105,10 @@ let liveMeta = '';
 // the site footer (decision 0076): the same on every shop page, the last child of .zz-page (after <main>), so the soft
 // navigation in site.js swaps it with the page. Rendered once here instead of in every page module.
 // Rendered on first use, once the settings are loaded (the footer follows the trade switch).
-let footerCache;
-const footerHtml = () => footerCache || (footerCache = renderToStaticMarkup(React.createElement(require('./pages/shell.js').SiteFooter, { site, url })));
-const withFooter = (body) => (body.startsWith('<div class="zz-page"') && body.endsWith('</div>') ? body.slice(0, -6) + footerHtml() + '</div>' : body);
+// newsletter: false = the footer without its signup (the home has its own, decision 0120)
+const footerCache = {};
+const footerHtml = (newsletter = true) => footerCache[newsletter] || (footerCache[newsletter] = renderToStaticMarkup(React.createElement(require('./pages/shell.js').SiteFooter, { site, url, newsletter })));
+const withFooter = (body, newsletter) => (body.startsWith('<div class="zz-page"') && body.endsWith('</div>') ? body.slice(0, -6) + footerHtml(newsletter) + '</div>' : body);
 // the staging edit bar goes first inside .zz-page (above the header, scrolls away with the page)
 const withEditBar = (body, bar) => (bar && body.startsWith('<div class="zz-page"') ? body.replace(/^<div class="zz-page"[^>]*>/, m => m + bar) : body);
 
@@ -135,7 +136,7 @@ const faviconLinks = [
   `<link rel="apple-touch-icon" href="${url('/assets/apple-touch-icon.png')}">`
 ].join('\n');
 
-function page({ title: t, body, edit }) {
+function page({ title: t, body, edit, footerNewsletter = true }) {
   return `<!doctype html>
 <html lang="${site.lang}">
 <head>
@@ -161,7 +162,7 @@ ${faviconLinks}
 <script src="${newsletterJsHref}" defer></script>
 ${liveMeta}</head>
 <body>
-${withEditBar(withFooter(body), editBar(edit))}
+${withEditBar(withFooter(body, footerNewsletter), editBar(edit))}
 ${playerHtml}
 ${toastRegionHtml}
 ${notifyDialogHtml}
@@ -313,8 +314,9 @@ write('contact/index.html', page({ title: 'Contact', body: renderToStaticMarkup(
 // the link in the newsletter confirmation email lands here (decision 0103)
 write('newsletter/confirm/index.html', page({ title: Newsletter.title, body: renderToStaticMarkup(React.createElement(Newsletter.ShopConfirm, { site, url })) }));
 
-// Home (Figma page `Home`, decision 0085): Just in, Genres, About
-write('index.html', page({ title: Home.title, body: renderToStaticMarkup(React.createElement(Home.Home, { products, site, url })), edit: [aboutKey()] }));
+// Home (Figma page `Home`, decision 0120): intro, genres, This week, newsletter, Recent. Its newsletter box replaces the
+// footer's signup there (Figma Home v2: footer `newsletter` off)
+write('index.html', page({ title: Home.title, body: renderToStaticMarkup(React.createElement(Home.Home, { products, site, url })), footerNewsletter: false, edit: ['short.home'] }));
 // Cloudflare Pages response headers (target pages only). Until launch the shop lives on staging.rythem-works.com
 // (behind Cloudflare Access) and store-front-6fx.pages.dev: neither may be indexed (site.json → noindex).
 if (targetArg === 'pages' && site.noindex) write('_headers', '/*\n  X-Robots-Tag: noindex\n');

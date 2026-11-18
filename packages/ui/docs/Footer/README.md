@@ -41,6 +41,7 @@ The site footer, the same on every shop page, after `<main>` ([0076](../../../..
 | `endpoint` | `string` |  | The site's own signup function (decision 0103): with it the page script posts there and answers in place (status line, honeypot field). |
 | `method` | `string` | `post` |  |
 | `label` | `ReactNode` | `Newsletter` | Field label. |
+| `hideLabel` | `boolean` |  | Figma `input label` off (home newsletter): no visible label; `label` (default "Email") becomes the field's aria-label. |
 | `placeholder` | `string` |  | @default "Your email" |
 | `name` | `string` | `email` | Name of the email field sent to the provider. |
 | `submitLabel` | `ReactNode` | `Subscribe` | Button text (secondary). |
