@@ -853,9 +853,13 @@ a.zz-product-card__image { display: block; color: inherit; }
   padding-inline: var(--zz-gallery-bleed, 0px);
   scroll-padding-inline: var(--zz-gallery-bleed, 0px);
 }
-/* the next photo peeks in (Gio 2026-11-18, decision 0121): each photo is medium-small narrower than the column, so with
-   the bleed the next one shows medium-small + the page margin at the right edge. A single photo fills the column. */
-.zz-gallery[data-device="mobile"] .zz-gallery__item { flex: 0 0 calc(100% - var(--medium-small)); scroll-snap-align: start; }
+/* the next photo peeks in by exactly medium-small (16) at the screen edge (Gio 2026-11-18, decision 0121): a photo is
+   the column − 16 + the bleed (the page margin, which the next photo also crosses) − the 1px gap. A single photo
+   fills the column. Used by Gallery and ProductTile on mobile. */
+.zz-gallery, .zz-product-tile__gallery {
+  --zz-gallery-item-width: calc(100% - var(--medium-small) + var(--zz-gallery-bleed, 0px) - 1px);
+}
+.zz-gallery[data-device="mobile"] .zz-gallery__item { flex: 0 0 var(--zz-gallery-item-width); scroll-snap-align: start; }
 .zz-gallery[data-device="mobile"] .zz-gallery__item:only-child { flex-basis: 100%; }
 
 @media (--mobile) {
@@ -877,7 +881,7 @@ a.zz-product-card__image { display: block; color: inherit; }
     padding-inline: var(--zz-gallery-bleed, 0px);
     scroll-padding-inline: var(--zz-gallery-bleed, 0px);
   }
-  .zz-gallery[data-device="responsive"] .zz-gallery__item { flex: 0 0 calc(100% - var(--medium-small)); scroll-snap-align: start; }
+  .zz-gallery[data-device="responsive"] .zz-gallery__item { flex: 0 0 var(--zz-gallery-item-width); scroll-snap-align: start; }
   .zz-gallery[data-device="responsive"] .zz-gallery__item:only-child { flex-basis: 100%; }
 }
 
@@ -1637,7 +1641,7 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
   overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
   margin-inline: calc(-1 * var(--zz-gallery-bleed, 0px)); padding-inline: var(--zz-gallery-bleed, 0px); scroll-padding-inline: var(--zz-gallery-bleed, 0px);
 }
-.zz-product-tile[data-device="mobile"] .zz-product-tile__photo { flex-basis: calc(100% - var(--medium-small)); }
+.zz-product-tile[data-device="mobile"] .zz-product-tile__photo { flex-basis: var(--zz-gallery-item-width); }
 .zz-product-tile[data-device="mobile"] .zz-product-tile__photo:only-child { flex-basis: 100%; }
 .zz-product-tile[data-device="mobile"] .zz-product-tile__gallery::-webkit-scrollbar { display: none; }
 .zz-product-tile[data-device="mobile"] .zz-product-tile__photo { scroll-snap-align: start; }
@@ -1648,7 +1652,7 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
     overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
     margin-inline: calc(-1 * var(--zz-gallery-bleed, 0px)); padding-inline: var(--zz-gallery-bleed, 0px); scroll-padding-inline: var(--zz-gallery-bleed, 0px);
   }
-  .zz-product-tile[data-device="responsive"] .zz-product-tile__photo { flex-basis: calc(100% - var(--medium-small)); }
+  .zz-product-tile[data-device="responsive"] .zz-product-tile__photo { flex-basis: var(--zz-gallery-item-width); }
   .zz-product-tile[data-device="responsive"] .zz-product-tile__photo:only-child { flex-basis: 100%; }
   .zz-product-tile[data-device="responsive"] .zz-product-tile__gallery::-webkit-scrollbar { display: none; }
   .zz-product-tile[data-device="responsive"] .zz-product-tile__photo { scroll-snap-align: start; }
