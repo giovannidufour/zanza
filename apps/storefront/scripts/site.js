@@ -13,7 +13,7 @@
       - anything unexpected (error, other origin, page without .zz-page) falls back to a normal page load
    4. PDP gallery
       - tracks the gallery's top in the window (--pdp-gallery-top), so pdp.css keeps its bottom at the window bottom
-      - EXPERIMENT sticky record (desktop): measures the record (info + actions) for pdp.css, and brings it back from
+      - sticky scroll (desktop, decision 0119): measures the record (info + actions) for pdp.css, and brings it back from
         under "More for sale" when keyboard focus moves into it; "back to this record" card over the gallery once the
         record is covered, a click scrolls page and gallery back to the top together
    5. PLP filters
@@ -384,7 +384,7 @@
     };
   }
 
-  /* -- PDP sticky record (EXPERIMENT, pdp.css data-record-stack) ---------
+  /* -- PDP sticky scroll (decision 0119, pdp.css data-record-stack) -------
      --pdp-record-height = the taller of info and actions (row 1 keeps the height it had before they spanned 2 rows).
      Focus moving into a record
      covered by the list scrolls the page back until the record shows (WCAG 2.4.11, focus not obscured). */
@@ -439,7 +439,7 @@
       title.focus({ preventScroll: true });
     }
     function onBackClick(e) {
-      if (!back || !e.target.closest || !e.target.closest('.pdp-back-card')) return;
+      if (!back || !e.target.closest || !e.target.closest('.zz-return-card')) return;
       var g = gallery || { scrollTop: 0 };
       var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (scrollTopAnimation) scrollTopAnimation.stop();

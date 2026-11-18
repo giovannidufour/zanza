@@ -241,16 +241,16 @@ write('js/newsletter.js', newsletterJs);
 for (const f of fs.readdirSync(path.join(APP, 'public'))) write('assets/' + f, fs.readFileSync(path.join(APP, 'public', f)));
 
 const order = new Map(products.map((p, i) => [p, i]));
-// "More for sale" (PDP): up to RELATED_COUNT other available products of the same section, most shared genres first, then
+// "More for sale" (PDP, decision 0119): always RELATED_COUNT records when the catalogue has them. First the available
+// records of the same section, then the available ones of the other section (none while trade is off), then the
+// unavailable ones (sold / reserved, shown with their state); inside each group most shared genres first, then
 // listing order. Placeholder logic until the backend provides recommendations.
-const RELATED_COUNT = 10;   // Gio 2026-11-18 (sticky PDP experiment): 10, was 3
+const RELATED_COUNT = 12;
 function relatedTo(product) {
   const genres = new Set(product.release.genres || []);
-  // TEST ONLY (Gio 2026-11-18, sticky PDP experiment): always fill the list up to RELATED_COUNT, taking records of
-  // the other section and not available ones after the usual picks. Never merge this to main.
-  const rank = (p) => (p.listing.section === product.listing.section ? 0 : 2) + (p.listing.status === 'available' ? 0 : 1);
+  const rank = (p) => (p.listing.status === 'available' ? 0 : 2) + (p.listing.section === product.listing.section ? 0 : 1);
   return products
-    .filter(p => p !== product)
+    .filter(p => p !== product)   // trade copies are already out of `products` while trade is off
     .map(p => ({ p, rank: rank(p), score: (p.release.genres || []).filter(g => genres.has(g)).length }))
     .sort((a, b) => a.rank - b.rank || b.score - a.score || order.get(a.p) - order.get(b.p))
     .slice(0, RELATED_COUNT).map(x => x.p);

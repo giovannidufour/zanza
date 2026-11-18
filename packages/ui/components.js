@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"OrderItem"},{"name":"OrderRow"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"},{"name":"FormSectionHead"},{"name":"Marker"},{"name":"PriceFields"},{"name":"ListingStatus"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"OrderItem"},{"name":"OrderRow"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"ProductReturnCard"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"},{"name":"FormSectionHead"},{"name":"Marker"},{"name":"PriceFields"},{"name":"ListingStatus"}]} */
 /* packages/ui/components.js — the ONE implementation of the rythem-works components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
@@ -34,6 +34,7 @@
     'icon-bars-three': [24, 24, '<path d="M0 8H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M0 12H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M0 16H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
     'icon-chevron-down-large-thin': [24, 24, '<path transform="matrix(0 -1 1 0 2 17.5)" d="M 10 0 L 0 10 L 10 20" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>'],
     'icon-chevron-down-small-thin': [24, 24, '<path transform="matrix(0 -1 1 0 6 15.5)" d="M 6 0 L 0 6 L 6 12" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>'],
+    'icon-chevron-up-small-thin': [24, 24, '<path d="M 6 15 L 12 9 L 18 15" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>'],
     'icon-chevron-left-small-thin': [24, 24, '<path transform="translate(9 6)" d="M 6 0 L 0 6 L 6 12" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>'],
     'icon-chevron-right-small-thin': [24, 24, '<path transform="translate(9 6)" d="M 0 0 L 6 6 L 0 12" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>'],
     'icon-clock-counter-clockwise': [24, 24, '<path transform="translate(11.889 6.875)" d="M 0 0 L 0 5.121 L 5.121 5.121" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/><path transform="translate(3.555 16.326)" d="M 0.622 4.948 L 0 0 L 4.858 1.354" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/><path transform="translate(2.5 2.612)" d="M 1.056 13.714 C 2.113 15.752 3.881 17.331 6.024 18.154 C 8.167 18.976 10.537 18.985 12.687 18.179 C 14.836 17.372 16.615 15.806 17.688 13.777 C 18.761 11.747 19.053 9.395 18.509 7.164 C 17.966 4.934 16.623 2.98 14.737 1.673 C 12.85 0.365 10.55 -0.207 8.27 0.067 C 5.991 0.34 3.891 1.439 2.367 3.156 C 0.843 4.873 0.001 7.089 0 9.384" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/>'],
@@ -581,9 +582,28 @@
     return h('section', Object.assign({
       className: cx('zz-related-products', props.className),
       'aria-labelledby': titleId
-    }, omit(props, ['title', 'headingLevel', 'className', 'children'])),
+    }, omit(props, ['title', 'headingLevel', 'className', 'children', 'action'])),
       h('h' + (props.headingLevel || 2), { id: titleId, className: 'zz-related-products__title body-medium' }, props.title),
-      h('div', { className: 'zz-related-products__list' }, props.children));
+      h('div', { className: 'zz-related-products__list' }, props.children),
+      // Figma `view all` (boolean, decision 0119): full-width action at the end, inside the container
+      props.action ? h('div', { className: 'zz-related-products__action' }, props.action) : null);
+  }
+
+  /* ── ProductReturnCard ──────────────────────────────────────────────────
+     Figma: `product return card` (state default | hover), page PDP. Desktop PDP: docked on the anchored gallery once
+     "More for sale" covers the record; pressing it takes the page back to the record (behaviour: the page, decision
+     0119). A <button>: cover 48 | name (body/small, max 2 lines) + price (body/small) | chevron up. Outlined box on
+     surface/accent; hover adds surface/hover over it (stays opaque). The accessible name comes from aria-label. */
+  function ProductReturnCard(props) {
+    var image = props.image;
+    return h('button', Object.assign({ type: 'button', className: cx('zz-return-card', props.className),
+      'data-state': props.state && props.state !== 'default' ? props.state : undefined
+    }, omit(props, ['image', 'name', 'price', 'className', 'state'])),
+      h('span', { className: 'zz-return-card__cover' }, image && image.src ? h('img', { src: image.src, alt: image.alt || '' }) : null),
+      h('span', { className: 'zz-return-card__text' },
+        h('span', { className: 'zz-return-card__name body-small' }, props.name),
+        props.price != null ? h('span', { className: 'zz-return-card__price body-small' }, props.price) : null),
+      h('span', { className: 'zz-return-card__icon', 'aria-hidden': 'true' }, icon('icon-chevron-up-small-thin')));
   }
 
   /* ── Gallery ────────────────────────────────────────────────────────────
@@ -1653,7 +1673,7 @@
   }
 
   return { Button: Button, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, ActiveFilter: ActiveFilter, Tag: Tag, TagGroup: TagGroup,
-           PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, BagItem: BagItem, OrderItem: OrderItem, OrderRow: OrderRow, BagSummary: BagSummary, RelatedProducts: RelatedProducts, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
+           PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, BagItem: BagItem, OrderItem: OrderItem, OrderRow: OrderRow, BagSummary: BagSummary, RelatedProducts: RelatedProducts, ProductReturnCard: ProductReturnCard, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
            Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, ChevronDownLargeIcon: ChevronDownLargeIcon, DragHandleIcon: DragHandleIcon,
            Checkbox: Checkbox, Alert: Alert, Divider: Divider, ActionPanel: ActionPanel, ListingStatus: ListingStatus, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog, Toast: Toast, ToastRegion: ToastRegion,
            EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon, TickLargeThinIcon: TickLargeThinIcon, ClockCounterClockwiseIcon: ClockCounterClockwiseIcon, EnvelopeIcon: EnvelopeIcon,

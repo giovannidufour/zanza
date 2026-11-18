@@ -82,6 +82,7 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 ## Accessibility risks
 
 - **IconButton** is exactly 24px: needs ≥ 24px clear space from neighbouring targets.
+- **PDP sticky scroll (0119)**: the anchored layout moves content at different speeds (record still, list moving). Kept on with `prefers-reduced-motion` because nothing animates by itself; if a user test shows discomfort, switch it off under reduced motion. Focus ring of `product return card` is the browser default (no focus token yet).
 
 ## Figma to fix
 
@@ -110,6 +111,9 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 
 
 ## Code to do
+
+- **ProductReturnCard (0119)** is a first version: Gio plans more iterations (content, motion, position). Motion values (200ms fade + 8 up, 600ms scroll back) are placeholders until Figma has motion tokens.
+- **"More for sale" (0119)**: 12 records picked in the build (same section, other section, then sold); replace with backend recommendations when they exist.
 
 - DS artifact (https://claude.ai/artifact/9Q7SAYDqDnBAj4MEKLnphz) not republished since the `--mobile` type variants: needs `npm run build:artifact` + publish.
 - Component token tables in `docs/*/README.md` are still hand-written (API tables are generated).

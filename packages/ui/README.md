@@ -52,7 +52,8 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | OrderItem | page `Account` → `order item` | ported (0101): BagItem without Remove |
 | OrderRow | page `Account` → `order row` | ported (0101): one link per order, View not a tab stop |
 | BagSummary | page `Bag` → `bag summary` | ported: subtotal, shipping "Calculated at checkout", Checkout, note |
-| RelatedProducts | page `PDP` → `you may also like` | ported: one layout, cards carry the device |
+| RelatedProducts | page `PDP` → `you may also like` | ported: one layout, cards carry the device; `action` = Figma `view all` (0119) |
+| ProductReturnCard | page `PDP` → `product return card` | ported (0119): state default / hover; desktop PDP behaviour lives in the page |
 | Gallery | page `PDP` → `product image` ×2, `mobile gallery` | ported from page placement; Figma component pending |
 | Input | page `input` → `input` + `_input-master` | ported: variant text field / search / select / text area (2026-11-12, default state only) × size medium / compact; error, locked (admin) |
 | DropZone | page `uploads` → `drop zone` | ported |

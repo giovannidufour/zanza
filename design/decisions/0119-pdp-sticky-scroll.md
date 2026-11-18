@@ -1,0 +1,13 @@
+# 0119 — PDP desktop: record and gallery anchor, "More for sale" scrolls over them
+
+`2026-11-18` · accepted · Figma: page `PDP` → `PDP - desktop · scrolled (record covered)`, components `you may also like` (`title`, `view all`) and `product return card` (state default | hover)
+
+**Context.** On the desktop PDP the record (gallery, info, actions) scrolled away with the page, and "More for sale" listed 3 records of the same section. Gio tried a sticky layout on a test branch (2026-11-18) and kept it, with a way back to the record and a longer list that ends in a link to the section.
+**Decision.**
+- Desktop only. Gallery, info and actions move up with the page until they sit `small` (8) below the visible part of the site header (the top of the window when it is hidden), then stay anchored. "More for sale" starts where it always did, scrolls up over the record (opaque, page ground) and uncovers it on the way back. A record taller than the window anchors higher, so Add to bag stays reachable.
+- The gallery, anchored, scrolls only inside, under the pointer (`overscroll-behavior: contain`); once anchored it stops growing (it no longer follows its own top as in 0036), so the end of the page never uncovers its last photo.
+- The "More for sale" title band (top rule + 8 + title + 8) anchors at the same line; the cards scroll under it. Keyboard focus never lands under the band (`scroll-padding-top`) or on a covered record (focus moving into the record scrolls the page back).
+- When the band reaches its anchor (the record is fully covered), `product return card` appears docked `small` inside the bottom of the gallery: cover 48, name, price, chevron up. Pressing it scrolls page and gallery back to the top in one animation (they land together) and moves focus to the record title. Hidden = out of the tab order.
+- "More for sale" shows 12 records: available of the same section, then available of the other section (none while trade is off), then sold / reserved; inside each group most shared genres first. The list ends with `view all`: a full-width secondary large Button inside the container, "View all for sale" / "View all for trade", linking to the section. Mobile gets the 12 records and the link too, nothing else changes there.
+- Motion is placeholder (no motion tokens): header-follow 200ms ease-out, card fade + 8 up 200ms, scroll back 600ms ease-in-out; none with `prefers-reduced-motion`.
+**Rule.** On desktop the PDP record is a fixed stage and the related list is the layer that moves over it; anything added to the record must fit that (no content that only makes sense while scrolling with the page). Any "back to" control appears only when what it returns to is fully hidden.
