@@ -68,6 +68,10 @@
       fields: [{ name: 'sections', kind: 'sections', label: 'Sections' }] },
     { key: 'page.how_trading', path: '/how-trading-works/',  group: 'pages', title: 'How trading works', shows: 'trade', where: '/how-trading-works/',
       fields: [{ name: 'steps', kind: 'steps', label: 'Steps', default: STEPS.map(function (s) { return { title: s[0], text: s[1] }; }) }] },
+    { key: 'short.home', path: '/',  group: 'short', title: 'Home', where: 'Home · the welcome line at the top',
+      fields: [
+        { name: 'intro', kind: 'textarea', label: 'Welcome line', help: 'The link “Subscribe to newsletter” follows it.', default: 'Welcome! This space is for record sales from my personal collection. Reggae and affiliate music will be regularly listed, watch this space for shop & discovery.' }
+      ] },
     { key: 'short.contact', path: '/contact/',  group: 'short', title: 'Contact', where: '/contact/',
       fields: [
         { name: 'intro', kind: 'textarea', label: 'Intro', default: 'Questions about a record, an order{{#trade}} or a trade{{/trade}}? Write to me by email or with the form, and I answer by email.' },

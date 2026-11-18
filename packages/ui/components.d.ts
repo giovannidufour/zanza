@@ -893,6 +893,8 @@ export interface FooterNewsletterProps extends HTMLAttributes<HTMLFormElement> {
   method?: string;
   /** Field label. @default "Newsletter" */
   label?: ReactNode;
+  /** Figma `input label` off (home newsletter): no visible label; `label` (default "Email") becomes the field's aria-label. */
+  hideLabel?: boolean;
   /** @default "Your email" */
   placeholder?: string;
   /** Name of the email field sent to the provider. @default "email" */
@@ -1205,52 +1207,97 @@ export interface ActionBarProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function ActionBar(props: ActionBarProps): JSX.Element;
 
-/** Figma `section head` (page Home): heading of a home section. Divider on top, title, actions on the right. */
+/** Figma `section head` (page Home, decision 0120): heading of a home section. Divider on top, title + inline meta, actions on the right. */
 export interface SectionHeadProps extends HTMLAttributes<HTMLDivElement> {
-  /** Figma `title`. */
+  /** Figma `title` (body/medium, text/strong). */
   title: ReactNode;
+  /** Figma `meta text` (boolean `meta`): an inline count after the title, e.g. "(12)", text/moderate. Omit → none. */
+  meta?: ReactNode;
   /** Heading level of the title. @default 2 */
   headingLevel?: 2 | 3 | 4;
-  /** Figma boolean `divider`: false for the first section under the header (the header border is already there). @default true */
+  /** Figma boolean `divider`. @default true */
   divider?: boolean;
-  /** Figma booleans `play` and `see all`: secondary Buttons ("Play all", "See all"). Omit → no actions. */
+  /** Figma boolean `actions` (`play`, `see all`): secondary Buttons ("Play all", "See all"). Omit → no actions. */
   actions?: ReactNode;
   /** id of the title, to name the section (aria-labelledby). */
   titleId?: string;
 }
 export declare function SectionHead(props: SectionHeadProps): JSX.Element;
 
-/** Figma `genre links` (page Home): the catalogue's genres as Tag links (size medium) to the filtered PLP. A <section>. */
+/** Figma `genre links` (page Home, layout row | column): the catalogue's genres as Tag links (size large) + "All". A <nav> named "Genres". */
 export interface GenreLinksProps extends HTMLAttributes<HTMLElement> {
-  /** @default "Genres" */
-  title?: ReactNode;
   /** The genres, in order. */
   genres: { label: ReactNode; href: string }[];
-  /** @default 2 */
-  headingLevel?: 2 | 3 | 4;
-  /** The SectionHead divider. @default true */
-  divider?: boolean;
+  /** Figma `layout`: row = wrapping, column = one per line; responsive = column on desktop, row on mobile. @default "responsive" */
+  layout?: 'row' | 'column' | 'responsive';
+  /** "All" (Button secondary extra-small, own line): the link to every record (the shop: /sale/). Omit → no All. */
+  allHref?: string;
+  /** @default "All" */
+  allLabel?: ReactNode;
 }
 export declare function GenreLinks(props: GenreLinksProps): JSX.Element;
 
-/** Figma `home about` (page Home): who is behind the shop. A <section>. */
-export interface HomeAboutProps extends HTMLAttributes<HTMLElement> {
-  /** @default "About" */
+/** Figma `home intro` (page Home, device desktop | mobile): the welcome line at the top of the home. A <p>; links inside are underlined. */
+export interface HomeIntroProps extends HTMLAttributes<HTMLParagraphElement> {
+  /** desktop = body/extra-large, mobile = body/large, responsive = both by breakpoint. @default "responsive" */
+  device?: 'desktop' | 'mobile' | 'responsive';
+  children?: ReactNode;
+}
+export declare function HomeIntro(props: HomeIntroProps): JSX.Element;
+
+/** Figma `home newsletter` (page Home): the signup between two shelves, in a dashed box (the store name's dash). A <section>. */
+export interface HomeNewsletterProps extends HTMLAttributes<HTMLElement> {
+  /** The SectionHead title. @default "Get new records first" */
   title?: ReactNode;
   /** @default 2 */
   headingLevel?: 2 | 3 | 4;
-  /** The SectionHead divider. @default true */
-  divider?: boolean;
-  /** Figma `bio`: one line. */
+  /** Figma `device`: the box width is set by the page (desktop: 2 of 3 tile columns; mobile: fill). @default "responsive" */
+  device?: 'desktop' | 'mobile' | 'responsive';
+  /** The form: a FooterNewsletter with `hideLabel`. */
   children?: ReactNode;
-  /** Figma boolean `discogs`: the DiscogsCard props. Omit → no card. */
-  discogs?: DiscogsCardProps;
-  /** Link to the About page. Omit → no link. */
-  href?: string;
-  /** @default "More about me" */
-  linkLabel?: ReactNode;
 }
-export declare function HomeAbout(props: HomeAboutProps): JSX.Element;
+export declare function HomeNewsletter(props: HomeNewsletterProps): JSX.Element;
+
+/** Figma `product tile` (page `product card`, device desktop | mobile × state default | hover): a record in a home shelf (grid view). An <article>. */
+export interface ProductTileProps extends HTMLAttributes<HTMLElement> {
+  /** desktop = the cover; mobile = every photo in a horizontal swipe gallery + counter; responsive = by breakpoint. @default "responsive" */
+  device?: 'desktop' | 'mobile' | 'responsive';
+  /** Doc-only pin of the interaction state (hover comes from :hover on pointer devices). */
+  state?: 'default' | 'hover';
+  /** The photos, cover first (1:1). */
+  images?: { src: string; srcSet?: string; sizes?: string; alt?: string }[];
+  /** The product page: the media becomes its link. */
+  href?: string;
+  /** Figma `product name`. */
+  title: ReactNode;
+  /** Figma `release info`. */
+  releaseInfo?: ReactNode;
+  /** Figma `price`. */
+  price?: ReactNode;
+  /** Figma `samples`: PlayerButtons, right of the price, wrapping. */
+  samples?: ReactNode;
+  /** Figma `button` (fill): e.g. a secondary Button "Add to bag". */
+  action?: ReactNode;
+  /** Figma boolean `counter`: the gallery counter on mobile, shown only with more than one photo. @default true */
+  counter?: boolean;
+  /** @default 3 */
+  headingLevel?: 2 | 3 | 4;
+}
+export declare function ProductTile(props: ProductTileProps): JSX.Element;
+
+/** Figma `gallery counter`: "1/3" on a photo, body/extra-small text/strong on surface/accent. */
+export interface GalleryCounterProps extends HTMLAttributes<HTMLSpanElement> {
+  /** Figma `count`, e.g. "1/3". */
+  children?: ReactNode;
+}
+export declare function GalleryCounter(props: GalleryCounterProps): JSX.Element;
+
+/** Figma `view toggle` (page Home, view grid | list): a secondary Button that switches a list between tiles and cards. Its label names the other view. */
+export interface ViewToggleProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  /** The view shown now: grid → "List view" (icon bars-three); list → "Grid view" (icon: TODO in Figma). @default "grid" */
+  view?: 'grid' | 'list';
+}
+export declare function ViewToggle(props: ViewToggleProps): JSX.Element;
 
 /** Mirrors the Figma component `form section head` (BACKEND → Create, 2026-11-17): the heading of a Create / Edit listing section. */
 export interface FormSectionHeadProps extends HTMLAttributes<HTMLHeadingElement> {

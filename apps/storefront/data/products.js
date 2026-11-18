@@ -71,7 +71,8 @@ function toProduct(row, mediaUrl) {
       price: row.price_cents == null ? null : { amount: row.price_cents, currency: row.currency },
       sku: row.sku,
       weight_g: row.weight_g || null,   // shipping: own weight; null = the format's (decision 0057)
-      custom_title: row.custom_title
+      custom_title: row.custom_title,
+      published_at: row.published_at || null   // the home's "This week" (decision 0120)
     },
     release: {
       discogs_release_id: r.discogs_release_id,

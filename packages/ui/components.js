@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"OrderItem"},{"name":"OrderRow"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"ProductReturnCard"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"},{"name":"FormSectionHead"},{"name":"Marker"},{"name":"PriceFields"},{"name":"ListingStatus"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"OrderItem"},{"name":"OrderRow"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"ProductReturnCard"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"},{"name":"FormSectionHead"},{"name":"Marker"},{"name":"PriceFields"},{"name":"ListingStatus"},{"name":"SectionHead"},{"name":"GenreLinks"},{"name":"HomeIntro"},{"name":"HomeNewsletter"},{"name":"ProductTile"},{"name":"GalleryCounter"},{"name":"ViewToggle"}]} */
 /* packages/ui/components.js — the ONE implementation of the rythem-works components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
@@ -1477,9 +1477,11 @@
     var noteId = base + '-note';
     return h('form', Object.assign({ className: cx('zz-footer-newsletter', props.className), action: props.action, method: props.method || 'post',
       'data-newsletter-endpoint': props.endpoint || undefined },
-      omit(props, ['action', 'method', 'endpoint', 'label', 'placeholder', 'submitLabel', 'note', 'name', 'className'])),
+      omit(props, ['action', 'method', 'endpoint', 'label', 'hideLabel', 'placeholder', 'submitLabel', 'note', 'name', 'className'])),
       h('div', { className: 'zz-footer-newsletter__row' },
-        h(Input, { id: base + '-email', className: 'zz-footer-newsletter__input', label: props.label || 'Newsletter', type: 'email', name: props.name || 'email',
+        // hideLabel (Figma `input label` off, home newsletter): the label stays for assistive tech as aria-label
+        h(Input, { id: base + '-email', className: 'zz-footer-newsletter__input', label: props.hideLabel ? undefined : props.label || 'Newsletter',
+          'aria-label': props.hideLabel ? props.label || 'Email' : undefined, type: 'email', name: props.name || 'email',
           placeholder: props.placeholder || 'Your email', autoComplete: 'email', required: true, 'aria-describedby': props.note ? noteId : undefined }),
         h(Button, { hierarchy: 'secondary', type: 'submit' }, props.submitLabel || 'Subscribe')),
       props.endpoint ? h('div', { className: 'zz-visually-hidden', 'aria-hidden': 'true' },
@@ -1643,33 +1645,96 @@
     return h(Tag, Object.assign({}, omit(props, ['headingLevel', 'className', 'children']), { className: cx('zz-form-section-head label-medium', props.className) }), props.children);
   }
 
-  /* ── Home (Figma page `Home`, 2026-11-14) ────────────────────────────────
-     SectionHead: `section head` — divider on top (boolean `divider`), then a row: title body/large text/strong, actions on
-       the right (gap small): `play` ("Play all") and `see all`, secondary Buttons; gap medium-small.
-     GenreLinks: `genre links` — SectionHead (no actions) + the genres as Tag size=medium links, wrapping, gap small.
-     HomeAbout: `home about` — SectionHead (no actions) + bio body/medium + DiscogsCard (boolean `discogs`) + an underlined link; gap medium-small. */
+  /* ── Home (Figma page `Home`, Home v2 2026-11-18, decision 0120) ─────────
+     SectionHead: `section head` — divider on top (boolean `divider`), then a row (gap small, top-aligned): title body/medium
+       text/strong + `meta` (inline count "(12)", body/medium text/moderate, booleans `meta`), actions on the right
+       (boolean `actions`: `play` "Play all", `see all`, secondary Buttons); gap small.
+     GenreLinks: `genre links` (layout row | column): the genres as Tag size=large links + "All" (Button secondary
+       extra-small, own line), gap small. No title (Gio 2026-11-18): a <nav> named "Genres". responsive = column on
+       desktop, row on mobile.
+     HomeIntro: `home intro` (device desktop | mobile): the welcome line, body/extra-large (desktop) · body/large (mobile).
+     HomeNewsletter: `home newsletter` — 16 above and below, then a dashed box (the store name's dash, 1px divider/strong,
+       8 on / 8 off), padding medium-small, gap small: SectionHead (no divider, no actions) + FooterNewsletter (label hidden).
+     ProductTile: `product tile` (device desktop | mobile × state default | hover), page `product card`. A record in a home
+       shelf: media, title block (name, release info, body/medium), price row (price + samples, space-between), Button
+       fill. desktop: the cover 1:1. mobile: every photo in a horizontal swipe gallery + `gallery counter` "1/3" (8 from
+       the bottom-left corner). responsive (default) = desktop above the breakpoint, mobile below (one markup).
+     GalleryCounter: `gallery counter` — "1/3", tag anatomy (padding 4/8), body/extra-small text/strong on surface/accent.
+     ViewToggle: `view toggle` (view grid | list): a secondary Button that switches a shelf between tiles and cards.
+       view=grid reads "List view" (icon bars-three); view=list reads "Grid view" (icon TODO in Figma, open.md). */
   function SectionHead(props) {
     var HeadingTag = 'h' + (props.headingLevel || 2);
-    return h('div', Object.assign({}, omit(props, ['title', 'headingLevel', 'divider', 'actions', 'titleId', 'className']), { className: cx('zz-section-head', props.className) }),
+    var hasMeta = props.meta !== undefined && props.meta !== null && props.meta !== false;
+    return h('div', Object.assign({}, omit(props, ['title', 'meta', 'headingLevel', 'divider', 'actions', 'titleId', 'className']), { className: cx('zz-section-head', props.className) }),
       props.divider === false ? null : h(Divider),
       h('div', { className: 'zz-section-head__row' },
-        h(HeadingTag, { className: 'zz-section-head__title body-large', id: props.titleId }, props.title),
+        h(HeadingTag, { className: 'zz-section-head__title body-medium', id: props.titleId }, props.title,
+          hasMeta ? h('span', { className: 'zz-section-head__meta' }, ' ', props.meta) : null),
         props.actions ? h('div', { className: 'zz-section-head__actions' }, props.actions) : null));
   }
   function GenreLinks(props) {
     var genres = props.genres || [];
-    return h('section', Object.assign({}, omit(props, ['title', 'genres', 'headingLevel', 'divider', 'className']), { className: cx('zz-genre-links', props.className), 'aria-labelledby': props.id ? props.id + '-title' : undefined }),
-      h(SectionHead, { title: props.title || 'Genres', headingLevel: props.headingLevel, divider: props.divider, titleId: props.id ? props.id + '-title' : undefined }),
+    return h('nav', Object.assign({}, omit(props, ['genres', 'layout', 'allHref', 'allLabel', 'className', 'aria-label']),
+      { className: cx('zz-genre-links', props.className), 'data-layout': props.layout || 'responsive', 'aria-label': props['aria-label'] || 'Genres' }),
       h('ul', { className: 'zz-genre-links__list' }, genres.map(function (g) {
-        return h('li', { key: g.href }, h(Tag, { size: 'medium', href: g.href }, g.label));
-      })));
+        return h('li', { key: g.href }, h(Tag, { size: 'large', href: g.href }, g.label));
+      })),
+      props.allHref ? h(Button, { hierarchy: 'secondary', size: 'extra-small', href: props.allHref, className: 'zz-genre-links__all' }, props.allLabel || 'All') : null);
   }
-  function HomeAbout(props) {
-    return h('section', Object.assign({}, omit(props, ['title', 'headingLevel', 'divider', 'discogs', 'href', 'linkLabel', 'className', 'children']), { className: cx('zz-home-about', props.className), 'aria-labelledby': props.id ? props.id + '-title' : undefined }),
-      h(SectionHead, { title: props.title || 'About', headingLevel: props.headingLevel, divider: props.divider, titleId: props.id ? props.id + '-title' : undefined }),
-      props.children ? h('p', { className: 'zz-home-about__bio body-medium' }, props.children) : null,
-      props.discogs ? h(DiscogsCard, props.discogs) : null,
-      props.href ? h('a', { className: 'zz-home-about__link body-medium', href: props.href }, props.linkLabel || 'More about me') : null);
+  function HomeIntro(props) {
+    var device = props.device || 'responsive';
+    var type = device === 'desktop' ? 'body-extra-large' : device === 'mobile' ? 'body-large' : 'body-extra-large body-large--mobile';
+    return h('p', Object.assign({}, omit(props, ['device', 'className', 'children']), { className: cx('zz-home-intro', type, props.className), 'data-device': device }), props.children);
+  }
+  function HomeNewsletter(props) {
+    var titleId = (props.id || 'zz-home-newsletter') + '-title';
+    return h('section', Object.assign({}, omit(props, ['title', 'headingLevel', 'device', 'children', 'className']),
+      { className: cx('zz-home-newsletter', props.className), 'data-device': props.device || 'responsive', 'aria-labelledby': titleId }),
+      h('div', { className: 'zz-home-newsletter__box' },
+        h(SectionHead, { title: props.title || 'Get new records first', headingLevel: props.headingLevel, divider: false, titleId: titleId }),
+        props.children));
+  }
+  function GalleryCounter(props) {
+    return h('span', Object.assign({}, omit(props, ['className', 'children']), { className: cx('zz-gallery-counter body-extra-small', props.className) }), props.children);
+  }
+  function ProductTile(props) {
+    var device = props.device || 'responsive';
+    var titleId = useId();
+    var images = (props.images || []).filter(function (img) { return img && img.src; });
+    var many = images.length > 1 && device !== 'desktop';
+    var media = h('div', { className: 'zz-product-tile__media' },
+      h(props.href ? 'a' : 'div', Object.assign({ className: 'zz-product-tile__gallery' },
+        props.href ? { href: props.href, 'aria-labelledby': titleId } : {},
+        many ? { 'data-tile-gallery': '' } : {}),
+        (images.length ? images : [null]).map(function (img, i) {
+          if (device === 'desktop' && i > 0) return null;
+          return h('span', { key: i, className: 'zz-product-tile__photo' },
+            img ? h('img', { src: img.src, srcSet: img.srcSet, sizes: img.srcSet ? img.sizes : undefined, alt: i === 0 ? img.alt || '' : '', loading: 'lazy' }) : null);
+        })),
+      // Figma boolean `counter`: only with more than one photo; scripts update the first number while swiping
+      many && props.counter !== false ? h(GalleryCounter, { className: 'zz-product-tile__counter', 'aria-hidden': 'true', 'data-tile-counter': '' }, '1/' + images.length) : null);
+    return h('article', Object.assign({
+      className: cx('zz-product-tile', props.className),
+      'data-device': device,
+      'data-state': props.state && props.state !== 'default' ? props.state : undefined,   // doc-only pin (0009)
+      'aria-labelledby': titleId
+    }, omit(props, ['device', 'state', 'images', 'href', 'title', 'releaseInfo', 'price', 'samples', 'action', 'counter', 'headingLevel', 'className', 'children'])),
+      media,
+      h('div', { className: 'zz-product-tile__title-block' },
+        h('h' + (props.headingLevel || 3), { id: titleId, className: 'zz-product-tile__name body-medium' }, props.title),
+        props.releaseInfo ? h('p', { className: 'zz-product-tile__release body-medium' }, props.releaseInfo) : null),
+      (props.price != null || props.samples) ? h('div', { className: 'zz-product-tile__price-row' },
+        props.price != null ? h('p', { className: 'zz-product-tile__price body-medium' }, props.price) : null,
+        props.samples ? h('div', { className: 'zz-product-tile__samples' }, props.samples) : null) : null,
+      props.action ? h('div', { className: 'zz-product-tile__action' }, props.action) : null);
+  }
+  function ViewToggle(props) {
+    var view = props.view || 'grid';
+    return h(Button, Object.assign({ hierarchy: 'secondary' }, omit(props, ['view', 'className']), {
+      className: cx('zz-view-toggle', props.className),
+      'data-view': view,
+      leadingIcon: view === 'grid' ? icon('icon-bars-three') : undefined   // view=list: grid icon still a placeholder in Figma (open.md)
+    }), view === 'grid' ? 'List view' : 'Grid view');
   }
 
   return { Button: Button, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, ActiveFilter: ActiveFilter, Tag: Tag, TagGroup: TagGroup,
@@ -1682,5 +1747,5 @@
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
            ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, AdminBar: AdminBar, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
-           SectionHead: SectionHead, GenreLinks: GenreLinks, HomeAbout: HomeAbout };
+           SectionHead: SectionHead, GenreLinks: GenreLinks, HomeIntro: HomeIntro, HomeNewsletter: HomeNewsletter, ProductTile: ProductTile, GalleryCounter: GalleryCounter, ViewToggle: ViewToggle };
 });

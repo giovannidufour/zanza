@@ -1,16 +1,21 @@
-/* apps/storefront/pages/home.js — the home page "/" (Figma page `Home`, decision 0085).
-   A pure function: products in, React tree out. Desktop mirrors the PLP: a 3-column side (where the filters are:
-   Genres, About) and a 9-column main (Just in). Mobile: one column, Genres, Just in, About.
-   Just in = the newest listings, sale and trade mixed (Gio 2026-11-15; products come in listing order: newest
-   published first): sale available or reserved, trade available. Trade cards keep their own button ("Make an offer").
-   "Play all" queues their samples in the site player (scripts/site.js, data-play-all). */
+/* apps/storefront/pages/home.js — the home page "/" (Figma page `Home`, Home v2, decision 0120; replaces 0085).
+   A pure function: products in, React tree out. Sale only for now (Gio 2026-11-18: trade and personal info left out).
+   - intro: the welcome line (admin → Content → Home) + "Subscribe to newsletter" → the newsletter box below
+   - side (desktop, 3 of 12 columns): the genres one per line + All (→ /sale/), then the view toggle (grid | list)
+   - main (9 columns): shelf "This week (n)" = sale records published in the last 7 days (max 6), the newsletter box,
+     shelf "Recent" = the next 6 newest sale records. No This week (nothing new) → only Recent.
+   - mobile: one column; genres in rows, no view toggle, one full-width tile per row with its photos in a swipe gallery.
+   Each shelf renders both views: tiles (grid) and the PDP product cards (list); home.css shows the one in
+   .home-content[data-view], scripts/site.js flips it and remembers the choice. "Play all" queues only visible samples. */
 'use strict';
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
-const { SiteHeader, ProductCardFor, plpHref, identityOn } = require('./shell.js');
+const { SiteHeader, ProductCardFor, plpHref, textOf, imageOf, IMAGE_SIZES, productNameLinked, releaseInfoLinked,
+  productHref, productName, formatPrice, sampleAttrs } = require('./shell.js');
 
-const JUST_IN_COUNT = 8;
+const SHELF_COUNT = 6;   // Figma: 2 rows of 3 tiles on desktop
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 // the genres of the available sale listings, A–Z, each linking to the sale PLP filtered by it
 function genresOf(products, url) {
@@ -19,35 +24,74 @@ function genresOf(products, url) {
   return [...names].sort((a, b) => a.localeCompare(b)).map((g) => ({ label: g, href: plpHref(url, 'genre', g) }));
 }
 
-function Home({ products, site, url }) {
-  const sale = products.filter((p) => p.listing.section === 'sale');
-  const justIn = products.filter((p) => (p.listing.section === 'sale' && ['available', 'reserved'].includes(p.listing.status)) ||
-    (p.listing.section === 'trade' && p.listing.status === 'available')).slice(0, JUST_IN_COUNT);
-  const genres = genresOf(sale.filter((p) => p.listing.status === 'available'), url);
-  const hasSamples = justIn.some((p) => (p.samples || []).some((s) => s.audio_url));
-  const owner = site.owner || {};
-  const discogs = owner.discogs || {};
-  const btn = (label, props) => h(Z.Button, Object.assign({ hierarchy: 'secondary' }, props), label);
-  const list = (items) => h('div', { className: 'home-list' }, items.map((product) =>
-    h(ProductCardFor, { key: product.listing.slug, product, url, headingLevel: 3 })));
-
-  // one grid: Genres, Just in, About in this order (mobile = one column in DOM order: Genres on top, Gio 2026-11-15);
-  // desktop places Genres and About in the side column and Just in across both rows of the main column
-  return h('div', { className: 'zz-page' },
-    h(SiteHeader, { site, url, current: 'home' }),
-    h('main', { className: 'home-content' },
-      h('h1', { className: 'zz-visually-hidden' }, site.storeName),
-      genres.length ? h(Z.GenreLinks, { id: 'home-genres', genres, divider: false, className: 'home-genres' }) : null,
-      h('section', { className: 'home-section home-just-in', 'aria-labelledby': 'home-just-in', 'data-play-scope': '' },
-        // "See all" → /catalog/: every record, sale and trade mixed like Just in (Gio 2026-11-15)
-        h(Z.SectionHead, { title: 'Just in', titleId: 'home-just-in', actions: h(React.Fragment, null,
-          hasSamples ? btn('Play all', { type: 'button', 'data-play-all': '' }) : null,
-          btn('See all', { href: url('/catalog/') })) }),
-        justIn.length ? list(justIn) : h('p', { className: 'body-medium home-empty' }, 'No records right now.')),
-      // Who I am off (decision 0106): owner = the Store profile (no Discogs), the link speaks of the shop
-      h(Z.HomeAbout, { id: 'home-about', href: url('/about/'), className: 'home-about', linkLabel: identityOn(site) ? undefined : 'More about the shop',
-        discogs: discogs.username ? { handle: discogs.username, stats: discogs.stats, href: discogs.href } : undefined },
-        owner.bio)));
+// a record as a ProductTile: every photo (cover first), samples as in the card, Add to bag (site.js syncs it: In bag,
+// (Reserved) Notify me, Sold out)
+function TileFor({ product, url }) {
+  const { listing, release, copy, samples } = product;
+  const href = productHref(product, url);
+  const photos = [release.cover].concat(copy.photos || []).filter(Boolean);
+  return h(Z.ProductTile, {
+    'data-listing-id': listing.id,
+    'data-listing-status': listing.status,
+    'data-listing-section': listing.section,
+    href,
+    images: photos.map((src, i) => imageOf(product, src, url, { sizes: IMAGE_SIZES.tile, alt: i === 0 ? productName(release) : '' })),
+    title: productNameLinked(product, url, href),
+    releaseInfo: releaseInfoLinked(release, url),
+    price: formatPrice(listing.price),
+    samples: samples.length ? samples.map((s, i) => h(Z.PlayerButton, Object.assign({
+      key: s.track_position,
+      'aria-label': `${productName(release)}, sample ${i + 1}: ${s.title}`
+    }, sampleAttrs(product, s, url)), String(i + 1))) : null,
+    action: h(Z.Button, { hierarchy: 'secondary', 'data-add-to-bag': listing.id, 'data-listing-status': listing.status }, 'Add to bag')
+  });
 }
 
-module.exports = { Home, title: 'Reggae and dancehall records', JUST_IN_COUNT };
+function Shelf({ id, title, meta, items, url, divider }) {
+  const hasSamples = items.some((p) => (p.samples || []).some((s) => s.audio_url));
+  const btn = (label, props) => h(Z.Button, Object.assign({ hierarchy: 'secondary' }, props), label);
+  return h('section', { className: 'home-shelf', 'aria-labelledby': id, 'data-play-scope': '' },
+    h(Z.SectionHead, { title, titleId: id, meta, divider, actions: h(React.Fragment, null,
+      hasSamples ? btn('Play all', { type: 'button', 'data-play-all': '' }) : null,
+      btn('See all', { href: url('/sale/') })) }),
+    h('div', { className: 'home-shelf__grid', 'data-home-view': 'grid' },
+      items.map((product) => h(TileFor, { key: product.listing.slug, product, url }))),
+    h('div', { className: 'home-shelf__list', 'data-home-view': 'list' },
+      items.map((product) => h(ProductCardFor, { key: product.listing.slug, product, url, headingLevel: 3 }))));
+}
+
+function Home({ products, site, url, now = Date.now() }) {
+  const sale = products.filter((p) => p.listing.section === 'sale');
+  // products come newest published first (data/products.js)
+  const onSale = sale.filter((p) => ['available', 'reserved'].includes(p.listing.status));
+  const fresh = onSale.filter((p) => p.listing.published_at && now - Date.parse(p.listing.published_at) < WEEK_MS);
+  const thisWeek = fresh.slice(0, SHELF_COUNT);
+  const recent = onSale.filter((p) => !thisWeek.includes(p)).slice(0, SHELF_COUNT);
+  const genres = genresOf(sale.filter((p) => p.listing.status === 'available'), url);
+  const nl = site.newsletter || {};
+  const intro = textOf(site, 'short.home', 'intro');
+
+  const newsletter = nl.action ? h(Z.HomeNewsletter, { id: 'newsletter', className: 'home-newsletter' },
+    h(Z.FooterNewsletter, { id: 'home-newsletter', action: nl.action, endpoint: nl.endpoint || undefined, label: 'Email', hideLabel: true,
+      note: ['Get them in your inbox as they’re listed. ', h('a', { key: 'p', href: url('/privacy/') }, 'Privacy')] })) : null;
+
+  return h('div', { className: 'zz-page' },
+    h(SiteHeader, { site, url, current: 'home' }),
+    h('main', { className: 'home-content', 'data-view': 'grid' },
+      h('h1', { className: 'zz-visually-hidden' }, site.storeName),
+      h('div', { className: 'home-intro' },
+        h(Z.HomeIntro, null, intro, nl.action ? h(React.Fragment, null, ' ', h('a', { href: '#newsletter' }, 'Subscribe to newsletter')) : null)),
+      h('div', { className: 'home-side' },
+        genres.length ? h(Z.GenreLinks, { genres, allHref: url('/sale/'), className: 'home-genres' }) : null,
+        h('div', { className: 'home-view-toggle' },
+          h(Z.ViewToggle, { view: 'grid', 'data-home-toggle': 'list', 'aria-controls': 'home-main' }),
+          h(Z.ViewToggle, { view: 'list', 'data-home-toggle': 'grid', 'aria-controls': 'home-main' }))),
+      h('div', { className: 'home-main', id: 'home-main' },
+        thisWeek.length ? h(Shelf, { id: 'home-this-week', title: 'This week', meta: `(${fresh.length})`, items: thisWeek, url }) : null,
+        thisWeek.length ? newsletter : null,
+        recent.length ? h(Shelf, { id: 'home-recent', title: 'Recent', items: recent, url }) : null,
+        thisWeek.length ? null : newsletter,
+        !thisWeek.length && !recent.length ? h('p', { className: 'body-medium home-empty' }, 'No records right now.') : null)));
+}
+
+module.exports = { Home, title: 'Reggae and dancehall records', SHELF_COUNT };

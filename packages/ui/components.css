@@ -1546,21 +1546,103 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Home (Figma page `Home`, 2026-11-14): section head, genre links, home about
+   Home (Figma page `Home`, Home v2 2026-11-18, decision 0120): section head, genre links, home intro, home newsletter,
+   product tile, gallery counter, view toggle
    ═══════════════════════════════════════════════════════════════════════ */
-.zz-section-head { display: flex; flex-direction: column; gap: var(--medium-small); }
-.zz-section-head__row { display: flex; align-items: center; justify-content: space-between; gap: var(--small); }
+.zz-section-head { display: flex; flex-direction: column; gap: var(--small); }
+.zz-section-head__row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--small); }
 .zz-section-head__title { margin: 0; color: var(--text-strong); }
+.zz-section-head__meta { color: var(--text-moderate); }   /* Figma `meta text` "(12)": body/medium text/moderate, inline */
 .zz-section-head__actions { display: flex; gap: var(--small); flex: none; }
 
-.zz-genre-links { display: flex; flex-direction: column; gap: var(--medium-small); }
+/* genre links: layout=row (genres wrap, "All" on its own line) | column (one genre per line); responsive = column on
+   desktop, row on mobile (Gio 2026-11-18). Tags hug their label in both layouts. */
+.zz-genre-links { display: flex; flex-direction: column; align-items: flex-start; gap: var(--small); }
 .zz-genre-links__list { display: flex; flex-wrap: wrap; gap: var(--small); margin: 0; padding: 0; list-style: none; }
+.zz-genre-links[data-layout="column"] .zz-genre-links__list,
+.zz-genre-links[data-layout="responsive"] .zz-genre-links__list { flex-direction: column; align-items: flex-start; }
+@media (--mobile) {
+  .zz-genre-links[data-layout="responsive"] .zz-genre-links__list { flex-direction: row; }
+}
 
-.zz-home-about__link { color: var(--text-strong); text-decoration: underline; }
+.zz-home-intro { margin: 0; color: var(--text-strong); }
+.zz-home-intro a { color: inherit; text-decoration: underline; }
 
-.zz-home-about { display: flex; flex-direction: column; align-items: stretch; gap: var(--medium-small); color: var(--text-strong); }
-.zz-home-about__bio { margin: 0; }
-.zz-home-about__link { align-self: flex-start; }
+/* home newsletter: 16 above and below the box; the box = the store name's dashed border (.zz-header__name: 1px
+   divider/strong, 8 on / 8 off, drawn as four repeating gradients), padding medium-small, gap small */
+.zz-home-newsletter { padding: var(--medium-small) 0; }
+.zz-home-newsletter__box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--small);
+  box-sizing: border-box;
+  padding: var(--medium-small);
+  border: 1px solid transparent;
+  background-origin: border-box;
+  background-clip: border-box;
+  background-repeat: no-repeat;
+  background-image:
+    repeating-linear-gradient(90deg,  var(--border-divider-strong) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(90deg,  var(--border-divider-strong) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(180deg, var(--border-divider-strong) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(180deg, var(--border-divider-strong) 0 8px, transparent 8px 16px);
+  background-size: 100% 1px, 100% 1px, 1px 100%, 1px 100%;
+  background-position: 0 0, 0 100%, 0 0, 100% 0;
+  color: var(--text-strong);
+}
+.zz-home-newsletter .zz-footer-newsletter__note a { color: inherit; text-decoration: underline; }
+/* the field row wraps under 200px of email (Figma footer newsletter, email minWidth 200) */
+.zz-home-newsletter .zz-footer-newsletter__row { flex-wrap: wrap; }
+.zz-home-newsletter .zz-footer-newsletter__input { min-width: 200px; }
+
+/* product tile: media, title block, price row, button; gap small. Hover = surface/hover on the whole tile (as the
+   product card, decision 0088), pointer devices only. */
+.zz-product-tile { display: flex; flex-direction: column; gap: var(--small); min-width: 0; color: var(--text-strong); }
+.zz-product-tile[data-state="hover"] { background: var(--surface-hover); }
+@media (hover: hover) {
+  .zz-product-tile:hover { background: var(--surface-hover); }
+}
+.zz-product-tile p, .zz-product-tile h2, .zz-product-tile h3, .zz-product-tile h4 { margin: 0; }
+.zz-product-tile__media { position: relative; }
+.zz-product-tile__gallery { display: flex; gap: 1px; color: inherit; }   /* Figma: gallery itemSpacing 1 */
+.zz-product-tile__photo { flex: 0 0 100%; aspect-ratio: 1; overflow: hidden; background: var(--surface-support-1); }
+.zz-product-tile__photo > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.zz-product-tile__counter { position: absolute; left: var(--small); bottom: var(--small); }
+.zz-product-tile__title-block { display: flex; flex-direction: column; }
+.zz-product-tile__name a, .zz-product-tile__release a { color: inherit; }
+.zz-product-tile__price-row { display: flex; align-items: center; justify-content: space-between; gap: var(--small); }
+.zz-product-tile__samples { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--small); }
+.zz-product-tile__action > .zz-button { width: 100%; box-sizing: border-box; }
+
+/* desktop: the cover only. mobile: every photo, swiped sideways and snapped, with the counter */
+.zz-product-tile[data-device="desktop"] .zz-product-tile__photo + .zz-product-tile__photo,
+.zz-product-tile[data-device="desktop"] .zz-product-tile__counter,
+.zz-product-tile[data-device="responsive"] .zz-product-tile__photo + .zz-product-tile__photo,
+.zz-product-tile[data-device="responsive"] .zz-product-tile__counter { display: none; }
+.zz-product-tile[data-device="mobile"] .zz-product-tile__gallery {
+  overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.zz-product-tile[data-device="mobile"] .zz-product-tile__gallery::-webkit-scrollbar { display: none; }
+.zz-product-tile[data-device="mobile"] .zz-product-tile__photo { scroll-snap-align: start; }
+@media (--mobile) {
+  .zz-product-tile[data-device="responsive"] .zz-product-tile__photo + .zz-product-tile__photo { display: block; }
+  .zz-product-tile[data-device="responsive"] .zz-product-tile__counter { display: inline-flex; }
+  .zz-product-tile[data-device="responsive"] .zz-product-tile__gallery {
+    overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .zz-product-tile[data-device="responsive"] .zz-product-tile__gallery::-webkit-scrollbar { display: none; }
+  .zz-product-tile[data-device="responsive"] .zz-product-tile__photo { scroll-snap-align: start; }
+}
+
+/* gallery counter: tag anatomy (padding 4/8), body/extra-small text/strong on surface/accent */
+.zz-gallery-counter {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  background: var(--surface-accent);
+  color: var(--text-strong);
+  white-space: nowrap;
+}
 
 /* ── FormSectionHead (Figma BACKEND → Create, `form section head`, Gio 2026-11-17) ── */
 .zz-form-section-head { margin: 0; color: var(--text-strong); }

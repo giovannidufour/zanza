@@ -93,7 +93,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | FiltersLayer · FilterFacet · PlpHeader · SelectButton | page `filters` → `filters layer`, `filter facet`, `PLP header` | ported: mobile filters, level main / facet, sticky actions; sort = native select as a button (0038) |
 | MenuLayer · MenuGroup · MenuItem | page `menu` → `menu layer`, `menu item` | ported: mobile menu opened by the header hamburger (0060); also the admin mobile menu, MenuItem without href = action button (0089) |
 | Footer · FooterLinks · FooterNewsletter | page `footer` → `footer`, `footer link list`, `footer newsletter`, `footer legal` | ported (0077): `<footer>` landmark, newsletter slot, link columns, legal + copyright; desktop / mobile responsive |
-| SectionHead · GenreLinks · HomeAbout | page `Home` → `section head`, `genre links`, `home about` | ported (0085): home blocks; Header `homeCurrent` = `store name` state=active |
+| SectionHead · GenreLinks · HomeIntro · HomeNewsletter · ProductTile · GalleryCounter · ViewToggle | page `Home` → `section head`, `genre links`, `home intro`, `home newsletter`, `view toggle`; page `product card` → `product tile`, `gallery counter` | ported (0120, Home v2; HomeAbout removed): home blocks; Header `homeCurrent` = `store name` state=active |
 | EntityField · EntityChip | `input` › `chips` + `_input chips`, `entity chip` (tags), `entity option` (input › building blocks) | ported: chips, menu (entity / alias / create), keyboard; Label = one chip; chip size medium / large |
 
 ## Open items

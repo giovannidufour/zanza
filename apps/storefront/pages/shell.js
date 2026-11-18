@@ -16,7 +16,8 @@ const SECTION_LABEL = { sale: 'For sale', trade: 'For trade', catalog: 'Catalog'
 // mobile; PDP gallery = 4 of 12 columns, full width on mobile). Fixed-size spots (bag 96, player 48) need none here.
 const IMAGE_SIZES = {
   card: `${queries.mobile} 96px, 16vw`,
-  gallery: `${queries.mobile} 100vw, 33vw`
+  gallery: `${queries.mobile} 100vw, 33vw`,
+  tile: `${queries.mobile} 100vw, 25vw`   // home ProductTile: 3 per row in the 9-column main, full width on mobile
 };
 // a photo of `product` as a component image: + srcset when its smaller copies exist (data/products.js → markSized)
 function imageOf(product, src, url, { sizes, alt = '' } = {}) {
@@ -245,7 +246,7 @@ function SiteMenu({ site, url, current }) {
 // it stays off until the Privacy page names Buttondown (German law, design/open.md). newsletter.endpoint = our own
 // double opt-in (decision 0103, scripts/newsletter.js); Buttondown's form stays as the fallback without JS.
 const LEGAL_LINKS = [['Privacy', '/privacy/'], ['Terms', '/terms/']];   // private seller (decision 0093): no Impressum, no Withdrawal; contact = /contact/;
-function SiteFooter({ site, url }) {
+function SiteFooter({ site, url, newsletter = true }) {
   const owner = site.owner || {};
   const nl = site.newsletter || {};
   const link = (label, href) => ({ label, href: url(href) });
@@ -256,7 +257,7 @@ function SiteFooter({ site, url }) {
     : (owner.links || []).map((l) => ({ label: l.label, href: l.href }));
   return h(Z.Footer, {
     className: 'site-footer',
-    newsletter: nl.action ? h(Z.FooterNewsletter, { action: nl.action, endpoint: nl.endpoint || undefined,
+    newsletter: newsletter && nl.action ? h(Z.FooterNewsletter, { action: nl.action, endpoint: nl.endpoint || undefined,
       note: [`New records in your inbox. You confirm ${nl.endpoint && nl.autoConfirm !== false ? 'with one click in an email' : 'by email'} and can leave anytime. `, h('a', { key: 'p', href: url('/privacy/') }, 'Privacy')] }) : null,
     legal: LEGAL_LINKS.map(([text, href]) => h('a', { key: href, href: url(href) }, text)),
     copyright: `\u00a9 ${new Date().getFullYear()} ${site.storeName}`
