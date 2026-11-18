@@ -7,7 +7,7 @@ const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 
 const { TradeActions } = require('./trade.js');
-const { SECTION_LABEL, tagsOf, tagLinksOf, formatPrice, productName, productNameLinked, releaseInfoLinked, gradingProps, SiteHeader, sampleAttrs, ProductCardFor, imageOf, IMAGE_SIZES } = require('./shell.js');
+const { SECTION_LABEL, tagsOf, tagLinksOf, formatPrice, productName, productNameLinked, smallImageUrl, releaseInfoLinked, gradingProps, SiteHeader, sampleAttrs, ProductCardFor, imageOf, IMAGE_SIZES } = require('./shell.js');
 
 function breadcrumbItems(product, url) {
   const { listing, release } = product;
@@ -33,6 +33,15 @@ function Pdp({ product, related = [], site, url }) {
         className: 'pdp-content__gallery',
         images: [release.cover].concat(copy.photos).filter(Boolean).map((src, i) => imageOf(product, src, url, { sizes: IMAGE_SIZES.gallery, alt: i === 0 ? productName(release) : '' }))
       }),
+      // Figma `product return card` (decision 0119, desktop): docked on the anchored gallery; scripts/site.js shows it
+      // once "More for sale" covers the record and scrolls back to the record when pressed
+      related.length ? h('div', { className: 'pdp-content__back', 'data-record-back': '' },
+        h(Z.ProductReturnCard, {
+          image: release.cover ? { src: smallImageUrl(product, release.cover, 48, url), alt: '' } : undefined,
+          name: productName(release),
+          price: trade ? 'Trade only' : formatPrice(listing.price),
+          'aria-label': `Back to ${productName(release)}`
+        })) : null,
       h(Z.ProductInfo, {
         className: 'pdp-content__info',
         title: productNameLinked(product, url),
@@ -55,7 +64,9 @@ function Pdp({ product, related = [], site, url }) {
         h('p', { className: 'pdp-content__note body-small', 'data-reserved-note': listing.id, hidden: listing.status !== 'reserved' },
           'Someone is checking out this record. If they don\u2019t buy it, it\u2019s back within 30 minutes.')),
       // Figma: `you may also like` — desktop row 2, cols 5–12; mobile below the content. Cards are h3 under its h2.
-      related.length ? h(Z.RelatedProducts, { className: 'pdp-content__related', title: trade ? 'More for trade:' : 'More for sale:' },
+      // Figma `you may also like` + `view all` (0119): a full-width link to the whole section closes the list
+      related.length ? h(Z.RelatedProducts, { className: 'pdp-content__related', title: trade ? 'More for trade:' : 'More for sale:',
+        action: h(Z.Button, { hierarchy: 'secondary', size: 'large', href: url(`/${listing.section}/`) }, trade ? 'View all for trade' : 'View all for sale') },
         related.map((p) => h(ProductCardFor, { key: p.listing.slug, product: p, url, headingLevel: 3 }))) : null
     )
   );

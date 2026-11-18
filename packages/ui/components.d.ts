@@ -384,8 +384,25 @@ export interface RelatedProductsProps extends HTMLAttributes<HTMLElement> {
   headingLevel?: 2 | 3 | 4;
   /** Figma slot `products list`: <ProductCard>s, stacked (gap 8). */
   children?: ReactNode;
+  /** Figma `view all` (boolean): one action at the end of the list, full width, inside the container (PDP: a secondary large Button linking to the section, "View all for sale"). */
+  action?: ReactNode;
 }
 export declare function RelatedProducts(props: RelatedProductsProps): JSX.Element;
+
+/** "Back to this record" card (Figma: PDP `product return card`). Desktop PDP: docked on the anchored gallery once "More for sale" covers the record; the page decides when it shows and what pressing it does (decision 0119). Renders a <button>. */
+export interface ProductReturnCardProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  /** Figma `cover`: 48 × 48, cropped to fill. Usually decorative (alt ""): the name is in the text. */
+  image?: { src: string; alt?: string };
+  /** Figma `name` (body/small, max 2 lines, then …). */
+  name: ReactNode;
+  /** Figma `price` (body/small): the price, or "Trade only". */
+  price?: ReactNode;
+  /** Give the button a name that says where it goes, e.g. "Back to <record>". */
+  'aria-label'?: string;
+  /** Documentation only: pins the Figma state. Do not use in product code. */
+  state?: 'default' | 'hover';
+}
+export declare function ProductReturnCard(props: ProductReturnCardProps): JSX.Element;
 
 /** Product images: 2 per product. Desktop: stacked full width, gap gutter-small, vertical scroll inside `--zz-gallery-max-height` (set by the page); mobile: horizontal swipe. Mirrors the PDP frames (no Figma gallery component yet). */
 export interface GalleryImage {

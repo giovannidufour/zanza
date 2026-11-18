@@ -241,15 +241,18 @@ write('js/newsletter.js', newsletterJs);
 for (const f of fs.readdirSync(path.join(APP, 'public'))) write('assets/' + f, fs.readFileSync(path.join(APP, 'public', f)));
 
 const order = new Map(products.map((p, i) => [p, i]));
-// "More for sale" (PDP): up to 3 other available products of the same section, most shared genres first, then
+// "More for sale" (PDP, decision 0119): always RELATED_COUNT records when the catalogue has them. First the available
+// records of the same section, then the available ones of the other section (none while trade is off), then the
+// unavailable ones (sold / reserved, shown with their state); inside each group most shared genres first, then
 // listing order. Placeholder logic until the backend provides recommendations.
-const RELATED_COUNT = 3;
+const RELATED_COUNT = 12;
 function relatedTo(product) {
   const genres = new Set(product.release.genres || []);
+  const rank = (p) => (p.listing.status === 'available' ? 0 : 2) + (p.listing.section === product.listing.section ? 0 : 1);
   return products
-    .filter(p => p !== product && p.listing.section === product.listing.section && p.listing.status === 'available')
-    .map(p => ({ p, score: (p.release.genres || []).filter(g => genres.has(g)).length }))
-    .sort((a, b) => b.score - a.score || order.get(a.p) - order.get(b.p))
+    .filter(p => p !== product)   // trade copies are already out of `products` while trade is off
+    .map(p => ({ p, rank: rank(p), score: (p.release.genres || []).filter(g => genres.has(g)).length }))
+    .sort((a, b) => a.rank - b.rank || b.score - a.score || order.get(a.p) - order.get(b.p))
     .slice(0, RELATED_COUNT).map(x => x.p);
 }
 for (const product of products) {

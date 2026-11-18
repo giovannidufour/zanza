@@ -30,6 +30,99 @@ body[data-player-open] .pdp-content__gallery { --zz-gallery-max-height: calc(100
 .pdp-content__info    { grid-column: 5 / span 4; grid-row: 1; }
 .pdp-content__actions { grid-column: 9 / span 4; grid-row: 1; }
 
+/* PDP sticky scroll (decision 0119, desktop; Figma PDP `PDP - desktop · scrolled (record covered)`): gallery and
+   record (info + actions) move up with the page
+   until they reach small (8px) below the visible part of the site header (the top of the window when it is
+   hidden), then stay anchored there; "More for sale" starts
+   where it always did, keeps scrolling, covers the record, and uncovers it on the way back. The gallery, anchored,
+   scrolls only inside, under the pointer (overscroll-behavior: its end does not hand the wheel to the page); its
+   bottom stays page-margin above the window bottom, and it stops growing once anchored.
+   Info and actions span rows 1-2 so sticky holds them down the whole list (a grid item sticks only inside its grid
+   area); row 1 keeps its height from --pdp-record-height (the taller of the two, set by scripts/site.js), so the list
+   starts exactly where it did. A record taller than the window anchors higher, so Add to bag stays reachable.
+   data-record-stack is set by site.js only when there is a related list: without JS the page is the old layout. */
+.pdp-content[data-record-stack] {
+  grid-template-rows: minmax(max(calc((100cqw - 11 * var(--gutter-small)) / 3 + 3 * var(--gutter-small)), var(--pdp-record-height, 0px)), auto) auto;
+}
+.pdp-content[data-record-stack] > .pdp-content__info,
+.pdp-content[data-record-stack] > .pdp-content__actions {
+  grid-row: 1 / span 2;
+  position: sticky;
+  top: min(calc(var(--site-header-visible, 0px) + var(--small)), calc(100dvh - var(--pdp-record-height, 0px) - var(--page-margin-desktop)));
+}
+body[data-player-open] .pdp-content[data-record-stack] > .pdp-content__info,
+body[data-player-open] .pdp-content[data-record-stack] > .pdp-content__actions {
+  top: min(calc(var(--site-header-visible, 0px) + var(--small)), calc(100dvh - var(--pdp-record-height, 0px) - var(--site-player-height, 0px) - var(--page-margin-desktop)));
+}
+.pdp-content[data-record-stack] > .pdp-content__gallery {
+  position: sticky;
+  top: calc(var(--site-header-visible, 0px) + var(--small));
+  overscroll-behavior: contain;
+  /* height from the window bottom to its top (0036), but its top never counts as higher than the anchor: at the end
+     of the list the grid pushes the gallery up, and a height that kept growing as it rose would uncover the last
+     photo (Gio 2026-11-18: the gallery scrolls only inside, never with the page) */
+  --pdp-gallery-anchor: calc(var(--site-header-visible, 0px) + var(--small));
+  --zz-gallery-max-height: calc(100dvh - max(var(--pdp-gallery-top, 0px), var(--pdp-gallery-anchor)) - var(--page-margin-desktop));
+}
+body[data-player-open] .pdp-content[data-record-stack] > .pdp-content__gallery {
+  --zz-gallery-max-height: calc(100dvh - max(var(--pdp-gallery-top, 0px), var(--pdp-gallery-anchor)) - var(--site-player-height, 0px) - var(--page-margin-desktop));
+}
+/* the anchor sits small below the visible part of the site header: when the header comes back on scroll up,
+   gallery and record step down with it (same pattern and placeholder timing as the PLP filters, plp.css) */
+html[data-header-revealing] .pdp-content[data-record-stack] > :is(.pdp-content__gallery, .pdp-content__info, .pdp-content__actions) { transition: top 200ms ease-out; }
+@media (prefers-reduced-motion: reduce) { html[data-header-revealing] .pdp-content[data-record-stack] > * { transition: none; } }
+/* Figma `product return card` (packages/ui ProductReturnCard, 0119). A layer on the gallery's grid area, anchored
+   like it and as tall as it (--pdp-gallery-height, site.js); the card docks small inside its bottom edge. Hidden
+   until "More for sale" reaches its anchor (data-visible, site.js), so it shows only once the record is covered.
+   Hidden = visibility hidden (out of the tab order). TODO motion: fade + 8 up, 200ms ease-out placeholder. */
+.pdp-content__back { display: none; }
+.pdp-content[data-record-stack] > .pdp-content__back {
+  display: block;
+  grid-column: 1 / span 4;
+  grid-row: 1 / span 2;
+  position: sticky;
+  top: calc(var(--site-header-visible, 0px) + var(--small));
+  height: var(--pdp-gallery-height, 0px);
+  z-index: 2;
+  pointer-events: none;   /* the layer never blocks the gallery: only the card takes clicks */
+}
+html[data-header-revealing] .pdp-content[data-record-stack] > .pdp-content__back { transition: top 200ms ease-out; }
+.pdp-content__back > .zz-return-card {
+  position: absolute;
+  left: var(--small); right: var(--small); bottom: var(--small);
+  width: auto;
+  pointer-events: auto;
+  opacity: 0; transform: translateY(var(--small)); visibility: hidden;
+  transition: opacity 200ms ease-out, transform 200ms ease-out, visibility 0s linear 200ms;
+}
+.pdp-content__back[data-visible] > .zz-return-card { opacity: 1; transform: none; visibility: visible; transition: opacity 200ms ease-out, transform 200ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .pdp-content__back > .zz-return-card, .pdp-content__back[data-visible] > .zz-return-card { transition: none; transform: none; }
+  html[data-header-revealing] .pdp-content[data-record-stack] > .pdp-content__back { transition: none; }
+}
+/* the list is an opaque layer above the record: page ground, so the record disappears under it */
+.pdp-content[data-record-stack] > .pdp-content__related { position: relative; z-index: 1; background: var(--surface-accent); }
+
+/* the "More for sale" title band (top rule + padding 8 + title + the 8 below it) anchors at the same line as the
+   record (small below the visible header) while the cards scroll under it. The component's top rule and top padding
+   move onto the title, so the band is one opaque block; margin-bottom -8 cancels the list gap the band now includes.
+   8 = the component's literal padding/gap (open.md). */
+.pdp-content[data-record-stack] > .pdp-content__related { border-top: 0; padding-top: 0; }
+.pdp-content[data-record-stack] > .pdp-content__related > .zz-related-products__title {
+  position: sticky;
+  top: calc(var(--site-header-visible, 0px) + var(--small));
+  z-index: 1;
+  background: var(--surface-accent);
+  box-shadow: 0 calc(-1 * var(--small)) 0 var(--surface-accent);   /* the small gap above it is opaque too: cards never show through */
+  border-top: 1px solid var(--border-divider-strong);
+  padding: 8px 0;
+  margin-bottom: -8px;
+}
+html[data-header-revealing] .pdp-content[data-record-stack] > .pdp-content__related > .zz-related-products__title { transition: top 200ms ease-out; }
+@media (prefers-reduced-motion: reduce) { html[data-header-revealing] .pdp-content[data-record-stack] > .pdp-content__related > .zz-related-products__title { transition: none; } }
+/* keyboard focus on a card never lands under the band: the page scrolls it below (--pdp-related-band set by site.js) */
+html:has(.pdp-content[data-record-stack]) { scroll-padding-top: calc(var(--site-header-visible, 0px) + var(--small) + var(--pdp-related-band, 0px)); }
+
 /* Figma: button layout=fill, size large (desktop and mobile) */
 .pdp-content__cta { width: 100%; }
 /* Reserved note under the CTA (proposal, Figma PDP page → `reserved + notify me (proposal)`, gap 8 = small) */
@@ -47,4 +140,12 @@ body[data-player-open] .pdp-content__gallery { --zz-gallery-max-height: calc(100
   .pdp-content__related { margin-top: calc(24px - var(--small)); }
   /* Figma PDP - mobile: the gallery scroller bleeds into both page margins (image 2 peeks; swiped images exit at the edge, the resting one keeps the margin) */
   .pdp-content__gallery { --zz-gallery-bleed: var(--page-margin-mobile); }
+  /* the sticky record experiment is desktop only */
+  .pdp-content[data-record-stack] { grid-template-rows: none; }
+  .pdp-content[data-record-stack] > .pdp-content__info, .pdp-content[data-record-stack] > .pdp-content__actions { grid-row: auto; position: static; }
+  .pdp-content[data-record-stack] > .pdp-content__gallery { position: static; overscroll-behavior: auto; }
+  .pdp-content[data-record-stack] > .pdp-content__back { display: none; }
+  .pdp-content[data-record-stack] > .pdp-content__related { border-top: 1px solid var(--border-divider-strong); padding-top: 8px; }
+  .pdp-content[data-record-stack] > .pdp-content__related > .zz-related-products__title { position: static; box-shadow: none; border-top: 0; padding: 0; margin-bottom: 0; }
+  html:has(.pdp-content[data-record-stack]) { scroll-padding-top: 0; }
 }

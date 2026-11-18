@@ -13,6 +13,9 @@
       - anything unexpected (error, other origin, page without .zz-page) falls back to a normal page load
    4. PDP gallery
       - tracks the gallery's top in the window (--pdp-gallery-top), so pdp.css keeps its bottom at the window bottom
+      - sticky scroll (desktop, decision 0119): measures the record (info + actions) for pdp.css, and brings it back from
+        under "More for sale" when keyboard focus moves into it; "back to this record" card over the gallery once the
+        record is covered, a click scrolls page and gallery back to the top together
    5. PLP filters
       - ticking an option filters the list (OR inside a block, AND between blocks), updates the counts, the URL and
         the breadcrumbs, and announces the number of records
@@ -377,6 +380,112 @@
     galleryCleanup = function () {
       window.removeEventListener('resize', schedule);
       window.removeEventListener('scroll', schedule);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }
+
+  /* -- PDP sticky scroll (decision 0119, pdp.css data-record-stack) -------
+     --pdp-record-height = the taller of info and actions (row 1 keeps the height it had before they spanned 2 rows).
+     Focus moving into a record
+     covered by the list scrolls the page back until the record shows (WCAG 2.4.11, focus not obscured). */
+  var recordCleanup = null;
+  var scrollTopAnimation = null;   // the running back-card scroll to the top, if any
+  function initRecordStack() {
+    if (recordCleanup) recordCleanup();
+    recordCleanup = null;
+    var content = document.querySelector('.pdp-content');
+    var related = content && content.querySelector('.pdp-content__related');
+    if (!related) return;
+    var parts = Array.prototype.filter.call(content.querySelectorAll('.pdp-content__info, .pdp-content__actions'), function (el) { return el.parentNode === content; });
+    if (!parts.length) return;
+    var frame = 0;
+    function measure() {
+      frame = 0;
+      var height = Math.max.apply(null, parts.map(function (el) { return el.offsetHeight; }));
+      content.style.setProperty('--pdp-record-height', Math.ceil(height) + 'px');
+      var band = related.querySelector('.zz-related-products__title');
+      if (band) document.documentElement.style.setProperty('--pdp-related-band', Math.ceil(band.offsetHeight) + 'px');
+      content.setAttribute('data-record-stack', '');
+    }
+    function schedule() { if (!frame) frame = window.requestAnimationFrame(measure); }
+    function onFocusIn(e) {
+      if (!e.target.closest || !e.target.closest('.pdp-content__info, .pdp-content__actions')) return;
+      if (getComputedStyle(parts[0]).position !== 'sticky') return;   // mobile: normal flow
+      var bottom = Math.max.apply(null, parts.map(function (el) { return el.getBoundingClientRect().bottom; }));
+      var gap = parseFloat(getComputedStyle(content).rowGap) || 0;
+      var over = bottom + gap - related.getBoundingClientRect().top;
+      if (over > 0) window.scrollBy(0, -over);
+    }
+    // "back to this record" card (pdp.js, pdp.css): shows once the "More for sale" band sits at its anchor (the record
+    // is fully covered); a click scrolls the page to the top and the gallery to its first photo, then focus goes to
+    // the record's title, so keyboard and screen reader users land where the card took them.
+    var back = content.querySelector('[data-record-back]');
+    var gallery = content.querySelector('.pdp-content__gallery');
+    var band = related.querySelector('.zz-related-products__title');
+    var visFrame = 0;
+    function updateBack() {
+      visFrame = 0;
+      if (!back || !band) return;
+      var anchor = parseFloat(getComputedStyle(band).top) || 0;
+      var covered = getComputedStyle(band).position === 'sticky' && band.getBoundingClientRect().top <= anchor + 1;
+      if (covered) back.setAttribute('data-visible', ''); else back.removeAttribute('data-visible');
+      if (gallery) back.style.setProperty('--pdp-gallery-height', gallery.offsetHeight + 'px');
+    }
+    function scheduleBack() { if (!visFrame) visFrame = window.requestAnimationFrame(updateBack); }
+    function focusRecord() {
+      var title = content.querySelector('.pdp-content__info .zz-product-info__name');
+      if (!title) return;
+      title.setAttribute('tabindex', '-1');
+      title.focus({ preventScroll: true });
+    }
+    function onBackClick(e) {
+      if (!back || !e.target.closest || !e.target.closest('.zz-return-card')) return;
+      var g = gallery || { scrollTop: 0 };
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (scrollTopAnimation) scrollTopAnimation.stop();
+      if (reduce) { window.scrollTo(0, 0); g.scrollTop = 0; focusRecord(); return; }
+      // one animation drives both, so page and gallery start and land together whatever their distances (Gio
+      // 2026-11-18). Native smooth scroll picks its own duration per distance, so it is not used here.
+      // TODO motion: no duration/easing in Figma - 600ms ease-in-out is a placeholder.
+      var DURATION = 600, page0 = window.scrollY, gallery0 = g.scrollTop, start = 0;
+      function ease(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+      function step(now) {
+        if (!start) start = now;
+        var k = 1 - ease(Math.min(1, (now - start) / DURATION));
+        window.scrollTo(0, page0 * k);
+        g.scrollTop = gallery0 * k;
+        if (k > 0) frameId = window.requestAnimationFrame(step); else { stop(); focusRecord(); }
+      }
+      // the user takes over (wheel, touch, keys): the animation stops where it is
+      function stop() {
+        window.cancelAnimationFrame(frameId);
+        ['wheel', 'touchstart', 'keydown'].forEach(function (t) { window.removeEventListener(t, stop); });
+        scrollTopAnimation = null;
+      }
+      var frameId = window.requestAnimationFrame(step);
+      ['wheel', 'touchstart', 'keydown'].forEach(function (t) { window.addEventListener(t, stop, { passive: true }); });
+      scrollTopAnimation = { stop: stop };
+    }
+    measure();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
+    var ro = window.ResizeObserver ? new ResizeObserver(schedule) : null;
+    if (ro) parts.concat(related.querySelector('.zz-related-products__title') || []).forEach(function (el) { ro.observe(el); });
+    window.addEventListener('resize', schedule);
+    content.addEventListener('focusin', onFocusIn);
+    content.addEventListener('click', onBackClick);
+    window.addEventListener('scroll', scheduleBack, { passive: true });
+    window.addEventListener('resize', scheduleBack);
+    if (ro && gallery) ro.observe(gallery);
+    updateBack();
+    recordCleanup = function () {
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', schedule);
+      content.removeEventListener('focusin', onFocusIn);
+      content.removeEventListener('click', onBackClick);
+      window.removeEventListener('scroll', scheduleBack);
+      window.removeEventListener('resize', scheduleBack);
+      if (visFrame) window.cancelAnimationFrame(visFrame);
+      if (scrollTopAnimation) scrollTopAnimation.stop();
       if (frame) window.cancelAnimationFrame(frame);
     };
   }
@@ -1804,6 +1913,7 @@
       initHeader();
       initMenu();
       initGallery();
+      initRecordStack();
       initSearch();
       initFilters();
       initStatus();
@@ -1856,6 +1966,7 @@
   initHeader();
   initMenu();
   initGallery();
+  initRecordStack();
   initSearch();
   initFilters();
   initStatus();
