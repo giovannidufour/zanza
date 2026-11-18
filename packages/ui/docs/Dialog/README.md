@@ -2,6 +2,23 @@
 
 A modal confirmation before an action (admin: every bulk action, decision 0025). Figma: page `dialog` → `dialog` (2026-11-10, first used on BACKEND → Listings, "delete confirm").
 
+## NewsletterDialog
+
+The newsletter signup as a modal (decision 0121). Figma: page `dialog` → `newsletter dialog`. The same shell (surface/base, 1px divider/strong, padding 16, gap 24, backdrop surface/scrim); head row = title + `icon button` close (icon-x); body line; children = a FooterNewsletter with `hideLabel`. Rendered closed once per shop page (build.js); scripts/site.js opens it from any link or button that points to the newsletter (`href` ending in `#newsletter`, or `data-newsletter-open`) and closes it on the close button, Esc or a click on the backdrop; focus goes to the email field and back to the opener.
+
+<!-- api: NewsletterDialogProps -->
+<!-- generated from components.d.ts by build-docs.js: edit the .d.ts, not this table -->
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `id` | `string` | `zz-newsletter-dialog` | id of the &lt;dialog> (its title and body ids derive from it). |
+| `title` | `ReactNode` |  | Figma `title`. @default "Get new records first" |
+| `body` | `ReactNode` |  | Figma `body`. @default "Get them in your inbox as they’re listed." |
+| `closeLabel` | `string` | `Close` | Accessible name of the close icon button. |
+| `children` | `ReactNode` |  | The form: a FooterNewsletter with `hideLabel`. |
+
+`*` required.
+<!-- /api -->
+
 ## API
 
 <!-- api: DialogProps -->

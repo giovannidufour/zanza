@@ -2,7 +2,7 @@
    Layout only: components bring their own styles from packages/ui.
    Desktop: the intro across the page (16 above and below), then the PLP grid (12 columns, gap gutter/small): side 3
    (genres, view toggle; gap 16) + main 9 (shelves and the newsletter box; gap 16). Tiles: 3 per row, gap 8, rows 16.
-   Mobile: one column (intro, genres, shelves, newsletter; gap 16), one full-width tile per row (gap 16), no toggle. */
+   Mobile: one column (intro 16 above and below, genres, shelves, newsletter; gap 16), one full-width tile per row (gap 16), no toggle. */
 .home-intro { padding: var(--medium-small) 0; }
 .home-content {
   display: grid;
@@ -36,12 +36,14 @@
 .home-content[data-view="list"] [data-home-toggle="list"] { display: none; }
 
 @media (--mobile) {
-  .home-intro { padding: var(--medium-small) 0 var(--small); }
+  /* intro: 16 above and below as on desktop (Gio 2026-11-18: +8 below on mobile) */
   .home-content { grid-template-columns: minmax(0, 1fr); }
   .home-intro, .home-side, .home-main { grid-column: 1; }
   .home-side { padding-top: 0; padding-bottom: var(--medium-small); }
   .home-main { padding-top: 0; }
   .home-view-toggle { display: none; }
+  /* tile swipe galleries bleed into the page margins, as the PDP gallery (decision 0121) */
+  .home-shelf__grid { --zz-gallery-bleed: var(--page-margin-mobile); }
   /* mobile is always tiles (Gio 2026-11-18: no list view on mobile) */
   .home-content[data-view] [data-home-view="grid"] { display: grid; }
   .home-content[data-view] [data-home-view="list"] { display: none; }

@@ -42,6 +42,8 @@
    7b. Home (decision 0120)
       - the view toggle switches the shelves between tiles (grid) and product cards (list), remembered in this browser
       - the counter of a tile's mobile gallery ("2/3") follows the photo in view
+   7c. Newsletter dialog (decision 0121)
+      - links and buttons that point to the newsletter open it as a modal (close button, Esc, backdrop close it)
    8. SelectButton focus (decision 0081)
       - the ring of a native select shows for keyboard focus only, not after a mouse pick (focus stays on the select)
 
@@ -1981,6 +1983,44 @@
     var total = g.children.length;
     var i = Math.min(total, Math.max(1, Math.round(g.scrollLeft / Math.max(1, g.clientWidth)) + 1));
     counter.textContent = i + '/' + total;
+  }, true);
+
+  /* ---------------------------------------------------------------- 7c. newsletter dialog (decision 0121) */
+
+  // any link or button that points to the newsletter (href ending in #newsletter, or data-newsletter-open) opens the
+  // newsletter dialog instead of scrolling. Close: its close button, Esc (native), a click on the backdrop. Focus goes
+  // back to the opener. No dialog on the page (or no showModal): the link does what it always did.
+  var newsletterReturn = null;
+  function newsletterDialog() { return document.querySelector('[data-newsletter-dialog]'); }
+  function closeNewsletter() {
+    var d = newsletterDialog();
+    if (d && d.open) d.close();
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var d = newsletterDialog();
+    if (!d || !d.showModal) return;
+    var opener = t.closest('a[href$="#newsletter"], [data-newsletter-open]');
+    if (opener && !d.contains(opener)) {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      newsletterReturn = opener;
+      if (!d.open) d.showModal();
+      var email = d.querySelector('input[type="email"]');
+      if (email && !email.closest('[hidden]')) email.focus();
+      return;
+    }
+    if (t.closest('[data-dialog-close]') && d.contains(t)) { closeNewsletter(); return; }
+    if (t === d) {   // a click on the backdrop lands on the <dialog> itself: close only if it is outside its box
+      var r = d.getBoundingClientRect();
+      if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) closeNewsletter();
+    }
+  });
+  document.addEventListener('close', function (e) {
+    if (e.target !== newsletterDialog()) return;
+    if (newsletterReturn && document.contains(newsletterReturn)) newsletterReturn.focus();
+    newsletterReturn = null;
   }, true);
 
   /* ---------------------------------------------------------------- 8. select button focus (decision 0081) */

@@ -84,9 +84,3 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus, main[tabindex="-1"]:focus, dia
 /* "(Reserved) Notify me" (decision 0065): on mobile only "Reserved" + the envelope (Gio 2026-11-12) */
 @media (--mobile) { .site-reserved__bracket, .site-reserved__action { display: none; } }
 
-/* Staging only (decision 0106, not in Figma): a strip of ✎ links to the admin editors of this page's texts
-   (build.js → editBar), first in the page, above the header. Secondary small Buttons. Gone at launch (site.json noindex). */
-.staging-edit {
-  display: flex; flex-wrap: wrap; align-items: center; gap: var(--small);
-  padding: var(--small) 0;   /* .zz-page already has the page margins */
-}
