@@ -1609,6 +1609,9 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-product-tile__photo > img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .zz-product-tile__counter { position: absolute; left: var(--small); bottom: var(--small); }
 .zz-product-tile__title-block { display: flex; flex-direction: column; }
+/* price row + button sit at the bottom of the tile: in a grid row every tile is as tall as the tallest one (grid
+   stretch), so the buttons of a row line up whatever the title length (Gio 2026-11-18, decision 0120) */
+.zz-product-tile__title-block { margin-bottom: auto; }
 .zz-product-tile__name a, .zz-product-tile__release a { color: inherit; }
 .zz-product-tile__price-row { display: flex; align-items: center; justify-content: space-between; gap: var(--small); }
 .zz-product-tile__samples { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--small); }
