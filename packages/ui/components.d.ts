@@ -1185,6 +1185,17 @@ export interface ListingsHeadProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function ListingsHead(props: ListingsHeadProps): JSX.Element;
 
+/** Mirrors the Figma component `listings filter` (page BACKEND → Listings, device=desktop | mobile, one responsive markup,
+ *  decision 0128): the status tabs of the Listings page + the search that filters its rows. Desktop = one row, search
+ *  280 on the right; mobile = tabs, then the search full width. */
+export interface ListingsFilterProps extends HTMLAttributes<HTMLDivElement> {
+  /** The status tabs: a <Tabs> (Live · Drafts · Sold · Archived). */
+  tabs: ReactNode;
+  /** The search field: an <Input variant="search"> with aria-label and placeholder. Omit → tabs only. */
+  search?: ReactNode;
+}
+export declare function ListingsFilter(props: ListingsFilterProps): JSX.Element;
+
 /** Figma `product image` (page `media`) at 40 × 40 (decision 0123): a record's photo in an admin list (ListingRow, the
  *  Listings table). Decorative by default (empty alt, aria-hidden): the row's title names the record. */
 export interface ThumbnailProps extends HTMLAttributes<HTMLSpanElement> {
