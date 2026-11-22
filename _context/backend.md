@@ -60,6 +60,7 @@ Chiavi casuali e immutabili (2026-11-10): l'upload avviene prima che il listing 
 ### Scanner macOS: nomi dei file dai draft (decisione 0138, 2026-11-22)
 - Edge Function `scan-targets` (sola lettura, **Verify JWT ON**, solo admin via `is_admin()`, stessa sessione email OTP dell'admin): `{ query }` → fino a 20 draft (SKU, titolo, cat. no, prima foto), filtrati in funzione su SKU, artista, titolo, custom title, cat. no; `{ id, roles }` → i nomi delle immagini 1…N (1 Label A, 2 Label B, 3+ Other photo). Non scrive niente: nessun upload, nessuna modifica ai draft (Gio: non ancora).
 - I nomi li calcola `packages/file-names/file-names.js`, lo **stesso** file usato dall'admin (File names, 0136): `file-names.js` nella funzione è una copia (`npm run sync:functions`). Lo Scanner non costruisce mai un nome. Per sapere qual è il lato B la funzione legge le posizioni Discogs della release (come l'admin); se Discogs non risponde, ordine delle righe (`positions_read: false`).
+- Tab Samples (decisione 0141, 2026-11-23): `{ id }` restituisce anche `clips` (una riga per posizione con clip: role, label, name, artist, title) e `tags` (album, label, cat_no, year se non è un decennio, genres) per gli ID3 dell'export. Sempre sola lettura.
 - Deploy: dashboard → Edge Functions → nuova funzione `scan-targets` con `index.ts` + `file-names.js`; secret opzionale `DISCOGS_TOKEN` (già presente).
 
 ### Artisti ed etichette (0006, Gio 2026-11-10)
