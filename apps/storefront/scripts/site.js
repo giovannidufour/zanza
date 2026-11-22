@@ -1969,8 +1969,8 @@
     var view = t.getAttribute('data-home-toggle');
     home.setAttribute('data-view', view);
     try { window.localStorage.setItem(HOME_VIEW_KEY, view); } catch (err) { /* storage blocked */ }
-    // the pressed button is now hidden: keep the keyboard on the toggle that replaced it
-    var other = home.querySelector('[data-home-toggle="' + (view === 'grid' ? 'list' : 'grid') + '"]');
+    // the pressed button is now hidden: keep the keyboard on the toggle that replaced it, in the same shelf (0126)
+    var other = (t.closest('.home-view-toggle') || home).querySelector('[data-home-toggle="' + (view === 'grid' ? 'list' : 'grid') + '"]');
     if (other) other.focus();
   });
   // ProductTile mobile gallery: the counter follows the photo snapped in view ("2/3"). Scroll does not bubble: one

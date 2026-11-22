@@ -196,7 +196,7 @@
   }
 
   /* ── Breadcrumbs ────────────────────────────────────────────────────────
-     Figma: `breadcrumbs` (device=desktop|mobile). `trail` = body/medium items separated by "/", padding `small`, one line
+     Figma: `breadcrumbs` (one component that fills its parent; the identical device variants went in 0122). `trail` = body/medium items separated by "/", padding `small`, one line
      (scrolls sideways when too long), 1px rule below. PDP only: the PLP shows ActiveFilter instead (0041).
      Items with `href` are links (the last one too: the PDP trail is section / genre, both links, 0122); a last item
      without `href` is the current page (aria-current). The "/" sits inside the item, hidden from AT, so the list

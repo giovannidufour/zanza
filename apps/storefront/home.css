@@ -1,7 +1,7 @@
 /* apps/storefront/home.css — page layout of the home page (Figma page `Home`, Home v2, decision 0120).
    Layout only: components bring their own styles from packages/ui.
    Desktop: the intro across the page (16 above and below), then the PLP grid (12 columns, gap gutter/small): side 3
-   (genres, view toggle; gap 16) + main 9 (shelves and the newsletter box; gap 16). Tiles: 3 per row, gap 8, rows 16.
+   (genres) + main 9 (shelves and the newsletter box; gap 16); the view toggle sits in each shelf head next to Play all (0126). Tiles: 3 per row, gap 8, rows 16.
    Mobile: one column (intro 16 above and below, genres, shelves, newsletter; gap 16), one full-width tile per row (gap 16), no toggle. */
 .home-intro { padding: var(--medium-small) 0; }
 .home-content {
@@ -15,6 +15,7 @@
 .home-intro { grid-column: 1 / -1; }
 .home-side  { grid-column: 1 / span 3; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--medium-small); padding-top: var(--small); }
 .home-main  { grid-column: 4 / span 9; min-width: 0; display: flex; flex-direction: column; gap: var(--medium-small); padding-top: var(--small); }
+.home-view-toggle { display: flex; }   /* one of its two buttons shows, see below */
 .home-empty { margin: 0; color: var(--text-strong); }
 
 .home-shelf { display: flex; flex-direction: column; gap: var(--small); }

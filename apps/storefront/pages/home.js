@@ -1,9 +1,10 @@
 /* apps/storefront/pages/home.js — the home page "/" (Figma page `Home`, Home v2, decision 0120; replaces 0085).
    A pure function: products in, React tree out. Sale only for now (Gio 2026-11-18: trade and personal info left out).
    - intro: the welcome line (admin → Content → Home) + "Subscribe to newsletter" → the newsletter box below
-   - side (desktop, 3 of 12 columns): the genres one per line + All (→ /sale/), then the view toggle (grid | list)
+   - side (desktop, 3 of 12 columns): the genres one per line + All (→ /sale/)
    - main (9 columns): shelf "This week (n)" = sale records published in the last 7 days (max 6), the newsletter box,
      shelf "Recent" = the next 6 newest sale records. No This week (nothing new) → only Recent.
+   - each shelf head: Play all, the view toggle (grid | list, desktop only; decision 0126), See all
    - mobile: one column; genres in rows, no view toggle, one full-width tile per row with its photos in a swipe gallery.
    Each shelf renders both views: tiles (grid) and the PDP product cards (list); home.css shows the one in
    .home-content[data-view], scripts/site.js flips it and remembers the choice. "Play all" queues only visible samples. */
@@ -54,6 +55,10 @@ function Shelf({ id, title, meta, items, url, divider }) {
   return h('section', { className: 'home-shelf', 'aria-labelledby': id, 'data-play-scope': '' },
     h(Z.SectionHead, { title, titleId: id, meta, divider, actions: h(React.Fragment, null,
       hasSamples ? btn('Play all', { type: 'button', 'data-play-all': '' }) : null,
+      // next to Play all (decision 0126): every shelf has one, all of them switch the whole page
+      h('div', { className: 'home-view-toggle' },
+        h(Z.ViewToggle, { view: 'grid', 'data-home-toggle': 'list', 'aria-controls': 'home-main' }),
+        h(Z.ViewToggle, { view: 'list', 'data-home-toggle': 'grid', 'aria-controls': 'home-main' })),
       btn('See all', { href: url('/sale/') })) }),
     h('div', { className: 'home-shelf__grid', 'data-home-view': 'grid' },
       items.map((product) => h(TileFor, { key: product.listing.slug, product, url }))),
@@ -83,10 +88,7 @@ function Home({ products, site, url, now = Date.now() }) {
       h('div', { className: 'home-intro' },
         h(Z.HomeIntro, null, intro, nl.action ? h(React.Fragment, null, ' ', h('a', { href: '#newsletter' }, 'Subscribe to newsletter')) : null)),
       h('div', { className: 'home-side' },
-        genres.length ? h(Z.GenreLinks, { genres, allHref: url('/sale/'), className: 'home-genres' }) : null,
-        h('div', { className: 'home-view-toggle' },
-          h(Z.ViewToggle, { view: 'grid', 'data-home-toggle': 'list', 'aria-controls': 'home-main' }),
-          h(Z.ViewToggle, { view: 'list', 'data-home-toggle': 'grid', 'aria-controls': 'home-main' }))),
+        genres.length ? h(Z.GenreLinks, { genres, allHref: url('/sale/'), className: 'home-genres' }) : null),
       h('div', { className: 'home-main', id: 'home-main' },
         thisWeek.length ? h(Shelf, { id: 'home-this-week', title: 'This week', meta: `(${fresh.length})`, items: thisWeek, url }) : null,
         thisWeek.length ? newsletter : null,

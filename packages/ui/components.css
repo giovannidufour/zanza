@@ -402,6 +402,7 @@ a.zz-tab {
 }
 .zz-breadcrumbs__item { flex: none; display: flex; align-items: center; gap: 4px; }   /* "/" + label: same 4 as the slot */
 .zz-breadcrumbs__item a { color: inherit; text-decoration: none; }
+@media (hover: hover) { .zz-breadcrumbs__item a:hover { text-decoration: underline; } }   /* as .site-inline-link (0043, 0122) */
 .zz-breadcrumbs__rule { height: 1px; width: 100%; background: var(--border-divider-strong); }
 
 /* ═══════════════════════════════════════════════════════════════════════
