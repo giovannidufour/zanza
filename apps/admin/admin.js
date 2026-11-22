@@ -339,6 +339,8 @@
     for (var i = 0; i < FORMATS.length; i++) if (d.indexOf(FORMATS[i]) >= 0) return FORMATS[i];
     return '';
   }
+  // Discogs positions of the tracks that become lines (same filter as patchFromDiscogs): "A1", "B", …
+  function positionsOf(d) { return (d.tracks || []).filter(function (t) { return t.title; }).map(function (t) { return String(t.position || '').toUpperCase(); }); }
   function patchFromDiscogs(cur, d, entities) {
     var skipped = [];
     var tracks = (d.tracks || []).filter(function (t) { return t.title; });
@@ -433,6 +435,40 @@
   // ── shop preview: form → the storefront's text (same mapping as apps/storefront/pages/shell.js and data/products.js) ──
   // the shop shows the credit when it differs (Different spelling), as the database stores it
   function lineArtistText(l) { return l.artistSpelled && l.artistCredit.trim() ? l.artistCredit.trim() : namesOf(l.artists); }
+  /* ── File names (decision 0136): <sku>_<role>_<slug>, so a scan or a clip can be named before it is uploaded ──
+     role: 1 = label A, 2 = label B, 3 = other photos (then 4, 5…; gallery order), a1 b1… = the Discogs position of the
+     line (a / b by line order when there is none). slug = what is in the file, for Gio in Finder only (ASCII, lowercase,
+     hyphens, ≤ 60 chars): the track for clips and labels, line 1 for other photos. Matching reads sku and role only. */
+  function fileSlug(text) {
+    var s = String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      .replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    if (s.length > 60) { s = s.slice(0, 60); var cut = s.lastIndexOf('-'); if (cut > 30) s = s.slice(0, cut); s = s.replace(/-+$/, ''); }
+    return s;
+  }
+  function fileLineSlug(f, i) {
+    var l = f.lines[i]; if (!l) return '';
+    return fileSlug([lineArtistText(l) || (i > 0 ? lineArtistText(f.lines[0]) : ''), l.title].filter(Boolean).join(' '));
+  }
+  // [{ key, role, name }] for a saved listing; positions = Discogs positions by line (null = still reading, [] = none)
+  function fileNamesOf(f, positions) {
+    function name(role, slug) { return [f.sku, role, slug].filter(Boolean).join('_'); }
+    var pos = (positions || []).map(function (p) { return /^[a-z]{1,2}\d{0,2}$/i.test(p) ? p.toLowerCase() : ''; });
+    function sideLine(side, fallback) {
+      var i = pos.findIndex(function (p) { return p.charAt(0) === side; });
+      return i >= 0 ? i : f.lines[fallback] ? fallback : 0;
+    }
+    var rows = [
+      { key: 'label-a', role: 'Label A', name: name('1', fileLineSlug(f, sideLine('a', 0))) },
+      { key: 'label-b', role: 'Label B', name: name('2', fileLineSlug(f, sideLine('b', 1))) },
+      { key: 'photos', role: 'Other photos (then _4, _5…)', name: name('3', fileLineSlug(f, 0)) }
+    ];
+    if (positions === null) return rows;
+    f.lines.forEach(function (l, i) {
+      var role = pos[i] || (pos.length ? '' : i === 0 ? 'a' : i === 1 ? 'b' : '');
+      if (role) rows.push({ key: 'line-' + i, role: role.toUpperCase(), name: name(role, fileLineSlug(f, i)) });
+    });
+    return rows;
+  }
   // "Artist - Title 1 / Title 2", or "Artist 1 - Title 1 / Artist 2 - Title 2" when a later line has its own artist;
   // tolerant of half-filled lines (the preview fills in while typing)
   function previewName(f) {
@@ -514,6 +550,18 @@
     }, [openId, mobile]);
     useEffect(function () { return function () { document.documentElement.style.removeProperty('--admin-player-height'); document.body.removeAttribute('data-player-open'); }; }, []);
     var fRef = useRef(f); fRef.current = f;
+    // Discogs positions of the lines, for the file names (0136): read once per release, after typing stops
+    var ps = useState(null), positions = ps[0], setPositions = ps[1];   // null | { id, list }
+    var cp = useState(null), copied = cp[0], setCopied = cp[1], copyTimer = useRef(null);
+    var relId = discogsId(f.discogs);
+    useEffect(function () {
+      if (!f.sku || relId === null || (positions && positions.id === relId)) return;
+      var live = true, timer = setTimeout(function () {
+        invoke('discogs-lookup', { releaseId: relId }).then(function (d) { if (live) setPositions({ id: relId, list: positionsOf(d) }); },
+          function () { if (live) setPositions({ id: relId, list: [] }); });
+      }, 600);
+      return function () { live = false; clearTimeout(timer); };
+    }, [f.sku, relId]);
     var fd = useState(false), fetching = fd[0], setFetching = fd[1];
     var pf = useState(null), photoFound = pf[0], setPhotoFound = pf[1];   // releases from a photo of the label (0092)
     var en = useState(null), entities = en[0], setEntities = en[1];
@@ -663,6 +711,7 @@
         var d = await invoke('discogs-lookup', { releaseId: id });
         var r = patchFromDiscogs(fRef.current, d, entities);
         set(r.patch);
+        setPositions({ id: id, list: positionsOf(d) });
         setMessage({ error: false, text: 'Filled from Discogs: check the fields before saving.' + (r.skipped.length ? ' Not filled: ' + r.skipped.join('; ') + '.' : '') });
       } catch (err) {
         setMessage({ error: true, text: 'Discogs: ' + err.message });
@@ -949,7 +998,29 @@
       mobile ? shopBtn : panelButtons.length ? h(Z.ActionPanel, null, panelButtons) : null,
       mobile ? null : note,
       isNew ? null : statusPanel(),
+      fileNamesPanel(),
       shopPreview());
+
+    // Figma Create → `file names` (decision 0136): the names to give scans and clips, with Copy; once there is a SKU
+    function fileNamesPanel() {
+      if (!f.sku || (f.status !== 'draft' && f.status !== 'available')) return null;
+      var reading = relId !== null && !(positions && positions.id === relId);
+      var rows = fileNamesOf(f, reading ? null : relId === null ? [] : positions.list);
+      function copy(row) {
+        function done() { setCopied(row.key); clearTimeout(copyTimer.current); copyTimer.current = setTimeout(function () { setCopied(null); }, 2000); }
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(row.name).then(done, function () { setMessage({ error: true, text: 'Not copied: select the name and copy it.' }); });
+        else setMessage({ error: true, text: 'Not copied: select the name and copy it.' });
+      }
+      var done = copied ? rows.filter(function (r) { return r.key === copied; })[0] : null;
+      return h('section', { className: 'admin-section admin-file-names', 'aria-labelledby': 'file-names-title' },
+        h(Z.FormSectionHead, { id: 'file-names-title' }, 'File names'),
+        h('p', { className: 'body-small admin-file-names__help' }, 'Copy a name, then rename the scan or the clip in Finder: the extension stays.'),
+        h('ul', { className: 'admin-file-names__list' }, rows.map(function (r) {
+          return h(Z.FileNameRow, { key: r.key, role: r.role, name: r.name, copied: copied === r.key, onCopy: function () { copy(r); } });
+        })),
+        reading ? h('p', { className: 'body-small admin-file-names__help' }, 'Reading the track positions on Discogs…') : null,
+        h('p', { className: 'zz-visually-hidden', role: 'status' }, done ? 'Copied: ' + done.name : ''));
+    }
 
     function shopPreview() {
       var title = previewName(f), tags = previewTags(f);
@@ -2345,7 +2416,7 @@
   /* Figma BACKEND → Memo (2296:9962, decision 0087): Gio's list of records to sell later, made for the phone.
      Add = Record (free text, or a Discogs release picked while typing) + optional Note. The list is public.memos
      (migration 0019, admin only), newest first. Create listing opens #new/memo/<id> (release fetched; the first
-     save takes the item off the list). Remove deletes at once, toast with Undo (0049). */
+     save takes the item off the list). Create draft saves a draft at once, no form (0135). Remove deletes at once, toast with Undo (0049). */
   // a release as the picker shows it, from the discogs-lookup release answer (a pasted link)
   function releaseFromLookup(d) {
     var fmt = d.format || {}, desc = (fmt.descriptions || []).slice(0, 2).join(', ') || fmt.name || '';
@@ -2570,6 +2641,35 @@
         sb.from('memos').insert(row).then(function (r) { if (r.error) setMessage({ error: true, text: 'Not restored: ' + r.error.message }); load(); });
       });
     }
+    /* Create draft (decision 0135): one tap, no form. A release is fetched as Fetch Discogs does; free text = line 1
+       titled with the memo (as a skipped record of Bulk, 0107). The draft may be incomplete; the memo leaves the list. */
+    var cd = useState(null), drafting = cd[0], setDrafting = cd[1];   // id of the memo being turned into a draft
+    async function createDraft(row) {
+      if (drafting) return;
+      setDrafting(row.id); setMessage(null);
+      try {
+        var f = emptyForm();
+        if (row.discogs_release_id) {
+          var entities = null;
+          try { entities = await loadEntities(); } catch (e) { /* entities are bound by name on save */ }
+          var d = await invoke('discogs-lookup', { releaseId: row.discogs_release_id });
+          Object.assign(f, patchFromDiscogs(f, d, entities).patch);
+        } else {
+          f.lines = [newLine({ title: row.title })];
+        }
+        var res = await sb.rpc('admin_save_listing', { payload: payloadOf(f, 'draft') });
+        if (res.error) throw new Error(res.error.message);
+        var saved = res.data;
+        setRows(function (cur) { return cur.filter(function (r) { return r.id !== row.id; }); });
+        var del = await sb.from('memos').delete().eq('id', row.id);
+        if (del.error) { setMessage({ error: true, text: 'Draft created (SKU ' + saved.sku + '), but the memo was not removed: ' + del.error.message }); load(); }
+        if (window.ZanzaToast) window.ZanzaToast.show({ message: 'Draft created · SKU ' + saved.sku + '.', actionLabel: 'Open',
+          onAction: function () { location.hash = '#edit-' + saved.listing_id; } });
+      } catch (err) {
+        setMessage({ error: true, text: 'Draft not created: ' + err.message });
+      }
+      setDrafting(null);
+    }
     var count = rows ? rows.length : 0;
     return h('div', { className: 'admin-memo' },
       h('h1', { className: 'label-extra-large' }, 'Memo'),
@@ -2589,6 +2689,7 @@
             count ? h('ul', { className: 'admin-memo__items', 'aria-label': 'Memo list' }, rows.map(function (r) {
               return h(Z.MemoItem, { key: r.id, title: r.title, meta: r.discogs_meta || undefined, note: r.note || undefined,
                 href: r.discogs_release_id ? 'https://www.discogs.com/release/' + r.discogs_release_id : undefined,
+                onCreateDraft: function () { createDraft(r); }, createDraftBusy: drafting === r.id,
                 onCreate: function () { location.hash = '#new/memo/' + r.id; },
                 onRemove: function () { remove(r); } });
             })) : null));

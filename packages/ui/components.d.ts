@@ -1014,7 +1014,13 @@ export interface MemoItemProps extends HTMLAttributes<HTMLLIElement> {
   note?: ReactNode;
   /** the release on discogs.com (Figma: shown with `discogs release`). Omit → no link */
   href?: string;
-  /** Create listing. Omit → no button */
+  /** Figma boolean `create draft` (decision 0135): saves a draft from the memo, no form. Omit → no button */
+  onCreateDraft?: () => void;
+  /** true while the draft is being saved: the button reads "Creating…" and does nothing */
+  createDraftBusy?: boolean;
+  /** Default "Create draft" */
+  createDraftLabel?: string;
+  /** Figma boolean `create listing`: opens the listing form from the memo. Omit → no button */
   onCreate?: () => void;
   /** Remove. Omit → no button */
   onRemove?: () => void;
@@ -1024,6 +1030,19 @@ export interface MemoItemProps extends HTMLAttributes<HTMLLIElement> {
   removeLabel?: string;
 }
 export declare function MemoItem(props: MemoItemProps): JSX.Element;
+
+/** Figma `file name` (Create, decision 0136): a name to give a scan or a clip of a listing, with Copy. An <li>: wrap in a <ul>. */
+export interface FileNameRowProps extends HTMLAttributes<HTMLLIElement> {
+  /** what the file is: "Label A", "Other photos", "A1" */
+  role: ReactNode;
+  /** the name without extension: "48213_a1_gregory-isaacs-why-did-you-leave" */
+  name: ReactNode;
+  /** Figma `state=copied`: the button reads "Copied" */
+  copied?: boolean;
+  /** Copy. Omit → no button */
+  onCopy?: () => void;
+}
+export declare function FileNameRow(props: FileNameRowProps): JSX.Element;
 
 /** Figma `bulk record` (BACKEND → Bulk, decision 0107): one record found in the files dropped on Bulk create. An <li>: wrap in a <ul>. */
 export interface BulkRecordProps extends HTMLAttributes<HTMLLIElement> {

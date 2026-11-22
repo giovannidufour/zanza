@@ -1,0 +1,8 @@
+# 0135 — Memo: Create draft in one tap
+
+`2026-11-22` · accepted · Figma: BACKEND → `Memo` (page 2296:9962): `memo item` booleans `create draft` and `create listing` (both default ON), note "memo behaviour"
+
+**Context.** Gio jots records in Memo (0087) and wants to turn each one into a draft without going through the form: "on every row a button that says Create draft". A draft gets its SKU when it is created, so it is also the first step for naming its files (scans, samples) before uploading them.
+**Decision.** `MemoItem` gets a third secondary small action, **Create draft**, first in the row (Create listing and Remove stay). One tap saves a draft through `admin_save_listing`, no form: a memo with a Discogs release is fetched as Fetch Discogs does (`discogs-lookup { releaseId }` → `patchFromDiscogs`); a free-text memo becomes line 1 titled with the memo, no artist (as a skipped record of Bulk, 0107). The draft may be incomplete (migration 0026: grading, format, price come later, checked on publish). The memo leaves the list; toast "Draft created · SKU 48213." with **Open** (the draft's edit page). While saving the button reads "Creating…" (aria-busy, one at a time); a failure goes to the status line and the memo stays. The memo note is not copied into the draft (there is no private note field on a listing).
+**Rule.** An admin shortcut that only creates something saves it at once and offers Open in the toast; a shortcut that needs choices opens the form. Both reuse the same save path (`admin_save_listing`) and the same Discogs mapping (`patchFromDiscogs`): never a second copy of either.
+**Where.** `apps/admin/admin.js` (Memo → createDraft), `packages/ui` (`MemoItem` `onCreateDraft`, `createDraftBusy`, `createDraftLabel`).

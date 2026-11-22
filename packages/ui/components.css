@@ -1477,6 +1477,12 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-memo-item__text { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
 .zz-memo-item__text > p { margin: 0; overflow-wrap: anywhere; }
 .zz-memo-item__meta { color: var(--text-moderate); }
+/* FileNameRow (Figma Create → `file name`, decision 0136) */
+.zz-file-name { display: flex; align-items: center; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
+.zz-file-name__text { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
+.zz-file-name__text > p { margin: 0; overflow-wrap: anywhere; }
+.zz-file-name__role { color: var(--text-moderate); }
+.zz-file-name > .zz-button { flex: none; }
 .zz-memo-item__link { color: inherit; text-decoration: underline; align-self: flex-start; }
 .zz-memo-item__actions { flex: none; display: flex; flex-wrap: wrap; gap: 8px; }
 @media (--mobile) { .zz-memo-item { flex-direction: column; align-items: stretch; gap: 8px; } }
