@@ -24,6 +24,8 @@ The path above the PDP content (the PLP shows ActiveFilter, 0041): `body-medium`
 
 Items with `href` are links, the last one included; a last item without `href` is the current page (`aria-current="page"`). Empty items are dropped, so a missing value never leaves a double "/". Each "/" is an `aria-hidden` span inside the following item, so the list holds only the path. Default `aria-label`: "Breadcrumb".
 
+Links: no underline, underline on hover where the device hovers (as every inline link, 0043); keyboard focus = browser ring (no focus token yet).
+
 The PDP trail is **section / genre**, both links (0122): the record is the page's h1, the format is in the release info.
 
 ## Tokens
