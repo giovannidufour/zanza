@@ -171,6 +171,11 @@ struct ScanColumn: View {
                         .frame(width: 56, alignment: .trailing)
                     Button("0°") { model.angle = 0 }.buttonStyle(ZButtonStyle(primary: false))
                 }
+                Toggle(isOn: $model.autoTurn) {
+                    Text(model.turning ? "Reading the label…" : "Turn by itself (reads the label text)").bodyStyle(14)
+                }
+                .toggleStyle(.checkbox)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             Text(scanner.busy ? "\(model.caption) · \(Int(scanner.progress * 100))%" : model.caption)
                 .bodyStyle(12, color: Theme.textModerate).lineLimit(2).multilineTextAlignment(.center)
@@ -279,7 +284,7 @@ struct PreviewCanvas: View {
                 model.center = CGPoint(x: dragStart!.x - gx, y: dragStart!.y - gy)
                 model.clampCenter()
             }
-            .onEnded { _ in dragStart = nil })
+            .onEnded { _ in dragStart = nil; model.turnFromPreview() })
     }
 }
 

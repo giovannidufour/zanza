@@ -31,6 +31,12 @@ final class AppModel: ObservableObject {
         didSet { UserDefaults.standard.set(originalsFolder, forKey: "originalsFolder") }
     }
 
+    /// Turn the record by itself so the label text reads upright (Gio 2026-11-22)
+    @Published var autoTurn: Bool = UserDefaults.standard.object(forKey: "autoTurn") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(autoTurn, forKey: "autoTurn"); if autoTurn { turnFromPreview() } }
+    }
+    @Published var turning = false
+
     /// Last preview and the glass area it shows (mm, origin = corner of the glass)
     @Published var preview: CGImage?
     @Published var previewZone = CGRect(x: 0, y: 0, width: 216, height: 297)
@@ -130,11 +136,28 @@ final class AppModel: ObservableObject {
             switch result {
             case .success(let img):
                 self.preview = img
+                self.turnFromPreview()
                 self.caption = self.preset.sideMM == nil
                     ? "Whole glass: Scan saves everything you see"
                     : "Drag the record so the spindle hole sits in the middle; turn it from the handle. The dashed square is the 4\" label"
             case .failure(let e):
                 self.caption = e.localizedDescription
+            }
+        }
+    }
+
+    /// Reads the label in the preview around the guide's centre and turns the record upright (in the background)
+    func turnFromPreview() {
+        guard autoTurn, let img = preview, sideMM != nil, !turning else { return }
+        let k = CGFloat(img.width) / previewZone.width
+        let c = CGPoint(x: (center.x - previewZone.minX) * k, y: (center.y - previewZone.minY) * k)
+        let current = angle
+        turning = true
+        DispatchQueue.global(qos: .userInitiated).async {
+            let a = AutoTurn.angle(in: img, centerPx: c, sidePx: SizePreset.labelMM * k, current: current)
+            DispatchQueue.main.async {
+                self.turning = false
+                if let a { self.angle = a }
             }
         }
     }
@@ -161,6 +184,10 @@ final class AppModel: ObservableObject {
                 guard let side else { self.save(original: img, label: nil, dpi: dpi); return }
                 let scale = CGFloat(img.width) / area.width   // px per mm, as scanned
                 let c = CGPoint(x: (center.x - area.minX) * scale, y: (center.y - area.minY) * scale)
+                var angle = angle
+                if self.autoTurn, let a = AutoTurn.angle(in: img, centerPx: c, sidePx: SizePreset.labelMM * scale, current: angle) {
+                    angle = a; self.angle = a
+                }
                 guard let original = ImageOutput.straighten(img, centerPx: c, sidePx: side * scale, angle: angle),
                       let label = ImageOutput.straighten(img, centerPx: c, sidePx: SizePreset.labelMM * scale, angle: angle) else {
                     self.caption = "Could not cut the squares out of the scan"; return

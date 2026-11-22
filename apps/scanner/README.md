@@ -22,6 +22,7 @@ text fields are not drawn by the renderer). `ZanzaScanner --test-scan <folder> <
 | `Sources/Scanner.swift` | ImageCaptureCore: finds and opens the scanner, scans an area (mm from the corner of the glass) to a CGImage; record presets (7", 10", 12", whole glass; 4" label) |
 | `Sources/AppModel.swift` | State: names, settings (remembered), preview, selection square, Preview / Scan / save |
 | `Sources/ImageOutput.swift` | Cuts and straightens the turned square; writes JPEG / PNG / TIFF with the dpi |
+| `Sources/AutoTurn.swift` | Finds the upright turn of a label by reading its text (Vision) |
 | `Sources/Names.swift` | Parses pasted names (`<sku>_<role>_<slug>`), role labels, next photo name |
 | `Sources/ContentView.swift` | The window (mirrors the Figma screens) |
 | `Sources/Theme.swift` | Colours and type styles from `packages/ui/tokens.json` (backend theme) |
