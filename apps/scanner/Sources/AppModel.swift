@@ -33,7 +33,7 @@ final class AppModel: ObservableObject {
 
     /// Last preview and the glass area it shows (mm, origin = corner of the glass)
     @Published var preview: CGImage?
-    @Published var previewZone = CGRect(x: 0, y: 0, width: 216, height: 216)
+    @Published var previewZone = CGRect(x: 0, y: 0, width: 216, height: 297)
     /// Selection square: centre in mm (glass coordinates) and clockwise angle in radians
     @Published var center = CGPoint(x: 108, y: 108)
     @Published var angle: CGFloat = 0

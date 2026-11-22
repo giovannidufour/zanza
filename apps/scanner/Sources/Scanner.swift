@@ -19,10 +19,8 @@ enum SizePreset: String, CaseIterable, Identifiable {
     var sideMM: CGFloat? {
         switch self { case .record7: return 180; case .record10, .record12: return 216; case .wholeGlass: return nil }
     }
-    /// The zone the preview scans, from the corner of the glass (clamped to the glass)
-    var zoneMM: CGSize {
-        switch self { case .wholeGlass: return CGSize(width: 1000, height: 1000); default: return CGSize(width: 216, height: 216) }
-    }
+    /// The zone the preview scans: the whole glass (clamped to it), so a record shows wherever it lies (Gio 2026-11-22)
+    var zoneMM: CGSize { CGSize(width: 1000, height: 1000) }
     var menuTitle: String {
         switch self {
         case .record7: return "7\" · whole record + 4\" label"
