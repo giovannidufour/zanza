@@ -1065,13 +1065,21 @@
   /* Figma BACKEND → Listings (2026-11-10, decisions 0024, 0025): status tabs, a bulk bar that is always there (fixed
      height: no layout shift), a table whose first column selects. Every action asks first in a Dialog; Publish /
      Unpublish / Archive then offer Undo. Each action moves only the rows it is allowed for. */
+  // decision 0128: no All tab; Live first and default (reserved is still in the shop, so Live; traded closes like sold)
   var TABS = [
-    ['all', 'All', function (s) { return s !== 'archived'; }],
-    ['draft', 'Drafts', function (s) { return s === 'draft'; }],
     ['live', 'Live', function (s) { return s === 'available' || s === 'reserved'; }],
+    ['draft', 'Drafts', function (s) { return s === 'draft'; }],
     ['sold', 'Sold', function (s) { return s === 'sold' || s === 'traded'; }],
     ['archived', 'Archived', function (s) { return s === 'archived'; }]
   ];
+  /* decision 0128: the search matches SKU, the record's name (custom title, artists, titles) and the label, ignoring
+     case and accents; every word must match somewhere */
+  function fold(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+  function haystack(r) {
+    var rel = r.release || {};
+    return fold([r.sku, nameOf(r), (rel.label_entity || {}).name].concat((rel.lines || []).map(function (l) { return l.artist; })).join(' '));
+  }
+  function matches(r, words) { if (!words.length) return true; var hs = haystack(r); return words.every(function (w) { return hs.indexOf(w) >= 0; }); }
   var BULK = [['publish', 'Publish'], ['unpublish', 'Unpublish'], ['archive', 'Archive'], ['delete', 'Delete']];
   var UNDO = { publish: 'unpublish', unpublish: 'publish', archive: 'restore' };
   var DONE_VERB = { publish: 'published', unpublish: 'unpublished', archive: 'archived', restore: 'restored', delete: 'deleted' };
@@ -1098,7 +1106,8 @@
     var mobile = useIsMobile();
     var st = useState(null), rows = st[0], setRows = st[1];
     var er = useState(null), error = er[0], setError = er[1];
-    var tb = useState('all'), tab = tb[0], setTab = tb[1];
+    var tb = useState('live'), tab = tb[0], setTab = tb[1];
+    var qs = useState(''), query = qs[0], setQuery = qs[1];
     var se = useState([]), selected = se[0], setSelected = se[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
     var bs = useState(false), busy = bs[0], setBusy = bs[1];
@@ -1106,8 +1115,9 @@
     var focusAfter = useRef(null);
 
     function load() {
-      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_cents,condition_media,custom_title,photo_keys,created_at,orders:order_items(count),release:releases(format,lines:release_lines(position,artist,title))')
-        .order('created_at', { ascending: false })
+      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_cents,condition_media,custom_title,photo_keys,created_at,sort_order,orders:order_items(count),release:releases(format,label_entity:labels(name),lines:release_lines(position,artist,title))')
+        // decision 0129: one global order, Gio's (sort_order, lower = first); each tab shows it filtered
+        .order('sort_order', { ascending: true }).order('created_at', { ascending: false })
         .then(function (res) { if (res.error) setError(res.error.message); else setRows(res.data); });
     }
     useEffect(function () {
@@ -1126,13 +1136,16 @@
     if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not load the listings: ' + error);
     if (!rows) return h('p', { className: 'body-medium' }, 'Loading…');
 
-    var withStatus = rows.map(function (r) { return Object.assign({ eff: effectiveStatus(r) }, r); });
+    var words = fold(query).split(/\s+/).filter(Boolean);
+    var all = rows.map(function (r) { return Object.assign({ eff: effectiveStatus(r) }, r); });
+    // the search narrows every tab, and the tab counts follow it (where the matches are)
+    var withStatus = all.filter(function (r) { return matches(r, words); });
     var current = TABS.filter(function (t) { return t[0] === tab; })[0];
     var visible = withStatus.filter(function (r) { return current[2](r.eff); });
     var picked = visible.filter(function (r) { return selected.indexOf(r.id) >= 0; });
     var allOn = visible.length > 0 && picked.length === visible.length;
     var someOn = picked.length > 0 && !allOn;
-    var byId = {}; withStatus.forEach(function (r) { byId[r.id] = r; });
+    var byId = {}; all.forEach(function (r) { byId[r.id] = r; });
 
     function toggle(id, on) {
       setSelected(function (cur) { return on ? cur.concat([id]) : cur.filter(function (x) { return x !== id; }); });
@@ -1203,7 +1216,29 @@
       run(c.action, c.ok.map(function (r) { return r.id; }));
     }
 
+    /* decision 0129: drag & drop (or ↑ ↓ on the handle) puts the row between its new visible neighbours; the
+       database (admin_move_listing) works out the place in the global order. Off while searching (hidden rows sit
+       between the results) and in Archived (not in the shop). */
+    var canOrder = !words.length && tab !== 'archived';
+    function moveRow(from, to) {
+      var ids = visible.map(function (r) { return r.id; });
+      var id = ids.splice(from, 1)[0];
+      ids.splice(to, 0, id);
+      var after = to > 0 ? ids[to - 1] : null, before = to < ids.length - 1 ? ids[to + 1] : null;
+      var a = after ? Number(byId[after].sort_order) : null, b = before ? Number(byId[before].sort_order) : null;
+      var guess = a !== null && b !== null ? (a + b) / 2 : a !== null ? a + 1 : b - 1;
+      setRows(function (cur) {   // at once on screen; the reload brings the database's value
+        return cur.map(function (r) { return r.id === id ? Object.assign({}, r, { sort_order: guess }) : r; })
+          .sort(function (x, y) { return Number(x.sort_order) - Number(y.sort_order); });
+      });
+      sb.rpc('admin_move_listing', { p_id: id, p_after: after, p_before: before }).then(function (res) {
+        if (res.error) setMessage({ error: true, text: 'Order not saved: ' + res.error.message });
+        load();
+      });
+    }
+
     var counts = {}; TABS.forEach(function (t) { counts[t[0]] = withStatus.filter(function (r) { return t[2](r.eff); }).length; });
+    var emptyText = words.length ? 'Nothing matches “' + query.trim() + '”' + (withStatus.length ? ' here: see the counts on the other tabs.' : '.') : 'No listings here.';
     var bar = h('div', { className: 'admin-bulk' },
       h('p', { className: 'admin-bulk__count body-medium', 'aria-live': 'polite' }, picked.length + ' selected'),
       picked.length
@@ -1239,35 +1274,62 @@
     return h('div', { className: 'admin-section admin-listings' },
       // the ways to add records live here, not in the admin bar (decision 0125)
       h(Z.ListingsHead, { title: 'Listings', bulkHref: '#bulk', createHref: '#new' }),
-      h(Z.Tabs, { value: tab, onValueChange: pickTab, 'aria-label': 'Filter by status' },
-        TABS.map(function (t) { return h(Z.Tab, { key: t[0], value: t[0], suffix: String(counts[t[0]]), 'aria-controls': 'listings-table' }, t[1]); })),
+      // Figma BACKEND → Listings → `listings filter` (decision 0128): status tabs + search
+      h(Z.ListingsFilter, {
+        tabs: h(Z.Tabs, { value: tab, onValueChange: pickTab, 'aria-label': 'Filter by status' },
+          TABS.map(function (t) { return h(Z.Tab, { key: t[0], value: t[0], suffix: String(counts[t[0]]), 'aria-controls': 'listings-table' }, t[1]); })),
+        search: h(Z.Input, { variant: 'search', 'aria-label': 'Search listings', placeholder: 'Search SKU, artist, title, label',
+          value: query, autoComplete: 'off', 'aria-controls': 'listings-table', clearLabel: 'Clear search',
+          onClear: function () { setQuery(''); setSelected([]); },
+          onChange: function (e) { setQuery(e.target.value); setSelected([]); } }) }),
       // mobile (Figma page `admin` → Listings - mobile, decision 0089): rows instead of the table, the bulk bar after them
       // (sticky at the bottom while something is selected)
-      mobile ? h('ul', { id: 'listings-table', className: 'admin-rows' }, visible.length ? visible.map(function (r) {
-        return h(Z.ListingRow, { key: r.id, href: '#edit-' + r.id, title: nameOf(r), image: thumbOf(r),
-          meta: [r.sku, statusText(r), r.section].filter(Boolean).join(' · '),
-          price: r.price_cents === null ? null : centsToText(r.price_cents) + ' €',
-          select: h(Z.Checkbox, { id: 'select-' + r.id, hideLabel: true, label: 'Select ' + nameOf(r),
-            checked: selected.indexOf(r.id) >= 0, onChange: function (e) { toggle(r.id, e.target.checked); } }) });
-      }) : h('li', { className: 'body-small admin-rows__empty' }, 'No listings here.')) : bar,
-      mobile ? bar : h('div', { className: 'admin-table-wrap' },
-        h('table', { id: 'listings-table', className: 'admin-table body-small' },
-          h('thead', null, h('tr', null,
-            h('th', { className: 'select' }, visible.length ? h(Z.Checkbox, { id: 'select-all', hideLabel: true, label: 'Select all', checked: allOn, indeterminate: someOn, onChange: toggleAll }) : null),
-            h('th', { className: 'thumb' }, h('span', { className: 'zz-visually-hidden' }, 'Photo')),
-            ['SKU', 'Record', 'Status', 'Section', 'Price'].map(function (t) { return h('th', { key: t, className: t === 'SKU' ? 'num' : t === 'Price' ? 'num price' : '' }, t); }))),
-          h('tbody', null, visible.length ? visible.map(function (r) {
-            return h('tr', { key: r.id },
-              h('td', { className: 'select' }, h(Z.Checkbox, { id: 'select-' + r.id, hideLabel: true, label: 'Select ' + nameOf(r),
-                checked: selected.indexOf(r.id) >= 0, onChange: function (e) { toggle(r.id, e.target.checked); } })),
-              h('td', { className: 'thumb' }, h(Z.Thumbnail, thumbOf(r))),
-              h('td', { className: 'num' }, r.sku),
-              h('td', null, h('a', { href: '#edit-' + r.id }, nameOf(r))),
-              h('td', null, statusText(r)),
-              h('td', null, r.section),
-              h('td', { className: 'num price' }, r.price_cents === null ? '' : centsToText(r.price_cents) + ' €'));
-          }) : h('tr', null, h('td', { colSpan: 7 }, 'No listings here.'))))),
+      mobile ? h(OrderedRows, { mobile: true, rows: visible, onMove: canOrder ? moveRow : null, selected: selected, toggle: toggle, empty: emptyText }) : bar,
+      mobile ? bar : h(OrderedRows, { rows: visible, onMove: canOrder ? moveRow : null, selected: selected, toggle: toggle, empty: emptyText,
+        head: h('thead', null, h('tr', null,
+          canOrder ? h('th', { className: 'handle' }, h('span', { className: 'zz-visually-hidden' }, 'Order')) : null,
+          h('th', { className: 'select' }, visible.length ? h(Z.Checkbox, { id: 'select-all', hideLabel: true, label: 'Select all', checked: allOn, indeterminate: someOn, onChange: toggleAll }) : null),
+          h('th', { className: 'thumb' }, h('span', { className: 'zz-visually-hidden' }, 'Photo')),
+          ['SKU', 'Record', 'Status', 'Section', 'Price'].map(function (t) { return h('th', { key: t, className: t === 'SKU' ? 'num' : t === 'Price' ? 'num price' : '' }, t); }))) }),
       dialog);
+  }
+
+  /* the rows of Listings (table body on desktop, ListingRow list on mobile) in Gio's order, reorderable by drag & drop
+     with the admin's one drag logic (useDragOrder, the same as photos and samples; decision 0129) */
+  function OrderedRows(props) {
+    var rows = props.rows, move = props.onMove;
+    var d = Z.useDragOrder({ count: rows.length, onMove: move,
+      keyOf: function (i) { return rows[i].id; }, nameOf: function (i) { return nameOf(rows[i]); } });
+    function handle(r, i) {
+      return move ? h(Z.DragHandle, { index: d.slot(i).pos, count: rows.length, onMove: d.keyboardMove, name: nameOf(r) }) : null;
+    }
+    function check(r) {
+      return h(Z.Checkbox, { id: 'select-' + r.id, hideLabel: true, label: 'Select ' + nameOf(r),
+        checked: props.selected.indexOf(r.id) >= 0, onChange: function (e) { props.toggle(r.id, e.target.checked); } });
+    }
+    var status = move ? h('span', { className: 'zz-visually-hidden', role: 'status', 'aria-live': 'polite' }, d.live) : null;
+    if (props.mobile) {
+      // mobile (Figma page `admin` → Listings - mobile, decision 0089): rows instead of the table
+      return h(React.Fragment, null,
+        h('ul', Object.assign({ id: 'listings-table', className: 'admin-rows admin-sortable' }, d.listProps), rows.length ? rows.map(function (r, i) {
+          return h(Z.ListingRow, Object.assign({ href: '#edit-' + r.id, title: nameOf(r), image: thumbOf(r), handle: handle(r, i),
+            meta: [r.sku, statusText(r), r.section].filter(Boolean).join(' · '),
+            price: r.price_cents === null ? null : centsToText(r.price_cents) + ' €',
+            select: check(r) }, d.rowProps(i)));
+        }) : h('li', { className: 'body-small admin-rows__empty' }, props.empty)), status);
+    }
+    return h(React.Fragment, null, h('div', { className: 'admin-table-wrap' }, h('table', { className: 'admin-table body-small' }, props.head,
+      h('tbody', Object.assign({ id: 'listings-table', className: 'admin-sortable' }, d.listProps), rows.length ? rows.map(function (r, i) {
+      return h('tr', d.rowProps(i),
+        move ? h('td', { className: 'handle' }, handle(r, i)) : null,
+        h('td', { className: 'select' }, check(r)),
+        h('td', { className: 'thumb' }, h(Z.Thumbnail, thumbOf(r))),
+        h('td', { className: 'num' }, r.sku),
+        h('td', null, h('a', { href: '#edit-' + r.id, draggable: false }, nameOf(r))),
+        h('td', null, statusText(r)),
+        h('td', null, r.section),
+        h('td', { className: 'num price' }, r.price_cents === null ? '' : centsToText(r.price_cents) + ' €'));
+    }) : h('tr', null, h('td', { colSpan: 7 }, props.empty))))), status);
   }
 
   function EditLoader(props) {

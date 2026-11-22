@@ -1,0 +1,8 @@
+# 0128 — Listings: no All tab, Live first, a search that narrows every tab
+
+`2026-11-22` · accepted (Gio: "vorrei in listings un input search che mi filtri i risultati … draft può anche essere una lista a parte … forse è la lista all proprio che non serve molto. potrebbe essere live drafts sold archived") · amends [0024](0024-delete-drafts-archive-the-rest.md) (tabs) · Figma: BACKEND → Listings → new component set `listings filter` (2412:1671, device desktop | mobile), used in every Listings frame in place of the old `status filter` frames
+
+**Context.** The default tab "All" mixed drafts with what is in the shop, and there was no way to find one record among many.
+**Decision.** Tabs in this order: Live (available + reserved: a reserved copy is still in the shop), Drafts, Sold (sold + traded), Archived. No All tab; Live is the default. A search field (`Input variant="search"`, placeholder "Search SKU, artist, title, label", × to clear) sits right of the tabs on desktop (280 wide), under them full width on mobile. It filters as you type, matching SKU, record name (custom title, line artists and titles) and label name, ignoring case and accents; with several words each must match. The search narrows every tab and the tab counts follow it, so a record outside the current tab shows up as a count on its tab. Typing clears the selection (the bulk actions never hit hidden rows).
+**Rule.** An admin list's search filters in place and narrows its tab counts too; selection is reset whenever the visible rows change by filter.
+**Where.** `packages/ui` (`ListingsFilter`, `components.d.ts`, `components.css`), `apps/admin/admin.js` (Listings: `TABS`, `fold`, `matches`).

@@ -745,27 +745,31 @@
     return blankImage;
   }
 
-  function FileList(props) {
+  /* useDragOrder (decision 0129: the one drag & drop of the admin, extracted from FileList). A list whose rows the
+     user reorders by dragging (pointer) or with ↑ ↓ on a handle (keyboard). While dragging, the DOM keeps the old
+     order and the rows are translated to where they would be after the drop (the others shift live); committed on
+     drop, reverted on dragend elsewhere. Moving DOM nodes during a native drag would cancel the drop in Chromium.
+     opts: count, keyOf(i), nameOf(i), onMove(from, to) (null = fixed order), handleSelector (the handle that keeps the
+     focus after a keyboard move). Returns { listRef, listProps, rowProps(i), slot(i), keyboardMove(from, to), drag, live }:
+     the caller spreads listProps on the list element (<ol>, <ul>, <tbody>) and rowProps(i) on each row. */
+  function useDragOrder(opts) {
     var listRef = React.useRef(null);
     var tops = React.useRef({});          // layout top of each row by key, for the keyboard-move slide (FLIP)
     var focusKey = React.useRef(null);    // keyboard move: the row whose handle keeps the focus
     var dropped = React.useRef(false);    // drop: the preview becomes the order, without sliding again
-    // drag = { from, to, rows: [{ top, height }], gap, grab }: while dragging, the DOM keeps the old order and the
-    // rows are translated to where they would be after the drop (the others shift live); committed on drop,
-    // reverted on dragend elsewhere. Moving DOM nodes during a native drag would cancel the drop in Chromium.
+    // drag = { from, to, rows: [{ top, height }], gap, grab, over }
     var dragState = React.useState(null), drag = dragState[0], setDrag = dragState[1];
     var dragRef = React.useRef(null);
     var liveState = React.useState(''), live = liveState[0], setLive = liveState[1];
-    var items = React.Children.toArray(props.children);
-    var move = props.onMove;
+    var move = opts.onMove, count = opts.count;
     React.useEffect(function () { if (move) blankDragImage(); }, [!!move]);   // loaded before the first drag
 
     function update(next) { dragRef.current = next; setDrag(next); }
-    function itemName(i) { var c = items[i]; return (c && c.props && c.props.name) || ('item ' + (i + 1)); }
+    function itemName(i) { return (opts.nameOf && opts.nameOf(i)) || ('item ' + (i + 1)); }
     function commit(from, to, viaKeyboard) {
       if (from === to) return;
-      if (viaKeyboard) focusKey.current = items[from].key; else dropped.current = true;
-      setLive(itemName(from) + ', position ' + (to + 1) + ' of ' + items.length);
+      if (viaKeyboard) focusKey.current = opts.keyOf(from); else dropped.current = true;
+      setLive(itemName(from) + ', position ' + (to + 1) + ' of ' + count);
       move(from, to);
     }
     // where row i shows (0-based) and how far it is translated, for the current preview
@@ -785,6 +789,7 @@
       var next = {};
       Array.prototype.forEach.call(list.children, function (li) {
         var key = li.getAttribute('data-key');
+        if (key === null) return;
         next[key] = li.offsetTop;
         var dy = tops.current[key] !== undefined ? tops.current[key] - li.offsetTop : 0;
         if (settle) {                       // the preview translate is gone and the row is in its new DOM place: no slide
@@ -797,7 +802,7 @@
       });
       tops.current = next;
       if (focusKey.current !== null) {
-        var handle = list.querySelector('[data-key="' + focusKey.current + '"] .zz-file-item__handle');
+        var handle = list.querySelector('[data-key="' + focusKey.current + '"] ' + (opts.handleSelector || '.zz-drag-handle'));
         focusKey.current = null;
         if (handle && document.activeElement !== handle) handle.focus();
       }
@@ -808,8 +813,9 @@
       if (e.target.closest && e.target.closest('input, textarea, select')) { e.preventDefault(); return; }
       e.dataTransfer.effectAllowed = 'move';
       try { e.dataTransfer.setData('text/plain', itemName(i)); } catch (err) { /* Firefox starts a drag only with data */ }
-      var list = listRef.current, lis = list.children;
-      var rows = Array.prototype.map.call(lis, function (li) { return { top: li.offsetTop, height: li.offsetHeight }; });
+      var list = listRef.current, lis = list.children, listTop = list.getBoundingClientRect().top;
+      // measured from the list's own box, so it works for a <tbody> too (its rows' offsetParent is the table)
+      var rows = Array.prototype.map.call(lis, function (li) { var b = li.getBoundingClientRect(); return { top: b.top - listTop, height: b.height }; });
       // no browser drag image (a static snapshot): the row itself follows the pointer, so its position number
       // follows the preview, and the list shows the empty slot where it will land
       if (blankDragImage().complete && e.dataTransfer.setDragImage) e.dataTransfer.setDragImage(blankDragImage(), 0, 0);
@@ -838,52 +844,79 @@
       return n;
     }
 
+    var listProps = !move ? { ref: listRef } : {
+      ref: listRef,
+      'data-dragging': drag ? 'true' : undefined,
+      onDragOver: function (e) {
+        var d = dragRef.current; if (!d) return;
+        e.preventDefault();
+        var to = slotAt(e.clientY);
+        if (to !== d.to || !d.over) update(Object.assign({}, d, { to: to, over: true }));
+      },
+      // left the list (or Escape, which fires a dragleave): on dragend the old order comes back
+      onDragLeave: function (e) {
+        var d = dragRef.current; if (!d) return;
+        var b = listRef.current.getBoundingClientRect();
+        if (e.clientX <= b.left || e.clientX >= b.right || e.clientY <= b.top || e.clientY >= b.bottom) update(Object.assign({}, d, { over: false }));
+      },
+      onDrop: function (e) {
+        var d = dragRef.current; if (!d) return;
+        e.preventDefault(); update(null); commit(d.from, d.to);
+      }
+    };
+    function rowProps(i) {
+      var s = slot(i), key = opts.keyOf(i);
+      return {
+        key: key,
+        'data-key': key,
+        'data-dragged': drag && drag.from === i ? 'true' : undefined,
+        style: s.dy && !(drag && drag.from === i) ? { transform: 'translateY(' + s.dy + 'px)' } : undefined,   // the dragged row follows the pointer (set in onDragStart)
+        draggable: move ? true : undefined,
+        onDragStart: move ? function (e) { onDragStart(i, e); } : undefined,
+        // Chromium fires no drop when the pointer is over the drag source, and the dragged row is translated under it:
+        // so dragend commits the preview while the pointer is still on the list, and reverts it otherwise
+        onDragEnd: move ? function () { var d = dragRef.current; if (!d) return; update(null); if (d.over) commit(d.from, d.to); } : undefined
+      };
+    }
+    return { listRef: listRef, listProps: listProps, rowProps: rowProps, slot: slot, drag: drag, live: live,
+      keyboardMove: move ? function (from, to) { commit(from, to, true); } : null };
+  }
+
+  /* DragHandle (Figma: `drag handle` = icon `bars-three` 24, in `file item`, `listing row`, `listings table row`;
+     decision 0129): the chromeless 24 × 24 button that starts a keyboard move (↑ ↓) of its row. Pointer drags start
+     on the whole row (useDragOrder). */
+  function DragHandle(props) {
+    function onKey(e) {
+      if (e.key === 'ArrowUp' && props.index > 0) { e.preventDefault(); props.onMove(props.index, props.index - 1); }
+      if (e.key === 'ArrowDown' && props.index < props.count - 1) { e.preventDefault(); props.onMove(props.index, props.index + 1); }
+    }
+    return h('button', Object.assign({ type: 'button' }, omit(props, ['index', 'count', 'onMove', 'name', 'className', 'label']), {
+      className: cx('zz-drag-handle', props.className),
+      'aria-label': props.label || ('Move ' + (props.name || 'item') + ', position ' + (props.index + 1) + ' of ' + props.count + ' (arrow up / down)'),
+      onKeyDown: props.onMove ? onKey : undefined
+    }), h('span', { className: 'zz-drag-handle__icon', 'aria-hidden': 'true' }, h(DragHandleIcon)));
+  }
+
+  function FileList(props) {
+    var items = React.Children.toArray(props.children);
+    var move = props.onMove;
+    var d = useDragOrder({ count: items.length, onMove: move, handleSelector: '.zz-file-item__handle',
+      keyOf: function (i) { return items[i].key || i; },
+      nameOf: function (i) { var c = items[i]; return c && c.props && c.props.name; } });
     return h(React.Fragment, null,
-      h('ol', Object.assign({ ref: listRef, className: cx('zz-file-list', props.className), 'data-dragging': drag ? 'true' : undefined,
-        onDragOver: move ? function (e) {
-          var d = dragRef.current; if (!d) return;
-          e.preventDefault();
-          var to = slotAt(e.clientY);
-          if (to !== d.to || !d.over) update(Object.assign({}, d, { to: to, over: true }));
-        } : undefined,
-        // left the list (or Escape, which fires a dragleave): on dragend the old order comes back
-        onDragLeave: move ? function (e) {
-          var d = dragRef.current; if (!d) return;
-          var b = listRef.current.getBoundingClientRect();
-          if (e.clientX <= b.left || e.clientX >= b.right || e.clientY <= b.top || e.clientY >= b.bottom) update(Object.assign({}, d, { over: false }));
-        } : undefined,
-        onDrop: move ? function (e) {
-          var d = dragRef.current; if (!d) return;
-          e.preventDefault(); update(null); commit(d.from, d.to);
-        } : undefined
-      }, omit(props, ['onMove', 'children', 'className'])),
+      h('ol', Object.assign({ className: cx('zz-file-list', props.className) }, d.listProps, omit(props, ['onMove', 'children', 'className'])),
         items.map(function (child, i) {
-          var s = slot(i);
-          return h('li', {
-            key: child.key || i,
-            'data-key': child.key || i,
-            'data-dragged': drag && drag.from === i ? 'true' : undefined,
-            className: 'zz-file-list__item',
-            style: s.dy && !(drag && drag.from === i) ? { transform: 'translateY(' + s.dy + 'px)' } : undefined,   // the dragged row follows the pointer (set in onDragStart)
-            draggable: move ? true : undefined,
-            onDragStart: move ? function (e) { onDragStart(i, e); } : undefined,
-            // Chromium fires no drop when the pointer is over the drag source, and the dragged row is translated under it:
-            // so dragend commits the preview while the pointer is still on the list, and reverts it otherwise
-            onDragEnd: move ? function () { var d = dragRef.current; if (!d) return; update(null); if (d.over) commit(d.from, d.to); } : undefined
-          }, h(FileListContext.Provider, { value: { index: s.pos, count: items.length, move: move && function (from, to) { commit(from, to, true); } } }, child));
+          var s = d.slot(i);
+          return h('li', Object.assign({ className: 'zz-file-list__item' }, d.rowProps(i)),
+            h(FileListContext.Provider, { value: { index: s.pos, count: items.length, move: d.keyboardMove } }, child));
         })),
-      move ? h('span', { className: 'zz-file-list__status', role: 'status', 'aria-live': 'polite' }, live) : null);
+      move ? h('span', { className: 'zz-file-list__status', role: 'status', 'aria-live': 'polite' }, d.live) : null);
   }
 
   function FileItem(props) {
     var ctx = React.useContext(FileListContext) || { index: 0, count: 1 };
     var position = props.position !== undefined ? props.position : String(ctx.index + 1).padStart(2, '0');
     var name = props.name;
-    function onHandleKey(e) {
-      if (!ctx.move) return;
-      if (e.key === 'ArrowUp' && ctx.index > 0) { e.preventDefault(); ctx.move(ctx.index, ctx.index - 1); }
-      if (e.key === 'ArrowDown' && ctx.index < ctx.count - 1) { e.preventDefault(); ctx.move(ctx.index, ctx.index + 1); }
-    }
     var playable = !!props.onTogglePlay;
     var hasBody = !!props.children;
     var remove = props.onRemove ? h(IconButton, { className: 'zz-file-item__remove', icon: h(CloseIcon), 'aria-label': props.removeLabel || ('Remove ' + name), onClick: props.onRemove }) : null;
@@ -892,11 +925,7 @@
       'data-media': props.image ? 'image' : (playable ? 'audio' : undefined),
       'data-body': hasBody ? 'true' : undefined
     }, omit(props, ['name', 'position', 'image', 'featured', 'featuredLabel', 'playing', 'onTogglePlay', 'onRemove', 'removeLabel', 'reorderLabel', 'className', 'children'])),
-      ctx.move ? h('button', {
-        type: 'button', className: 'zz-file-item__handle',
-        'aria-label': props.reorderLabel || ('Move ' + name + ', position ' + (ctx.index + 1) + ' of ' + ctx.count + ' (arrow up / down)'),
-        onKeyDown: onHandleKey
-      }, h('span', { className: 'zz-file-item__handle-icon', 'aria-hidden': 'true' }, h(DragHandleIcon))) : null,
+      ctx.move ? h(DragHandle, { className: 'zz-file-item__handle', index: ctx.index, count: ctx.count, onMove: ctx.move, name: name, label: props.reorderLabel }) : null,
       // with children (e.g. the sample title Input, Figma `sample row` 2095:20507): a full-width column,
       // `file row` (content + remove, gap 16) above the children (gap 16)
       h(hasBody ? 'div' : React.Fragment, hasBody ? { className: 'zz-file-item__body' } : null,
@@ -1132,6 +1161,15 @@
         props.bulkHref ? h(Button, { hierarchy: 'secondary', href: props.bulkHref }, props.bulkLabel || 'Bulk create') : null,
         props.createHref ? h(Button, { hierarchy: 'primary', href: props.createHref }, props.createLabel || 'Create listing') : null));
   }
+  /* ── ListingsFilter (Figma BACKEND → Listings → `listings filter`, device=desktop | mobile, decision 0128) ──
+     The status tabs of the Listings page (Live · Drafts · Sold · Archived, a <Tabs>) + the search field that filters
+     the rows (an <Input variant="search">). Desktop: one row, tabs left, search 280 right, centred, gap 16.
+     Mobile (--mobile): the tabs (they scroll sideways) then the search full width, gap 16. */
+  function ListingsFilter(props) {
+    return h('div', Object.assign({}, omit(props, ['tabs', 'search', 'className']), { className: cx('zz-listings-filter', props.className) }),
+      h('div', { className: 'zz-listings-filter__tabs' }, props.tabs),
+      props.search ? h('div', { className: 'zz-listings-filter__search' }, props.search) : null);
+  }
   /* ── Thumbnail (Figma `product image` (page `media`) at 40 × 40, decision 0123) ──
      The record's photo in an admin list (ListingRow, the Listings table). Decorative: the row's title names the record,
      so alt is empty and the box is hidden from screen readers. No photo → the empty square (surface/media). */
@@ -1145,7 +1183,8 @@
      select (a Checkbox, label hidden) · text (title link body/small underlined, meta body/small text/moderate, gap 4)
      · price (body/small, right). Padding 16 top/bottom, gap 16, bottom border divider/strong. */
   function ListingRow(props) {
-    return h('li', Object.assign({}, omit(props, ['select', 'image', 'title', 'href', 'meta', 'price', 'className']), { className: cx('zz-listing-row', props.className) }),
+    return h('li', Object.assign({}, omit(props, ['handle', 'select', 'image', 'title', 'href', 'meta', 'price', 'className']), { className: cx('zz-listing-row', props.className) }),
+      props.handle || null,   // Figma boolean `handle` (decision 0129): a DragHandle, first
       props.select ? h('div', { className: 'zz-listing-row__select' }, props.select) : null,
       // Figma boolean `show thumbnail` (decision 0123): an `image` object, even without src (= the empty square)
       props.image ? h(Thumbnail, Object.assign({ className: 'zz-listing-row__thumb' }, props.image)) : null,
@@ -1787,6 +1826,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, AdminBar: AdminBar, ListingsHead: ListingsHead, Thumbnail: Thumbnail, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, useDragOrder: useDragOrder, DragHandle: DragHandle, AdminBar: AdminBar, ListingsHead: ListingsHead, ListingsFilter: ListingsFilter, Thumbnail: Thumbnail, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
            NewsletterDialog: NewsletterDialog, SectionHead: SectionHead, GenreLinks: GenreLinks, HomeIntro: HomeIntro, HomeNewsletter: HomeNewsletter, ProductTile: ProductTile, GalleryCounter: GalleryCounter, ViewToggle: ViewToggle };
 });

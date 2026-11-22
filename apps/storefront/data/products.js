@@ -122,7 +122,11 @@ function toProduct(row, mediaUrl) {
 }
 
 // listing order: newest published first; imported test content keeps its old order (legacy id)
+// Gio's order from the admin (listings.sort_order, migration 0029, decision 0129; lower = first). Without it (a database
+// before 0029, or the JSON in content/): newest published first, as before.
 function byListingOrder(a, b) {
+  const sa = a.sort_order, sb = b.sort_order;
+  if (sa !== undefined && sa !== null && sb !== undefined && sb !== null && Number(sa) !== Number(sb)) return Number(sa) - Number(sb);
   return String(b.published_at || '').localeCompare(String(a.published_at || '')) ||
     String((a.import_source || {}).legacy_id || '').localeCompare(String((b.import_source || {}).legacy_id || '')) ||
     a.slug.localeCompare(b.slug);

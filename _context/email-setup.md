@@ -36,6 +36,7 @@ Eccezione voluta: l'account **Buttondown** ha come email `gio@rythem-works.com`,
 | Nome nel testo (`STORE_NAME`) | `rythem-works` |
 | Link nel testo (`SHOP_URL`) | `https://rythem-works.com` (oggi è la pagina coming soon: va bene finché il negozio non è aperto) |
 | Destinatario offerte (`OFFER_TO`) | `gio.rythem.works@gmail.com` |
+| Avviso nuovi iscritti newsletter | funzione `newsletter`, alla conferma del link: email a `NEWSLETTER_TO` se c'è, altrimenti `OFFER_TO` (casella del negozio). Mai al Gmail personale (2026-11-22) |
 | Tracking aperture/click | spento (privacy) |
 | Ricezione email | spenta |
 

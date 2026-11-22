@@ -75,6 +75,13 @@ h1, h2, p { margin: 0; }
 .admin-table .thumb { width: 40px; }   /* Figma: `product image` 40 × 40 column after the checkbox (decision 0123) */
 .admin-table .thumb .zz-thumbnail { display: block; }
 .admin-table .price { text-align: right; }
+.admin-table .handle { width: 24px; }   /* Figma `listings table row` → `drag handle` 24, first column (decision 0129) */
+.admin-table .handle .zz-drag-handle { display: flex; }
+/* reorderable rows (useDragOrder, decision 0129): the others slide to the preview; the dragged one covers them on the
+   page ground (FileList uses surface/base on its white panel; here the list sits on surface/page) */
+.admin-sortable > [data-key] { transition: transform 150ms ease-out; }
+.admin-sortable > [data-dragged] { position: relative; z-index: 1; transition: none; background: var(--surface-page); }
+@media (prefers-reduced-motion: reduce) { .admin-sortable > [data-key] { transition: none; } }
 .admin-listings { gap: 24px; }
 /* bulk bar: always rendered, fixed height (38 button + 2×8), so selecting never moves the table */
 .admin-bulk { display: flex; align-items: center; gap: 8px; min-height: 54px; padding: 8px 16px; background: var(--surface-subtle); }
