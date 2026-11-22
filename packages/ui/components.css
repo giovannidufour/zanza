@@ -1531,6 +1531,9 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 
 .zz-listing-row { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
 .zz-listing-row__select { flex: none; display: flex; }
+/* Thumbnail (Figma `product image` 40 × 40, decision 0123): the empty square is surface/support-1 */
+.zz-thumbnail { flex: none; display: block; width: 40px; height: 40px; overflow: hidden; background: var(--surface-support-1); }
+.zz-thumbnail > img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .zz-listing-row__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .zz-listing-row__title { color: inherit; overflow-wrap: anywhere; }
 .zz-listing-row__meta, .zz-listing-row__price { margin: 0; }

@@ -79,7 +79,8 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | SectionRow | page `Content` (BACKEND) → `section row` | ported (0106): heading + text + Remove (page sections, trade steps) |
 | ProgressBar | page `Memo` (BACKEND) → `progress bar` | ported (0091): value 0–100, role=progressbar |
 | AdminBar | page `admin` → `admin bar` | ported (0089): device desktop / mobile (responsive); mobile opens a MenuLayer dialog |
-| ListingRow | page `admin` → `listing row` | ported (0089): admin list row on mobile (Listings, Attributes), select, meta, price |
+| ListingRow | page `admin` → `listing row` | ported (0089, 0123): admin list row on mobile (Listings, Attributes, order records), select, thumbnail, meta, price |
+| Thumbnail | page `media` → `product image` at 40 × 40 | ported (0123): the record's photo in admin lists, empty square without a photo |
 | OrderBlock | page `Orders` (BACKEND) → `order block` | ported (0100): title, body (line breaks kept), optional action |
 | FormSectionHead | page `Create` (BACKEND) → `form section head` | ported (0113): heading of a Create / Edit listing section |
 | Marker | page `listing form` → `marker` | ported (0114): 48px circle before a form block (line number, €€), aria-hidden |
