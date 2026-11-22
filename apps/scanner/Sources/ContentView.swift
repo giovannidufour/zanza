@@ -33,7 +33,7 @@ struct RecordColumn: View {
                 Text(model.recordTitle ?? "Copy the names of a draft").labelStyle(18)
                     .fixedSize(horizontal: false, vertical: true)
                 if model.steps.isEmpty {
-                    Text("In the admin, open the draft, then File names → Copy all. Come back here: the names are pasted by themselves (or press Paste names). One name works too, or just type it.")
+                    Text("In the admin, open the draft and copy a name from File names. Come back here: it is pasted by itself (or press Paste names). Or just type the name.")
                         .bodyStyle(14, color: Theme.textModerate).fixedSize(horizontal: false, vertical: true)
                 }
                 Button("Paste names") { model.pasteNames() }
