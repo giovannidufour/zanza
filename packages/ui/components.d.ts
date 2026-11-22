@@ -1211,6 +1211,8 @@ export declare function Thumbnail(props: ThumbnailProps): JSX.Element;
 
 /** Mirrors the Figma component `listing row` (page `admin`, decision 0089): a row of an admin list on mobile, in a <ul>. */
 export interface ListingRowProps extends HTMLAttributes<HTMLLIElement> {
+  /** Figma boolean `handle` (decision 0129): a DragHandle, before the select. Omit → fixed order. */
+  handle?: ReactNode;
   /** A Checkbox with hideLabel (accessible name "Select <record>"). Omit → no select column. */
   select?: ReactNode;
   /** Figma `thumbnail` + boolean `show thumbnail` (decision 0123): the record's first photo as a Thumbnail.
@@ -1225,6 +1227,40 @@ export interface ListingRowProps extends HTMLAttributes<HTMLLIElement> {
   price?: ReactNode;
 }
 export declare function ListingRow(props: ListingRowProps): JSX.Element;
+
+/** Figma `drag handle` (icon bars-three 24, in `file item`, `listing row`, `listings table row`; decision 0129): the
+ *  chromeless button of a reorderable row. ↑ ↓ move the row by one; pointer drags start on the whole row (useDragOrder). */
+export interface DragHandleProps extends HTMLAttributes<HTMLButtonElement> {
+  /** Shown position of the row, 0-based. */
+  index: number;
+  count: number;
+  /** (from, to): useDragOrder's keyboardMove. */
+  onMove: (from: number, to: number) => void;
+  /** The row's name, for the default label "Move <name>, position n of m (arrow up / down)". */
+  name?: string;
+  label?: string;
+}
+export declare function DragHandle(props: DragHandleProps): JSX.Element;
+
+/** The one drag & drop order of the admin (decision 0129; FileList uses it). Spread `listProps` on the list element
+ *  (<ol>, <ul>, <tbody>) and `rowProps(i)` on each row; `slot(i).pos` = where row i shows during a drag. */
+export declare function useDragOrder(opts: {
+  count: number;
+  keyOf: (i: number) => string | number;
+  nameOf?: (i: number) => string | undefined;
+  /** null/undefined = fixed order (no drag). */
+  onMove?: ((from: number, to: number) => void) | null;
+  /** The handle that keeps the focus after a keyboard move. @default ".zz-drag-handle" */
+  handleSelector?: string;
+}): {
+  listRef: { current: HTMLElement | null };
+  listProps: Record<string, unknown>;
+  rowProps: (i: number) => Record<string, unknown>;
+  slot: (i: number) => { pos: number; dy: number };
+  keyboardMove: ((from: number, to: number) => void) | null;
+  drag: unknown;
+  live: string;
+};
 
 /** Mirrors the Figma component `order block` (page `Orders`, BACKEND, decision 0100): one block of the admin order page. */
 export interface OrderBlockProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {

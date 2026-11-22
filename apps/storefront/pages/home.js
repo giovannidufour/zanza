@@ -68,8 +68,9 @@ function Shelf({ id, title, meta, items, url, divider }) {
 
 function Home({ products, site, url, now = Date.now() }) {
   const sale = products.filter((p) => p.listing.section === 'sale');
-  // products come newest published first (data/products.js)
-  const onSale = sale.filter((p) => ['available', 'reserved'].includes(p.listing.status));
+  // the shelves are about what is new (decision 0129): newest published first, not Gio's order of the shop lists
+  const newest = (x, y) => String(y.listing.published_at || '').localeCompare(String(x.listing.published_at || ''));
+  const onSale = sale.filter((p) => ['available', 'reserved'].includes(p.listing.status)).sort(newest);
   const fresh = onSale.filter((p) => p.listing.published_at && now - Date.parse(p.listing.published_at) < WEEK_MS);
   const thisWeek = fresh.slice(0, SHELF_COUNT);
   const recent = onSale.filter((p) => !thisWeek.includes(p)).slice(0, SHELF_COUNT);

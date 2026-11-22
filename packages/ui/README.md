@@ -58,6 +58,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | Input | page `input` → `input` + `_input-master` | ported: variant text field / search / select / text area (2026-11-12, default state only) × size medium / compact; error, locked (admin) |
 | DropZone | page `uploads` → `drop zone` | ported |
 | FileList / FileItem | page `uploads` → `file item` (list = layout frame) | ported: type audio / image, state default / dragging, handle, featured, title field |
+| DragHandle / useDragOrder | `drag handle` (icon bars-three 24) in `file item`, `listing row`, `listings table row` | ported (0129): the one drag & drop order of the admin, extracted from FileList; used by FileList and Listings |
 | Alert | page `Bag` → `alert` | ported (0077): red box, used by BagSummary `minimumNote` and `soldOutNote` |
 | Divider | page `divider` → `divider` | ported |
 | ActionPanel | page `listing form` → `action panel` | ported |
