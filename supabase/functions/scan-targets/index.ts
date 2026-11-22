@@ -3,8 +3,11 @@
 //   POST { query }        → { drafts: [{ id, sku, title, cat_no, photo_key, created_at }] }
 //                            drafts only, newest first, max 20; query matches SKU, artist, title, custom title or
 //                            catalogue number (all words, any order); empty query = the 20 most recent drafts.
-//   POST { id, roles? }   → { draft: { id, sku, title, cat_no }, positions_read, images: [{ role, label, name }] }
+//   POST { id, roles? }   → { draft: { id, sku, title, cat_no }, positions_read, images: [{ role, label, name }],
+//                              clips: [{ role, label, name, artist, title }], tags: { album, label, cat_no, year, genres } }
 //                            names for image roles 1…roles (default 3, max 12): 1 Label A, 2 Label B, 3+ Other photo.
+//                            clips = one row per line with a clip role (a1, b1… or a / b), as the admin's File names;
+//                            with tags = what the Scanner's Samples tab writes in the ID3 tags (decision 0141).
 // The names come from packages/file-names (./file-names.js is a COPY, `npm run sync:functions`), the same code as
 // the admin's File names (0136): the Scanner never builds a name itself. Label B needs the Discogs positions of the
 // release (which line is side B); they are read here, once per call, like the admin does; if Discogs fails the rule
@@ -26,9 +29,13 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...headers, "Content-Type": "application/json" } });
 
 type Line = { position: number; artist: string | null; title: string | null };
+type Release = {
+  cat_no: string | null; discogs_release_id: number | null; label: string | null; year: number | null;
+  year_precision: string | null; genres: string[] | null; lines: Line[] | null;
+};
 type Row = {
   id: string; sku: number | null; custom_title: string | null; photo_keys: string[] | null; created_at: string;
-  release: { cat_no: string | null; discogs_release_id: number | null; lines: Line[] | null } | null;
+  release: Release | null;
 };
 
 const linesOf = (r: Row) => (r.release?.lines ?? []).slice().sort((a, b) => a.position - b.position)
@@ -61,7 +68,7 @@ async function discogsPositions(id: number): Promise<string[] | null> {
   } catch { return null; }
 }
 
-const SELECT = "id,sku,custom_title,photo_keys,created_at,release:releases(cat_no,discogs_release_id,lines:release_lines(position,artist,title))";
+const SELECT = "id,sku,custom_title,photo_keys,created_at,release:releases(cat_no,discogs_release_id,label,year,year_precision,genres,lines:release_lines(position,artist,title))";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers });
@@ -92,7 +99,19 @@ Deno.serve(async (req) => {
       label: i === 0 ? "Label A" : i === 1 ? "Label B" : "Other photo",
       name: FileNames.imageName(r.sku, lines, positions ?? [], i + 1),
     }));
-    return json({ draft: summary(r), positions_read: positions !== null, images });
+    // clip rows: the same rows as the admin's File names (0136), with the line they belong to for the ID3 tags
+    const rows = FileNames.fileNames(r.sku, lines, positions ?? []) as { key: string; role: string; name: string }[];
+    const clips = rows.filter((x) => x.key.startsWith("line-")).map((x) => {
+      const i = Number(x.key.slice(5));
+      return { role: x.role.toLowerCase(), label: x.role, name: x.name,
+        artist: lines[i]?.artist.trim() || lines[0]?.artist.trim() || "", title: lines[i]?.title.trim() ?? "" };
+    });
+    const rel = r.release;
+    const tags = {
+      album: titleOf(r), label: rel?.label ?? null, cat_no: rel?.cat_no ?? null,
+      year: rel?.year && rel?.year_precision !== "decade" ? rel.year : null, genres: rel?.genres ?? [],
+    };
+    return json({ draft: summary(r), positions_read: positions !== null, images, clips, tags });
   }
 
   // search over the drafts (a few hundred at most: filtered here, no full-text index needed)
