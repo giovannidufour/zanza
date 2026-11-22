@@ -1500,6 +1500,15 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-listings-head__title { flex: 1 1 auto; min-width: 0; margin: 0; overflow-wrap: anywhere; }
 .zz-listings-head__actions { flex: none; display: flex; flex-wrap: wrap; gap: 16px; }
 @media (--mobile) { .zz-listings-head { flex-direction: column; align-items: flex-start; } }
+/* ── ListingsFilter (Figma BACKEND → Listings → `listings filter`, decision 0128): tabs + search ── */
+.zz-listings-filter { display: flex; align-items: center; gap: 16px; }
+.zz-listings-filter__tabs { flex: 1 1 auto; min-width: 0; }
+.zz-listings-filter__search { flex: 0 0 280px; min-width: 0; }
+.zz-listings-filter__search .zz-input { width: 100%; }
+@media (--mobile) {
+  .zz-listings-filter { flex-direction: column; align-items: stretch; }
+  .zz-listings-filter__search { flex: none; }
+}
 
 /* ── ListingRow (Figma page `admin` → `listing row`, decision 0089): an admin list row on mobile, MemoItem grammar ── */
 .zz-order-block { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; color: var(--text-strong); }
