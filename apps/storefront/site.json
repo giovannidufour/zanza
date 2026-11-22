@@ -8,7 +8,7 @@
   "liveHosts": ["rythem-works.com", "www.rythem-works.com"],
   "owner": {
     "note": "Who runs the shop (Figma page Trade / About). PLACEHOLDERS until Gio fills them: name, bio, Instagram and Mixes links. Discogs (highmuzik) and Instagram (giouann) are real (Gio, 2026-11-12/13); Facebook is real too (Gio, 2026-11-13), used only for the verification button, not listed on About (the profile URL carries his full name); stats show only the join year until the ratings are checked. No legal name or address here (that is the Impressum).",
-    "name": "Gio",
+    "name": "",
     "djName": "DJ name",
     "bio": "Placeholder: who you are in three lines. DJ and collector, what you play, where. These records come from my own crates.",
     "links": [
@@ -49,8 +49,8 @@
     "flowNote": "Own double opt-in (decision 0103): endpoint = URL of the Supabase function newsletter (secret BUTTONDOWN_API_KEY, Verify JWT OFF); the form posts there and answers in place, the email link lands on /newsletter/confirm/ and adds the address to Buttondown as active. If the function is missing or fails, the form falls back to action (Buttondown's own flow). autoConfirm true = the confirm page confirms as it opens (one click); false = it shows a Confirm button (safe from email link scanners that run JavaScript)."
   },
   "legal": {
-    "note": "Legal pages (decisions 0079, 0093): content/legal/*.md, {{legal.x}} is filled from here; empty = a bracketed placeholder on the page, listed by the build. Gio sells privately (2026-11-15): no address, no phone, no VAT line, no Impressum: first name only (Gio 2026-11-22, accepted risk, decision 0130) + email, and the contact form (site.json → contact). email = the shop contact address, also shown on /contact/ (provisional: see _context/provisional-names.md). updated = date of the last change to Privacy.",
-    "name": "Gio",
+    "note": "Legal pages (decisions 0079, 0093): content/legal/*.md, {{legal.x}} is filled from here; empty = a bracketed placeholder on the page, listed by the build. Gio sells privately (2026-11-15): no address, no phone, no VAT line, no Impressum: no name at all (Gio 2026-11-22, accepted risk, decision 0130; legal.name unused) + email, and the contact form (site.json → contact). email = the shop contact address, also shown on /contact/ (provisional: see _context/provisional-names.md). updated = date of the last change to Privacy.",
+    "name": "",
     "email": "gio@rythem-works.com",
     "updated": "2026-11-22"
   },
