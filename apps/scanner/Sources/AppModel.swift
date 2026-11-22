@@ -40,6 +40,8 @@ final class AppModel: ObservableObject {
     @Published var turning = false
     /// Grid and "up" figure on the guide while the Turn slider is held
     @Published var turnAids = false
+    /// set for one update: the preview animates to the new centre (Center)
+    var animateCenter = false
 
     /// Last preview and the glass area it shows (mm, origin = corner of the glass)
     @Published var preview: CGImage?
@@ -180,6 +182,22 @@ final class AppModel: ObservableObject {
             DispatchQueue.main.async {
                 self.turning = false
                 if let a { self.angle = a }
+            }
+        }
+    }
+
+    /// Center (⌘E): finds the record's outer edge on the preview and puts its centre on the guide's centre; angle kept
+    func centerRecord() {
+        guard let img = preview, sideMM != nil else { caption = "Press Preview first"; return }
+        DispatchQueue.global(qos: .userInitiated).async {
+            let c = AutoCenter.recordCenter(in: img)
+            DispatchQueue.main.async {
+                guard let c else { self.caption = "Couldn't find the record edge: drag it by hand"; return }
+                let k = self.previewZone.width / CGFloat(img.width)   // mm per preview pixel
+                self.animateCenter = true
+                self.center = CGPoint(x: self.previewZone.minX + c.x * k, y: self.previewZone.minY + c.y * k)
+                self.caption = "Record centred: fine-tune with the arrows"
+                self.turnFromPreview()
             }
         }
     }

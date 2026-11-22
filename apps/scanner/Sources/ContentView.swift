@@ -200,11 +200,18 @@ struct ScanColumn: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             Text(scanner.busy ? "\(model.caption) · \(Int(scanner.progress * 100))%" : model.caption)
                 .bodyStyle(14, color: Theme.textModerate).lineLimit(2).multilineTextAlignment(.center)
-            if model.sideMM != nil {
-                Toggle(isOn: $model.autoTurn) {
-                    Text(model.turning ? "Reading the label…" : "Turn by itself (reads the label text)").bodyStyle(12)
+            if model.sideMM != nil {   // preview tools (Figma 2438:1771)
+                HStack(spacing: 16) {
+                    Button("Center") { model.centerRecord() }
+                        .buttonStyle(ZButtonStyle(primary: false))
+                        .disabled(model.preview == nil)
+                        .keyboardShortcut("e", modifiers: .command)
+                        .help("Put the record in the middle of the guide (⌘E)")
+                    Toggle(isOn: $model.autoTurn) {
+                        Text(model.turning ? "Reading the label…" : "Turn by itself (reads the label text)").bodyStyle(12)
+                    }
+                    .toggleStyle(.checkbox)
                 }
-                .toggleStyle(.checkbox)
             }
         }
         .padding(24)

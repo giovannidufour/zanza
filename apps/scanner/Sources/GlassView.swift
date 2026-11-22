@@ -65,8 +65,12 @@ final class GlassView: NSView {
     }
     var handle: CGPoint { CGPoint(x: mid.x, y: mid.y - (side ?? 0) * k / 2 - 30) }
 
+    /// next placement is animated (Center), not instant like a drag
+    var animateNext = false
+
     private func place() {
-        CATransaction.begin(); CATransaction.setDisableActions(true)
+        CATransaction.begin()
+        if animateNext { CATransaction.setAnimationDuration(0.25); animateNext = false } else { CATransaction.setDisableActions(true) }
         let k = self.k
         glassLayer.bounds = CGRect(x: 0, y: 0, width: glass.width * k, height: glass.height * k)
         if side == nil {
@@ -263,6 +267,7 @@ struct GlassCanvas: NSViewRepresentable {
         v.record = model.preset.recordMM ?? 0
         v.label = SizePreset.labelMM
         if !v.interacting {
+            if model.animateCenter { v.animateNext = true; model.animateCenter = false }
             v.center = model.center; v.angle = model.angle
             v.aids = model.turnAids
         }
