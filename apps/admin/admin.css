@@ -216,7 +216,7 @@ h1, h2, p { margin: 0; }
 .admin-bulk-page .admin-status:empty { display: none; }
 .admin-bulk-page__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .admin-bulk-page__head > p { margin: 0; }
-.admin-bulk-page__photo { display: block; width: 480px; max-width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--surface-subtle); }
+.admin-bulk-page__photo { display: block; width: 480px; max-width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--surface-media); }
 .admin-bulk-page--review { gap: 16px; }
 .admin-bulk-page--review .admin-picker { width: 480px; max-width: 100%; }
 .admin-bulk-page--review .admin-picker__list { position: static; max-height: none; }   /* in the flow: Next / Skip stay reachable */

@@ -29,7 +29,7 @@ Ordered list of uploaded files in the admin (images, the sample of a line, sampl
 | --- | --- | --- | --- |
 | `name` * | `string` |  | File name, e.g. "sample-name.mp3". Also names the buttons for screen readers. |
 | `position` | `ReactNode` |  | Shown before the name. Default: the row number inside FileList, two digits ("01"). |
-| `image` | `{ src?: string; alt?: string }` |  | Image file: the 40 × 40 thumbnail (empty = surface-support-1). |
+| `image` | `{ src?: string; alt?: string }` |  | Image file: the 40 × 40 thumbnail (empty = surface-media). |
 | `featured` | `boolean` |  | Shows "(featured)". The admin sets it on the first image (the featured image is always position 1). |
 | `featuredLabel` | `string` |  | Text of the featured marker. Default "(featured)". |
 | `playing` | `boolean` |  | Audio file: pause icon instead of play. |
@@ -52,7 +52,7 @@ Ordered list of uploaded files in the admin (images, the sample of a line, sampl
 
 ## Tokens
 
-Text `text-strong` · empty thumbnail `surface-support-1` · handle, play and remove: `action-floating-*` ([0007](../../../../design/decisions/0007-floating-actions-foreground-background.md)).
+Text `text-strong` · empty thumbnail `surface-media` · handle, play and remove: `action-floating-*` ([0007](../../../../design/decisions/0007-floating-actions-foreground-background.md)).
 
 ## Dimensions (Figma)
 

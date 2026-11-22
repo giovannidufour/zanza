@@ -13,7 +13,7 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - **Spacing scale / dimension tokens.** Paddings are hardcoded as in Figma; only `page-margin-*`, `gutter-small`, `small` exist. *Parked.*
 - **Type size tokens.** Coming later; until then the classes carry the sizes ([0003](decisions/0003-type-styles-are-classes.md)).
 - **PlayerButton disabled.** No strikethrough, unlike Button: intentional?
-- **Gallery.** Figma component not designed yet; image placeholder fill `#f2f4f7` has no token. *Parked.*
+- **Gallery.** Figma component not designed yet; image placeholder fill `#f2f4f7` has no token. *Parked.* 2026-11-22: the token now exists (`surface/media`, [0124](decisions/0124-image-placeholder-surface-media.md)); PDP gallery, Player cover and bag item image still have no fill at all in code: proposal, give them `surface-media` too (asked Gio).
 - **PDP gallery scroll ([0033](decisions/0033-pdp-gallery-scrolls-on-its-own.md), [0036](decisions/0036-pdp-gallery-moves-with-the-page.md)).** Code choices not drawn in Figma: no scrollbar (nothing hints that image 2 continues when the window is shorter than the column); the gallery moves with the page (0036). In Figma row 1 is FIXED 330.67, valid only at 1024: a taller info block would overflow it there (code grows the row). To confirm or design.
 
 - **Button loading state ([0098](decisions/0098-checkout-thanks-and-returns.md)).** Checkout waits ~1 s for create-checkout: today aria-disabled with no visual change (disabled = struck through = unavailable, 0058). Options: a `loading` variant (label "Checkout…", no strike), or keep as is.

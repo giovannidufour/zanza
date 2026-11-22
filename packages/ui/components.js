@@ -1122,7 +1122,7 @@
   }
   /* ── Thumbnail (Figma `product image` (page `media`) at 40 × 40, decision 0123) ──
      The record's photo in an admin list (ListingRow, the Listings table). Decorative: the row's title names the record,
-     so alt is empty and the box is hidden from screen readers. No photo → the empty square (surface/support-1). */
+     so alt is empty and the box is hidden from screen readers. No photo → the empty square (surface/media). */
   function Thumbnail(props) {
     return h('span', Object.assign({}, omit(props, ['src', 'srcSet', 'sizes', 'alt', 'className']), { className: cx('zz-thumbnail', props.className), 'aria-hidden': props.alt ? undefined : 'true' }),
       props.src ? h('img', { src: props.src, srcSet: props.srcSet, sizes: props.srcSet ? props.sizes || '40px' : undefined, alt: props.alt || '',
