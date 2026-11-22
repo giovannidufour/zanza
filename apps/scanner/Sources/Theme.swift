@@ -5,6 +5,9 @@ enum Theme {
     static let textStrong = Color.black
     static let textModerate = Color.black.opacity(0.56)      // black-a56
     static let surfaceBase = Color.white
+    /// surface/page, backend theme = scotch-mist: the admin's cream ground (Gio 2026-11-22)
+    static let surfacePage = Color(red: 0xfd / 255, green: 0xfb / 255, blue: 0xdd / 255)
+    static let surfacePageNS = NSColor(srgbRed: 0xfd / 255, green: 0xfb / 255, blue: 0xdd / 255, alpha: 1)
     static let surfaceSubtle = Color.black.opacity(0.04)     // black-a4
     static let surfaceHover = Color.black.opacity(0.04)
     static let divider = Color.black                         // border-divider-strong

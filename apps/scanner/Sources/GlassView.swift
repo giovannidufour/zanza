@@ -29,7 +29,8 @@ final class GlassView: NSView {
     override init(frame: NSRect) {
         super.init(frame: frame)
         wantsLayer = true
-        layer?.backgroundColor = NSColor(white: 0.96, alpha: 1).cgColor   // surface-subtle over surface-base
+        // surface-subtle (black 4%) over surface/page (cream)
+        layer?.backgroundColor = Theme.surfacePageNS.blended(withFraction: 0.04, of: .black)?.cgColor
         layer?.masksToBounds = true
         glassLayer.backgroundColor = NSColor.white.cgColor
         glassLayer.contentsGravity = .resize
@@ -186,12 +187,16 @@ final class GuideView: NSView {
         let s = side * k
         let square = CGRect(x: mid.x - s / 2, y: mid.y - s / 2, width: s, height: s)
         ctx.setStrokeColor(ink); ctx.setLineWidth(1)
-        if g.aids {   // horizontal lines every 1/12 of the guide, to line the text up
+        if g.aids {   // guide lines over the whole preview, 24 pt apart, fixed to the window; centre line stronger (0138)
             ctx.setStrokeColor(NSColor.black.withAlphaComponent(0.16).cgColor)   // black-a16
-            for i in 1..<12 {
-                let y = (square.minY + s * CGFloat(i) / 12).rounded() + 0.5
-                ctx.move(to: CGPoint(x: square.minX, y: y)); ctx.addLine(to: CGPoint(x: square.maxX, y: y))
+            var y = mid.y.truncatingRemainder(dividingBy: 24)
+            while y < bounds.maxY {
+                if abs(y - mid.y) > 1 { ctx.move(to: CGPoint(x: 0, y: y.rounded() + 0.5)); ctx.addLine(to: CGPoint(x: bounds.maxX, y: y.rounded() + 0.5)) }
+                y += 24
             }
+            ctx.strokePath()
+            ctx.setStrokeColor(NSColor.black.withAlphaComponent(0.48).cgColor)   // black-a48
+            ctx.move(to: CGPoint(x: 0, y: mid.y.rounded() + 0.5)); ctx.addLine(to: CGPoint(x: bounds.maxX, y: mid.y.rounded() + 0.5))
             ctx.strokePath()
             ctx.setStrokeColor(ink)
         }
@@ -221,10 +226,10 @@ final class GuideView: NSView {
             deg = deg.truncatingRemainder(dividingBy: 360); if deg > 180 { deg -= 360 }; if deg <= -180 { deg += 360 }
             let text = String(format: "%.1f°", deg) as NSString
             let attrs: [NSAttributedString.Key: Any] = [.font: NSFont(name: "Inter-Medium", size: 12) ?? NSFont.systemFont(ofSize: 12),
-                                                        .foregroundColor: NSColor.black]
+                                                        .foregroundColor: NSColor.white]
             let size = text.size(withAttributes: attrs)
             let box = CGRect(x: handle.x + 16, y: handle.y - size.height / 2 - 3, width: size.width + 12, height: size.height + 6)
-            ctx.setFillColor(NSColor.white.cgColor); ctx.fill(box); ctx.stroke(box.insetBy(dx: 0.5, dy: 0.5))
+            ctx.setFillColor(NSColor.black.cgColor); ctx.fill(box)
             text.draw(at: CGPoint(x: box.minX + 6, y: box.minY + 3), withAttributes: attrs)
         }
         if g.aids, let figure = NSImage(systemSymbolName: "figure.stand", accessibilityDescription: "Up") {

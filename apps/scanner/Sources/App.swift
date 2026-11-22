@@ -12,6 +12,7 @@ struct ZanzaScannerApp: App {
                 .environmentObject(model)
                 .onAppear { if !CommandLine.arguments.contains("--test-scan") { model.scanner.start(); model.pasteNames(onlyIfNew: true) } }
         }
+        .defaultSize(width: 1440, height: 900)
         .windowResizability(.contentMinSize)
         .commands {
             CommandGroup(after: .appInfo) {

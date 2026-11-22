@@ -15,7 +15,7 @@ enum Snapshot {
         if let j = args.firstIndex(of: "--with-preview"), j + 1 < args.count,
            let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: args[j + 1]) as CFURL, nil),
            let img = CGImageSourceCreateImageAtIndex(src, 0, nil) { model.preview = ScannerController.decoded(img); model.center = CGPoint(x: 112, y: 150) }
-        let view = ContentView(scanner: model.scanner).environmentObject(model).frame(width: 929, height: 760)
+        let view = ContentView(scanner: model.scanner).environmentObject(model).frame(width: 1440, height: 900)
         let r = ImageRenderer(content: view)
         r.scale = 1
         if let img = r.nsImage, let tiff = img.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff),

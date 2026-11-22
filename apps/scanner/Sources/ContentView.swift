@@ -1,21 +1,29 @@
 import SwiftUI
 
+/// The window (Figma "Scanner v2 - wide, search column" 2437:1540, 1440 × 900): drafts 360 | preview 720 | record 360,
+/// on the admin's cream ground (surface/page, backend).
 struct ContentView: View {
     @EnvironmentObject var model: AppModel
     @ObservedObject var scanner: ScannerController
 
     var body: some View {
         HStack(spacing: 0) {
-            RecordColumn(scanner: scanner)
-                .frame(width: 368)
+            Group {
+                if Config.configured { DraftColumn(drafts: model.drafts).padding(24) }
+                else { Text("No admin settings in this build.").bodyStyle(14, color: Theme.textModerate).padding(24) }
+            }
+            .frame(width: 360).frame(maxHeight: .infinity, alignment: .top)
             Rectangle().fill(Theme.divider).frame(width: 1)
             ScanColumn(scanner: scanner)
                 .frame(minWidth: 560, maxWidth: .infinity)
+            Rectangle().fill(Theme.divider).frame(width: 1)
+            RecordColumn(scanner: scanner)
+                .frame(width: 360)
         }
-        .frame(minHeight: 760)
-        .background(Theme.surfaceBase)
+        .frame(minWidth: 1280, minHeight: 860)
+        .background(Theme.surfacePage)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            model.pasteNames(onlyIfNew: true)
+            if model.drafts.draft == nil { model.pasteNames(onlyIfNew: true) }
         }
     }
 }
@@ -28,7 +36,7 @@ struct RecordColumn: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
-            if Config.configured { AdminPanel(drafts: model.drafts) }
+            DraftDetail(drafts: model.drafts)
             if model.drafts.draft == nil {   // v1: names pasted or typed (also when signed out or offline)
                 VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 8) {
@@ -58,6 +66,29 @@ struct RecordColumn: View {
                     }
                     .frame(maxHeight: 260)
                 }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    FieldLabel(text: "File name")
+                    HStack(spacing: 4) {
+                        TextField("48213_1_artist-title", text: $model.fileName)
+                            .textFieldStyle(.plain).font(Theme.body(16))
+                        Text(".\(model.format.ext)").bodyStyle(16, color: Theme.textModerate)
+                    }
+                    .padding(.horizontal, 12).frame(height: 40)
+                    .background(Theme.surfaceSubtle)
+                }
+                HStack(spacing: 12) {
+                    Button { model.runPreview() } label: { Text("Preview").frame(maxWidth: .infinity) }
+                        .buttonStyle(ZButtonStyle(primary: false))
+                        .disabled(!scanner.ready || scanner.busy)
+                        .keyboardShortcut("p", modifiers: .command)
+                    Button { model.runScan() } label: { Text("Scan").frame(maxWidth: .infinity) }
+                        .buttonStyle(ZButtonStyle(primary: true))
+                        .disabled(!scanner.ready || scanner.busy || model.fileName.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .keyboardShortcut(.return, modifiers: .command)
                 }
             }
 
@@ -157,6 +188,7 @@ struct StepRow: View {
 
 // MARK: Right: preview, file name, Preview + Scan
 
+/// Column 2: the preview fills the column; caption and the automatic turn under it
 struct ScanColumn: View {
     @EnvironmentObject var model: AppModel
     @ObservedObject var scanner: ScannerController
@@ -165,45 +197,14 @@ struct ScanColumn: View {
         VStack(spacing: 12) {
             GlassCanvas(model: model)
                 .aspectRatio(model.sideMM == nil ? model.previewZone.width / model.previewZone.height : 1, contentMode: .fit)
-                .padding(.top, 36)   // room for the turn handle above the square
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+            Text(scanner.busy ? "\(model.caption) · \(Int(scanner.progress * 100))%" : model.caption)
+                .bodyStyle(14, color: Theme.textModerate).lineLimit(2).multilineTextAlignment(.center)
             if model.sideMM != nil {
-                HStack(spacing: 12) {
-                    Text("Turn").bodyStyle(14)
-                    Slider(value: Binding(get: { -Double(model.angle) * 180 / .pi },
-                                          set: { model.angle = -CGFloat($0) * .pi / 180 }), in: -180...180,
-                           onEditingChanged: { editing in model.turnAids = editing })
-                    Text(String(format: "%.1f°", -Double(model.angle) * 180 / .pi)).bodyStyle(14, color: Theme.textModerate)
-                        .frame(width: 56, alignment: .trailing)
-                    Button("0°") { model.angle = 0 }.buttonStyle(ZButtonStyle(primary: false))
-                }
                 Toggle(isOn: $model.autoTurn) {
-                    Text(model.turning ? "Reading the label…" : "Turn by itself (reads the label text)").bodyStyle(14)
+                    Text(model.turning ? "Reading the label…" : "Turn by itself (reads the label text)").bodyStyle(12)
                 }
                 .toggleStyle(.checkbox)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            Text(scanner.busy ? "\(model.caption) · \(Int(scanner.progress * 100))%" : model.caption)
-                .bodyStyle(12, color: Theme.textModerate).lineLimit(2).multilineTextAlignment(.center)
-            HStack(alignment: .bottom, spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    FieldLabel(text: "File name")
-                    HStack(spacing: 4) {
-                        TextField("48213_1_artist-title", text: $model.fileName)
-                            .textFieldStyle(.plain).font(Theme.body(16))
-                        Text(".\(model.format.ext)").bodyStyle(16, color: Theme.textModerate)
-                    }
-                    .padding(.horizontal, 12).frame(height: 40)
-                    .background(Theme.surfaceSubtle)
-                }
-                Button("Preview") { model.runPreview() }
-                    .buttonStyle(ZButtonStyle(primary: false))
-                    .disabled(!scanner.ready || scanner.busy)
-                    .keyboardShortcut("p", modifiers: .command)
-                Button("Scan") { model.runScan() }
-                    .buttonStyle(ZButtonStyle(primary: true))
-                    .disabled(!scanner.ready || scanner.busy || model.fileName.trimmingCharacters(in: .whitespaces).isEmpty)
-                    .keyboardShortcut(.return, modifiers: .command)
             }
         }
         .padding(24)

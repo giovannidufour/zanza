@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Left column top (0138): sign in → pick a draft → its image positions. Figma: Scanner v2 screens.
-struct AdminPanel: View {
+/// Column 1 (0138, Figma "Scanner v2 - wide, search column" 2437:1540): sign in, then the draft search, always visible;
+/// the picked draft stays selected in the results.
+struct DraftColumn: View {
     @ObservedObject var drafts: DraftSession
     @EnvironmentObject var model: AppModel
     @State private var email = Backend.shared.email ?? ""
@@ -12,8 +13,7 @@ struct AdminPanel: View {
             switch drafts.signIn {
             case .signedOut: signInEmail
             case .codeSent(let address): signInCode(address)
-            case .signedIn:
-                if let d = drafts.draft { draftHead(d); slotList } else { picker }
+            case .signedIn: picker
             }
             if let e = drafts.error { Text(e).bodyStyle(12, color: Theme.alert).fixedSize(horizontal: false, vertical: true) }
         }
@@ -54,7 +54,7 @@ struct AdminPanel: View {
 
     var picker: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Pick a draft").labelStyle(12, color: Theme.textModerate)
+            Text("Drafts").labelStyle(12, color: Theme.textModerate)
             HStack {
                 TextField("SKU, artist, title, cat. no.", text: $drafts.query).textFieldStyle(.plain).font(Theme.body(16))
                 Image(systemName: "magnifyingglass").foregroundColor(Theme.textModerate)
@@ -65,58 +65,21 @@ struct AdminPanel: View {
             ScrollView {
                 VStack(spacing: 0) {
                     ForEach(drafts.results) { d in
-                        DraftResult(draft: d, scanned: drafts.scannedCount(d))
+                        DraftResult(draft: d, scanned: drafts.scannedCount(d), selected: drafts.draft?.id == d.id)
                             .onTapGesture { drafts.pick(d) }
                     }
                 }
             }
-            .frame(maxHeight: 300)
+            .frame(maxHeight: .infinity)
         }
         .onAppear { if drafts.results.isEmpty { drafts.search() } }
-    }
-
-    // MARK: Picked draft
-
-    func draftHead(_ d: DraftSummary) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("SKU \(d.skuText) · Draft").labelStyle(12, color: Theme.textModerate)
-            Text(d.title).labelStyle(18).fixedSize(horizontal: false, vertical: true)
-            Button("Change draft") { drafts.changeDraft() }.buttonStyle(ZButtonStyle(primary: false))
-        }
-    }
-
-    var slotList: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            List {
-                ForEach(Array(drafts.slots.enumerated()), id: \.element.id) { i, slot in
-                    ImageSlotRow(index: i, label: i < drafts.names.count ? drafts.names[i].label : "",
-                                 name: i < drafts.names.count ? drafts.names[i].name : "",
-                                 slot: slot, isTarget: drafts.target == i,
-                                 remove: { drafts.remove(at: i) })
-                        .contentShape(Rectangle())
-                        .onTapGesture { drafts.target = i; model.syncFileName() }
-                        .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: 0))
-                }
-                .onMove { drafts.move(from: $0, to: $1) }
-            }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .frame(height: min(CGFloat(drafts.slots.count) * 72, 290))
-            HStack(spacing: 12) {
-                Button("Add image") { drafts.addImage() }.buttonStyle(ZButtonStyle(primary: false))
-                Text("Drag the rows (or ⌥↑ ⌥↓) to change the order: files are renamed").bodyStyle(12, color: Theme.textModerate)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            // ⌥↑ / ⌥↓ move the target position
-            Button("") { drafts.moveTarget(by: -1) }.keyboardShortcut(.upArrow, modifiers: .option).hidden().frame(width: 0, height: 0)
-            Button("") { drafts.moveTarget(by: 1) }.keyboardShortcut(.downArrow, modifiers: .option).hidden().frame(width: 0, height: 0)
-        }
     }
 }
 
 struct DraftResult: View {
     let draft: DraftSummary
     let scanned: Int
+    var selected = false
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             ZStack {
@@ -133,7 +96,9 @@ struct DraftResult: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.vertical, 8).padding(.horizontal, 4)
+        .padding(.vertical, 8).padding(.horizontal, 12)
+        .background(selected ? Theme.surfaceHover : Color.clear)
+        .overlay(Rectangle().stroke(selected ? Theme.divider : Color.clear, lineWidth: 1))
         .contentShape(Rectangle())
     }
 }
@@ -168,5 +133,53 @@ struct ImageSlotRow: View {
         .padding(.horizontal, 8).padding(.vertical, 6)
         .background(isTarget ? Theme.surfaceHover : Color.clear)
         .overlay(Rectangle().stroke(isTarget ? Theme.divider : Color.clear, lineWidth: 1))
+    }
+}
+
+/// Column 3 top (0138): the picked draft and its image positions
+struct DraftDetail: View {
+    @ObservedObject var drafts: DraftSession
+    @EnvironmentObject var model: AppModel
+    var body: some View {
+        if let d = drafts.draft {
+            VStack(alignment: .leading, spacing: 16) { draftHead(d); slotList }
+        }
+    }
+
+    // MARK: Picked draft
+
+    func draftHead(_ d: DraftSummary) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("SKU \(d.skuText) · Draft").labelStyle(12, color: Theme.textModerate)
+            Text(d.title).labelStyle(18).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    var slotList: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            List {
+                ForEach(Array(drafts.slots.enumerated()), id: \.element.id) { i, slot in
+                    ImageSlotRow(index: i, label: i < drafts.names.count ? drafts.names[i].label : "",
+                                 name: i < drafts.names.count ? drafts.names[i].name : "",
+                                 slot: slot, isTarget: drafts.target == i,
+                                 remove: { drafts.remove(at: i) })
+                        .contentShape(Rectangle())
+                        .onTapGesture { drafts.target = i; model.syncFileName() }
+                        .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: 0))
+                }
+                .onMove { drafts.move(from: $0, to: $1) }
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .frame(height: min(CGFloat(drafts.slots.count) * 72, 290))
+            HStack(spacing: 12) {
+                Button("Add image") { drafts.addImage() }.buttonStyle(ZButtonStyle(primary: false))
+                Text("Drag the rows (or ⌥↑ ⌥↓) to change the order: files are renamed").bodyStyle(12, color: Theme.textModerate)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            // ⌥↑ / ⌥↓ move the target position
+            Button("") { drafts.moveTarget(by: -1) }.keyboardShortcut(.upArrow, modifiers: .option).hidden().frame(width: 0, height: 0)
+            Button("") { drafts.moveTarget(by: 1) }.keyboardShortcut(.downArrow, modifiers: .option).hidden().frame(width: 0, height: 0)
+        }
     }
 }
