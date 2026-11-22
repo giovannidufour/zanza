@@ -75,9 +75,16 @@ enum GlassSnapshot {
         let v = GlassView(frame: NSRect(x: 0, y: 0, width: 520, height: 520))
         v.glass = CGRect(x: 0, y: 0, width: 216, height: 216 * CGFloat(img.height) / CGFloat(img.width))
         v.image = img; v.side = 180; v.record = 177.8; v.center = CGPoint(x: 110, y: 160); v.angle = 0.4; v.aids = true
-        if let rep = v.bitmapImageRepForCachingDisplay(in: v.bounds) {
-            v.cacheDisplay(in: v.bounds, to: rep)
-            try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: a[i + 1]))
+        let win = NSWindow(contentRect: v.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        win.contentView = v
+        v.layoutSubtreeIfNeeded(); v.display()
+        let w = Int(v.bounds.width), h = Int(v.bounds.height)
+        if let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                               bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue), let layer = v.layer {
+            layer.displayIfNeeded(); layer.sublayers?.forEach { $0.displayIfNeeded() }
+            ctx.translateBy(x: 0, y: CGFloat(h)); ctx.scaleBy(x: 1, y: -1)   // layers are y-down here
+            layer.render(in: ctx)
+            if let img = ctx.makeImage() { try? ImageOutput.write(img, to: URL(fileURLWithPath: a[i + 1]), format: .png, dpi: 72) }
         }
         exit(0)
     }
