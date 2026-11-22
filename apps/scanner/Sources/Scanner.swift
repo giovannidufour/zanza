@@ -1,23 +1,34 @@
 import AppKit
 import ImageCaptureCore
 
-/// What part of the glass to preview and how big the square to scan is (millimetres).
+/// The record on the glass (Gio 2026-11-22): the whole record is scanned for the archive, and a 4" square around the
+/// spindle hole is cut for the shop. Sizes in millimetres.
 enum SizePreset: String, CaseIterable, Identifiable {
-    case record7 = "7\" record"
-    case label = "Label"
+    case record7 = "7\""
+    case record10 = "10\""
+    case record12 = "12\""
     case wholeGlass = "Whole glass"
     var id: String { rawValue }
-    /// Side of the scanned square; nil = the whole preview zone, not rotatable
+    /// The label image for the shop: 4" whatever the record (Gio's standard)
+    static let labelMM: CGFloat = 101.6
+    /// Record diameter, drawn on the preview
+    var recordMM: CGFloat? {
+        switch self { case .record7: return 177.8; case .record10: return 254; case .record12: return 304.8; case .wholeGlass: return nil }
+    }
+    /// Side of the original (archive) square: the record plus a margin, at most the width of the glass; nil = whole zone
     var sideMM: CGFloat? {
-        switch self { case .record7: return 180; case .label: return 110; case .wholeGlass: return nil }
+        switch self { case .record7: return 180; case .record10, .record12: return 216; case .wholeGlass: return nil }
     }
     /// The zone the preview scans, from the corner of the glass (clamped to the glass)
     var zoneMM: CGSize {
         switch self { case .wholeGlass: return CGSize(width: 1000, height: 1000); default: return CGSize(width: 216, height: 216) }
     }
     var menuTitle: String {
-        if let s = sideMM { return "\(rawValue) · \(Int(s)) × \(Int(s)) mm" }
-        return rawValue
+        switch self {
+        case .record7: return "7\" · whole record + 4\" label"
+        case .record10, .record12: return "\(rawValue) · centre (fits the glass) + 4\" label"
+        case .wholeGlass: return "Whole glass · one file"
+        }
     }
 }
 

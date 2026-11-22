@@ -25,6 +25,11 @@ final class AppModel: ObservableObject {
         ?? FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza scans") {
         didSet { UserDefaults.standard.set(folder, forKey: "folder") }
     }
+    /// Where the whole-record originals are archived
+    @Published var originalsFolder: URL = UserDefaults.standard.url(forKey: "originalsFolder")
+        ?? FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza scans/Originals") {
+        didSet { UserDefaults.standard.set(originalsFolder, forKey: "originalsFolder") }
+    }
 
     /// Last preview and the glass area it shows (mm, origin = corner of the glass)
     @Published var preview: CGImage?
@@ -101,12 +106,13 @@ final class AppModel: ObservableObject {
         select(s)
     }
 
-    func chooseFolder() {
+    func chooseFolder(originals: Bool = false) {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true; panel.canChooseFiles = false; panel.canCreateDirectories = true
         panel.prompt = "Choose"
-        panel.directoryURL = folder
-        if panel.runModal() == .OK, let url = panel.url { folder = url }
+        panel.message = originals ? "Folder for the originals (whole record)" : "Folder for the label images (4\")"
+        panel.directoryURL = originals ? originalsFolder : folder
+        if panel.runModal() == .OK, let url = panel.url { if originals { originalsFolder = url } else { folder = url } }
     }
 
     // MARK: Preview and scan
@@ -126,7 +132,7 @@ final class AppModel: ObservableObject {
                 self.preview = img
                 self.caption = self.preset.sideMM == nil
                     ? "Whole glass: Scan saves everything you see"
-                    : "Drag the square onto the record; turn it from the top handle"
+                    : "Put the square's centre on the spindle hole; turn it from the top handle. The dashed square is the 4\" label"
             case .failure(let e):
                 self.caption = e.localizedDescription
             }
@@ -151,37 +157,44 @@ final class AppModel: ObservableObject {
             switch result {
             case .failure(let e): self.caption = e.localizedDescription
             case .success(let img):
-                var out: CGImage? = img
-                if let side {
-                    let scale = CGFloat(img.width) / area.width   // px per mm, as scanned
-                    out = ImageOutput.straighten(img,
-                                                 centerPx: CGPoint(x: (center.x - area.minX) * scale, y: (center.y - area.minY) * scale),
-                                                 sidePx: side * scale, angle: angle)
+                guard let side else { self.save(original: img, label: nil, dpi: dpi); return }
+                let scale = CGFloat(img.width) / area.width   // px per mm, as scanned
+                let c = CGPoint(x: (center.x - area.minX) * scale, y: (center.y - area.minY) * scale)
+                guard let original = ImageOutput.straighten(img, centerPx: c, sidePx: side * scale, angle: angle),
+                      let label = ImageOutput.straighten(img, centerPx: c, sidePx: SizePreset.labelMM * scale, angle: angle) else {
+                    self.caption = "Could not cut the squares out of the scan"; return
                 }
-                guard let out else { self.caption = "Could not cut the square out of the scan"; return }
                 // The name is read now, so it can still be changed while the scanner runs
-                self.save(out, dpi: dpi)
+                self.save(original: original, label: label, dpi: dpi)
             }
         }
     }
 
-    private func save(_ image: CGImage, dpi: Int) {
+    /// Label (4") in Save to, original (whole record) in Originals; whole glass = one file in Save to.
+    private func save(original: CGImage, label: CGImage?, dpi: Int) {
         let name = Names.clean(fileName)
         let fm = FileManager.default
+        let file = name + "." + format.ext
+        let main = folder.appendingPathComponent(file)
+        let archive = label == nil ? nil : originalsFolder.appendingPathComponent(file)
         do {
             try fm.createDirectory(at: folder, withIntermediateDirectories: true)
-            let url = folder.appendingPathComponent(name).appendingPathExtension(format.ext)
-            if fm.fileExists(atPath: url.path) {
+            if archive != nil { try fm.createDirectory(at: originalsFolder, withIntermediateDirectories: true) }
+            let existing = [main, archive].compactMap { $0 }.filter { fm.fileExists(atPath: $0.path) }
+            if !existing.isEmpty {
                 let alert = NSAlert()
-                alert.messageText = "\(url.lastPathComponent) already exists"
-                alert.informativeText = "Replace it with this scan?"
+                alert.messageText = "\(file) already exists"
+                alert.informativeText = "Replace it with this scan? (" + existing.map { $0.deletingLastPathComponent().lastPathComponent }.joined(separator: " and ") + ")"
                 alert.addButton(withTitle: "Replace")
                 alert.addButton(withTitle: "Cancel")
                 if alert.runModal() != .alertFirstButtonReturn { caption = "Not saved: the file already exists"; return }
             }
-            try ImageOutput.write(image, to: url, format: format, dpi: dpi)
-            caption = "Saved in \(folder.lastPathComponent): \(url.lastPathComponent)"
-            if let step = steps.first(where: { $0.name == name }) { thumbs[step.id] = image }
+            try ImageOutput.write(label ?? original, to: main, format: format, dpi: dpi)
+            if let archive { try ImageOutput.write(original, to: archive, format: format, dpi: dpi) }
+            caption = archive == nil
+                ? "Saved in \(folder.lastPathComponent): \(file)"
+                : "Saved \(file): 4\" label in \(folder.lastPathComponent), whole record in \(originalsFolder.lastPathComponent)"
+            if let step = steps.first(where: { $0.name == name }) { thumbs[step.id] = label ?? original }
             advance(after: name)
         } catch {
             caption = error.localizedDescription

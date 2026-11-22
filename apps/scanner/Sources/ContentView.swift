@@ -12,7 +12,7 @@ struct ContentView: View {
             ScanColumn(scanner: scanner)
                 .frame(minWidth: 560, maxWidth: .infinity)
         }
-        .frame(minHeight: 700)
+        .frame(minHeight: 760)
         .background(Theme.surfaceBase)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             model.pasteNames(onlyIfNew: true)
@@ -58,7 +58,7 @@ struct RecordColumn: View {
 
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
-                    FieldLabel(text: "Size")
+                    FieldLabel(text: "Record")
                     Picker("", selection: $model.preset) {
                         ForEach(SizePreset.allCases) { Text($0.menuTitle).tag($0) }
                     }.labelsHidden()
@@ -71,26 +71,15 @@ struct RecordColumn: View {
                         }.labelsHidden()
                     }
                     VStack(alignment: .leading, spacing: 4) {
-                        FieldLabel(text: "Format")
+                        FieldLabel(text: "File type")
                         Picker("", selection: $model.format) {
                             ForEach(FileFormat.allCases) { Text($0.rawValue).tag($0) }
                         }.labelsHidden()
                     }
                 }
-                VStack(alignment: .leading, spacing: 4) {
-                    FieldLabel(text: "Save to")
-                    Button { model.chooseFolder() } label: {
-                        HStack {
-                            Text(model.folder.lastPathComponent).bodyStyle(16).lineLimit(1)
-                            Spacer()
-                            Text("Change").bodyStyle(14, color: Theme.textModerate)
-                        }
-                        .padding(.horizontal, 12).frame(height: 40)
-                        .background(Theme.surfaceSubtle)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .help(model.folder.path)
+                FolderField(title: model.preset.sideMM == nil ? "Save to" : "Labels (4\") to", url: model.folder) { model.chooseFolder() }
+                if model.preset.sideMM != nil {
+                    FolderField(title: "Originals to", url: model.originalsFolder) { model.chooseFolder(originals: true) }
                 }
             }
 
@@ -108,6 +97,29 @@ struct RecordColumn: View {
     /// The scanner's resolutions, plus the chosen one so the menu always shows it
     var dpiChoices: [Int] {
         Array(Set(scanner.resolutions.filter { $0 >= 75 && $0 <= 2400 } + [model.dpi])).sorted()
+    }
+}
+
+struct FolderField: View {
+    let title: String
+    let url: URL
+    let choose: () -> Void
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            FieldLabel(text: title)
+            Button(action: choose) {
+                HStack {
+                    Text(url.lastPathComponent).bodyStyle(16).lineLimit(1)
+                    Spacer()
+                    Text("Change").bodyStyle(14, color: Theme.textModerate)
+                }
+                .padding(.horizontal, 12).frame(height: 40)
+                .background(Theme.surfaceSubtle)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(url.path)
+        }
     }
 }
 
@@ -195,7 +207,7 @@ struct PreviewCanvas: View {
                 }
                 if let side = model.sideMM {
                     let s = side * k
-                    SelectionSquare(side: s)
+                    SelectionSquare(side: s, record: (model.preset.recordMM ?? 0) * k, label: SizePreset.labelMM * k)
                         .rotationEffect(.radians(model.angle))
                         .position(c)
                         .gesture(DragGesture(minimumDistance: 1)
@@ -225,10 +237,16 @@ struct PreviewCanvas: View {
 
 struct SelectionSquare: View {
     let side: CGFloat
+    let record: CGFloat   // record diameter, points
+    let label: CGFloat    // 4" label crop, points
     var body: some View {
         ZStack {
             Rectangle().fill(Color.white.opacity(0.001)).overlay(Rectangle().stroke(Theme.textStrong, lineWidth: 1))
-            Circle().stroke(Theme.textStrong, style: StrokeStyle(lineWidth: 1, dash: [6, 6]))   // the record's edge
+            if record > 0 && record <= side * 1.05 {   // the record's edge (10" and 12" do not fit the glass)
+                Circle().stroke(Theme.textStrong, style: StrokeStyle(lineWidth: 1, dash: [2, 4])).frame(width: record, height: record)
+            }
+            Rectangle().stroke(Theme.textStrong, style: StrokeStyle(lineWidth: 1, dash: [6, 6])).frame(width: label, height: label)  // the 4" label image
+            Circle().stroke(Theme.textStrong, lineWidth: 1).frame(width: 8, height: 8)   // spindle hole
             Rectangle().fill(Theme.textStrong).frame(width: 1, height: 30).offset(y: -side / 2 - 15)
         }
         .frame(width: side, height: side)

@@ -12,7 +12,7 @@ enum Snapshot {
         model.angle = -0.1
         model.center = CGPoint(x: 100, y: 104)
         model.caption = "Drag the square onto the record; turn it from the top handle"
-        let view = ContentView(scanner: model.scanner).environmentObject(model).frame(width: 929, height: 700)
+        let view = ContentView(scanner: model.scanner).environmentObject(model).frame(width: 929, height: 760)
         let r = ImageRenderer(content: view)
         r.scale = 1
         if let img = r.nsImage, let tiff = img.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff),

@@ -19,7 +19,7 @@ text fields are not drawn by the renderer).
 
 | File | Holds |
 | --- | --- |
-| `Sources/Scanner.swift` | ImageCaptureCore: finds and opens the scanner, scans an area (mm from the corner of the glass) to a CGImage; size presets |
+| `Sources/Scanner.swift` | ImageCaptureCore: finds and opens the scanner, scans an area (mm from the corner of the glass) to a CGImage; record presets (7", 10", 12", whole glass; 4" label) |
 | `Sources/AppModel.swift` | State: names, settings (remembered), preview, selection square, Preview / Scan / save |
 | `Sources/ImageOutput.swift` | Cuts and straightens the turned square; writes JPEG / PNG / TIFF with the dpi |
 | `Sources/Names.swift` | Parses pasted names (`<sku>_<role>_<slug>`), role labels, next photo name |
