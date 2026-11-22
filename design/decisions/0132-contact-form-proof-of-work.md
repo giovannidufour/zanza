@@ -1,6 +1,6 @@
 # 0132 — Contact form: invisible proof of work against bots
 
-`2026-11-22` · proposed (Gio: "il più smooth ma efficace, in modo da non ricevere bot") · Figma: none (no visible UI)
+`2026-11-22` · accepted (Gio: "il più smooth ma efficace, in modo da non ricevere bot") · Figma: none (no visible UI)
 
 **Context.** The `/contact/` form already had a honeypot (`website`) and an origin check. Gio wants something stronger but smooth. Cloudflare Turnstile is the strongest free option, but Cloudflare sets its own "strictly necessary" bot cookies, it needs a widget + secret, and Privacy would name one more processing; Gio's rule is no cookies and a minimal Privacy (0130, 0131).
 **Decision.**
