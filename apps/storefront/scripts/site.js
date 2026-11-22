@@ -51,6 +51,9 @@
 (function () {
   'use strict';
 
+  // analytics (decision 0131, scripts/analytics.js): named events, a no-op when analytics is off
+  function track(name, props) { if (window.ZanzaAnalytics) window.ZanzaAnalytics.track(name, props); }
+
   /* ---------------------------------------------------------------- 1. header */
 
   var headerCleanup = null;
@@ -261,7 +264,10 @@
     if (audio.getAttribute('src') !== cur.src) audio.src = cur.src;
     open();
     render();
-    if (autoplay) play();
+    if (autoplay) {
+      play();
+      track('sample_played', { listing_id: cur.listing, sample: index + 1, section: cur.section });
+    }
   }
   function toggle() {
     if (!current()) return;
@@ -619,6 +625,7 @@
       return s;
     }
     function selected() { return selectionOf(boxes, hiddenSel, soldBox); }
+    var lastSel = null;   // the selection of the last apply(), for analytics
     function matches(v, s, skip) {
       if (!v.__q) return false;
       if (v.__sold && !s.__showSold) return false;
@@ -705,6 +712,11 @@
     function apply(announce) {
       soldNow();
       var s = selected(), shown = 0;
+      // analytics: each value the visitor just added (not the ones from the URL at load)
+      if (announce && lastSel) keys.forEach(function (k) {
+        s[k].forEach(function (x) { if (!lastSel[k] || lastSel[k].indexOf(x) === -1) track('filter_applied', { filter: k, value: x, search: !!searchPage }); });
+      });
+      lastSel = s;
       items.forEach(function (el, i) { var ok = matches(values[i], s); el.hidden = !ok; if (ok) shown++; });
       refreshOptions(boxes, s, root);
       var empty = document.querySelector('[data-plp-empty]'); if (empty) empty.hidden = shown > 0;
@@ -772,7 +784,7 @@
     };
     syncSort();
     sortSelects.forEach(function (sel) {
-      sel.addEventListener('change', function (e) { e.stopPropagation(); sort = sel.value; syncSort(); applySort(); apply(false); });
+      sel.addEventListener('change', function (e) { e.stopPropagation(); sort = sel.value; syncSort(); applySort(); apply(false); track('sort_changed', { sort: sort }); });
     });
     if (layer && trigger && layer.showModal) {
       var draftSold = layer.querySelector('input[data-show-sold]');
@@ -892,6 +904,12 @@
     root.addEventListener('change', function () { apply(true); });
     applySort();
     apply(false);
+    // analytics: one search per results page; 0 results = what people look for and the shop doesn't have
+    if (searchPage && query && window.ZanzaAnalytics) {
+      var term = window.ZanzaAnalytics.safeTerm(query);
+      var results = items.filter(function (el) { return !el.hidden; }).length;
+      track('search', { term: term || '[redacted]', results: results, no_results: results === 0 });
+    }
   }
 
   /* ---------------------------------------------------------------- 6. bag */
@@ -927,7 +945,7 @@
   function addToBag(id) {
     if (!id) return;
     var ids = readBag();
-    if (ids.indexOf(id) === -1) { ids.push(id); writeBag(ids); }
+    if (ids.indexOf(id) === -1) { ids.push(id); writeBag(ids); track('bag_add', { listing_id: id, bag_size: ids.length }); }
     // a toast too (owner, decision 0050), even if the button and the header count already change: View bag = the header
     // Bag link (soft navigation keeps the player), so the toast closes after 6 s like a text-only one
     if (window.ZanzaToast) {
@@ -938,7 +956,9 @@
     } else announce('Added to bag. ' + ids.length + (ids.length === 1 ? ' record' : ' records') + ' in the bag.');
   }
   function removeFromBag(id) {
-    writeBag(readBag().filter(function (x) { return x !== id; }));
+    var ids = readBag().filter(function (x) { return x !== id; });
+    writeBag(ids);
+    track('bag_remove', { listing_id: id, bag_size: ids.length });
   }
 
   // the header Bag button: "(n)" in its suffix, on every page
@@ -1118,6 +1138,7 @@
         var b = r.body || {};
         if (r.status === 200 && b.url) {
           try { window.localStorage.setItem(CHECKOUT_KEY, JSON.stringify({ session: b.session, ids: ids })); } catch (e) { /* ignore */ }
+          track('checkout_started', { records: ids.length, country: select ? select.value : '' });
           window.location.href = b.url;   // keeps aria-disabled: the page is leaving
           return;
         }
@@ -1824,6 +1845,7 @@
       fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         .then(function (res) { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json().catch(function () { return {}; }); })
         .then(function (d) {
+          track('trade_offer_sent', { listing: payload.listing, records: recs.length });
           var sent = document.querySelector('[data-offer-sent]');
           // decision 0070: the phrase to send from each profile (in quotes), and the buttons for the networks they gave
           var phraseEl = sent && sent.querySelector('[data-offer-phrase]');
@@ -1883,6 +1905,7 @@
         body: JSON.stringify({ name: val('name'), email: val('email'), message: val('message'), website: val('website') }) })
         .then(function (res) { if (!res.ok) throw new Error('HTTP ' + res.status); })
         .then(function () {
+          track('contact_sent');
           form.hidden = true;
           var sent = document.querySelector('[data-contact-sent]');
           if (sent) sent.hidden = false;

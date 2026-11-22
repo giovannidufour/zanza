@@ -81,5 +81,10 @@
   "checkout": {
     "note": "Stripe Checkout (migration 0021, _context/backend.md → Checkout con hold). endpoint = URL of the Supabase function create-checkout; empty = Checkout in the Bag says checkout is not open yet.",
     "endpoint": "https://hhpknvyfypqipxufmbys.supabase.co/functions/v1/create-checkout"
+  },
+  "analytics": {
+    "note": "Shop analytics (decision 0131): PostHog EU Cloud, project 362828 (account: Gio's personal Gmail). key = the project token (phc_…, public by design, write-only); empty = no analytics scripts on any page. Cookieless ('always'), no recordings, heatmaps + web vitals on; never on the admin. Settings live in PostHog: Web analytics → cookieless tracking ON, domain https://rythem-works.com; Heatmaps ON (capture URLs: home, /sale/*, /products/*, free plan max 3); Privacy → discard client IP ON; Session replay OFF.",
+    "key": "phc_mkjXCRdhYtDHSrtg7tCsk3xTrxNzayLLY8QDvwzNCji6",
+    "host": "https://eu.i.posthog.com"
   }
 }

@@ -72,11 +72,13 @@ Da verificare con uno **Steuerberater** prima del checkout:
 
 **Proposta:** partire con **UE + UK/CH/US** e tariffe fisse per zona e formato, poi allargare.
 
+## Analytics (2026-11-22, decisione 0131)
+**PostHog EU Cloud** (Francoforte, piano gratuito), progetto 362828, account con la Gmail personale di Gio. Modalità **cookieless** (niente sul dispositivo, IP scartato, nessun banner): visite e fonti, heatmap (home, `/sale/*`, `/products/*`), web vitals, eventi (ricerche, filtri, sample, bag, checkout…) con il `template` della pagina. **Niente registrazioni.** Solo negozio, mai admin. Chiave in `site.json` → `analytics`. Sostituisce Plausible (a pagamento, senza heatmap). Nota Discogs: gli eventi nominati portano solo id e conteggi (niente titoli o dati Discogs); l'autocapture registra solo il testo dell'elemento cliccato.
+
 ## Servizi rimandati
 | Bisogno | Servizio | Quando |
 |---|---|---|
 | Ricerca/filtri PLP | Postgres finché < ~2k copie, poi Meilisearch | non prima di un anno al ritmo attuale |
-| Analytics | Plausible | i ToU Discogs vietano di esportare dati verso terzi (niente GA) |
 | Trade (proposals) | tabelle in più nello stesso Supabase | dopo il checkout; Q2 aperta |
 | Frontend Next.js | — | solo se il sito statico + `site.js` non basta più (carrello/account) |
 

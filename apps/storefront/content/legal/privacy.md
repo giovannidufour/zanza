@@ -9,12 +9,13 @@ Last updated: {{legal.updated}}
 ## What I process
 
 - **Visiting the site:** IP address and browser, to deliver pages securely; short logs. Art. 6(1)(f).
+- **Statistics:** visits, clicks, scrolling and page speed, without cookies or anything stored on your device; IP addresses discarded, no recordings. Art. 6(1)(f). Kept up to 12 months.
 - **In your browser:** only your bag and your sign-in.
 - **Orders, account and "Notify me":** name, address, email and order, to sell and ship; given to the payment provider and the carrier. Art. 6(1)(b) and (c); kept as long as the law requires, reminders until sent.
 - **Messages{{#trade}} and trade offers{{/trade}}:** what you write, to answer you. Art. 6(1)(b).
 - **Newsletter:** your email and proof of consent, until you unsubscribe. Art. 6(1)(a).
 
-I use service providers for hosting, database, email and payments. Some are in the USA: transfers are covered by the EU–U.S. Data Privacy Framework or the EU Standard Contractual Clauses. Without the data I can't ship an order or answer you.
+I use service providers for hosting, database, email, payments and statistics. Some are in the USA: transfers are covered by the EU–U.S. Data Privacy Framework or the EU Standard Contractual Clauses. Without the data I can't ship an order or answer you.
 
 ## Your rights
 
