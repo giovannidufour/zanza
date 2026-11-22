@@ -1144,18 +1144,13 @@ export interface ProgressBarProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function ProgressBar(props: ProgressBarProps): JSX.Element;
 
-/** Mirrors the Figma component `admin bar` (page `admin`, device=desktop | mobile, one responsive markup, decision 0089). */
+/** Mirrors the Figma component `admin bar` (page `admin`, device=desktop | mobile, one responsive markup, decision 0089).
+ *  No Create button since decision 0125: Create listing and Bulk create are on the Listings page (`ListingsHead`). */
 export interface AdminBarProps extends HTMLAttributes<HTMLElement> {
   /** Desktop section buttons, in order. `current` = the section you are on (Button state=active, aria-current). */
   items?: { href: string; label: ReactNode; current?: boolean }[];
   /** Mobile title (Figma `title`). @default "Store admin" */
   title?: ReactNode;
-  /** Create listing link (primary). Omit → no button. */
-  createHref?: string;
-  /** Desktop label and mobile accessible name. @default "Create listing" */
-  createLabel?: string;
-  /** Mobile visible label. @default "Create" */
-  createShortLabel?: ReactNode;
   /** Desktop: the signed-in email (body/small, text/moderate). */
   email?: ReactNode;
   /** Desktop Sign out. Omit → no button (on mobile Sign out is in the menu). */
@@ -1172,6 +1167,23 @@ export interface AdminBarProps extends HTMLAttributes<HTMLElement> {
   navLabel?: string;
 }
 export declare function AdminBar(props: AdminBarProps): JSX.Element;
+
+/** Mirrors the Figma component `listings head` (page BACKEND → Listings, device=desktop | mobile, one responsive markup,
+ *  decision 0125): the Listings page title + the ways to add records. Desktop = one row, actions right; mobile = actions
+ *  under the title. */
+export interface ListingsHeadProps extends HTMLAttributes<HTMLDivElement> {
+  /** The page heading (h1, label/extra-large). @default "Listings" */
+  title?: ReactNode;
+  /** Bulk create link (Button secondary). Omit → no button. */
+  bulkHref?: string;
+  /** @default "Bulk create" */
+  bulkLabel?: ReactNode;
+  /** Create listing link (Button primary). Omit → no button. */
+  createHref?: string;
+  /** @default "Create listing" */
+  createLabel?: ReactNode;
+}
+export declare function ListingsHead(props: ListingsHeadProps): JSX.Element;
 
 /** Figma `product image` (page `media`) at 40 × 40 (decision 0123): a record's photo in an admin list (ListingRow, the
  *  Listings table). Decorative by default (empty alt, aria-hidden): the row's title names the record. */

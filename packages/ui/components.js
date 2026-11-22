@@ -1099,28 +1099,38 @@
   }
   /* ── AdminBar (Figma page `admin` → `admin bar`, device=desktop | mobile, decision 0089) ──
      One responsive markup. desktop: section Buttons (secondary small, state=active = the section you are on, 0045)
-     + Create listing (primary small) · the signed-in email (body/small text/moderate) + Sign out.
-     mobile (--mobile): Menu Button (secondary, bars icon, like the shop header) · title (label/medium) · Create (primary),
+     · the signed-in email (body/small text/moderate) + Sign out.
+     mobile (--mobile): Menu Button (secondary, bars icon, like the shop header) · title (label/medium),
      padding page-margin/mobile, bottom border divider/strong; the sections and Sign out live in the page's menu dialog
-     (MenuLayer), opened by onMenuClick. */
+     (MenuLayer), opened by onMenuClick. No Create here since decision 0125: Create listing and Bulk create are actions
+     of the Listings page (ListingsHead). */
   function AdminBar(props) {
     var items = props.items || [];
-    return h('header', Object.assign({}, omit(props, ['items', 'title', 'createHref', 'createLabel', 'createShortLabel', 'email', 'onSignOut', 'signOutLabel',
+    return h('header', Object.assign({}, omit(props, ['items', 'title', 'email', 'onSignOut', 'signOutLabel',
       'onMenuClick', 'menuLabel', 'menuProps', 'navLabel', 'className']), { className: cx('zz-admin-bar', props.className) }),
       h('div', { className: 'zz-admin-bar__desktop' },
         h('nav', { className: 'zz-admin-bar__nav', 'aria-label': props.navLabel || 'Admin' },
           items.map(function (it) {
             return h(Button, { key: it.href, hierarchy: 'secondary', size: 'small', href: it.href, state: it.current ? 'active' : undefined }, it.label);
-          }),
-          props.createHref ? h(Button, { hierarchy: 'primary', size: 'small', href: props.createHref }, props.createLabel || 'Create listing') : null),
+          })),
         h('div', { className: 'zz-admin-bar__account' },
           props.email ? h('span', { className: 'zz-admin-bar__email body-small' }, props.email) : null,
           props.onSignOut ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onSignOut }, props.signOutLabel || 'Sign out') : null)),
       h('div', { className: 'zz-admin-bar__mobile' },
         h(Button, Object.assign({ className: 'zz-admin-bar__menu', hierarchy: 'secondary', leadingIcon: h(HamburgerIcon),
           'aria-label': props.menuLabel || 'Menu', onClick: props.onMenuClick }, props.menuProps)),
-        h('p', { className: 'zz-admin-bar__title label-medium' }, props.title || 'Store admin'),
-        props.createHref ? h(Button, { hierarchy: 'primary', href: props.createHref, 'aria-label': props.createLabel || 'Create listing' }, props.createShortLabel || 'Create') : null));
+        h('p', { className: 'zz-admin-bar__title label-medium' }, props.title || 'Store admin')));
+  }
+  /* ── ListingsHead (Figma BACKEND → Listings → `listings head`, device=desktop | mobile, decision 0125) ──
+     The Listings page title (h1 label-extra-large, the `admin page title`) + the ways to add records: Bulk create
+     (secondary) and Create listing (primary), gap 16, links. Desktop: one row, actions on the right, centred.
+     Mobile (--mobile): the actions go under the title, gap 16 (the uppercase labels do not fit beside it at 343). */
+  function ListingsHead(props) {
+    return h('div', Object.assign({}, omit(props, ['title', 'createHref', 'createLabel', 'bulkHref', 'bulkLabel', 'className']), { className: cx('zz-listings-head', props.className) }),
+      h('h1', { className: 'zz-listings-head__title label-extra-large' }, props.title || 'Listings'),
+      h('div', { className: 'zz-listings-head__actions' },
+        props.bulkHref ? h(Button, { hierarchy: 'secondary', href: props.bulkHref }, props.bulkLabel || 'Bulk create') : null,
+        props.createHref ? h(Button, { hierarchy: 'primary', href: props.createHref }, props.createLabel || 'Create listing') : null));
   }
   /* ── Thumbnail (Figma `product image` (page `media`) at 40 × 40, decision 0123) ──
      The record's photo in an admin list (ListingRow, the Listings table). Decorative: the row's title names the record,
@@ -1777,6 +1787,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, AdminBar: AdminBar, Thumbnail: Thumbnail, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, AdminBar: AdminBar, ListingsHead: ListingsHead, Thumbnail: Thumbnail, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
            NewsletterDialog: NewsletterDialog, SectionHead: SectionHead, GenreLinks: GenreLinks, HomeIntro: HomeIntro, HomeNewsletter: HomeNewsletter, ProductTile: ProductTile, GalleryCounter: GalleryCounter, ViewToggle: ViewToggle };
 });
