@@ -3,7 +3,8 @@
 // the visitor stays on the site and confirms with the one link in the email.
 //   POST { action: "subscribe", email, source, website }  → emails a signed confirm link (Resend). Nothing is stored.
 //   POST { action: "confirm", token }                     → checks the link, adds the address to Buttondown as an
-//                                                           active subscriber (API, type "regular"), with the consent proof
+//                                                           active subscriber (API, type "regular"), with the consent proof,
+//                                                           then emails the shop inbox (NEWSLETTER_TO, else OFFER_TO)
 // The link is <origin of the signup page>/newsletter/confirm/#<token>: the token is in the fragment, so it never reaches a
 // server log; the page posts it here (scripts/newsletter.js). A link scanner that only GETs the URL confirms nothing.
 // Token = base64url({ e: email, t: signup time, s: source path }) + "." + HMAC-SHA256, valid 7 days. The HMAC key is
@@ -11,6 +12,7 @@
 // Called by the browser: deploy with Verify JWT OFF. Abuse limits = allowed origins, honeypot, size caps.
 // Secrets (Supabase → Edge Functions → Secrets): BUTTONDOWN_API_KEY (new), RESEND_API_KEY, MAIL_FROM, SHOP_URL,
 // STORE_NAME (shared with contact / trade-offer). Optional ALLOWED_ORIGINS (comma-separated, e.g. the pages.dev URLs).
+// Signup notice to Gio: NEWSLETTER_TO (shop inbox), falls back to OFFER_TO; neither set = no notice. Never in code.
 const env = (k: string) => Deno.env.get(k) ?? "";
 const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
 const clip = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
@@ -56,6 +58,29 @@ async function readToken(token: string): Promise<{ e: string; t: number; s: stri
     if (!EMAIL.test(p.e) || typeof p.t !== "number" || Date.now() - p.t > TTL_MS) return null;
     return p;
   } catch { return null; }
+}
+
+// a confirmed signup → short email to the shop inbox. Best effort: a failure here never fails the confirm.
+async function notifyShop(p: { e: string; t: number; s: string }, origin: string, store: string) {
+  const to = env("NEWSLETTER_TO") || env("OFFER_TO");
+  if (!to) return;
+  const rows: [string, string][] = [
+    ["Email", p.e],
+    ["Signed up on", origin + p.s],
+    ["Signed up at", new Date(p.t).toISOString()],
+    ["Confirmed at", new Date().toISOString()],
+  ];
+  const text = [`New confirmed subscriber to the ${store} newsletter.`, "", ...rows.map(([k, v]) => `${k}: ${v}`)].join("\n");
+  const html = `<p>New confirmed subscriber to the ${escapeHtml(store)} newsletter.</p><p>` +
+    rows.map(([k, v]) => `${k}: ${escapeHtml(v)}`).join("<br>") + "</p>";
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${env("RESEND_API_KEY")}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: env("MAIL_FROM"), to, subject: `New newsletter subscriber: ${p.e}`, text, html }),
+    });
+    if (!res.ok) console.error("notify", res.status, (await res.text()).slice(0, 300));
+  } catch (e) { console.error("notify", String(e)); }
 }
 
 Deno.serve(async (req) => {
@@ -116,7 +141,10 @@ Deno.serve(async (req) => {
         metadata: { optin: "double opt-in, confirm link", signup_at: new Date(p.t).toISOString(), signup_page: origin + p.s, confirmed_at: new Date().toISOString() },
       }),
     });
-    if (res.ok) return json({ ok: true });
+    if (res.ok) {
+      await notifyShop(p, origin, store);
+      return json({ ok: true });
+    }
     const err = await res.text();
     if (/subscriber_suppressed/.test(err)) return json({ error: "suppressed" }, 409);   // blocked / bounced address
     console.error("buttondown", res.status, err.slice(0, 500));
