@@ -159,3 +159,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0135](0135-memo-create-draft.md) | Memo: Create draft in one tap (no form): release fetched as Fetch Discogs, free text = line 1; memo leaves the list, toast with Open | accepted |
 | [0136](0136-file-names-for-scans-and-clips.md) | File names `<sku>_<role>_<slug>` (roles of Bulk, slug = what is in the file, ignored by the parser); Edit listing side → File names with Copy (name without extension) | accepted |
 | [0138](0138-scanner-v2-admin-drafts-and-fluid-turn.md) | Scanner v2: sign in, pick an admin draft, image list (position = role = file name, drag to reorder renames files), proxy for fluid drag/turn, orientation glyph + guide lines + angle badge, arrow-key nudge | proposed |
+| [0140](0140-memo-bulk-actions.md) | Memo bulk: checkbox per row, Select all, Listings bulk bar; Create drafts (one at a time, reuses 0135) and Remove (Undo), both confirmed | accepted |

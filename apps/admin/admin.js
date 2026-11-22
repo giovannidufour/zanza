@@ -2574,6 +2574,7 @@
       h('p', { className: 'body-small admin-memo__photo-status', role: 'status' }, st.text));
   }
   function Memo() {
+    var mobile = useIsMobile();
     var ls = useState(null), rows = ls[0], setRows = ls[1];
     var es = useState(null), loadError = es[0], setLoadError = es[1];
     var ts = useState(''), text = ts[0], setText = ts[1];
@@ -2609,6 +2610,7 @@
     async function remove(row) {
       setMessage(null);   // the last "Added:" line would outlive its row
       setRows(function (cur) { return cur.filter(function (r) { return r.id !== row.id; }); });
+      setSelected(function (cur) { return cur.filter(function (x) { return x !== row.id; }); });
       var res = await sb.from('memos').delete().eq('id', row.id);
       if (res.error) { setMessage({ error: true, text: 'Not removed: ' + res.error.message }); load(); return; }
       toast('Removed: ' + row.title + '.', function () {
@@ -2618,33 +2620,98 @@
     /* Create draft (decision 0135): one tap, no form. A release is fetched as Fetch Discogs does; free text = line 1
        titled with the memo (as a skipped record of Bulk, 0107). The draft may be incomplete; the memo leaves the list. */
     var cd = useState(null), drafting = cd[0], setDrafting = cd[1];   // id of the memo being turned into a draft
+    // one memo → one draft (saved listing { listing_id, sku }); the memo is deleted after the save
+    async function draftFromMemo(row, entities) {
+      var f = emptyForm();
+      if (row.discogs_release_id) {
+        var d = await invoke('discogs-lookup', { releaseId: row.discogs_release_id });
+        Object.assign(f, patchFromDiscogs(f, d, entities).patch);
+      } else {
+        f.lines = [newLine({ title: row.title })];
+      }
+      var res = await sb.rpc('admin_save_listing', { payload: payloadOf(f, 'draft') });
+      if (res.error) throw new Error(res.error.message);
+      var del = await sb.from('memos').delete().eq('id', row.id);
+      return { saved: res.data, memoKept: del.error ? del.error.message : null };
+    }
+    async function entitiesOrNull() { try { return await loadEntities(); } catch (e) { return null; } }   // bound by name on save
     async function createDraft(row) {
       if (drafting) return;
       setDrafting(row.id); setMessage(null);
       try {
-        var f = emptyForm();
-        if (row.discogs_release_id) {
-          var entities = null;
-          try { entities = await loadEntities(); } catch (e) { /* entities are bound by name on save */ }
-          var d = await invoke('discogs-lookup', { releaseId: row.discogs_release_id });
-          Object.assign(f, patchFromDiscogs(f, d, entities).patch);
-        } else {
-          f.lines = [newLine({ title: row.title })];
-        }
-        var res = await sb.rpc('admin_save_listing', { payload: payloadOf(f, 'draft') });
-        if (res.error) throw new Error(res.error.message);
-        var saved = res.data;
-        setRows(function (cur) { return cur.filter(function (r) { return r.id !== row.id; }); });
-        var del = await sb.from('memos').delete().eq('id', row.id);
-        if (del.error) { setMessage({ error: true, text: 'Draft created (SKU ' + saved.sku + '), but the memo was not removed: ' + del.error.message }); load(); }
-        if (window.ZanzaToast) window.ZanzaToast.show({ message: 'Draft created · SKU ' + saved.sku + '.', actionLabel: 'Open',
-          onAction: function () { location.hash = '#edit-' + saved.listing_id; } });
+        var r = await draftFromMemo(row, row.discogs_release_id ? await entitiesOrNull() : null);
+        setRows(function (cur) { return cur.filter(function (x) { return x.id !== row.id; }); });
+        setSelected(function (cur) { return cur.filter(function (x) { return x !== row.id; }); });
+        if (r.memoKept) { setMessage({ error: true, text: 'Draft created (SKU ' + r.saved.sku + '), but the memo was not removed: ' + r.memoKept }); load(); }
+        if (window.ZanzaToast) window.ZanzaToast.show({ message: 'Draft created · SKU ' + r.saved.sku + '.', actionLabel: 'Open',
+          onAction: function () { location.hash = '#edit-' + r.saved.listing_id; } });
       } catch (err) {
         setMessage({ error: true, text: 'Draft not created: ' + err.message });
       }
       setDrafting(null);
     }
+
+    /* Bulk (decision 0140, the grammar of Listings 0025 / 0089): a checkbox per row, Select all on the count line,
+       the bulk bar (desktop: always rendered; mobile: fixed at the bottom while something is selected). Create drafts
+       and Remove ask first; drafts are created one at a time; the failed memos stay selected with the reason. */
+    var se = useState([]), selected = se[0], setSelected = se[1];
+    var bk = useState(null), bulk = bk[0], setBulk = bk[1];          // null | { action, busy }
+    var picked = (rows || []).filter(function (r) { return selected.indexOf(r.id) >= 0; });
+    function toggle(id, on) { setSelected(function (cur) { return on ? cur.concat([id]) : cur.filter(function (x) { return x !== id; }); }); }
+    async function bulkCreate() {
+      var list = picked.slice();
+      setBulk({ action: 'drafts', busy: true }); setMessage(null);
+      var entities = list.some(function (r) { return r.discogs_release_id; }) ? await entitiesOrNull() : null;
+      var done = [], failed = [], kept = [];
+      for (var i = 0; i < list.length; i++) {
+        setMessage({ error: false, text: 'Creating draft ' + (i + 1) + ' of ' + list.length + '…' });
+        try {
+          var r = await draftFromMemo(list[i], entities);
+          done.push(list[i].id);
+          if (r.memoKept) kept.push(r.saved.sku);
+        } catch (err) { failed.push(list[i].title + ': ' + err.message); }
+      }
+      setRows(function (cur) { return cur.filter(function (x) { return done.indexOf(x.id) < 0; }); });
+      setSelected(function (cur) { return cur.filter(function (x) { return done.indexOf(x) < 0; }); });
+      setBulk(null);
+      if (kept.length) load();
+      setMessage(failed.length || kept.length ? { error: true, text: [
+        done.length ? plural(done.length, 'draft') + ' created.' : null,
+        failed.length ? 'Not created (still selected): ' + failed.join('; ') + '.' : null,
+        kept.length ? 'Memos not removed for SKU ' + kept.join(', ') + ': remove them by hand.' : null].filter(Boolean).join(' ') } : null);
+      if (done.length && !failed.length && !kept.length) toast(plural(done.length, 'draft') + ' created. Find them in Listings → Drafts.');
+    }
+    async function bulkRemove() {
+      var list = picked.slice(), ids = list.map(function (r) { return r.id; });
+      setBulk({ action: 'remove', busy: true }); setMessage(null);
+      var res = await sb.from('memos').delete().in('id', ids);
+      setBulk(null);
+      if (res.error) { setMessage({ error: true, text: 'Not removed: ' + res.error.message }); return; }
+      setRows(function (cur) { return cur.filter(function (x) { return ids.indexOf(x.id) < 0; }); });
+      setSelected([]);
+      toast('Removed ' + plural(list.length, 'memo') + '.', function () {
+        sb.from('memos').insert(list).then(function (r) { if (r.error) setMessage({ error: true, text: 'Not restored: ' + r.error.message }); load(); });
+      });
+    }
     var count = rows ? rows.length : 0;
+    var allOn = count > 0 && picked.length === count, someOn = picked.length > 0 && !allOn;
+    var busy = !!(bulk && bulk.busy);
+    var bar = h('div', { className: 'admin-bulk' },
+      h('p', { className: 'admin-bulk__count body-medium', 'aria-live': 'polite' }, picked.length + ' selected'),
+      picked.length ? h('div', { className: 'admin-bulk__actions' },
+        h(Z.Button, { hierarchy: 'secondary', 'aria-busy': busy || undefined, onClick: busy ? undefined : function () { setBulk({ action: 'drafts' }); } }, 'Create drafts'),
+        h(Z.Button, { hierarchy: 'secondary', 'aria-busy': busy || undefined, onClick: busy ? undefined : function () { setBulk({ action: 'remove' }); } }, 'Remove')) : null);
+    var n = picked.length, names = picked.slice(0, 3).map(function (r) { return r.title; }).join(', ') + (n > 3 ? ' and ' + (n - 3) + ' more' : '');
+    var dialog = bulk && bulk.action === 'drafts'
+      ? h(Z.Dialog, { open: true, busy: busy, title: 'Create ' + plural(n, 'draft') + '?', confirmLabel: 'Create ' + plural(n, 'draft'),
+          onCancel: function () { if (!busy) setBulk(null); }, onConfirm: bulkCreate },
+          h('p', null, names + ': ' + (n === 1 ? 'becomes a draft (from its Discogs release, if it has one) and leaves the Memo list.'
+            : 'become drafts (from their Discogs releases, where they have one) and leave the Memo list.') + ' Grading and price come later, before publishing.'))
+      : bulk && bulk.action === 'remove'
+      ? h(Z.Dialog, { open: true, busy: busy, title: 'Remove ' + plural(n, 'memo') + '?', confirmLabel: 'Remove ' + plural(n, 'memo'),
+          onCancel: function () { if (!busy) setBulk(null); }, onConfirm: bulkRemove },
+          h('p', null, names + (n === 1 ? ' leaves' : ' leave') + ' the Memo list. You can undo it from the message that follows.'))
+      : h(Z.Dialog, { open: false, title: '', confirmLabel: '', onCancel: function () {}, onConfirm: function () {} }, '');
     return h('div', { className: 'admin-memo' },
       h('h1', { className: 'label-extra-large' }, 'Memo'),
       h('form', { className: 'admin-memo__add', onSubmit: add, noValidate: true },
@@ -2659,15 +2726,25 @@
       loadError ? h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'List not loaded: ' + loadError)
         : !rows ? h('p', { className: 'body-small' }, 'Loading…')
         : h('div', { className: 'admin-memo__list' },
-            h('p', { className: 'body-small admin-memo__count' }, count ? count + (count === 1 ? ' record' : ' records') : 'Nothing here yet. Add the records you want to sell later.'),
+            // Figma `memo status`, boolean `select all` (0140)
+            h('div', { className: 'admin-memo__count' },
+              count ? h(Z.Checkbox, { id: 'memo-select-all', hideLabel: true, label: 'Select all', checked: allOn, indeterminate: someOn,
+                onChange: function () { setSelected(allOn ? [] : rows.map(function (r) { return r.id; })); } }) : null,
+              h('p', { className: 'body-small' }, count ? count + (count === 1 ? ' record' : ' records') : 'Nothing here yet. Add the records you want to sell later.')),
+            count && !mobile ? bar : null,   // desktop: always above the list; mobile: after it, sticky while selecting (0089)
             count ? h('ul', { className: 'admin-memo__items', 'aria-label': 'Memo list' }, rows.map(function (r) {
               return h(Z.MemoItem, { key: r.id, title: r.title, meta: r.discogs_meta || undefined, note: r.note || undefined,
                 href: r.discogs_release_id ? 'https://www.discogs.com/release/' + r.discogs_release_id : undefined,
+                select: h(Z.Checkbox, { id: 'memo-select-' + r.id, hideLabel: true, label: 'Select ' + r.title,
+                  checked: selected.indexOf(r.id) >= 0, onChange: function (e) { toggle(r.id, e.target.checked); } }),
                 onCreateDraft: function () { createDraft(r); }, createDraftBusy: drafting === r.id,
                 onCreate: function () { location.hash = '#new/memo/' + r.id; },
                 onRemove: function () { remove(r); } });
-            })) : null));
+            })) : null,
+            count && mobile ? bar : null),
+      dialog);
   }
+
   /* ── Bulk create (#bulk, Figma BACKEND → Bulk, decision 0107) ─────────────
      Gio drops many photos and samples named <record>_<role>: the page groups them per record, uploads them as Create
      does, reads each record's label photo with the AI of Memo (read-label → discogs-lookup { fields }), then shows an
