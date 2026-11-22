@@ -157,6 +157,7 @@ final class AppModel: ObservableObject {
             switch result {
             case .failure(let e): self.caption = e.localizedDescription
             case .success(let img):
+                self.preview = ImageOutput.refresh(preview: self.preview, zone: self.previewZone, scan: img, area: area)
                 guard let side else { self.save(original: img, label: nil, dpi: dpi); return }
                 let scale = CGFloat(img.width) / area.width   // px per mm, as scanned
                 let c = CGPoint(x: (center.x - area.minX) * scale, y: (center.y - area.minY) * scale)

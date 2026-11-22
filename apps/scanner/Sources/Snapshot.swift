@@ -54,6 +54,7 @@ enum TestScan {
                 model.runScan()
                 func waitDone() {
                     if model.scanner.busy || model.caption.hasPrefix("Scanning") { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: waitDone); return }
+                    if let p = model.preview { try? ImageOutput.write(p, to: dir.appendingPathComponent("refreshed.png"), format: .png, dpi: 75) }
                     print(model.caption); exit(0)
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: waitDone)
