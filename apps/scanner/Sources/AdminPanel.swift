@@ -169,7 +169,7 @@ struct DraftDetail: View {
     func draftHead(_ d: DraftSummary) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("SKU \(d.skuText) · Draft").labelStyle(12, color: Theme.textModerate)
-            Text(d.title).labelStyle(18).fixedSize(horizontal: false, vertical: true)
+            Text(d.title).labelStyle(16).lineLimit(3).help(d.title)
         }
     }
 
@@ -200,7 +200,7 @@ struct DraftDetail: View {
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
-            .frame(height: min(CGFloat(drafts.slots.count) * 72, 290))
+            .frame(minHeight: 150, idealHeight: CGFloat(drafts.slots.count) * 76, maxHeight: CGFloat(drafts.slots.count) * 76)
             Text("Drag scanned images to change the order: files are renamed").bodyStyle(12, color: Theme.textModerate)
                 .fixedSize(horizontal: false, vertical: true)
         }

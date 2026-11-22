@@ -61,22 +61,34 @@ final class DraftSession: ObservableObject {
         run { let found = try await Backend.shared.drafts(matching: q); return { if self.query == q { self.results = found } } }
     }
 
+    /// Picking a draft rebuilds the list from that draft only (bug 2026-11-22: the previous draft's scans stayed in the
+    /// list under the new SKU's names). Nothing carries over: positions, thumbnails, target, undo, lightbox.
     func pick(_ d: DraftSummary) {
-        draft = d
+        guard d.id != draft?.id else { return }
+        // a scan in progress belongs to the draft it was started for: switch only when it is saved
+        if app?.scanner.busy == true { app?.caption = "Wait for the scan to finish, then pick the other draft"; return }
+        loadToken = UUID()
+        draft = d; names = []; slots = []; target = nil; lastRemoval = nil; lightbox = nil
+        app?.syncFileName()
         let onDisk = scannedRoles(sku: d.skuText)
         load(roles: max(3, onDisk.max() ?? 0))
     }
 
-    func changeDraft() { draft = nil; names = []; slots = []; target = nil; search() }
+    func changeDraft() { loadToken = UUID(); draft = nil; names = []; slots = []; target = nil; lastRemoval = nil; lightbox = nil; search() }
+
+    /// A load started for one draft never applies to another one picked meanwhile
+    private var loadToken = UUID()
 
     func addImage() { load(roles: names.count + 1) }
 
     /// Fetch the names of positions 1…roles and read which ones already have files on disk
     private func load(roles: Int) {
         guard let d = draft else { return }
+        let token = loadToken
         run {
             let list = try await Backend.shared.images(of: d.id, roles: roles)
             return {
+                guard token == self.loadToken, self.draft?.id == d.id else { return }   // another draft was picked
                 self.names = list
                 var s = self.slots
                 while s.count < list.count { s.append(Slot(scanned: false, thumb: nil)) }
@@ -139,7 +151,7 @@ final class DraftSession: ObservableObject {
 
     /// Delete / context menu: both files of that position go to the Trash (Undo puts them back)
     func remove(at i: Int) {
-        guard i < slots.count, i < names.count, slots[i].scanned else { return }
+        guard i < slots.count, i < names.count, slots[i].scanned, ofCurrentDraft(names[i].name) else { return }
         var moved: [(URL, URL)] = []
         for folder in folders {
             if let f = file(named: names[i].name, in: folder) {
@@ -181,6 +193,12 @@ final class DraftSession: ObservableObject {
 
     private var folders: [URL] { [app?.folder, app?.originalsFolder].compactMap { $0 } }
 
+    /// Guard: only names of the current draft's SKU are ever renamed or trashed
+    private func ofCurrentDraft(_ name: String) -> Bool {
+        guard let sku = draft?.skuText, !sku.isEmpty else { return false }
+        return name.hasPrefix(sku + "_")
+    }
+
     /// The file with this base name (any extension) in a folder
     func file(named base: String, in folder: URL?) -> URL? {
         guard let folder, let items = try? FileManager.default.contentsOfDirectory(atPath: folder.path) else { return nil }
@@ -196,6 +214,7 @@ final class DraftSession: ObservableObject {
             var moved: [(URL, String)] = []   // temp file → new base name
             for (newIndex, slot) in new.enumerated() where slot.scanned {
                 guard let oldIndex = old.firstIndex(where: { $0.id == slot.id }), oldIndex != newIndex,
+                      ofCurrentDraft(names[oldIndex].name), ofCurrentDraft(names[newIndex].name),
                       let f = file(named: names[oldIndex].name, in: folder) else { continue }
                 let tmp = folder.appendingPathComponent(".zanza-move-\(UUID().uuidString).\(f.pathExtension)")
                 if (try? fm.moveItem(at: f, to: tmp)) != nil { moved.append((tmp, names[newIndex].name)) }

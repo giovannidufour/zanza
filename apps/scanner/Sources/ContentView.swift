@@ -73,12 +73,12 @@ struct RecordColumn: View {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     FieldLabel(text: "File name")
-                    HStack(spacing: 4) {
-                        TextField("48213_1_artist-title", text: $model.fileName)
-                            .textFieldStyle(.plain).font(Theme.body(16))
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        TextField("48213_1_artist-title", text: $model.fileName, axis: .vertical)   // wraps, never cut
+                            .textFieldStyle(.plain).font(Theme.body(16)).lineLimit(1...4)
                         Text(".\(model.format.ext)").bodyStyle(16, color: Theme.textModerate)
                     }
-                    .padding(.horizontal, 12).frame(height: 40)
+                    .padding(.horizontal, 12).padding(.vertical, 10).frame(minHeight: 40)
                     .background(Theme.surfaceSubtle)
                 }
                 HStack(spacing: 12) {
