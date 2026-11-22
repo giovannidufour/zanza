@@ -1872,8 +1872,40 @@
     records().forEach(function (r) { initReleasePicker(r, searchEndpoint); });
   }
 
+  // Invisible proof of work (decision 0132): GET the endpoint for a signed puzzle, find n < max with
+  // sha256(salt + n) = challenge, in batches so the page stays responsive. Resolves to the answer, or null.
+  function solvePuzzle(endpoint) {
+    if (!window.crypto || !crypto.subtle || !window.TextEncoder) return Promise.resolve(null);
+    var enc = new TextEncoder();
+    function hex(buf) {
+      return Array.prototype.map.call(new Uint8Array(buf), function (b) { return (b < 16 ? '0' : '') + b.toString(16); }).join('');
+    }
+    return fetch(endpoint, { method: 'GET' })
+      .then(function (res) { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
+      .then(function (p) {
+        function batch(from) {
+          if (from > p.max) return null;
+          var tries = [];
+          for (var n = from; n < from + 500 && n <= p.max; n++) {
+            tries.push(crypto.subtle.digest('SHA-256', enc.encode(p.salt + n)));
+          }
+          return Promise.all(tries).then(function (hashes) {
+            for (var i = 0; i < hashes.length; i++) {
+              if (hex(hashes[i]) === p.challenge) {
+                return { salt: p.salt, challenge: p.challenge, signature: p.signature, number: from + i };
+              }
+            }
+            return batch(from + 500);
+          });
+        }
+        return batch(0);
+      })
+      .catch(function () { return null; });
+  }
+
   // /contact/ (decision 0093): checks Email and Message, posts JSON to the Supabase function `contact`
   // (site.json → contact.endpoint), then shows the thanks line in place of the form. Nothing is stored.
+  // Bots: honeypot `website` + the invisible puzzle, started as the page opens (decision 0132).
   function initContact() {
     var form = document.querySelector('[data-contact-form]');
     if (!form || form.hasAttribute('data-ready')) return;
@@ -1888,6 +1920,8 @@
       if (box) box.setAttribute('data-invalid', bad ? 'true' : 'false');
     }
     function fail(text, el) { errorEl.textContent = text; errorEl.hidden = false; if (el) el.focus(); }
+    var puzzleEndpoint = form.getAttribute('data-endpoint');
+    var puzzle = puzzleEndpoint ? solvePuzzle(puzzleEndpoint) : null;
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       errorEl.hidden = true;
@@ -1901,8 +1935,13 @@
       var idle = label ? label.textContent : '';
       sendBtn.disabled = true;
       if (label) label.textContent = 'Sending\u2026';
-      fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: val('name'), email: val('email'), message: val('message'), website: val('website') }) })
+      // a puzzle is good for one message: the next one (after an error) gets a fresh one
+      var answer = puzzle || solvePuzzle(endpoint);
+      puzzle = null;
+      answer.then(function (pow) {
+        return fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: val('name'), email: val('email'), message: val('message'), website: val('website'), pow: pow }) });
+      })
         .then(function (res) { if (!res.ok) throw new Error('HTTP ' + res.status); })
         .then(function () {
           track('contact_sent');
