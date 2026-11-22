@@ -1034,6 +1034,12 @@
   }
 
   // ── Listings ──────────────────────────────────────────────────────────────
+  // the record's first photo for the list rows (decision 0123): the 200 px copy (0108) for a 40 px square; no photo → {}
+  // (the empty square). Keys without copies (older test content, outside URLs) use the photo itself.
+  function thumbOf(row) {
+    var url = mediaUrl((row.photo_keys || [])[0]);
+    return url ? { src: IMG.smallest(url, 80) } : {};
+  }
   function nameOf(row) {
     if (row.custom_title) return row.custom_title;
     var lines = ((row.release || {}).lines || []).slice().sort(function (a, b) { return a.position - b.position; });
@@ -1100,7 +1106,7 @@
     var focusAfter = useRef(null);
 
     function load() {
-      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_cents,condition_media,custom_title,created_at,orders:order_items(count),release:releases(format,lines:release_lines(position,artist,title))')
+      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_cents,condition_media,custom_title,photo_keys,created_at,orders:order_items(count),release:releases(format,lines:release_lines(position,artist,title))')
         .order('created_at', { ascending: false })
         .then(function (res) { if (res.error) setError(res.error.message); else setRows(res.data); });
     }
@@ -1237,7 +1243,7 @@
       // mobile (Figma page `admin` → Listings - mobile, decision 0089): rows instead of the table, the bulk bar after them
       // (sticky at the bottom while something is selected)
       mobile ? h('ul', { id: 'listings-table', className: 'admin-rows' }, visible.length ? visible.map(function (r) {
-        return h(Z.ListingRow, { key: r.id, href: '#edit-' + r.id, title: nameOf(r),
+        return h(Z.ListingRow, { key: r.id, href: '#edit-' + r.id, title: nameOf(r), image: thumbOf(r),
           meta: [r.sku, statusText(r), r.section].filter(Boolean).join(' · '),
           price: r.price_cents === null ? null : centsToText(r.price_cents) + ' €',
           select: h(Z.Checkbox, { id: 'select-' + r.id, hideLabel: true, label: 'Select ' + nameOf(r),
@@ -1247,17 +1253,19 @@
         h('table', { id: 'listings-table', className: 'admin-table body-small' },
           h('thead', null, h('tr', null,
             h('th', { className: 'select' }, visible.length ? h(Z.Checkbox, { id: 'select-all', hideLabel: true, label: 'Select all', checked: allOn, indeterminate: someOn, onChange: toggleAll }) : null),
+            h('th', { className: 'thumb' }, h('span', { className: 'zz-visually-hidden' }, 'Photo')),
             ['SKU', 'Record', 'Status', 'Section', 'Price'].map(function (t) { return h('th', { key: t, className: t === 'SKU' ? 'num' : t === 'Price' ? 'num price' : '' }, t); }))),
           h('tbody', null, visible.length ? visible.map(function (r) {
             return h('tr', { key: r.id },
               h('td', { className: 'select' }, h(Z.Checkbox, { id: 'select-' + r.id, hideLabel: true, label: 'Select ' + nameOf(r),
                 checked: selected.indexOf(r.id) >= 0, onChange: function (e) { toggle(r.id, e.target.checked); } })),
+              h('td', { className: 'thumb' }, h(Z.Thumbnail, thumbOf(r))),
               h('td', { className: 'num' }, r.sku),
               h('td', null, h('a', { href: '#edit-' + r.id }, nameOf(r))),
               h('td', null, statusText(r)),
               h('td', null, r.section),
               h('td', { className: 'num price' }, r.price_cents === null ? '' : centsToText(r.price_cents) + ' €'));
-          }) : h('tr', null, h('td', { colSpan: 6 }, 'No listings here.'))))),
+          }) : h('tr', null, h('td', { colSpan: 7 }, 'No listings here.'))))),
       dialog);
   }
 
@@ -1336,7 +1344,7 @@
     var sv = useState(false), saving = sv[0], setSaving = sv[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
     useEffect(function () {
-      sb.from('orders').select('*,items:order_items(price_cents,listing:listings(id,sku,slug,status,custom_title,release:releases(format,lines:release_lines(position,artist,title))))')
+      sb.from('orders').select('*,items:order_items(price_cents,listing:listings(id,sku,slug,status,custom_title,photo_keys,release:releases(format,lines:release_lines(position,artist,title))))')
         .eq('id', props.id).single()
         .then(function (res) { if (res.error) setError(res.error.message); else { setO(res.data); setTracking(res.data.tracking_number || ''); } });
     }, [props.id]);
@@ -1389,7 +1397,7 @@
         h('h2', { id: 'order-records', className: 'label-medium' }, 'Records'),
         h('ul', { className: 'admin-rows' }, (o.items || []).map(function (it) {
           var l = it.listing || {};
-          return h(Z.ListingRow, { key: l.id, href: '#edit-' + l.id, title: nameOf(l),
+          return h(Z.ListingRow, { key: l.id, href: '#edit-' + l.id, title: nameOf(l), image: thumbOf(l),
             meta: [l.sku, l.release && l.release.format, STATUS_LABEL[l.status] || l.status].filter(Boolean).join(' · '),
             price: euro(it.price_cents) });
         }))),

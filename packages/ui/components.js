@@ -1120,13 +1120,23 @@
         h('p', { className: 'zz-admin-bar__title label-medium' }, props.title || 'Store admin'),
         props.createHref ? h(Button, { hierarchy: 'primary', href: props.createHref, 'aria-label': props.createLabel || 'Create listing' }, props.createShortLabel || 'Create') : null));
   }
+  /* ── Thumbnail (Figma `product image` (page `media`) at 40 × 40, decision 0123) ──
+     The record's photo in an admin list (ListingRow, the Listings table). Decorative: the row's title names the record,
+     so alt is empty and the box is hidden from screen readers. No photo → the empty square (surface/support-1). */
+  function Thumbnail(props) {
+    return h('span', Object.assign({}, omit(props, ['src', 'srcSet', 'sizes', 'alt', 'className']), { className: cx('zz-thumbnail', props.className), 'aria-hidden': props.alt ? undefined : 'true' }),
+      props.src ? h('img', { src: props.src, srcSet: props.srcSet, sizes: props.srcSet ? props.sizes || '40px' : undefined, alt: props.alt || '',
+        width: 40, height: 40, loading: 'lazy', decoding: 'async' }) : null);
+  }
   /* ── ListingRow (Figma page `admin` → `listing row`, decision 0089) ──
      One row of an admin list on mobile (Listings, Attributes), in place of the table row. Same grammar as MemoItem:
      select (a Checkbox, label hidden) · text (title link body/small underlined, meta body/small text/moderate, gap 4)
      · price (body/small, right). Padding 16 top/bottom, gap 16, bottom border divider/strong. */
   function ListingRow(props) {
-    return h('li', Object.assign({}, omit(props, ['select', 'title', 'href', 'meta', 'price', 'className']), { className: cx('zz-listing-row', props.className) }),
+    return h('li', Object.assign({}, omit(props, ['select', 'image', 'title', 'href', 'meta', 'price', 'className']), { className: cx('zz-listing-row', props.className) }),
       props.select ? h('div', { className: 'zz-listing-row__select' }, props.select) : null,
+      // Figma boolean `show thumbnail` (decision 0123): an `image` object, even without src (= the empty square)
+      props.image ? h(Thumbnail, Object.assign({ className: 'zz-listing-row__thumb' }, props.image)) : null,
       h('div', { className: 'zz-listing-row__text' },
         h('a', { className: 'zz-listing-row__title body-small', href: props.href }, props.title),
         props.meta ? h('p', { className: 'zz-listing-row__meta body-small' }, props.meta) : null),
@@ -1765,6 +1775,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, AdminBar: AdminBar, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, AdminBar: AdminBar, Thumbnail: Thumbnail, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
            NewsletterDialog: NewsletterDialog, SectionHead: SectionHead, GenreLinks: GenreLinks, HomeIntro: HomeIntro, HomeNewsletter: HomeNewsletter, ProductTile: ProductTile, GalleryCounter: GalleryCounter, ViewToggle: ViewToggle };
 });
