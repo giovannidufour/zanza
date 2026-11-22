@@ -1043,6 +1043,18 @@
         props.onCreate ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onCreate, 'aria-label': (props.createLabel || 'Create listing') + ': ' + name }, props.createLabel || 'Create listing') : null,
         props.onRemove ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onRemove, 'aria-label': (props.removeLabel || 'Remove') + ': ' + name }, props.removeLabel || 'Remove') : null));
   }
+  /* FileNameRow (Figma Create → `file name`, state default | copied, decision 0136): one name to give a scan or a clip
+     of a listing. An <li>, MemoItem grammar: role body/small text/moderate, name body/small text/strong, Copy (Button
+     secondary small) on the right. Padding 8 / 0, gap 16, bottom border divider/strong. copied = "Copied" (2 s). */
+  function FileNameRow(props) {
+    var name = typeof props.name === 'string' ? props.name : 'file name';
+    return h('li', Object.assign({}, omit(props, ['role', 'name', 'copied', 'onCopy', 'className']), { className: cx('zz-file-name', props.className) }),
+      h('div', { className: 'zz-file-name__text' },
+        h('p', { className: 'zz-file-name__role body-small' }, props.role),
+        h('p', { className: 'zz-file-name__name body-small' }, props.name)),
+      props.onCopy ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onCopy,
+        'aria-label': (props.copied ? 'Copied: ' : 'Copy file name: ') + name }, props.copied ? 'Copied' : 'Copy') : null);
+  }
   /* ── Bulk create (Figma BACKEND → Bulk, decision 0107) ──
      BulkRecord (`bulk record`, device mobile | desktop, state reading | matched | choose | not found | confirmed | skipped,
      boolean `warning`): one record found in the dropped files, MemoItem grammar. Text column: title body/medium
@@ -1831,6 +1843,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, useDragOrder: useDragOrder, DragHandle: DragHandle, AdminBar: AdminBar, ListingsHead: ListingsHead, ListingsFilter: ListingsFilter, Thumbnail: Thumbnail, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, FileNameRow: FileNameRow, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, useDragOrder: useDragOrder, DragHandle: DragHandle, AdminBar: AdminBar, ListingsHead: ListingsHead, ListingsFilter: ListingsFilter, Thumbnail: Thumbnail, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
            NewsletterDialog: NewsletterDialog, SectionHead: SectionHead, GenreLinks: GenreLinks, HomeIntro: HomeIntro, HomeNewsletter: HomeNewsletter, ProductTile: ProductTile, GalleryCounter: GalleryCounter, ViewToggle: ViewToggle };
 });

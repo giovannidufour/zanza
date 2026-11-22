@@ -157,3 +157,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0133](0133-weekly-dispatch-wednesday.md) | Dispatch at least once a week, usually Wednesday: full rule (paid by Tuesday → Wednesday, never more than a week) on the Shipping page, one line after paying (thanks, email, Account); nothing before paying; no admin setting | accepted |
 | [0134](0134-terms-and-shipping-generic.md) | Terms and Shipping like Privacy: minimal, no provider names, no unconfirmed numbers, no links to missing pages; no placeholders left | proposed |
 | [0135](0135-memo-create-draft.md) | Memo: Create draft in one tap (no form): release fetched as Fetch Discogs, free text = line 1; memo leaves the list, toast with Open | accepted |
+| [0136](0136-file-names-for-scans-and-clips.md) | File names `<sku>_<role>_<slug>` (roles of Bulk, slug = what is in the file, ignored by the parser); Edit listing side → File names with Copy (name without extension) | accepted |
