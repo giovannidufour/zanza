@@ -72,6 +72,8 @@ h1, h2, p { margin: 0; }
 /* Figma BACKEND → Listings (2026-11-10): first column = row selection (checkbox label=false), price right-aligned */
 .admin-table .select { width: 24px; }
 .admin-table .select .zz-checkbox { display: flex; }
+.admin-table .thumb { width: 40px; }   /* Figma: `product image` 40 × 40 column after the checkbox (decision 0123) */
+.admin-table .thumb .zz-thumbnail { display: block; }
 .admin-table .price { text-align: right; }
 .admin-listings { gap: 24px; }
 /* bulk bar: always rendered, fixed height (38 button + 2×8), so selecting never moves the table */

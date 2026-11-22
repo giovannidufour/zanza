@@ -1173,10 +1173,26 @@ export interface AdminBarProps extends HTMLAttributes<HTMLElement> {
 }
 export declare function AdminBar(props: AdminBarProps): JSX.Element;
 
+/** Figma `product image` (page `media`) at 40 × 40 (decision 0123): a record's photo in an admin list (ListingRow, the
+ *  Listings table). Decorative by default (empty alt, aria-hidden): the row's title names the record. */
+export interface ThumbnailProps extends HTMLAttributes<HTMLSpanElement> {
+  /** Photo URL: pass the small copy (decision 0108, the 200 px one). Omit → the empty square (surface/support-1). */
+  src?: string;
+  /** Optional srcset of the same photo; `sizes` defaults to 40px. */
+  srcSet?: string;
+  sizes?: string;
+  /** Alt text. Empty (default) = decorative, hidden from screen readers. */
+  alt?: string;
+}
+export declare function Thumbnail(props: ThumbnailProps): JSX.Element;
+
 /** Mirrors the Figma component `listing row` (page `admin`, decision 0089): a row of an admin list on mobile, in a <ul>. */
 export interface ListingRowProps extends HTMLAttributes<HTMLLIElement> {
   /** A Checkbox with hideLabel (accessible name "Select <record>"). Omit → no select column. */
   select?: ReactNode;
+  /** Figma `thumbnail` + boolean `show thumbnail` (decision 0123): the record's first photo as a Thumbnail.
+   *  `{}` (no src) → the empty square; omit → no thumbnail column (Attributes rows). */
+  image?: ThumbnailProps;
   /** The record (Figma `record`): a link to its edit page. */
   title: ReactNode;
   href: string;

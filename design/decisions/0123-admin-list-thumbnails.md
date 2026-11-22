@@ -1,0 +1,8 @@
+# 0123 — Admin lists: the record's photo as a 40 px thumbnail
+
+`2026-11-22` · accepted · Figma: COMPONENTS → `admin` → `listing row` (new `thumbnail` = `product image` 40 × 40, boolean `show thumbnail`, default ON); BACKEND → Listings: the four desktop tables get a `thumbnail` column after the checkbox (rows 56 high); mobile screens inherit it from `listing row`
+
+**Context.** Gio (2026-11-22): in the admin lists you should see the record's thumbnail when there is one. The lists only had text (SKU, "Artist - Title"), hard to scan when you look for a record by its sleeve.
+**Decision.** Listings (desktop table and mobile `ListingRow`) and the records of an order page show the listing's first photo in a 40 × 40 square (`Thumbnail`, Figma `product image`), cropped to fill (object-fit cover). File: the 200 px copy of the photo (0108), never the 1600 one; keys without copies use the photo itself. No photo = the empty square, so the column stays aligned. The thumbnail is decorative (empty alt, aria-hidden): the title next to it names the record and stays the only link. Attributes rows have no record, so no thumbnail (`image` omitted = `show thumbnail` off). `surface/support-1` in the backend theme is now black-a8 in code as in the Figma mode `backend` (it was missing in tokens.json, so admin empty squares and chips were light blue).
+**Rule.** A list of records in the admin shows the first photo as a `Thumbnail` 40 × 40 before the title, from the smallest copy that covers 2× (IMG.smallest(url, 80)); no photo = the empty square, never a hidden column.
+**Where.** `packages/ui` (`Thumbnail`, `ListingRow` `image`, tokens.json `surface-support-1` backend), `apps/admin/admin.js` (`thumbOf`, Listings, order page), `apps/admin/admin.css` (`.admin-table .thumb`).
