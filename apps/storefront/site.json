@@ -49,8 +49,8 @@
     "flowNote": "Own double opt-in (decision 0103): endpoint = URL of the Supabase function newsletter (secret BUTTONDOWN_API_KEY, Verify JWT OFF); the form posts there and answers in place, the email link lands on /newsletter/confirm/ and adds the address to Buttondown as active. If the function is missing or fails, the form falls back to action (Buttondown's own flow). autoConfirm true = the confirm page confirms as it opens (one click); false = it shows a Confirm button (safe from email link scanners that run JavaScript)."
   },
   "legal": {
-    "note": "Legal pages (decisions 0079, 0093): content/legal/*.md, {{legal.x}} is filled from here; empty = a bracketed placeholder on the page, listed by the build. Gio sells privately (2026-11-15): no address, no phone, no VAT line, no Impressum: name + email, and the contact form (site.json → contact). email = the shop contact address, also shown on /contact/ (provisional: see _context/provisional-names.md). updated = date of the last change to Privacy.",
-    "name": "",
+    "note": "Legal pages (decisions 0079, 0093): content/legal/*.md, {{legal.x}} is filled from here; empty = a bracketed placeholder on the page, listed by the build. Gio sells privately (2026-11-15): no address, no phone, no VAT line, no Impressum: first name only (Gio 2026-11-22, accepted risk, decision 0130) + email, and the contact form (site.json → contact). email = the shop contact address, also shown on /contact/ (provisional: see _context/provisional-names.md). updated = date of the last change to Privacy.",
+    "name": "Gio",
     "email": "gio@rythem-works.com",
     "updated": "2026-11-22"
   },
