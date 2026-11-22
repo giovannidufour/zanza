@@ -32,7 +32,19 @@
     return t;
   }
 
-  var on = !!(config.key && ph && typeof ph.init === 'function');
+  // the owner's own browsers (Gio, 2026-11-22: "exclude me"): ?analytics=off once per browser turns analytics off
+  // there for good, ?analytics=on turns it back on. An IP filter can't work: cookieless mode drops the IP first.
+  // This flag is the only thing analytics writes, and only in a browser that asked for it.
+  var OFF_KEY = 'zanza-analytics-off';
+  var optedOut = false;
+  try {
+    var flag = new URLSearchParams(location.search).get('analytics');
+    if (flag === 'off') localStorage.setItem(OFF_KEY, '1');
+    if (flag === 'on') localStorage.removeItem(OFF_KEY);
+    optedOut = localStorage.getItem(OFF_KEY) === '1';
+  } catch (e) { /* no storage: stay on */ }
+
+  var on = !optedOut && !!(config.key && ph && typeof ph.init === 'function');
   if (on) {
     ph.init(config.key, {
       api_host: config.host || 'https://eu.i.posthog.com',
