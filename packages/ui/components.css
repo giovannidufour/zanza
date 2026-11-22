@@ -540,7 +540,7 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
 .zz-player__close    { grid-area: close; }
 
 /* now playing: image 48 + title row (track · sample / product), gap 8 */
-.zz-player__image { flex: none; width: 48px; height: 48px; overflow: hidden; }
+.zz-player__image { flex: none; width: 48px; height: 48px; overflow: hidden; background: var(--surface-media); }   /* 0124 */
 .zz-player__image > img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .zz-player__title { display: flex; gap: 8px; min-width: 0; margin: 0; }
 .zz-player__number { flex: none; }
@@ -702,7 +702,7 @@ a.zz-product-card__image { display: block; color: inherit; }
   font-family: var(--font-sans);
 }
 .zz-bag-item p, .zz-bag-item h1, .zz-bag-item h2, .zz-bag-item h3, .zz-bag-item h4 { margin: 0; }
-.zz-bag-item__image { flex: none; width: 96px; height: 96px; display: block; }   /* Figma: product image 96 × 96 */
+.zz-bag-item__image { flex: none; width: 96px; height: 96px; display: block; background: var(--surface-media); }   /* 0124 */   /* Figma: product image 96 × 96 */
 .zz-bag-item__image > img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .zz-bag-item__info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: var(--small); }
 .zz-bag-item__title-block { display: flex; flex-direction: column; min-width: 0; }
@@ -827,7 +827,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 }
 .zz-gallery::-webkit-scrollbar { display: none; }
 .zz-gallery:focus-visible { outline: auto; }   /* browser ring: no focus token yet */
-.zz-gallery__item { flex: 0 0 auto; aspect-ratio: 1 / 1; overflow: hidden; }
+.zz-gallery__item { flex: 0 0 auto; aspect-ratio: 1 / 1; overflow: hidden; background: var(--surface-media); }   /* 0124 */
 .zz-gallery__item > img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
 .zz-gallery[data-device="mobile"] {
