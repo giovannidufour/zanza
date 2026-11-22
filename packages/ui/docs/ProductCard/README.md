@@ -38,7 +38,7 @@ One markup for both variants; CSS grid places the blocks ([0016](../../../../des
 
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `src` | `string` |  | Cover URL. Omitted → the empty square (surface/support-1). |
+| `src` | `string` |  | Cover URL. Omitted → the empty square (surface/media). |
 | `alt` | `string` |  | Alt text; empty = decorative (the title already names the release). |
 | `srcSet` | `string` |  | Optional `srcset`: the same photo in smaller files, the browser picks one (decision 0108). |
 | `sizes` | `string` |  | Optional `sizes`: how wide the image is drawn. Fixed-size images (BagItem, OrderRow 96px) default to their size; a ProductCard's depends on the page grid, so the page passes it. |
@@ -52,7 +52,7 @@ Responsive (no `device`): both buttons are in the markup and CSS shows one per b
 
 ## Tokens
 
-Text `text-strong` · image placeholder `surface-support-1` · grid gaps `gutter-small` · button = Button secondary.
+Text `text-strong` · image placeholder `surface-media` · grid gaps `gutter-small` · button = Button secondary.
 
 Type:
 

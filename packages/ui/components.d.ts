@@ -225,7 +225,7 @@ export declare function ProductInfo(props: ProductInfoProps): JSX.Element;
 /** Mirrors the Figma component `product card` (device=desktop | mobile): a release in a list. One markup; CSS grid places
  *  the blocks per variant (the description moves from the purchase column on desktop to the info column on mobile). */
 export interface ProductCardImage {
-  /** Cover URL. Omitted → the empty square (surface/support-1). */
+  /** Cover URL. Omitted → the empty square (surface/media). */
   src?: string;
   /** Alt text; empty = decorative (the title already names the release). */
   alt?: string;
@@ -502,7 +502,7 @@ export interface FileItemProps extends HTMLAttributes<HTMLDivElement> {
   name: string;
   /** Shown before the name. Default: the row number inside FileList, two digits ("01"). */
   position?: ReactNode;
-  /** Image file: the 40 × 40 thumbnail (empty = surface-support-1). */
+  /** Image file: the 40 × 40 thumbnail (empty = surface-media). */
   image?: { src?: string; alt?: string };
   /** Shows "(featured)". The admin sets it on the first image (the featured image is always position 1). */
   featured?: boolean;
@@ -1176,7 +1176,7 @@ export declare function AdminBar(props: AdminBarProps): JSX.Element;
 /** Figma `product image` (page `media`) at 40 × 40 (decision 0123): a record's photo in an admin list (ListingRow, the
  *  Listings table). Decorative by default (empty alt, aria-hidden): the row's title names the record. */
 export interface ThumbnailProps extends HTMLAttributes<HTMLSpanElement> {
-  /** Photo URL: pass the small copy (decision 0108, the 200 px one). Omit → the empty square (surface/support-1). */
+  /** Photo URL: pass the small copy (decision 0108, the 200 px one). Omit → the empty square (surface/media). */
   src?: string;
   /** Optional srcset of the same photo; `sizes` defaults to 40px. */
   srcSet?: string;

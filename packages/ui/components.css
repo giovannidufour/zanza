@@ -540,7 +540,7 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
 .zz-player__close    { grid-area: close; }
 
 /* now playing: image 48 + title row (track · sample / product), gap 8 */
-.zz-player__image { flex: none; width: 48px; height: 48px; overflow: hidden; }
+.zz-player__image { flex: none; width: 48px; height: 48px; overflow: hidden; background: var(--surface-media); }   /* 0124 */
 .zz-player__image > img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .zz-player__title { display: flex; gap: 8px; min-width: 0; margin: 0; }
 .zz-player__number { flex: none; }
@@ -644,7 +644,7 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
   grid-column: 1 / 3; grid-row: 1 / -1;
   aspect-ratio: 1;   /* Figma: product image, proportions locked 1:1 */
   overflow: hidden;
-  background: var(--surface-support-1);   /* Figma: product image fill (shown when there is no cover) */
+  background: var(--surface-media);   /* Figma: product image fill (shown while loading / when there is no cover), 0124 */
 }
 a.zz-product-card__image { display: block; color: inherit; }
 .zz-product-card__image > img { display: block; width: 100%; height: 100%; object-fit: cover; }
@@ -702,7 +702,7 @@ a.zz-product-card__image { display: block; color: inherit; }
   font-family: var(--font-sans);
 }
 .zz-bag-item p, .zz-bag-item h1, .zz-bag-item h2, .zz-bag-item h3, .zz-bag-item h4 { margin: 0; }
-.zz-bag-item__image { flex: none; width: 96px; height: 96px; display: block; }   /* Figma: product image 96 × 96 */
+.zz-bag-item__image { flex: none; width: 96px; height: 96px; display: block; background: var(--surface-media); }   /* 0124 */   /* Figma: product image 96 × 96 */
 .zz-bag-item__image > img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .zz-bag-item__info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: var(--small); }
 .zz-bag-item__title-block { display: flex; flex-direction: column; min-width: 0; }
@@ -802,7 +802,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 }
 .zz-return-card:hover, .zz-return-card[data-state="hover"] { background-image: linear-gradient(var(--surface-hover), var(--surface-hover)); }
 .zz-return-card:focus-visible { outline: auto; }   /* browser ring: no focus token yet (open.md) */
-.zz-return-card__cover { flex: 0 0 auto; width: 48px; height: 48px; background: var(--surface-subtle); overflow: hidden; }
+.zz-return-card__cover { flex: 0 0 auto; width: 48px; height: 48px; background: var(--surface-media); overflow: hidden; }
 .zz-return-card__cover > img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .zz-return-card__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
 .zz-return-card__name { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -827,7 +827,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 }
 .zz-gallery::-webkit-scrollbar { display: none; }
 .zz-gallery:focus-visible { outline: auto; }   /* browser ring: no focus token yet */
-.zz-gallery__item { flex: 0 0 auto; aspect-ratio: 1 / 1; overflow: hidden; }
+.zz-gallery__item { flex: 0 0 auto; aspect-ratio: 1 / 1; overflow: hidden; background: var(--surface-media); }   /* 0124 */
 .zz-gallery__item > img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
 .zz-gallery[data-device="mobile"] {
@@ -1001,7 +1001,7 @@ a.zz-product-card__image { display: block; color: inherit; }
 
 /* ── FileList / FileItem (Figma: `uploads` → `file item`; the list is a layout frame) ──
    List gap 8. Row: gap 16 between handle · content · remove; content gap 8, top-aligned (image rows),
-   centred with a play button (audio rows). Thumbnail 40 × 40, surface-support-1 when empty. */
+   centred with a play button (audio rows). Thumbnail 40 × 40, surface-media when empty (0124). */
 .zz-file-list { position: relative; display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }   /* relative: rows' offsetTop is measured from the list */
 .zz-file-list__item { display: block; }
 /* live reorder: rows slide to their new place (FLIP, set in JS).
@@ -1028,7 +1028,7 @@ a.zz-product-card__image { display: block; color: inherit; }
   flex: none;
   width: 40px;
   height: 40px;
-  background: var(--surface-support-1);
+  background: var(--surface-media);
   overflow: hidden;
 }
 .zz-file-item__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -1448,7 +1448,7 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-release-option, .zz-chosen-release { display: flex; align-items: flex-start; gap: var(--small); padding: var(--small); color: var(--text-strong); }
 .zz-release-option { cursor: pointer; background: var(--surface-base); }
 .zz-release-option[data-highlighted="true"], .zz-release-option:hover { background: var(--surface-subtle); }
-.zz-release-option__thumb { flex: none; display: block; width: 40px; height: 40px; object-fit: cover; background: var(--surface-support-1); }
+.zz-release-option__thumb { flex: none; display: block; width: 40px; height: 40px; object-fit: cover; background: var(--surface-media); }
 .zz-release-option__text { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
 .zz-release-option__meta { color: var(--text-moderate); }
 .zz-chosen-release { border: 1px solid var(--border-divider-strong); }
@@ -1531,8 +1531,8 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 
 .zz-listing-row { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
 .zz-listing-row__select { flex: none; display: flex; }
-/* Thumbnail (Figma `product image` 40 × 40, decision 0123): the empty square is surface/support-1 */
-.zz-thumbnail { flex: none; display: block; width: 40px; height: 40px; overflow: hidden; background: var(--surface-support-1); }
+/* Thumbnail (Figma `product image` 40 × 40, decision 0123): the empty square is surface/media (0124) */
+.zz-thumbnail { flex: none; display: block; width: 40px; height: 40px; overflow: hidden; background: var(--surface-media); }
 .zz-thumbnail > img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .zz-listing-row__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .zz-listing-row__title { color: inherit; overflow-wrap: anywhere; }
@@ -1621,7 +1621,7 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-product-tile p, .zz-product-tile h2, .zz-product-tile h3, .zz-product-tile h4 { margin: 0; }
 .zz-product-tile__media { position: relative; }
 .zz-product-tile__gallery { display: flex; gap: 1px; color: inherit; }   /* Figma: gallery itemSpacing 1 */
-.zz-product-tile__photo { flex: 0 0 100%; aspect-ratio: 1; overflow: hidden; background: var(--surface-support-1); }
+.zz-product-tile__photo { flex: 0 0 100%; aspect-ratio: 1; overflow: hidden; background: var(--surface-media); }
 .zz-product-tile__photo > img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .zz-product-tile__counter { position: absolute; left: var(--small); bottom: var(--small); }
 .zz-product-tile__title-block { display: flex; flex-direction: column; }
