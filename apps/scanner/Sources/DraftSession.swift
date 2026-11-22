@@ -112,6 +112,8 @@ final class DraftSession: ObservableObject {
 
     /// Drag-and-drop or ⌥↑/⌥↓: the scans move, the names stay with the positions, files are renamed at once
     func move(from source: IndexSet, to destination: Int) {
+        guard source.allSatisfy({ slots[$0].scanned }) else { return }   // only scanned images move
+        lastRemoval = nil
         var s = slots
         s.move(fromOffsets: source, toOffset: destination)
         renameFiles(from: slots, to: s)
@@ -123,20 +125,40 @@ final class DraftSession: ObservableObject {
     }
 
     func moveTarget(by delta: Int) {
-        guard let t = target else { return }
+        guard let t = target, t < slots.count, slots[t].scanned else { return }   // only scanned images move
         let to = t + delta
         guard to >= 0, to < slots.count else { return }
         move(from: IndexSet(integer: t), to: delta > 0 ? to + 1 : to)
     }
 
-    /// x: both files of that position go to the Trash
+    /// Last removal, for Undo: (file in the Trash, where it was), plus the position and its thumbnail
+    @Published var lastRemoval: (files: [(URL, URL)], index: Int, thumb: CGImage?)?
+
+    /// Delete / context menu: both files of that position go to the Trash (Undo puts them back)
     func remove(at i: Int) {
-        guard i < slots.count, i < names.count else { return }
-        for folder in folders { if let f = file(named: names[i].name, in: folder) { try? FileManager.default.trashItem(at: f, resultingItemURL: nil) } }
+        guard i < slots.count, i < names.count, slots[i].scanned else { return }
+        var moved: [(URL, URL)] = []
+        for folder in folders {
+            if let f = file(named: names[i].name, in: folder) {
+                var trashed: NSURL?
+                if (try? FileManager.default.trashItem(at: f, resultingItemURL: &trashed)) != nil, let t = trashed as URL? { moved.append((t, f)) }
+            }
+        }
+        lastRemoval = (moved, i, slots[i].thumb)
         slots[i].scanned = false; slots[i].thumb = nil
         target = i
         app?.syncFileName()
         app?.caption = "Moved to the Trash: \(names[i].name)"
+    }
+
+    func undoRemove() {
+        guard let r = lastRemoval else { return }
+        for (trashed, original) in r.files { try? FileManager.default.moveItem(at: trashed, to: original) }
+        if r.index < slots.count { slots[r.index].scanned = true; slots[r.index].thumb = r.thumb }
+        lastRemoval = nil
+        target = slots.firstIndex { !$0.scanned }
+        app?.syncFileName()
+        app?.caption = "Scan restored"
     }
 
     private var folders: [URL] { [app?.folder, app?.originalsFolder].compactMap { $0 } }

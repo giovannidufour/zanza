@@ -103,31 +103,40 @@ struct DraftResult: View {
     }
 }
 
+/// `image slot` (Figma 2431:750): scanned (handle, check) · target (highlighted, "Next scan" tag, no handle) ·
+/// empty (dashed thumbnail, "Not scanned", no handle). Rows without a handle are padded 36 so thumbnails line up.
 struct ImageSlotRow: View {
     let index: Int
     let label: String
     let name: String
     let slot: Slot
     let isTarget: Bool
-    let remove: () -> Void
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "line.3.horizontal").foregroundColor(Theme.textStrong)
+        HStack(spacing: 12) {
+            if slot.scanned && !isTarget {
+                Image(systemName: "line.3.horizontal").foregroundColor(Theme.textStrong).frame(width: 24)
+            } else {
+                Color.clear.frame(width: 24, height: 1)
+            }
             ZStack {
-                Rectangle().fill(Theme.surfaceSubtle)
-                if let t = slot.thumb { Image(decorative: t, scale: 1).resizable().scaledToFill() }
+                if slot.scanned, let t = slot.thumb { Image(decorative: t, scale: 1).resizable().scaledToFill() }
+                else if slot.scanned { Rectangle().fill(Theme.surfaceSubtle) }
+                else { Rectangle().strokeBorder(Theme.textModerate, style: StrokeStyle(lineWidth: 1, dash: [3, 3])) }
             }
             .frame(width: 40, height: 40).clipped()
             VStack(alignment: .leading, spacing: 2) {
-                Text("Image \(index + 1) · \(label)" + (isTarget ? " · next scan" : "")).labelStyle(10, color: Theme.textModerate)
-                Text(name).bodyStyle(13).fixedSize(horizontal: false, vertical: true)
+                Text("Image \(index + 1) · \(label)").labelStyle(10, color: Theme.textModerate)
+                Text(name).bodyStyle(13, color: slot.scanned || isTarget ? Theme.textStrong : Theme.textModerate)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
-            if slot.scanned {
-                Button(action: remove) { Image(systemName: "xmark").foregroundColor(Theme.textStrong) }
-                    .buttonStyle(.plain).help("Move both files to the Trash")
+            if isTarget {
+                Text("Next scan").bodyStyle(12).padding(.horizontal, 4).padding(.vertical, 2)
+                    .background(Color.black.opacity(0.08))   // tag item extra small: surface-support-1 (backend black-a8)
+            } else if slot.scanned {
+                Image(systemName: "checkmark.circle").font(.system(size: 18, weight: .light)).foregroundColor(Theme.textStrong)
             } else {
-                Image(systemName: "circle").foregroundColor(Theme.textStrong)
+                Text("Not scanned").bodyStyle(12, color: Theme.textModerate)
             }
         }
         .padding(.horizontal, 8).padding(.vertical, 6)
@@ -156,28 +165,41 @@ struct DraftDetail: View {
     }
 
     var slotList: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {   // images head (Figma 2439:1860)
+                Text("Images").labelStyle(12)
+                Spacer()
+                if drafts.lastRemoval != nil {
+                    Button("Undo") { drafts.undoRemove() }.buttonStyle(.plain).bodyStyle(12).underline()
+                }
+                Text("\(drafts.slots.filter(\.scanned).count) of \(drafts.slots.count) scanned").bodyStyle(12, color: Theme.textModerate)
+            }
             List {
                 ForEach(Array(drafts.slots.enumerated()), id: \.element.id) { i, slot in
                     ImageSlotRow(index: i, label: i < drafts.names.count ? drafts.names[i].label : "",
                                  name: i < drafts.names.count ? drafts.names[i].name : "",
-                                 slot: slot, isTarget: drafts.target == i,
-                                 remove: { drafts.remove(at: i) })
+                                 slot: slot, isTarget: drafts.target == i)
                         .contentShape(Rectangle())
                         .onTapGesture { drafts.target = i; model.syncFileName() }
+                        .contextMenu {
+                            if slot.scanned { Button("Move Scan to Trash") { drafts.remove(at: i) } }
+                        }
+                        .moveDisabled(!slot.scanned)
                         .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: 0))
+                        .listRowSeparator(.hidden)
                 }
                 .onMove { drafts.move(from: $0, to: $1) }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
+            .onDeleteCommand { if let t = drafts.target { drafts.remove(at: t) } }
             .frame(height: min(CGFloat(drafts.slots.count) * 72, 290))
             HStack(spacing: 12) {
                 Button("Add image") { drafts.addImage() }.buttonStyle(ZButtonStyle(primary: false))
-                Text("Drag the rows (or ⌥↑ ⌥↓) to change the order: files are renamed").bodyStyle(12, color: Theme.textModerate)
+                Text("Drag scanned images (or ⌥↑ ⌥↓) to change the order: files are renamed").bodyStyle(12, color: Theme.textModerate)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            // ⌥↑ / ⌥↓ move the target position
+            // ⌥↑ / ⌥↓ move the selected scanned image
             Button("") { drafts.moveTarget(by: -1) }.keyboardShortcut(.upArrow, modifiers: .option).hidden().frame(width: 0, height: 0)
             Button("") { drafts.moveTarget(by: 1) }.keyboardShortcut(.downArrow, modifiers: .option).hidden().frame(width: 0, height: 0)
         }
