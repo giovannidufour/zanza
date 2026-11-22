@@ -162,6 +162,16 @@ struct ScanColumn: View {
                 .aspectRatio(model.sideMM == nil ? model.previewZone.width / model.previewZone.height : 1, contentMode: .fit)
                 .padding(.top, 36)   // room for the turn handle above the square
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+            if model.sideMM != nil {
+                HStack(spacing: 12) {
+                    Text("Turn").bodyStyle(14)
+                    Slider(value: Binding(get: { -Double(model.angle) * 180 / .pi },
+                                          set: { model.angle = -CGFloat($0) * .pi / 180 }), in: -180...180)
+                    Text(String(format: "%.1f°", -Double(model.angle) * 180 / .pi)).bodyStyle(14, color: Theme.textModerate)
+                        .frame(width: 56, alignment: .trailing)
+                    Button("0°") { model.angle = 0 }.buttonStyle(ZButtonStyle(primary: false))
+                }
+            }
             Text(scanner.busy ? "\(model.caption) · \(Int(scanner.progress * 100))%" : model.caption)
                 .bodyStyle(12, color: Theme.textModerate).lineLimit(2).multilineTextAlignment(.center)
             HStack(alignment: .bottom, spacing: 12) {
@@ -197,6 +207,7 @@ struct PreviewCanvas: View {
     @ObservedObject var scanner: ScannerController
     @State private var dragStart: CGPoint?
     @State private var turnStart: (angle: CGFloat, pointer: CGFloat)?
+    @State private var pinchStart: CGFloat?
 
     var body: some View {
         GeometryReader { geo in
@@ -238,8 +249,8 @@ struct PreviewCanvas: View {
                 .allowsHitTesting(false)
             // turn handle, fixed above the guide
             Circle().fill(Theme.surfaceBase).overlay(Circle().stroke(Theme.textStrong, lineWidth: 1))
-                .frame(width: 14, height: 14)
-                .contentShape(Circle().inset(by: -10))
+                .frame(width: 18, height: 18)
+                .contentShape(Circle().inset(by: -14))
                 .position(x: mid.x, y: mid.y - r)
                 .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .named("canvas"))
                     .onChanged { v in
@@ -253,6 +264,12 @@ struct PreviewCanvas: View {
         .clipped()
         .contentShape(Rectangle())
         .coordinateSpace(name: "canvas")
+        .simultaneousGesture(RotationGesture()
+            .onChanged { v in
+                if pinchStart == nil { pinchStart = model.angle }
+                model.angle = pinchStart! - CGFloat(v.radians)   // two fingers on the trackpad turn the record
+            }
+            .onEnded { _ in pinchStart = nil })
         .gesture(DragGesture(minimumDistance: 1)
             .onChanged { v in
                 if dragStart == nil { dragStart = model.center }
