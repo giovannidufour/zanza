@@ -61,7 +61,7 @@ const files = {
   'admin.js': fs.readFileSync(path.join(APP, 'admin.js'), 'utf8')
 };
 for (const [name, body] of Object.entries(files)) fs.writeFileSync(path.join(OUT, name), body);
-// Favicon = the shop's logo illustration on the admin ground, scotch-mist (decisions 0097, 0127): single source in apps/storefront/public/
+// Favicon = the shop's logo illustration in negative, black ground (decisions 0097, 0127): single source in apps/storefront/public/
 for (const f of ['favicon-admin.svg', 'favicon-admin-32.png', 'apple-touch-icon-admin.png']) fs.copyFileSync(path.join(ROOT, 'apps/storefront/public', f), path.join(OUT, f));
 const v = (n) => `${n}?v=${hash(files[n])}`;
 const html = fs.readFileSync(path.join(APP, 'index.html'), 'utf8')
