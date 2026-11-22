@@ -56,7 +56,7 @@
   },
   "contact": {
     "note": "Contact form on /contact/ (decision 0093). endpoint = URL of the Supabase function contact (supabase/functions/contact, deploy with Verify JWT OFF, secret CONTACT_TO or OFFER_TO). Bots: honeypot + invisible proof of work, GET on the same endpoint (decision 0132); empty = the form says it is not switched on yet and points to the email.",
-    "endpoint": ""
+    "endpoint": "https://hhpknvyfypqipxufmbys.supabase.co/functions/v1/contact"
   },
   "trade": {
     "note": "Trade offers (Figma page Trade). offerEndpoint = URL of the Supabase function trade-offer; empty = the form shows that offers are not switched on yet. searchEndpoint = URL of the Supabase function discogs-search (decision 0069); empty = \"Which record\" is a plain text field.",
