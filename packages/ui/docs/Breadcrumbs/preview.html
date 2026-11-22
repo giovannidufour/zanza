@@ -1,4 +1,4 @@
-<!-- @dsCard group="Navigation" height=300 subtitle="items · links · current page" -->
+<!-- @dsCard group="Navigation" height=300 subtitle="items · links · optional current page" -->
 <!doctype html>
 <html data-theme="frontend">
 <head>
@@ -35,11 +35,12 @@
   }
 
   function Playground() {
-    var st = useState({ items: 'For sale, Dancehall, 7”', links: true });
+    var st = useState({ items: 'For sale, Dancehall', links: true, current: false });
     var s = st[0], set = st[1];
     var upd = function (k) { return function (v) { var n = Object.assign({}, s); n[k] = v; set(n); }; };
     var labels = s.items.split(',').map(function (x) { return x.trim(); }).filter(Boolean);
-    var items = labels.map(function (l, i) { return s.links && i === 0 ? { label: l, href: '#' } : { label: l }; });
+    var items = labels.map(function (l, i) { var last = i === labels.length - 1;
+      return s.links && !(last && s.current) ? { label: l, href: '#' } : { label: l }; });
     var snippet = '<Breadcrumbs items={[\n' + items.map(function (it) {
       return '  { label: "' + it.label + '"' + (it.href ? ', href: "' + it.href + '"' : '') + ' }';
     }).join(',\n') + '\n]} />';
@@ -49,7 +50,8 @@
         h('div', { className: 'pg__controls' },
           h('h3', null, 'Props'),
           h(Text, { id: 'items', label: 'items (csv)', value: s.items, onChange: upd('items') }),
-          h(Check, { id: 'links', label: 'first is link', value: s.links, onChange: upd('links') }))),
+          h(Check, { id: 'links', label: 'links', value: s.links, onChange: upd('links') }),
+          h(Check, { id: 'current', label: 'last = current page', value: s.current, onChange: upd('current') }))),
       h('pre', { className: 'code' }, snippet));
   }
 

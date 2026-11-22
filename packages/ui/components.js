@@ -197,19 +197,21 @@
 
   /* ── Breadcrumbs ────────────────────────────────────────────────────────
      Figma: `breadcrumbs` (device=desktop|mobile). `trail` = body/medium items separated by "/", padding `small`, one line
-     (scrolls sideways when too long), 1px rule below. PDP only: the PLP shows ActiveFilter instead (0041). */
+     (scrolls sideways when too long), 1px rule below. PDP only: the PLP shows ActiveFilter instead (0041).
+     Items with `href` are links (the last one too: the PDP trail is section / genre, both links, 0122); a last item
+     without `href` is the current page (aria-current). The "/" sits inside the item, hidden from AT, so the list
+     holds only the path. */
   function Breadcrumbs(props) {
-    var items = props.items || [];
-    var nodes = [];
-    items.forEach(function (it, i) {
+    var items = (props.items || []).filter(function (it) { return typeof it === 'string' ? it : it && it.label; });
+    var nodes = items.map(function (it, i) {
       var last = i === items.length - 1;
       var label = typeof it === 'string' ? it : it.label;
       var href = typeof it === 'string' ? null : it.href;
-      if (i > 0) nodes.push(h('li', { key: 'sep' + i, className: 'zz-breadcrumbs__sep', 'aria-hidden': 'true' }, '/'));
-      nodes.push(h('li', { key: 'it' + i, className: 'zz-breadcrumbs__item' },
-        href && !last
+      return h('li', { key: i, className: 'zz-breadcrumbs__item' },
+        i > 0 ? h('span', { className: 'zz-breadcrumbs__sep', 'aria-hidden': 'true' }, '/') : null,
+        href
           ? h('a', { href: href }, label)
-          : h('span', last ? { 'aria-current': 'page' } : null, label)));
+          : h('span', last ? { 'aria-current': 'page' } : null, label));
     });
     return h('nav', Object.assign({
       className: cx('zz-breadcrumbs', props.className),

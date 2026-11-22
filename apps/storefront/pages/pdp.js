@@ -9,13 +9,16 @@ const h = React.createElement;
 const { TradeActions } = require('./trade.js');
 const { SECTION_LABEL, tagsOf, tagLinksOf, formatPrice, productName, productNameLinked, smallImageUrl, releaseInfoLinked, gradingProps, SiteHeader, sampleAttrs, ProductCardFor, imageOf, IMAGE_SIZES } = require('./shell.js');
 
+// Figma `breadcrumbs` on the PDP (decision 0122): section / genre, both links. The genre opens the section's PLP
+// filtered by it (?genre=, as the genre tags); no genre → no crumb (the macro genre is never shown, 0048).
 function breadcrumbItems(product, url) {
   const { listing, release } = product;
+  const section = url(`/${listing.section}/`);
+  const genre = (release.genres || [])[0];
   return [
-    { label: SECTION_LABEL[listing.section], href: url(`/${listing.section}/`) },
-    { label: (release.genres || [])[0] || (release.macro_genre || [])[0], href: null },
-    { label: release.format, href: null }
-  ];
+    { label: SECTION_LABEL[listing.section], href: section },
+    genre ? { label: genre, href: `${section}?genre=${encodeURIComponent(genre)}` } : null
+  ].filter(Boolean);
 }
 
 function Pdp({ product, related = [], site, url }) {
