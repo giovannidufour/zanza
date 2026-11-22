@@ -104,9 +104,9 @@ struct DraftResult: View {
                 Text("SKU \(draft.skuText) · Draft").labelStyle(10, color: Theme.textModerate)
                 Text(draft.title).bodyStyle(14).fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 10) {   // media status
-                    Label("\(scanned)/\(imageSlots)", systemImage: "photo")
+                    Label("\(scanned)", systemImage: "photo")
                         .foregroundColor(scanned > 0 ? Theme.textStrong : Theme.textModerate)
-                    Label("\(clips)/\(clipSlots.map(String.init) ?? "–")", systemImage: "waveform")
+                    Label("\(clips)", systemImage: "waveform")
                         .foregroundColor(clips > 0 ? Theme.textStrong : Theme.textModerate)
                 }
                 .font(Theme.body(12)).labelStyle(.titleAndIcon)
@@ -186,7 +186,7 @@ struct DraftDetail: View {
             HStack {
                 Text("Clips").labelStyle(12)
                 Spacer()
-                Text(drafts.clips.isEmpty ? "No clip slots yet" : "\(drafts.clips.filter { session.clip(assignedTo: $0.name) != nil }.count) of \(drafts.clips.count) assigned")
+                Text(drafts.clips.isEmpty ? "No clip slots yet" : "\(drafts.clips.filter { session.clip(assignedTo: $0.name) != nil }.count) assigned")
                     .bodyStyle(12, color: Theme.textModerate)
             }
             ForEach(drafts.clips, id: \.name) { c in
@@ -212,7 +212,7 @@ struct DraftDetail: View {
                 if drafts.lastRemoval != nil {
                     Button("Undo") { drafts.undoRemove() }.buttonStyle(.plain).bodyStyle(12).underline()
                 }
-                Text("\(drafts.slots.filter(\.scanned).count) of \(drafts.slots.count) scanned").bodyStyle(12, color: Theme.textModerate)
+                Text("\(drafts.slots.filter(\.scanned).count) scanned").bodyStyle(12, color: Theme.textModerate)
             }
             List {
                 ForEach(Array(drafts.slots.enumerated()), id: \.element.id) { i, slot in

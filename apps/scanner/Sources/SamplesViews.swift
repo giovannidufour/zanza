@@ -227,7 +227,7 @@ struct ExportPanel: View {
             .buttonStyle(ZButtonStyle())
             .disabled(assigned.isEmpty || model.exporting || drafts.draft == nil)
             Text(drafts.draft == nil ? "Open a draft on the left"
-                 : "\(assigned.count) of \(drafts.clips.count) clips assigned" + (empty.isEmpty ? "" : " · \(empty.joined(separator: ", ")) still empty"))
+                 : "\(assigned.count) clips assigned" + (empty.isEmpty ? "" : " · \(empty.joined(separator: ", ")) still empty"))
                 .bodyStyle(12, color: Theme.textModerate)
             if let r = model.exportReport { Text(r).bodyStyle(12).fixedSize(horizontal: false, vertical: true) }
             Spacer(minLength: 0)
