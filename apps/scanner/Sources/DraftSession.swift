@@ -22,7 +22,9 @@ final class DraftSession: ObservableObject {
     @Published var names: [ImageTarget] = []
     /// what is at each position (same count as names)
     @Published var slots: [Slot] = []
-    @Published var target: Int?          // index of the position the next Scan fills
+    @Published var target: Int?          // the first empty position: the next Scan fills it (rows are not selectable)
+    /// Lightbox (Figma 2441:24959): index of the scan shown large, nil = closed
+    @Published var lightbox: Int?
 
     weak var app: AppModel?
     private var searchTask: Task<Void, Never>?
@@ -107,6 +109,7 @@ final class DraftSession: ObservableObject {
         guard let t = target, t < slots.count else { return }
         slots[t].scanned = true; slots[t].thumb = thumb
         target = slots.firstIndex { !$0.scanned }
+        if target == nil { addImage() }   // all filled: the next Scan gets a new row (4, 5…), no Add image button
         app?.syncFileName()
     }
 
@@ -146,9 +149,24 @@ final class DraftSession: ObservableObject {
         }
         lastRemoval = (moved, i, slots[i].thumb)
         slots[i].scanned = false; slots[i].thumb = nil
-        target = i
+        target = slots.firstIndex { !$0.scanned }
         app?.syncFileName()
         app?.caption = "Moved to the Trash: \(names[i].name)"
+    }
+
+    /// The label file of a scanned position, full size
+    func image(at i: Int) -> CGImage? {
+        guard i < names.count, let f = file(named: names[i].name, in: app?.folder),
+              let src = CGImageSourceCreateWithURL(f as CFURL, nil) else { return nil }
+        return CGImageSourceCreateThumbnailAtIndex(src, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true,
+                                                            kCGImageSourceThumbnailMaxPixelSize: 2000] as CFDictionary)
+    }
+    /// ← → in the lightbox: the previous / next scanned position
+    func stepLightbox(_ d: Int) {
+        guard let i = lightbox else { return }
+        var j = i + d
+        while j >= 0 && j < slots.count && !slots[j].scanned { j += d }
+        if j >= 0 && j < slots.count { lightbox = j }
     }
 
     func undoRemove() {

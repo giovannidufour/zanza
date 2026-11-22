@@ -22,6 +22,7 @@ struct ContentView: View {
         }
         .frame(minWidth: 1280, minHeight: 860)
         .background(Theme.surfacePage)
+        .overlay { Lightbox(drafts: model.drafts) }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             if model.drafts.draft == nil { model.pasteNames(onlyIfNew: true) }
         }

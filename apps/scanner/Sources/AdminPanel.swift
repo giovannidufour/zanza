@@ -111,6 +111,8 @@ struct ImageSlotRow: View {
     let name: String
     let slot: Slot
     let isTarget: Bool
+    let remove: () -> Void
+    let open: () -> Void
     var body: some View {
         HStack(spacing: 12) {
             if slot.scanned && !isTarget {
@@ -124,6 +126,9 @@ struct ImageSlotRow: View {
                 else { Rectangle().strokeBorder(Theme.textModerate, style: StrokeStyle(lineWidth: 1, dash: [3, 3])) }
             }
             .frame(width: 40, height: 40).clipped()
+            .contentShape(Rectangle())
+            .onTapGesture { if slot.scanned { open() } }   // click a scanned thumbnail: lightbox
+            .help(slot.scanned ? "Show the scan" : "")
             VStack(alignment: .leading, spacing: 2) {
                 Text("Image \(index + 1) · \(label)").labelStyle(10, color: Theme.textModerate)
                 Text(name).bodyStyle(13, color: slot.scanned || isTarget ? Theme.textStrong : Theme.textModerate)
@@ -134,7 +139,11 @@ struct ImageSlotRow: View {
                 Text("Next scan").bodyStyle(12).padding(.horizontal, 4).padding(.vertical, 2)
                     .background(Color.black.opacity(0.08))   // tag item extra small: surface-support-1 (backend black-a8)
             } else if slot.scanned {
-                Image(systemName: "checkmark.circle").font(.system(size: 18, weight: .light)).foregroundColor(Theme.textStrong)
+                Button(action: remove) {   // icon-x 24: both files to the Trash (Undo in the head)
+                    Image(systemName: "xmark").font(.system(size: 16, weight: .light)).foregroundColor(Theme.textStrong)
+                        .frame(width: 24, height: 24).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain).help("Move this scan to the Trash")
             } else {
                 Text("Not scanned").bodyStyle(12, color: Theme.textModerate)
             }
@@ -178,9 +187,8 @@ struct DraftDetail: View {
                 ForEach(Array(drafts.slots.enumerated()), id: \.element.id) { i, slot in
                     ImageSlotRow(index: i, label: i < drafts.names.count ? drafts.names[i].label : "",
                                  name: i < drafts.names.count ? drafts.names[i].name : "",
-                                 slot: slot, isTarget: drafts.target == i)
-                        .contentShape(Rectangle())
-                        .onTapGesture { drafts.target = i; model.syncFileName() }
+                                 slot: slot, isTarget: drafts.target == i,
+                                 remove: { drafts.remove(at: i) }, open: { drafts.lightbox = i })
                         .contextMenu {
                             if slot.scanned { Button("Move Scan to Trash") { drafts.remove(at: i) } }
                         }
@@ -192,16 +200,50 @@ struct DraftDetail: View {
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
-            .onDeleteCommand { if let t = drafts.target { drafts.remove(at: t) } }
             .frame(height: min(CGFloat(drafts.slots.count) * 72, 290))
-            HStack(spacing: 12) {
-                Button("Add image") { drafts.addImage() }.buttonStyle(ZButtonStyle(primary: false))
-                Text("Drag scanned images (or ⌥↑ ⌥↓) to change the order: files are renamed").bodyStyle(12, color: Theme.textModerate)
-                    .fixedSize(horizontal: false, vertical: true)
+            Text("Drag scanned images to change the order: files are renamed").bodyStyle(12, color: Theme.textModerate)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+/// Lightbox (Figma `image lightbox` 2441:24959): scrim over the window, white panel, role + file name, x; ← → steps
+/// through the scans, Esc or x closes.
+struct Lightbox: View {
+    @ObservedObject var drafts: DraftSession
+    @State private var image: CGImage?
+    var body: some View {
+        if let i = drafts.lightbox {
+            ZStack {
+                Color.black.opacity(0.48).ignoresSafeArea()   // surface/scrim
+                    .onTapGesture { drafts.lightbox = nil }
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Image \(i + 1) · \(i < drafts.names.count ? drafts.names[i].label : "")").labelStyle(10, color: Theme.textModerate)
+                            Text(i < drafts.names.count ? drafts.names[i].name : "").bodyStyle(14)
+                        }
+                        Spacer()
+                        Button { drafts.lightbox = nil } label: {
+                            Image(systemName: "xmark").font(.system(size: 20, weight: .light)).foregroundColor(Theme.textStrong)
+                        }
+                        .buttonStyle(.plain).keyboardShortcut(.escape, modifiers: [])
+                    }
+                    ZStack {
+                        Rectangle().fill(Theme.surfaceSubtle)
+                        if let image { Image(decorative: image, scale: 1).resizable().scaledToFit() }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    // ← → step through the scans
+                    Button("") { drafts.stepLightbox(-1) }.keyboardShortcut(.leftArrow, modifiers: []).hidden().frame(width: 0, height: 0)
+                    Button("") { drafts.stepLightbox(1) }.keyboardShortcut(.rightArrow, modifiers: []).hidden().frame(width: 0, height: 0)
+                }
+                .padding(.horizontal, 24).padding(.vertical, 16)
+                .background(Theme.surfaceBase)
+                .padding(40)
             }
-            // ⌥↑ / ⌥↓ move the selected scanned image
-            Button("") { drafts.moveTarget(by: -1) }.keyboardShortcut(.upArrow, modifiers: .option).hidden().frame(width: 0, height: 0)
-            Button("") { drafts.moveTarget(by: 1) }.keyboardShortcut(.downArrow, modifiers: .option).hidden().frame(width: 0, height: 0)
+            .onAppear { image = drafts.image(at: i) }
+            .onChange(of: drafts.lightbox) { new in image = new.flatMap { drafts.image(at: $0) } }
         }
     }
 }
