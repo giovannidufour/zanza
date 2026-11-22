@@ -1034,8 +1034,8 @@ a.zz-product-card__image { display: block; color: inherit; }
 }
 .zz-file-item__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-/* drag handle: 24 × 24 icon, chromeless (no Figma states: it reuses the floating colours of IconButton) */
-.zz-file-item__handle {
+/* drag handle (DragHandle, decision 0129): 24 × 24 icon, chromeless (no Figma states: it reuses the floating colours of IconButton) */
+.zz-drag-handle {
   display: inline-flex;
   flex: none;
   width: 24px;
@@ -1050,10 +1050,10 @@ a.zz-product-card__image { display: block; color: inherit; }
   appearance: none;
   -webkit-appearance: none;
 }
-@media (hover: hover) { .zz-file-item__handle:hover { background: var(--action-floating-background-hover); } }   /* 0043 */
-.zz-file-item__handle:active { background: var(--action-floating-background-pressed); cursor: grabbing; }
-.zz-file-item__handle-icon { display: inline-flex; width: 100%; height: 100%; }
-.zz-file-item__handle-icon svg { width: 100%; height: 100%; display: block; }
+@media (hover: hover) { .zz-drag-handle:hover { background: var(--action-floating-background-hover); } }   /* 0043 */
+.zz-drag-handle:active { background: var(--action-floating-background-pressed); cursor: grabbing; }
+.zz-drag-handle__icon { display: inline-flex; width: 100%; height: 100%; }
+.zz-drag-handle__icon svg { width: 100%; height: 100%; display: block; }
 
 /* ── Checkbox (Figma: controls → checkbox, state default | active) ─────────
    row gap 8, icon 24, label body/medium text/strong. The native input is visually hidden and drives the drawn box. */
