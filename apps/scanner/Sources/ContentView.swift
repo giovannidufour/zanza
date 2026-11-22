@@ -1,0 +1,243 @@
+import SwiftUI
+
+struct ContentView: View {
+    @EnvironmentObject var model: AppModel
+    @ObservedObject var scanner: ScannerController
+
+    var body: some View {
+        HStack(spacing: 0) {
+            RecordColumn(scanner: scanner)
+                .frame(width: 368)
+            Rectangle().fill(Theme.divider).frame(width: 1)
+            ScanColumn(scanner: scanner)
+                .frame(minWidth: 560, maxWidth: .infinity)
+        }
+        .frame(minHeight: 700)
+        .background(Theme.surfaceBase)
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            model.pasteNames(onlyIfNew: true)
+        }
+    }
+}
+
+// MARK: Left: record, steps, settings, scanner status
+
+struct RecordColumn: View {
+    @EnvironmentObject var model: AppModel
+    @ObservedObject var scanner: ScannerController
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(model.sku.map { "SKU \($0)" } ?? "No record").labelStyle(12, color: Theme.textModerate)
+                Text(model.recordTitle ?? "Copy the names of a draft").labelStyle(18)
+                    .fixedSize(horizontal: false, vertical: true)
+                if model.steps.isEmpty {
+                    Text("In the admin, open the draft, then File names → Copy all. Come back here: the names are pasted by themselves (or press Paste names). One name works too, or just type it.")
+                        .bodyStyle(14, color: Theme.textModerate).fixedSize(horizontal: false, vertical: true)
+                }
+                Button("Paste names") { model.pasteNames() }
+                    .buttonStyle(ZButtonStyle(primary: false))
+                    .keyboardShortcut("v", modifiers: [.command, .shift])
+            }
+
+            if !model.steps.isEmpty {
+                ScrollView {
+                    VStack(spacing: 4) {
+                        ForEach(model.steps) { step in
+                            StepRow(step: step, current: step.id == model.currentID, thumb: model.thumbs[step.id])
+                                .onTapGesture { model.select(step) }
+                        }
+                        Button("Add photo") { model.addPhoto() }
+                            .buttonStyle(.plain).bodyStyle(14, color: Theme.textModerate)
+                            .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 12).padding(.top, 4)
+                    }
+                }
+                .frame(maxHeight: 260)
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    FieldLabel(text: "Size")
+                    Picker("", selection: $model.preset) {
+                        ForEach(SizePreset.allCases) { Text($0.menuTitle).tag($0) }
+                    }.labelsHidden()
+                }
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        FieldLabel(text: "Resolution")
+                        Picker("", selection: $model.dpi) {
+                            ForEach(dpiChoices, id: \.self) { Text("\($0) dpi").tag($0) }
+                        }.labelsHidden()
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        FieldLabel(text: "Format")
+                        Picker("", selection: $model.format) {
+                            ForEach(FileFormat.allCases) { Text($0.rawValue).tag($0) }
+                        }.labelsHidden()
+                    }
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    FieldLabel(text: "Save to")
+                    Button { model.chooseFolder() } label: {
+                        HStack {
+                            Text(model.folder.lastPathComponent).bodyStyle(16).lineLimit(1)
+                            Spacer()
+                            Text("Change").bodyStyle(14, color: Theme.textModerate)
+                        }
+                        .padding(.horizontal, 12).frame(height: 40)
+                        .background(Theme.surfaceSubtle)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(model.folder.path)
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: 8) {
+                Circle().fill(scanner.ready ? Color.black : Theme.alert).frame(width: 8, height: 8)
+                Text(scanner.status).bodyStyle(12, color: Theme.textModerate)
+            }
+        }
+        .padding(24)
+        .frame(maxHeight: .infinity, alignment: .top)
+    }
+
+    /// The scanner's resolutions, plus the chosen one so the menu always shows it
+    var dpiChoices: [Int] {
+        Array(Set(scanner.resolutions.filter { $0 >= 75 && $0 <= 2400 } + [model.dpi])).sorted()
+    }
+}
+
+struct StepRow: View {
+    let step: ScanStep
+    let current: Bool
+    let thumb: CGImage?
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Rectangle().fill(Theme.surfaceSubtle)
+                if let thumb { Image(decorative: thumb, scale: 1).resizable().scaledToFill() }
+            }
+            .frame(width: 48, height: 48).clipped()
+            VStack(alignment: .leading, spacing: 2) {
+                Text(step.roleLabel).labelStyle(12, color: Theme.textModerate)
+                Text(step.name).bodyStyle(14).fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+            Image(systemName: step.done ? "checkmark.circle" : "circle")
+                .font(.system(size: 18, weight: .light)).foregroundColor(Theme.textStrong)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .background(current ? Theme.surfaceHover : Color.clear)
+        .overlay(Rectangle().stroke(current ? Theme.divider : Color.clear, lineWidth: 1))
+        .contentShape(Rectangle())
+    }
+}
+
+// MARK: Right: preview, file name, Preview + Scan
+
+struct ScanColumn: View {
+    @EnvironmentObject var model: AppModel
+    @ObservedObject var scanner: ScannerController
+
+    var body: some View {
+        VStack(spacing: 12) {
+            PreviewCanvas(scanner: scanner)
+                .aspectRatio(model.previewZone.width / model.previewZone.height, contentMode: .fit)
+                .padding(.top, 36)   // room for the turn handle above the square
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            Text(scanner.busy ? "\(model.caption) · \(Int(scanner.progress * 100))%" : model.caption)
+                .bodyStyle(12, color: Theme.textModerate).lineLimit(2).multilineTextAlignment(.center)
+            HStack(alignment: .bottom, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    FieldLabel(text: "File name")
+                    HStack(spacing: 4) {
+                        TextField("48213_1_artist-title", text: $model.fileName)
+                            .textFieldStyle(.plain).font(Theme.body(16))
+                        Text(".\(model.format.ext)").bodyStyle(16, color: Theme.textModerate)
+                    }
+                    .padding(.horizontal, 12).frame(height: 40)
+                    .background(Theme.surfaceSubtle)
+                }
+                Button("Preview") { model.runPreview() }
+                    .buttonStyle(ZButtonStyle(primary: false))
+                    .disabled(!scanner.ready || scanner.busy)
+                    .keyboardShortcut("p", modifiers: .command)
+                Button("Scan") { model.runScan() }
+                    .buttonStyle(ZButtonStyle(primary: true))
+                    .disabled(!scanner.ready || scanner.busy || model.fileName.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .keyboardShortcut(.return, modifiers: .command)
+            }
+        }
+        .padding(24)
+    }
+}
+
+/// The previewed zone of the glass with the square to scan: drag it, turn it from the top handle.
+struct PreviewCanvas: View {
+    @EnvironmentObject var model: AppModel
+    @ObservedObject var scanner: ScannerController
+    @State private var dragStart: CGPoint?
+
+    var body: some View {
+        GeometryReader { geo in
+            let zone = model.previewZone
+            let k = geo.size.width / zone.width                 // points per mm
+            let c = CGPoint(x: (model.center.x - zone.minX) * k, y: (model.center.y - zone.minY) * k)
+            ZStack(alignment: .topLeading) {
+                Rectangle().fill(Theme.surfaceSubtle)
+                if let img = model.preview {
+                    Image(decorative: img, scale: 1).resizable().frame(width: geo.size.width, height: geo.size.height).clipped()
+                }
+                if let side = model.sideMM {
+                    let s = side * k
+                    SelectionSquare(side: s)
+                        .rotationEffect(.radians(model.angle))
+                        .position(c)
+                        .gesture(DragGesture(minimumDistance: 1)
+                            .onChanged { v in
+                                if dragStart == nil { dragStart = model.center }
+                                model.center = CGPoint(x: dragStart!.x + v.translation.width / k, y: dragStart!.y + v.translation.height / k)
+                                model.clampCenter()
+                            }
+                            .onEnded { _ in dragStart = nil })
+                    // rotate handle: 24 pt above the top edge, turns with the square
+                    let r = s / 2 + 30
+                    Circle().fill(Theme.surfaceBase).overlay(Circle().stroke(Theme.textStrong, lineWidth: 1))
+                        .frame(width: 14, height: 14)
+                        .contentShape(Circle().inset(by: -8))
+                        .position(x: c.x + r * sin(model.angle), y: c.y - r * cos(model.angle))
+                        .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .named("canvas"))
+                            .onChanged { v in
+                                model.angle = atan2(v.location.x - c.x, -(v.location.y - c.y))
+                            })
+                        .help("Drag to turn the square")
+                }
+            }
+            .coordinateSpace(name: "canvas")
+        }
+    }
+}
+
+struct SelectionSquare: View {
+    let side: CGFloat
+    var body: some View {
+        ZStack {
+            Rectangle().fill(Color.white.opacity(0.001)).overlay(Rectangle().stroke(Theme.textStrong, lineWidth: 1))
+            Circle().stroke(Theme.textStrong, style: StrokeStyle(lineWidth: 1, dash: [6, 6]))   // the record's edge
+            Rectangle().fill(Theme.textStrong).frame(width: 1, height: 30).offset(y: -side / 2 - 15)
+        }
+        .frame(width: side, height: side)
+        .overlay(alignment: .topLeading) { handle.offset(x: -4, y: -4) }
+        .overlay(alignment: .topTrailing) { handle.offset(x: 4, y: -4) }
+        .overlay(alignment: .bottomLeading) { handle.offset(x: -4, y: 4) }
+        .overlay(alignment: .bottomTrailing) { handle.offset(x: 4, y: 4) }
+    }
+    var handle: some View {
+        Rectangle().fill(Theme.surfaceBase).overlay(Rectangle().stroke(Theme.textStrong, lineWidth: 1)).frame(width: 8, height: 8)
+    }
+}
