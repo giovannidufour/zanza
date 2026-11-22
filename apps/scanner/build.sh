@@ -9,6 +9,7 @@ swiftc -O -swift-version 5 -target arm64-apple-macos13.0 \
   -framework SwiftUI -framework ImageCaptureCore -framework AppKit \
   Sources/*.swift -o "$APP/Contents/MacOS/ZanzaScanner"
 cp Info.plist "$APP/Contents/Info.plist"
+cp AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"   # made by tools/make-icon.swift (README)
 # Admin link (0138): Supabase URL + publishable key (public) and media base URL, from the git-ignored env file
 ENV=../storefront/.supabase.env
 if [ -f "$ENV" ]; then

@@ -27,3 +27,10 @@ text fields are not drawn by the renderer). `ZanzaScanner --test-scan <folder> <
 | `Sources/ContentView.swift` | The window (mirrors the Figma screens) |
 | `Sources/GlassView.swift` | The preview under the fixed guide (AppKit): drag, turn, trackpad rotate, grid and up figure while turning |
 | `Sources/Theme.swift` | Colours and type styles from `packages/ui/tokens.json` (backend theme) |
+
+## Icon
+
+`AppIcon.icns` = the shop logo on the staging favicon's acid-green ground (0127), in the macOS rounded square.
+Figma: `favicon`, variant `environment=scanner` (page assets). To remake it after a logo change:
+`swift tools/make-icon.swift <logo.png> icon1024.png`, then the iconset sizes with `sips` and `iconutil -c icns`.
+The logo PNG is the one embedded in `apps/storefront/public/favicon-staging.svg`.
