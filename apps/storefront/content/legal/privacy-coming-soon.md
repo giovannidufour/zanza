@@ -2,30 +2,17 @@
 
 Last updated: {{legal.updated}}
 
-This page is a placeholder until the shop opens. It does one thing with personal data: if you want, it puts your email address on the newsletter list. No tracking, no analytics, no advertising, no cookies.
+## Who
 
-## Who is responsible
+{{storeName}}, run by a private person. Write to {{legal.email}}.
 
-rythem-works, a personal project run by Gio. For anything about your data, write to {{legal.email}}.
+## What I process
 
-## When you visit this page
+- **Visiting this page:** IP address and browser, to deliver it securely; short logs. Art. 6(1)(f).
+- **Newsletter:** your email and proof of consent, until you unsubscribe. Art. 6(1)(a).
 
-The page is hosted by Cloudflare (Cloudflare, Inc., USA) on Cloudflare Pages. To deliver it, Cloudflare necessarily processes your IP address, the page requested, date and time, and your browser's user agent, and keeps short-lived logs for security. The fonts are served from this site: your browser does not contact Google or any other font service.
-
-- Legal basis: Art. 6(1)(f) GDPR. My legitimate interest is delivering the page securely.
-
-## Newsletter
-
-If you sign up, you first get an email with a link to confirm (double opt-in); only when you click it are you subscribed. That email is sent through Resend (Resend, Inc., USA; servers in Ireland) by a small function of this site hosted by Supabase (Supabase, Inc., USA; servers in Frankfurt), which does not store your address. Once you confirm, your email address is stored by Buttondown (Buttondown, LLC, USA), which sends the newsletter on my behalf, together with the time of your sign-up and confirmation, the page you signed up on and your IP address at confirmation, as proof of your consent. Open and click tracking is switched off.
-
-You can unsubscribe at any time with the link in every email, or by writing to me. Your address is then removed from the list.
-
-- Legal basis: your consent, Art. 6(1)(a) GDPR. Withdrawing it does not affect what happened before.
-
-Cloudflare, Supabase, Resend and Buttondown are based in the USA. Your data is protected there by the EU–U.S. Data Privacy Framework (Art. 45 GDPR) where the provider is certified, otherwise by the EU Standard Contractual Clauses (Art. 46(2)(c) GDPR).
+I use service providers for hosting and email. Some are in the USA: transfers are covered by the EU–U.S. Data Privacy Framework or the EU Standard Contractual Clauses.
 
 ## Your rights
 
-You can ask to access, correct or delete your data, restrict or object to its processing, receive it in a portable format, and withdraw your consent at any time (Art. 15–18, 20, 21 and 7(3) GDPR). Write to {{legal.email}}. You can also complain to a data protection supervisory authority (Art. 77 GDPR), for example the one where you live.
-
-When the shop opens, this page is replaced by the shop's full privacy policy.
+Access, correction, deletion, restriction, portability, objection and withdrawing consent (Art. 7, 15–18, 20, 21 GDPR): write to {{legal.email}}. You can also complain to a data protection authority (Art. 77 GDPR).
