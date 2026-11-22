@@ -44,6 +44,8 @@
         return;
       }
       if (!res.ok) { native(); return; }
+      // analytics (decision 0131): only where the shop loads it (not the coming-soon page); never the address
+      if (window.ZanzaAnalytics) window.ZanzaAnalytics.track('newsletter_signup', { source: location.pathname });
       if (row) row.hidden = true;
       show(status, 'Almost done: we sent a link to ' + email.value.trim() + '. Click it to confirm.');
       status.focus();   // the button is gone: keep focus where the answer is

@@ -1,7 +1,7 @@
 {
   "name": "zanza",
   "private": true,
-  "description": "rythem-works \u2014 vinyl record store. packages/ui = design system (tokens + components), apps/storefront = the site.",
+  "description": "rythem-works — vinyl record store. packages/ui = design system (tokens + components), apps/storefront = the site.",
   "scripts": {
     "build:tokens": "node packages/ui/build-tokens.js",
     "build": "node supabase/scripts/sync-functions.js --check && node packages/ui/build-tokens.js && node packages/ui/build-docs.js && node apps/storefront/build.js",
@@ -15,6 +15,7 @@
     "sync:functions": "node supabase/scripts/sync-functions.js"
   },
   "dependencies": {
+    "posthog-js": "1.447.3",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   }
