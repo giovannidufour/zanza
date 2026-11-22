@@ -14,6 +14,8 @@ final class GlassView: NSView {
     var angle: CGFloat = 0 { didSet { place() } }
     var aids = false { didSet { if aids != oldValue { guide.needsDisplay = true } } }   // grid + "up" figure while turning
     var onCommit: ((CGPoint, CGFloat) -> Void)?
+    /// Arrow-key nudges: saved without the automatic turn, so a fine-tuned angle is kept
+    var onNudge: ((CGPoint, CGFloat) -> Void)?
     private(set) var interacting = false
 
     /// The glass image is one layer moved and turned by the GPU: dragging changes only its transform, nothing is redrawn
@@ -85,6 +87,7 @@ final class GlassView: NSView {
     override func mouseDown(with e: NSEvent) {
         guard side != nil else { return }
         let p = convert(e.locationInWindow, from: nil)
+        window?.makeFirstResponder(self)   // so the arrow keys reach the preview
         interacting = true
         if hypot(p.x - handle.x, p.y - handle.y) < 22 {
             mode = .turn(pointer: pointerAngle(p), angle: angle); aids = true
@@ -125,6 +128,27 @@ final class GlassView: NSView {
     private func endPinch() {
         pinching = false; aids = false; interacting = false
         onCommit?(center, angle)
+    }
+
+    /// Arrows move the record 0.2 mm (⇧ 2 mm) the way they point; ⌥← / ⌥→ turn it 0.2° (⇧ 2°)
+    override func keyDown(with e: NSEvent) {
+        guard side != nil, let key = e.specialKey,
+              [NSEvent.SpecialKey.leftArrow, .rightArrow, .upArrow, .downArrow].contains(key) else { super.keyDown(with: e); return }
+        let big = e.modifierFlags.contains(.shift)
+        if e.modifierFlags.contains(.option) {
+            guard key == .leftArrow || key == .rightArrow else { return }
+            let step = (big ? 2 : 0.2) * CGFloat.pi / 180
+            angle += key == .leftArrow ? step : -step      // ← counter-clockwise, → clockwise
+        } else {
+            let mm: CGFloat = big ? 2 : 0.2
+            var dx: CGFloat = 0, dy: CGFloat = 0
+            switch key { case .leftArrow: dx = -mm; case .rightArrow: dx = mm; case .upArrow: dy = -mm; default: dy = mm }
+            // the image moves on screen: undo its turn to get the move on the glass (same as a drag)
+            let a = angle
+            let gx = dx * cos(a) - dy * sin(a), gy = dx * sin(a) + dy * cos(a)
+            center = CGPoint(x: min(max(center.x - gx, glass.minX), glass.maxX), y: min(max(center.y - gy, glass.minY), glass.maxY))
+        }
+        onNudge?(center, angle)
     }
 
     /// clockwise from straight up
@@ -191,6 +215,7 @@ struct GlassCanvas: NSViewRepresentable {
             model.center = c; model.angle = a
             model.turnFromPreview()
         }
+        v.onNudge = { c, a in model.center = c; model.angle = a }
         return v
     }
 

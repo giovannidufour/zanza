@@ -141,7 +141,7 @@ final class AppModel: ObservableObject {
                 self.turnFromPreview()
                 self.caption = self.preset.sideMM == nil
                     ? "Whole glass: Scan saves everything you see"
-                    : "Drag the record so the spindle hole sits in the middle; turn it from the handle. The dashed square is the 4\" label"
+                    : "Drag the record so the spindle hole sits in the middle (arrows to fine-tune, ⌥← ⌥→ to turn). The dashed square is the 4\" label"
             case .failure(let e):
                 self.caption = e.localizedDescription
             }
