@@ -1237,7 +1237,8 @@
     } else dialog = h(Z.Dialog, { open: false, title: '', confirmLabel: '', onCancel: function () {}, onConfirm: function () {} }, '');
 
     return h('div', { className: 'admin-section admin-listings' },
-      h('h1', { className: 'label-extra-large' }, 'Listings'),
+      // the ways to add records live here, not in the admin bar (decision 0125)
+      h(Z.ListingsHead, { title: 'Listings', bulkHref: '#bulk', createHref: '#new' }),
       h(Z.Tabs, { value: tab, onValueChange: pickTab, 'aria-label': 'Filter by status' },
         TABS.map(function (t) { return h(Z.Tab, { key: t[0], value: t[0], suffix: String(counts[t[0]]), 'aria-controls': 'listings-table' }, t[1]); })),
       // mobile (Figma page `admin` → Listings - mobile, decision 0089): rows instead of the table, the bulk bar after them
@@ -2950,20 +2951,18 @@
       body);
   }
 
-  /* Admin navigation (Figma page `admin`, decision 0089): AdminBar (desktop buttons / mobile Menu · title · Create)
+  /* Admin navigation (Figma page `admin`, decision 0089): AdminBar (desktop buttons / mobile Menu · title)
      + the mobile menu, a full-screen native modal <dialog> with a MenuLayer, like the shop's (0060): Esc, × or
      following a link closes it, focus goes back to the Menu button. */
-  var SECTIONS = [['listings', 'Listings', '#'], ['orders', 'Orders', '#orders'], ['memo', 'Memo', '#memo'], ['bulk', 'Bulk', '#bulk'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings'], ['content', 'Content', '#content']];
+  var SECTIONS = [['listings', 'Listings', '#'], ['orders', 'Orders', '#orders'], ['memo', 'Memo', '#memo'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings'], ['content', 'Content', '#content']];
   function sectionOf(hash) {
     if (/^#orders/.test(hash)) return 'orders';
-    if (/^#memo/.test(hash)) return 'memo';
-    if (hash === '#bulk') return 'bulk';
+    if (/^#(new\/)?memo/.test(hash)) return 'memo';   // a listing created from a memo starts in Memo
     if (/^#attributes/.test(hash)) return 'attributes';
     if (hash === '#shipping') return 'shipping';
     if (hash === '#settings') return 'settings';
     if (/^#content/.test(hash)) return 'content';
-    if (/^#new/.test(hash)) return null;   // Create: no section is current (the Create button is the way in)
-    return 'listings';                        // list and #edit-<id>
+    return 'listings';   // list, #edit-<id>, and Create (#new) / Bulk create (#bulk): actions of Listings (decision 0125)
   }
   function Nav(props) {
     var dialogRef = useRef(null), menuBtn = useRef(null);
@@ -2982,7 +2981,7 @@
     return h(React.Fragment, null,
       h(Z.AdminBar, {
         items: SECTIONS.map(function (x) { return { href: x[2], label: x[1], current: x[0] === current }; }),
-        title: document.title || 'Store admin', createHref: '#new', email: props.email, onSignOut: signOut,
+        title: document.title || 'Store admin', email: props.email, onSignOut: signOut,
         onMenuClick: openMenu, menuProps: { 'aria-expanded': open ? 'true' : 'false', 'aria-controls': 'admin-menu', 'aria-haspopup': 'dialog' }
       }),
       h('dialog', { id: 'admin-menu', className: 'admin-menu', 'aria-label': 'Menu', tabIndex: -1, ref: dialogRef,
