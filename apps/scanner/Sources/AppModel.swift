@@ -66,10 +66,10 @@ final class AppModel: ObservableObject {
         clampCenter()
     }
 
+    /// The guide's centre stays on the glass
     func clampCenter() {
-        let half = (sideMM ?? 0) / 2
-        center.x = min(max(center.x, previewZone.minX + half * 0.5), previewZone.maxX - half * 0.5)
-        center.y = min(max(center.y, previewZone.minY + half * 0.5), previewZone.maxY - half * 0.5)
+        center.x = min(max(center.x, previewZone.minX), previewZone.maxX)
+        center.y = min(max(center.y, previewZone.minY), previewZone.maxY)
     }
 
     // MARK: Names
@@ -132,7 +132,7 @@ final class AppModel: ObservableObject {
                 self.preview = img
                 self.caption = self.preset.sideMM == nil
                     ? "Whole glass: Scan saves everything you see"
-                    : "Put the square's centre on the spindle hole; turn it from the top handle. The dashed square is the 4\" label"
+                    : "Drag the record so the spindle hole sits in the middle; turn it from the handle. The dashed square is the 4\" label"
             case .failure(let e):
                 self.caption = e.localizedDescription
             }

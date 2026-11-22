@@ -159,7 +159,7 @@ struct ScanColumn: View {
     var body: some View {
         VStack(spacing: 12) {
             PreviewCanvas(scanner: scanner)
-                .aspectRatio(model.previewZone.width / model.previewZone.height, contentMode: .fit)
+                .aspectRatio(model.sideMM == nil ? model.previewZone.width / model.previewZone.height : 1, contentMode: .fit)
                 .padding(.top, 36)   // room for the turn handle above the square
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             Text(scanner.busy ? "\(model.caption) · \(Int(scanner.progress * 100))%" : model.caption)
@@ -189,49 +189,80 @@ struct ScanColumn: View {
     }
 }
 
-/// The previewed zone of the glass with the square to scan: drag it, turn it from the top handle.
+/// The preview under a fixed guide (Gio 2026-11-22): the guide stays in the middle, the record is dragged under it and
+/// turned from the handle above the guide. The model keeps the square in glass coordinates (centre, clockwise angle):
+/// moving or turning the image is the inverse move of the square.
 struct PreviewCanvas: View {
     @EnvironmentObject var model: AppModel
     @ObservedObject var scanner: ScannerController
     @State private var dragStart: CGPoint?
+    @State private var turnStart: (angle: CGFloat, pointer: CGFloat)?
 
     var body: some View {
         GeometryReader { geo in
-            let zone = model.previewZone
-            let k = geo.size.width / zone.width                 // points per mm
-            let c = CGPoint(x: (model.center.x - zone.minX) * k, y: (model.center.y - zone.minY) * k)
-            ZStack(alignment: .topLeading) {
-                Rectangle().fill(Theme.surfaceSubtle)
-                if let img = model.preview {
-                    Image(decorative: img, scale: 1).resizable().frame(width: geo.size.width, height: geo.size.height).clipped()
-                }
-                if let side = model.sideMM {
-                    let s = side * k
-                    SelectionSquare(side: s, record: (model.preset.recordMM ?? 0) * k, label: SizePreset.labelMM * k)
-                        .rotationEffect(.radians(model.angle))
-                        .position(c)
-                        .gesture(DragGesture(minimumDistance: 1)
-                            .onChanged { v in
-                                if dragStart == nil { dragStart = model.center }
-                                model.center = CGPoint(x: dragStart!.x + v.translation.width / k, y: dragStart!.y + v.translation.height / k)
-                                model.clampCenter()
-                            }
-                            .onEnded { _ in dragStart = nil })
-                    // rotate handle: 24 pt above the top edge, turns with the square
-                    let r = s / 2 + 30
-                    Circle().fill(Theme.surfaceBase).overlay(Circle().stroke(Theme.textStrong, lineWidth: 1))
-                        .frame(width: 14, height: 14)
-                        .contentShape(Circle().inset(by: -8))
-                        .position(x: c.x + r * sin(model.angle), y: c.y - r * cos(model.angle))
-                        .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .named("canvas"))
-                            .onChanged { v in
-                                model.angle = atan2(v.location.x - c.x, -(v.location.y - c.y))
-                            })
-                        .help("Drag to turn the square")
-                }
-            }
-            .coordinateSpace(name: "canvas")
+            if let side = model.sideMM { guided(side: side, size: geo.size) } else { wholeGlass(size: geo.size) }
         }
+    }
+
+    /// Whole glass: the preview as it is, nothing to place
+    func wholeGlass(size: CGSize) -> some View {
+        ZStack {
+            Rectangle().fill(Theme.surfaceSubtle)
+            if let img = model.preview { Image(decorative: img, scale: 1).resizable().scaledToFit() }
+        }
+    }
+
+    func guided(side: CGFloat, size: CGSize) -> some View {
+        let glass = model.previewZone
+        let view = min(size.width, size.height)
+        let k = view * 0.78 / side                          // points per mm: the guide fills 78% of the frame
+        let mid = CGPoint(x: size.width / 2, y: size.height / 2)
+        // where the glass's corner lands so that model.center sits in the middle
+        let imgSize = CGSize(width: glass.width * k, height: glass.height * k)
+        let offset = CGSize(width: (glass.midX - model.center.x) * k, height: (glass.midY - model.center.y) * k)
+        let s = side * k, r = s / 2 + 30
+        return ZStack {
+            Rectangle().fill(Theme.surfaceSubtle)
+            // the glass (preview or empty), moved and turned under the guide
+            ZStack {
+                Rectangle().fill(Color.white)
+                if let img = model.preview { Image(decorative: img, scale: 1).resizable() }
+            }
+            .frame(width: imgSize.width, height: imgSize.height)
+            .offset(offset)
+            .rotationEffect(.radians(-model.angle))   // around the frame centre = the guide centre
+            .position(mid)
+            // fixed guide
+            SelectionSquare(side: s, record: (model.preset.recordMM ?? 0) * k, label: SizePreset.labelMM * k)
+                .position(mid)
+                .allowsHitTesting(false)
+            // turn handle, fixed above the guide
+            Circle().fill(Theme.surfaceBase).overlay(Circle().stroke(Theme.textStrong, lineWidth: 1))
+                .frame(width: 14, height: 14)
+                .contentShape(Circle().inset(by: -10))
+                .position(x: mid.x, y: mid.y - r)
+                .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .named("canvas"))
+                    .onChanged { v in
+                        let p = atan2(v.location.x - mid.x, -(v.location.y - mid.y))
+                        if turnStart == nil { turnStart = (model.angle, p) }
+                        model.angle = turnStart!.angle - (p - turnStart!.pointer)   // the image turns with the pointer
+                    }
+                    .onEnded { _ in turnStart = nil })
+                .help("Drag sideways to turn the record")
+        }
+        .clipped()
+        .contentShape(Rectangle())
+        .coordinateSpace(name: "canvas")
+        .gesture(DragGesture(minimumDistance: 1)
+            .onChanged { v in
+                if dragStart == nil { dragStart = model.center }
+                // screen move → glass move: undo the image's turn, then scale
+                let a = model.angle, dx = v.translation.width, dy = v.translation.height
+                let gx = (dx * cos(a) - dy * sin(a)) / k, gy = (dx * sin(a) + dy * cos(a)) / k
+                model.center = CGPoint(x: dragStart!.x - gx, y: dragStart!.y - gy)
+                model.clampCenter()
+            }
+            .onEnded { _ in dragStart = nil })
     }
 }
 
@@ -241,7 +272,7 @@ struct SelectionSquare: View {
     let label: CGFloat    // 4" label crop, points
     var body: some View {
         ZStack {
-            Rectangle().fill(Color.white.opacity(0.001)).overlay(Rectangle().stroke(Theme.textStrong, lineWidth: 1))
+            Rectangle().strokeBorder(Theme.textStrong, lineWidth: 1)
             if record > 0 && record <= side * 1.05 {   // the record's edge (10" and 12" do not fit the glass)
                 Circle().stroke(Theme.textStrong, style: StrokeStyle(lineWidth: 1, dash: [2, 4])).frame(width: record, height: record)
             }
