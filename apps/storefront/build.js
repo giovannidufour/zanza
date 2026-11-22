@@ -58,6 +58,16 @@ const shippingJsHref = url(`/js/shipping.js?v=${hashOf(shippingJs)}`);
 // newsletter signup + confirm page (decision 0103): the same file as the coming-soon page
 const newsletterJs = fs.readFileSync(path.join(APP, 'scripts/newsletter.js'));
 const newsletterJsHref = url(`/js/newsletter.js?v=${hashOf(newsletterJs)}`);
+// analytics (decision 0131): PostHog EU, cookieless, no recordings; only when site.json → analytics.key is set.
+// posthog-js (array build, pinned in package.json) is served from our own domain; scripts/analytics.js starts it.
+const analytics = site.analytics && site.analytics.key ? site.analytics : null;
+const posthogJs = analytics ? fs.readFileSync(require.resolve('posthog-js/dist/array.js')) : null;
+const analyticsJs = analytics ? fs.readFileSync(path.join(APP, 'scripts/analytics.js')) : null;
+const analyticsTags = analytics ? [
+  `<script>window.ZanzaAnalyticsConfig=${JSON.stringify({ key: analytics.key, host: analytics.host })}</script>`,
+  `<script src="${url(`/js/posthog.js?v=${hashOf(posthogJs)}`)}" defer></script>`,
+  `<script src="${url(`/js/analytics.js?v=${hashOf(analyticsJs)}`)}" defer></script>`
+].join('\n') + '\n' : '';
 const { Pdp, title } = require('./pages/pdp.js');
 const Plp = require('./pages/plp.js');
 const Bag = require('./pages/bag.js');
@@ -136,7 +146,10 @@ const faviconLinks = [
   `<script>if(${JSON.stringify(site.liveHosts || [])}.indexOf(location.hostname)<0){var f=${JSON.stringify({ svg: url(faviconStaging.svg), png: url(faviconStaging.png), touch: url(faviconStaging.touch) })};document.querySelectorAll('link[data-favicon]').forEach(function(l){l.href=f[l.dataset.favicon]})}</script>`
 ].join('\n');
 
-function page({ title: t, body, footerNewsletter = true }) {
+// template: the page type analytics groups by (decision 0131), written on .zz-page so soft navigation carries it
+const withTemplate = (body, template) => body.replace('<div class="zz-page"', `<div class="zz-page" data-template="${template}"`);
+function page({ title: t, body, footerNewsletter = true, template }) {
+  if (!template) throw new Error(`page "${t}" has no analytics template`);
   return `<!doctype html>
 <html lang="${site.lang}">
 <head>
@@ -158,11 +171,11 @@ ${faviconLinks}
 <script src="${toastJsHref}" defer></script>
 <script src="${shippingJsHref}" defer></script>
 <script src="${accountJsHref}" defer></script>
-<script src="${siteJsHref}" defer></script>
+${analyticsTags}<script src="${siteJsHref}" defer></script>
 <script src="${newsletterJsHref}" defer></script>
 ${liveMeta}</head>
 <body>
-${withFooter(body, footerNewsletter)}
+${withFooter(withTemplate(body, template), footerNewsletter)}
 ${playerHtml}
 ${toastRegionHtml}
 ${notifyDialogHtml}
@@ -240,6 +253,7 @@ write('js/account.js', accountJs);
 write('js/toast.js', toastJs);
 write('js/shipping.js', shippingJs);
 write('js/newsletter.js', newsletterJs);
+if (analytics) { write('js/posthog.js', posthogJs); write('js/analytics.js', analyticsJs); }
 for (const f of fs.readdirSync(path.join(APP, 'public'))) write('assets/' + f, fs.readFileSync(path.join(APP, 'public', f)));
 
 const order = new Map(products.map((p, i) => [p, i]));
@@ -259,65 +273,65 @@ function relatedTo(product) {
 }
 for (const product of products) {
   const body = renderToStaticMarkup(React.createElement(Pdp, { product, related: relatedTo(product), site, url }));
-  write(`products/${product.listing.slug}/index.html`, page({ title: title(product), body }));
+  write(`products/${product.listing.slug}/index.html`, page({ template: product.listing.section === 'trade' ? 'pdp_trade' : 'pdp_sale', title: title(product), body }));
 }
 
 // PLP: the listing of the "For sale" section (Figma: PLP - desktop); "For trade" has no products yet.
 // A reserved copy stays in the list with its "Reserved" button: it is paused, not gone (Gio 2026-11-12)
 // Sold copies stay too, behind the "Show sold out" filter, ticked by default (Gio 2026-11-12, Figma page `Search`)
 const forSale = products.filter(p => p.listing.section === 'sale' && ['available', 'reserved', 'sold'].includes(p.listing.status));
-write('sale/index.html', page({ title: Plp.title('sale'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, allProducts: products, site, url })) }));
+write('sale/index.html', page({ template: 'plp', title: Plp.title('sale'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, allProducts: products, site, url })) }));
 
 // For trade (Figma page `Trade`, decision 0068): the trade PLP, one offer page per trade listing, How trading works, About.
 // Traded copies stay on the list like sold ones (behind "Show sold out").
 const forTrade = products.filter(p => p.listing.section === 'trade' && ['available', 'reserved', 'traded'].includes(p.listing.status));
-if (site.tradeEnabled) write('trade/index.html', page({ title: Plp.title('trade'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'trade', products: forTrade, allProducts: products, site, url })) }));
+if (site.tradeEnabled) write('trade/index.html', page({ template: 'plp', title: Plp.title('trade'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'trade', products: forTrade, allProducts: products, site, url })) }));
 // Catalog (decision 0085, Gio 2026-11-15): every record of both sections mixed, newest first, with the PLP filters.
 // Linked only from the home's "See all" under Just in (no tab, no menu item).
 const catalog = products.filter(p => forSale.includes(p) || forTrade.includes(p));
-write('catalog/index.html', page({ title: Plp.title('catalog'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'catalog', products: catalog, allProducts: products, site, url })) }));
+write('catalog/index.html', page({ template: 'plp', title: Plp.title('catalog'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'catalog', products: catalog, allProducts: products, site, url })) }));
 for (const product of forTrade.filter(p => p.listing.status === 'available')) {
-  write(`products/${product.listing.slug}/offer/index.html`, page({ title: `Make an offer · ${title(product)}`, body: renderToStaticMarkup(React.createElement(Trade.Offer, { product, site, url })) }));
+  write(`products/${product.listing.slug}/offer/index.html`, page({ template: 'trade_offer', title: `Make an offer · ${title(product)}`, body: renderToStaticMarkup(React.createElement(Trade.Offer, { product, site, url })) }));
 }
 // trade off: no /trade/, no offer pages (forTrade is empty), no How trading works. A Pages deploy replaces the whole
 // site, so the pages of the previous build are gone too.
-if (site.tradeEnabled) write('how-trading-works/index.html', page({ title: 'How trading works', body: renderToStaticMarkup(React.createElement(Trade.HowTrading, { site, url })) }));
-write('about/index.html', page({ title: 'About', body: renderToStaticMarkup(React.createElement(Trade.About, { site, url })) }));
+if (site.tradeEnabled) write('how-trading-works/index.html', page({ template: 'trade_info', title: 'How trading works', body: renderToStaticMarkup(React.createElement(Trade.HowTrading, { site, url })) }));
+write('about/index.html', page({ template: 'about', title: 'About', body: renderToStaticMarkup(React.createElement(Trade.About, { site, url })) }));
 
 // Search results (Figma page `Search`, 2026-11-12): /search/?q=… is a PLP of the same copies, matched in the browser
 // (scripts/site.js) against each card's data-search text. Static and client-side: fine at hundreds of copies
 // (_context/stack.md: a search service only past ~2k).
-write('search/index.html', page({ title: 'Search', body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, allProducts: products, site, url, search: true })) }));
+write('search/index.html', page({ template: 'search', title: 'Search', body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, allProducts: products, site, url, search: true })) }));
 
 // Bag (decision 0044): one hidden line per listing of the sale section, whatever its status (a copy sold after it was
 // added still shows, as unavailable); scripts/site.js shows the visitor's own lines from localStorage
 const bagProducts = products.filter(p => p.listing.section === 'sale');
-write('bag/index.html', page({ title: Bag.title, body: renderToStaticMarkup(React.createElement(Bag.Bag, { products: bagProducts, site, url, shipping, countries: shippingData.countries(shipping) })) }));
+write('bag/index.html', page({ template: 'bag', title: Bag.title, body: renderToStaticMarkup(React.createElement(Bag.Bag, { products: bagProducts, site, url, shipping, countries: shippingData.countries(shipping) })) }));
 // after a paid Stripe Checkout (migration 0021, Figma page `Checkout`): site.js takes the paid records out of the bag
-write('checkout/thanks/index.html', page({ title: Checkout.title, body: renderToStaticMarkup(React.createElement(Checkout.Thanks, { site, url })) }));
+write('checkout/thanks/index.html', page({ template: 'checkout_thanks', title: Checkout.title, body: renderToStaticMarkup(React.createElement(Checkout.Thanks, { site, url })) }));
 
 // Customer account (decision 0101, Figma page `Account`): sign in with an email code, then the orders bought with that
 // email (scripts/account.js reads them from Supabase). Static shells: nothing personal is in the HTML.
-write('account/index.html', page({ title: Account.TITLE.orders, body: renderToStaticMarkup(React.createElement(Account.Account, { site, url, view: 'orders' })) }));
-write('account/order/index.html', page({ title: Account.TITLE.order, body: renderToStaticMarkup(React.createElement(Account.Account, { site, url, view: 'order' })) }));
-write('account/details/index.html', page({ title: Account.TITLE.details, body: renderToStaticMarkup(React.createElement(Account.Account, { site, url, view: 'details' })) }));
+write('account/index.html', page({ template: 'account', title: Account.TITLE.orders, body: renderToStaticMarkup(React.createElement(Account.Account, { site, url, view: 'orders' })) }));
+write('account/order/index.html', page({ template: 'account', title: Account.TITLE.order, body: renderToStaticMarkup(React.createElement(Account.Account, { site, url, view: 'order' })) }));
+write('account/details/index.html', page({ template: 'account', title: Account.TITLE.details, body: renderToStaticMarkup(React.createElement(Account.Account, { site, url, view: 'details' })) }));
 
 // Legal pages (decision 0079, Figma page `Legal`): content/legal/<page>.md → /<page>/. What Gio still has to fill
 // (site.json → legal, [[TO FILL]] in the text) is listed here, so a build never hides a placeholder.
 for (const p of Legal.PAGES) {
   const md = Content.markdownFromSections(site.pageTitles[p], site.texts[`page.${p}`].sections);
   const { title: t, body, missing } = Legal.legalPage(p, { site, url, shipping, countries: shippingData.countries(shipping), md });
-  write(`${p}/index.html`, page({ title: t, body: renderToStaticMarkup(body) }));
+  write(`${p}/index.html`, page({ template: 'legal', title: t, body: renderToStaticMarkup(body) }));
   if (missing.length) console.log(`    to fill: ${missing.join(' · ')}`);
 }
 // Contact (decision 0093): email + form, in place of an Impressum (Gio sells privately)
-write('contact/index.html', page({ title: 'Contact', body: renderToStaticMarkup(React.createElement(ContactPage.Contact, { site, url })) }));
+write('contact/index.html', page({ template: 'contact', title: 'Contact', body: renderToStaticMarkup(React.createElement(ContactPage.Contact, { site, url })) }));
 // the link in the newsletter confirmation email lands here (decision 0103)
-write('newsletter/confirm/index.html', page({ title: Newsletter.title, body: renderToStaticMarkup(React.createElement(Newsletter.ShopConfirm, { site, url })) }));
+write('newsletter/confirm/index.html', page({ template: 'newsletter_confirm', title: Newsletter.title, body: renderToStaticMarkup(React.createElement(Newsletter.ShopConfirm, { site, url })) }));
 
 // Home (Figma page `Home`, decision 0120): intro, genres, This week, newsletter, Recent. Its newsletter box replaces the
 // footer's signup there (Figma Home v2: footer `newsletter` off)
-write('index.html', page({ title: Home.title, body: renderToStaticMarkup(React.createElement(Home.Home, { products, site, url })), footerNewsletter: false }));
+write('index.html', page({ template: 'home', title: Home.title, body: renderToStaticMarkup(React.createElement(Home.Home, { products, site, url })), footerNewsletter: false }));
 // Cloudflare Pages response headers (target pages only). Until launch the shop lives on staging.rythem-works.com
 // (behind Cloudflare Access) and store-front-6fx.pages.dev: neither may be indexed (site.json → noindex).
 if (targetArg === 'pages' && site.noindex) write('_headers', '/*\n  X-Robots-Tag: noindex\n');

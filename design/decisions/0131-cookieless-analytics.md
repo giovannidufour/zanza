@@ -1,0 +1,16 @@
+# 0131 — Shop analytics: PostHog EU, cookieless, heatmaps without recordings
+
+`2026-11-22` · accepted (Gio: "vorrei solo soluzioni che non richiedano cookies" · "va bene in caso heatmap senza recordings" · traffic sources, most used filters, most searched words, page performance per template) · Figma: none (no visible UI)
+
+**Context.** Gio wants traffic sources, heatmaps, what people search and filter, and performance per page template. Session recordings (Clarity, PostHog replay) and cookie-based analytics need a consent banner under GDPR + TTDSG §25; Gio wants no banner. `_context/stack.md` had Plausible pencilled in (paid, no heatmaps). Cloudflare Web Analytics is cookieless but has no heatmaps and no custom events.
+**Decision.**
+- **PostHog EU Cloud** (Frankfurt), free plan, project 362828 on Gio's personal Gmail (account management only). The project token lives in `site.json` → `analytics.key` (public by design); empty = no analytics script on any page.
+- **Cookieless**: `cookieless_mode: 'always'` + `persistence: 'memory'`: nothing is written to the device (no cookie, localStorage, sessionStorage); visitors are counted by a daily server-side hash; client IP discarded (project setting). No consent banner.
+- **On**: page views (soft navigation included, `capture_pageview: 'history_change'`: filters and sort do not count as views), page leave, autocapture (clicks; never field values), heatmaps, web vitals. **Off**: session recordings, surveys, person profiles, `identify()`.
+- **Template on every event**: `template` = `data-template` on `.zz-page`, written by `build.js` (`page({ template })`, required) and carried by the soft navigation: `home`, `plp`, `search`, `pdp_sale`, `pdp_trade`, `trade_offer`, `trade_info`, `about`, `bag`, `checkout_thanks`, `account`, `legal`, `contact`, `newsletter_confirm`. Group by it in PostHog for performance per template.
+- **Named events** (`window.ZanzaAnalytics.track`, a no-op when off): `search` (term, results, no_results; terms with `@` or 6+ digits sent as `[redacted]`), `filter_applied` (filter, value; only values the visitor adds, not the URL's), `sort_changed`, `sample_played`, `bag_add`, `bag_remove`, `checkout_started`, `trade_offer_sent`, `contact_sent`, `newsletter_signup`. Never an email, a name or a field's text.
+- posthog-js is pinned in `package.json` and served from the shop's own domain (`/js/posthog.js`); PostHog lazy-loads its heatmap / web-vitals extensions from its EU assets host.
+- **Never on the admin** (separate app; it never loads these files). Not on the coming-soon page.
+- PostHog settings: Web analytics domain `https://rythem-works.com`; heatmap capture URLs (free plan, max 3): `/`, `/sale/*`, `/products/*`.
+**Rule.** A new page passes `template` to `page()`. A new user action worth measuring gets a `track('snake_case_name', props)` call with ids and counts only, never personal data, and a line in this decision. Anything that would store on the device or record the screen needs a consent banner first: ask Gio.
+**Where.** `apps/storefront/scripts/analytics.js`, `apps/storefront/build.js` (analyticsTags, withTemplate), `apps/storefront/scripts/site.js` + `newsletter.js` (track calls), `apps/storefront/site.json` → `analytics`; Privacy text: `apps/storefront/content/legal/privacy.md` (bullet "Statistics").
