@@ -12,6 +12,9 @@ enum Snapshot {
         model.angle = -0.1
         model.center = CGPoint(x: 100, y: 104)
         model.caption = "Drag the square onto the record; turn it from the top handle"
+        if let j = args.firstIndex(of: "--with-preview"), j + 1 < args.count,
+           let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: args[j + 1]) as CFURL, nil),
+           let img = CGImageSourceCreateImageAtIndex(src, 0, nil) { model.preview = ScannerController.decoded(img); model.center = CGPoint(x: 112, y: 150) }
         let view = ContentView(scanner: model.scanner).environmentObject(model).frame(width: 929, height: 760)
         let r = ImageRenderer(content: view)
         r.scale = 1
@@ -29,6 +32,13 @@ enum TestScan {
         let a = CommandLine.arguments
         guard let i = a.firstIndex(of: "--test-scan"), i + 3 < a.count else { return }
         let dir = URL(fileURLWithPath: a[i + 1])
+        // the test must not change Gio's remembered settings
+        let keys = ["preset", "dpi", "format", "folder", "originalsFolder"]
+        let saved = keys.map { UserDefaults.standard.object(forKey: $0) }
+        atexit_b {
+            for (k, v) in zip(keys, saved) { if let v { UserDefaults.standard.set(v, forKey: k) } else { UserDefaults.standard.removeObject(forKey: k) } }
+            UserDefaults.standard.synchronize()
+        }
         let model = AppModel()
         model.folder = dir.appendingPathComponent("labels"); model.originalsFolder = dir.appendingPathComponent("originals")
         model.dpi = 300; model.format = .jpeg; model.preset = .record7
