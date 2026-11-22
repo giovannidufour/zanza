@@ -10,19 +10,21 @@ The path above the PDP content (the PLP shows ActiveFilter, 0041): `body-medium`
 
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `items` * | `Array<BreadcrumbItem \| string>` |  | In order; the last item is the current page (never a link, aria-current="page"). |
+| `items` * | `Array<BreadcrumbItem \| string>` |  | In order. Items without a label are dropped. The last item is the current page only when it has no href (0122). |
 
 ### BreadcrumbItem
 
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `label` * | `ReactNode` |  | Item text. |
-| `href` | `string \| null` |  | Link target; omitted or null = plain text. Ignored on the last item. |
+| `href` | `string \| null` |  | Link target; omitted or null = plain text. A last item without href is the current page (aria-current="page"). |
 
 `*` required.
 <!-- /api -->
 
-Items with `href` are links; the last item is never a link and carries `aria-current="page"`. Separators are `aria-hidden`. Default `aria-label`: "Breadcrumb".
+Items with `href` are links, the last one included; a last item without `href` is the current page (`aria-current="page"`). Empty items are dropped, so a missing value never leaves a double "/". Each "/" is an `aria-hidden` span inside the following item, so the list holds only the path. Default `aria-label`: "Breadcrumb".
+
+The PDP trail is **section / genre**, both links (0122): the record is the page's h1, the format is in the release info.
 
 ## Tokens
 

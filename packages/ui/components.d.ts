@@ -97,11 +97,11 @@ export declare function Tab(props: TabProps): JSX.Element;
 export interface BreadcrumbItem {
   /** Item text. */
   label: ReactNode;
-  /** Link target; omitted or null = plain text. Ignored on the last item. */
+  /** Link target; omitted or null = plain text. A last item without href is the current page (aria-current="page"). */
   href?: string | null;
 }
 export interface BreadcrumbsProps extends HTMLAttributes<HTMLElement> {
-  /** In order; the last item is the current page (never a link, aria-current="page"). */
+  /** In order. Items without a label are dropped. The last item is the current page only when it has no href (0122). */
   items: Array<BreadcrumbItem | string>;
 }
 export declare function Breadcrumbs(props: BreadcrumbsProps): JSX.Element;
