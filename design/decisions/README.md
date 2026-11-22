@@ -156,3 +156,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0132](0132-contact-form-proof-of-work.md) | Contact form bots: invisible proof of work (signed puzzle from the function, solved in the background), honeypot, 3 s time trap; no cookies, no third party, no visible widget | accepted |
 | [0133](0133-weekly-dispatch-wednesday.md) | Dispatch at least once a week, usually Wednesday: full rule (paid by Tuesday → Wednesday, never more than a week) on the Shipping page, one line after paying (thanks, email, Account); nothing before paying; no admin setting | accepted |
 | [0134](0134-terms-and-shipping-generic.md) | Terms and Shipping like Privacy: minimal, no provider names, no unconfirmed numbers, no links to missing pages; no placeholders left | proposed |
+| [0135](0135-memo-create-draft.md) | Memo: Create draft in one tap (no form): release fetched as Fetch Discogs, free text = line 1; memo leaves the list, toast with Open | accepted |

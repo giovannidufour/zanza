@@ -2345,7 +2345,7 @@
   /* Figma BACKEND → Memo (2296:9962, decision 0087): Gio's list of records to sell later, made for the phone.
      Add = Record (free text, or a Discogs release picked while typing) + optional Note. The list is public.memos
      (migration 0019, admin only), newest first. Create listing opens #new/memo/<id> (release fetched; the first
-     save takes the item off the list). Remove deletes at once, toast with Undo (0049). */
+     save takes the item off the list). Create draft saves a draft at once, no form (0135). Remove deletes at once, toast with Undo (0049). */
   // a release as the picker shows it, from the discogs-lookup release answer (a pasted link)
   function releaseFromLookup(d) {
     var fmt = d.format || {}, desc = (fmt.descriptions || []).slice(0, 2).join(', ') || fmt.name || '';
@@ -2570,6 +2570,35 @@
         sb.from('memos').insert(row).then(function (r) { if (r.error) setMessage({ error: true, text: 'Not restored: ' + r.error.message }); load(); });
       });
     }
+    /* Create draft (decision 0135): one tap, no form. A release is fetched as Fetch Discogs does; free text = line 1
+       titled with the memo (as a skipped record of Bulk, 0107). The draft may be incomplete; the memo leaves the list. */
+    var cd = useState(null), drafting = cd[0], setDrafting = cd[1];   // id of the memo being turned into a draft
+    async function createDraft(row) {
+      if (drafting) return;
+      setDrafting(row.id); setMessage(null);
+      try {
+        var f = emptyForm();
+        if (row.discogs_release_id) {
+          var entities = null;
+          try { entities = await loadEntities(); } catch (e) { /* entities are bound by name on save */ }
+          var d = await invoke('discogs-lookup', { releaseId: row.discogs_release_id });
+          Object.assign(f, patchFromDiscogs(f, d, entities).patch);
+        } else {
+          f.lines = [newLine({ title: row.title })];
+        }
+        var res = await sb.rpc('admin_save_listing', { payload: payloadOf(f, 'draft') });
+        if (res.error) throw new Error(res.error.message);
+        var saved = res.data;
+        setRows(function (cur) { return cur.filter(function (r) { return r.id !== row.id; }); });
+        var del = await sb.from('memos').delete().eq('id', row.id);
+        if (del.error) { setMessage({ error: true, text: 'Draft created (SKU ' + saved.sku + '), but the memo was not removed: ' + del.error.message }); load(); }
+        if (window.ZanzaToast) window.ZanzaToast.show({ message: 'Draft created · SKU ' + saved.sku + '.', actionLabel: 'Open',
+          onAction: function () { location.hash = '#edit-' + saved.listing_id; } });
+      } catch (err) {
+        setMessage({ error: true, text: 'Draft not created: ' + err.message });
+      }
+      setDrafting(null);
+    }
     var count = rows ? rows.length : 0;
     return h('div', { className: 'admin-memo' },
       h('h1', { className: 'label-extra-large' }, 'Memo'),
@@ -2589,6 +2618,7 @@
             count ? h('ul', { className: 'admin-memo__items', 'aria-label': 'Memo list' }, rows.map(function (r) {
               return h(Z.MemoItem, { key: r.id, title: r.title, meta: r.discogs_meta || undefined, note: r.note || undefined,
                 href: r.discogs_release_id ? 'https://www.discogs.com/release/' + r.discogs_release_id : undefined,
+                onCreateDraft: function () { createDraft(r); }, createDraftBusy: drafting === r.id,
                 onCreate: function () { location.hash = '#new/memo/' + r.id; },
                 onRemove: function () { remove(r); } });
             })) : null));

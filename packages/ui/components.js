@@ -1026,7 +1026,7 @@
      the text; desktop puts them on the right, centred (CSS @media, one markup). */
   function MemoItem(props) {
     var name = typeof props.title === 'string' ? props.title : 'record';
-    return h('li', Object.assign({}, omit(props, ['title', 'meta', 'note', 'href', 'onCreate', 'onRemove', 'createLabel', 'removeLabel', 'className']),
+    return h('li', Object.assign({}, omit(props, ['title', 'meta', 'note', 'href', 'onCreateDraft', 'onCreate', 'onRemove', 'createDraftLabel', 'createDraftBusy', 'createLabel', 'removeLabel', 'className']),
       { className: cx('zz-memo-item', props.className) }),
       h('div', { className: 'zz-memo-item__text' },
         h('p', { className: 'zz-memo-item__title body-medium' }, props.title),
@@ -1035,6 +1035,11 @@
         props.href ? h('a', { className: 'zz-memo-item__link body-small', href: props.href, target: '_blank', rel: 'noopener' },
           'On Discogs', h('span', { 'aria-hidden': 'true' }, ' ↗'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')) : null),
       h('div', { className: 'zz-memo-item__actions' },
+        // Figma boolean `create draft` (decision 0135): a draft in one tap, no form; busy = "Creating…", disabled
+        props.onCreateDraft ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.createDraftBusy ? undefined : props.onCreateDraft,
+          'aria-busy': props.createDraftBusy || undefined, 'aria-disabled': props.createDraftBusy || undefined,
+          'aria-label': (props.createDraftBusy ? 'Creating draft' : props.createDraftLabel || 'Create draft') + ': ' + name },
+          props.createDraftBusy ? 'Creating…' : props.createDraftLabel || 'Create draft') : null,
         props.onCreate ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onCreate, 'aria-label': (props.createLabel || 'Create listing') + ': ' + name }, props.createLabel || 'Create listing') : null,
         props.onRemove ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onRemove, 'aria-label': (props.removeLabel || 'Remove') + ': ' + name }, props.removeLabel || 'Remove') : null));
   }
