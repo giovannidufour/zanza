@@ -6,6 +6,20 @@ final class AppModel: ObservableObject {
     let scanner = ScannerController()
     /// The admin link (0138): sign in, picked draft, image positions
     let drafts = DraftSession()
+    /// The Samples tab (0141)
+    let session = SessionModel()
+    enum Tab { case scans, samples }
+    @Published var tab: Tab = .scans { didSet { session.active = tab == .samples; if tab == .scans { session.stop() } } }
+    @Published var exporting = false
+    @Published var exportReport: String?
+    @Published var wavFolder: URL = UserDefaults.standard.url(forKey: "wavFolder")
+        ?? FileManager.default.urls(for: .musicDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza samples/WAV") {
+        didSet { UserDefaults.standard.set(wavFolder, forKey: "wavFolder") }
+    }
+    @Published var mp3Folder: URL = UserDefaults.standard.url(forKey: "mp3Folder")
+        ?? FileManager.default.urls(for: .musicDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza samples/MP3") {
+        didSet { UserDefaults.standard.set(mp3Folder, forKey: "mp3Folder") }
+    }
 
     @Published var steps: [ScanStep] = []
     /// Saved scans, shown as thumbnails in the steps
@@ -115,6 +129,63 @@ final class AppModel: ObservableObject {
         }
         caption = found.count == 1 ? "1 name pasted" : "\(found.count) names pasted"
         return true
+    }
+
+    func chooseExportFolder(mp3: Bool) {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true; panel.canChooseFiles = false; panel.canCreateDirectories = true
+        panel.prompt = "Choose"; panel.message = mp3 ? "Folder for the MP3 320" : "Folder for the WAV"
+        panel.directoryURL = mp3 ? mp3Folder : wavFolder
+        if panel.runModal() == .OK, let u = panel.url { if mp3 { mp3Folder = u } else { wavFolder = u } }
+    }
+
+    /// Clips of a draft for its row: assigned in the session or already exported (WAV of that SKU)
+    func clipCount(_ d: DraftSummary) -> Int {
+        let sku = d.skuText
+        var names = Set(session.assignments.values.filter { $0.sku == sku }.map(\.name))
+        if let items = try? FileManager.default.contentsOfDirectory(atPath: wavFolder.path) {
+            for f in items where f.hasPrefix(sku + "_") && f.hasSuffix(".wav") {
+                let parts = f.split(separator: "_")
+                if parts.count > 1, Int(parts[1]) == nil { names.insert((f as NSString).deletingPathExtension) }
+            }
+        }
+        return names.count
+    }
+
+    /// Export every assigned clip of the open draft: WAV + MP3, tags, the side's label as cover. Overwrites.
+    func exportClips() {
+        guard let d = drafts.draft else { return }
+        let jobs: [(SessionClip, ClipTarget)] = drafts.clips.compactMap { slot in session.clip(assignedTo: slot.name).map { ($0, slot) } }
+        let t = drafts.tags, sku = d.skuText
+        let labelA = drafts.names.first { $0.role == 1 }.flatMap { drafts.file(named: $0.name, in: folder) }
+        let labelB = drafts.names.first { $0.role == 2 }.flatMap { drafts.file(named: $0.name, in: folder) }
+        let wav = wavFolder, mp3 = mp3Folder
+        exporting = true; exportReport = nil
+        DispatchQueue.global(qos: .userInitiated).async {
+            var done = 0, errors: [String] = [], noCover: [String] = []
+            for (clip, slot) in jobs {
+                let side = slot.role.lowercased().first == "b" ? labelB : labelA
+                let cover = AudioExport.cover(from: side)
+                if cover == nil { noCover.append(slot.label) }
+                var tags = AudioExport.Tags()
+                tags.title = slot.title ?? ""; tags.artist = slot.artist ?? ""
+                tags.album = t?.album ?? d.title; tags.label = t?.label ?? ""
+                tags.year = t?.year.map(String.init) ?? ""; tags.genre = (t?.genres ?? []).joined(separator: ", ")
+                tags.track = slot.label; tags.comment = sku; tags.cover = cover
+                do {
+                    try AudioExport.export(source: clip.url, trimStart: clip.trimStart, name: slot.name, tags: tags,
+                                           wavFolder: wav, mp3Folder: mp3, normalize: false)
+                    done += 1
+                } catch { errors.append("\(slot.label): \(error.localizedDescription)") }
+            }
+            DispatchQueue.main.async {
+                self.exporting = false
+                var r = "Exported \(done) of \(jobs.count): WAV in \(wav.lastPathComponent), MP3 in \(mp3.lastPathComponent)."
+                if !noCover.isEmpty { r += " No cover for \(noCover.joined(separator: ", ")) (label not scanned yet)." }
+                if !errors.isEmpty { r += " " + errors.joined(separator: " · ") }
+                self.exportReport = r
+            }
+        }
     }
 
     /// With a draft picked, the file name is the name of the target position (from the admin)

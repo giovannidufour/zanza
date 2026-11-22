@@ -20,6 +20,11 @@ final class DraftSession: ObservableObject {
     @Published var draft: DraftSummary?
     /// names of positions 1…N, from scan-targets (the app never builds a name)
     @Published var names: [ImageTarget] = []
+    /// clip slots and tag data of the open draft (0141)
+    @Published var clips: [ClipTarget] = []
+    @Published var tags: DraftTags?
+    /// slots per draft id once opened, for the media status of the rows (images, clips)
+    @Published var slotCounts: [String: (images: Int, clips: Int)] = [:]
     /// what is at each position (same count as names)
     @Published var slots: [Slot] = []
     @Published var target: Int?          // the first empty position: the next Scan fills it (rows are not selectable)
@@ -68,13 +73,13 @@ final class DraftSession: ObservableObject {
         // a scan in progress belongs to the draft it was started for: switch only when it is saved
         if app?.scanner.busy == true { app?.caption = "Wait for the scan to finish, then pick the other draft"; return }
         loadToken = UUID()
-        draft = d; names = []; slots = []; target = nil; lastRemoval = nil; lightbox = nil
+        draft = d; names = []; slots = []; clips = []; tags = nil; target = nil; lastRemoval = nil; lightbox = nil
         app?.syncFileName()
         let onDisk = scannedRoles(sku: d.skuText)
         load(roles: max(3, onDisk.max() ?? 0))
     }
 
-    func changeDraft() { loadToken = UUID(); draft = nil; names = []; slots = []; target = nil; lastRemoval = nil; lightbox = nil; search() }
+    func changeDraft() { loadToken = UUID(); draft = nil; names = []; slots = []; clips = []; tags = nil; target = nil; lastRemoval = nil; lightbox = nil; search() }
 
     /// A load started for one draft never applies to another one picked meanwhile
     private var loadToken = UUID()
@@ -86,10 +91,13 @@ final class DraftSession: ObservableObject {
         guard let d = draft else { return }
         let token = loadToken
         run {
-            let list = try await Backend.shared.images(of: d.id, roles: roles)
+            let detail = try await Backend.shared.detail(of: d.id, roles: roles)
+            let list = detail.images
             return {
                 guard token == self.loadToken, self.draft?.id == d.id else { return }   // another draft was picked
                 self.names = list
+                self.clips = detail.clips; self.tags = detail.tags
+                self.slotCounts[d.id] = (list.count, detail.clips.count)
                 var s = self.slots
                 while s.count < list.count { s.append(Slot(scanned: false, thumb: nil)) }
                 if s.count > list.count { s = Array(s.prefix(list.count)) }

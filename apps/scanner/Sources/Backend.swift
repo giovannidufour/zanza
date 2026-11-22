@@ -25,6 +25,11 @@ struct DraftSummary: Codable, Identifiable, Equatable {
 }
 
 struct ImageTarget: Codable { let role: Int; let label: String; let name: String }
+/// A clip slot (0141): one per line with a clip role (a1, b1… or a / b); artist/title for the ID3 tags
+struct ClipTarget: Codable, Equatable { let role: String; let label: String; let name: String; let artist: String?; let title: String? }
+/// What the Samples tab writes in the tags (0141); every field optional until scan-targets is redeployed
+struct DraftTags: Codable, Equatable { let album: String?; let label: String?; let cat_no: String?; let year: Int?; let genres: [String]? }
+struct DraftInfo { let images: [ImageTarget]; let clips: [ClipTarget]; let tags: DraftTags? }
 
 enum BackendError: LocalizedError {
     case notConfigured, signedOut, server(String)
@@ -91,10 +96,13 @@ final class Backend {
         return try JSONDecoder().decode([DraftSummary].self, from: data)
     }
 
-    func images(of id: String, roles: Int) async throws -> [ImageTarget] {
+    /// Image names, and (after the 0141 redeploy) clip slots and tags: missing ones are simply empty
+    func detail(of id: String, roles: Int) async throws -> DraftInfo {
         let r = try await post("/functions/v1/scan-targets", ["id": id, "roles": roles], auth: true)
-        let data = try JSONSerialization.data(withJSONObject: r["images"] ?? [])
-        return try JSONDecoder().decode([ImageTarget].self, from: data)
+        let images = try JSONDecoder().decode([ImageTarget].self, from: JSONSerialization.data(withJSONObject: r["images"] ?? []))
+        let clips = (try? JSONDecoder().decode([ClipTarget].self, from: JSONSerialization.data(withJSONObject: r["clips"] ?? []))) ?? []
+        let tags = (r["tags"] as? [String: Any]).flatMap { try? JSONDecoder().decode(DraftTags.self, from: JSONSerialization.data(withJSONObject: $0)) }
+        return DraftInfo(images: images, clips: clips, tags: tags)
     }
 
     // MARK: HTTP

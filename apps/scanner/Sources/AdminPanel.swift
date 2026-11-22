@@ -65,8 +65,15 @@ struct DraftColumn: View {
             ScrollView {
                 VStack(spacing: 0) {
                     ForEach(drafts.results) { d in
-                        DraftResult(draft: d, scanned: drafts.scannedCount(d), selected: drafts.draft?.id == d.id)
-                            .onTapGesture { drafts.pick(d) }
+                        let open = drafts.draft?.id == d.id
+                        VStack(alignment: .leading, spacing: 12) {
+                            DraftResult(draft: d, scanned: drafts.scannedCount(d), imageSlots: drafts.slotCounts[d.id]?.images ?? 3,
+                                        clips: model.clipCount(d), clipSlots: drafts.slotCounts[d.id]?.clips, selected: open)
+                                .onTapGesture { drafts.pick(d) }
+                            if open { DraftDetail(drafts: drafts, session: model.session).padding(.horizontal, 8).padding(.bottom, 8) }
+                        }
+                        .background(open ? Theme.surfaceHover : Color.clear)
+                        .overlay(Rectangle().stroke(open ? Theme.divider : Color.clear, lineWidth: 1))
                     }
                 }
             }
@@ -76,9 +83,13 @@ struct DraftColumn: View {
     }
 }
 
+/// `draft row` (0141): SKU, record, media status (images scanned/slots, clips/slots; grey = none)
 struct DraftResult: View {
     let draft: DraftSummary
     let scanned: Int
+    var imageSlots = 3
+    var clips = 0
+    var clipSlots: Int?
     var selected = false
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -92,13 +103,17 @@ struct DraftResult: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("SKU \(draft.skuText) · Draft").labelStyle(10, color: Theme.textModerate)
                 Text(draft.title).bodyStyle(14).fixedSize(horizontal: false, vertical: true)
-                Text("\(scanned) of 3 images").labelStyle(10, color: Theme.textModerate)
+                HStack(spacing: 10) {   // media status
+                    Label("\(scanned)/\(imageSlots)", systemImage: "photo")
+                        .foregroundColor(scanned > 0 ? Theme.textStrong : Theme.textModerate)
+                    Label("\(clips)/\(clipSlots.map(String.init) ?? "–")", systemImage: "waveform")
+                        .foregroundColor(clips > 0 ? Theme.textStrong : Theme.textModerate)
+                }
+                .font(Theme.body(12)).labelStyle(.titleAndIcon)
             }
             Spacer(minLength: 0)
         }
         .padding(.vertical, 8).padding(.horizontal, 12)
-        .background(selected ? Theme.surfaceHover : Color.clear)
-        .overlay(Rectangle().stroke(selected ? Theme.divider : Color.clear, lineWidth: 1))
         .contentShape(Rectangle())
     }
 }
@@ -157,10 +172,26 @@ struct ImageSlotRow: View {
 /// Column 3 top (0138): the picked draft and its image positions
 struct DraftDetail: View {
     @ObservedObject var drafts: DraftSession
+    @ObservedObject var session: SessionModel
     @EnvironmentObject var model: AppModel
     var body: some View {
-        if let d = drafts.draft {
-            VStack(alignment: .leading, spacing: 16) { draftHead(d); slotList }
+        if drafts.draft != nil {
+            VStack(alignment: .leading, spacing: 16) { slotList; clipList }
+        }
+    }
+
+    /// Clips (0141): one slot per Discogs position; drop a session clip on it
+    var clipList: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Clips").labelStyle(12)
+                Spacer()
+                Text(drafts.clips.isEmpty ? "No clip slots yet" : "\(drafts.clips.filter { session.clip(assignedTo: $0.name) != nil }.count) of \(drafts.clips.count) assigned")
+                    .bodyStyle(12, color: Theme.textModerate)
+            }
+            ForEach(drafts.clips, id: \.name) { c in
+                ClipSlotRow(slot: c, clip: session.clip(assignedTo: c.name), session: session, drafts: drafts)
+            }
         }
     }
 

@@ -14,11 +14,18 @@ struct ContentView: View {
             }
             .frame(width: 360).frame(maxHeight: .infinity, alignment: .top)
             Rectangle().fill(Theme.divider).frame(width: 1)
-            ScanColumn(scanner: scanner)
-                .frame(minWidth: 560, maxWidth: .infinity)
+            VStack(spacing: 0) {   // centre: tabs switch the centre and right columns only (0141)
+                ScannerTabs().padding(.horizontal, 24).padding(.top, 24)
+                if model.tab == .scans { ScanColumn(scanner: scanner) }
+                else { SessionPanel(session: model.session).padding(24) }
+            }
+            .frame(minWidth: 560, maxWidth: .infinity)
             Rectangle().fill(Theme.divider).frame(width: 1)
-            RecordColumn(scanner: scanner)
-                .frame(width: 360)
+            Group {
+                if model.tab == .scans { RecordColumn(scanner: scanner) }
+                else { ExportPanel(session: model.session, drafts: model.drafts) }
+            }
+            .frame(width: 360)
         }
         .frame(minWidth: 1280, minHeight: 860)
         .background(Theme.surfacePage)
@@ -37,7 +44,12 @@ struct RecordColumn: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
-            DraftDetail(drafts: model.drafts)
+            if let d = model.drafts.draft {   // the open draft (its images are in the left column)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("SKU \(d.skuText) · Draft").labelStyle(12, color: Theme.textModerate)
+                    Text(d.title).labelStyle(16).lineLimit(3).help(d.title)
+                }
+            }
             if model.drafts.draft == nil {   // v1: names pasted or typed (also when signed out or offline)
                 VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 8) {
