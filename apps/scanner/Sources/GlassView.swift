@@ -11,11 +11,12 @@ final class GlassView: NSView {
     var record: CGFloat = 0 { didSet { if record != oldValue { guide.needsDisplay = true } } }
     var label: CGFloat = 101.6
     var center = CGPoint(x: 108, y: 148) { didSet { place() } }
-    var angle: CGFloat = 0 { didSet { place() } }
+    var angle: CGFloat = 0 { didSet { place(); if aids { guide.needsDisplay = true } } }
     var aids = false { didSet { if aids != oldValue { guide.needsDisplay = true } } }   // grid + "up" figure while turning
     var onCommit: ((CGPoint, CGFloat) -> Void)?
     /// Arrow-key nudges: saved without the automatic turn, so a fine-tuned angle is kept
     var onNudge: ((CGPoint, CGFloat) -> Void)?
+    var onScan: (() -> Void)?
     private(set) var interacting = false
 
     /// The glass image is one layer moved and turned by the GPU: dragging changes only its transform, nothing is redrawn
@@ -104,7 +105,10 @@ final class GlassView: NSView {
             let gx = (dx * cos(a) - dy * sin(a)) / k, gy = (dx * sin(a) + dy * cos(a)) / k
             center = CGPoint(x: min(max(c0.x - gx, glass.minX), glass.maxX), y: min(max(c0.y - gy, glass.minY), glass.maxY))
         case .turn(let p0, let a0):
-            angle = a0 - (pointerAngle(p) - p0)
+            var a = a0 - (pointerAngle(p) - p0)
+            let quarter = (a / (.pi / 2)).rounded() * (.pi / 2)
+            if abs(a - quarter) < .pi / 180 { a = quarter }   // soft snap at 0, 90, 180, 270 (±1°)
+            angle = a
         case nil: break
         }
     }
@@ -130,25 +134,40 @@ final class GlassView: NSView {
         onCommit?(center, angle)
     }
 
-    /// Arrows move the record 0.2 mm (⇧ 2 mm) the way they point; ⌥← / ⌥→ turn it 0.2° (⇧ 2°)
+    /// Keyboard (0138): arrows move the record 0.5 mm (⇧ 5 mm) the way they point; [ ] turn it 0.5° (⇧ 5°),
+    /// ⌥← ⌥→ too; ⌘0 back to the middle of the glass and 0°; Return = Scan. Nudges never trigger the automatic turn.
     override func keyDown(with e: NSEvent) {
-        guard side != nil, let key = e.specialKey,
-              [NSEvent.SpecialKey.leftArrow, .rightArrow, .upArrow, .downArrow].contains(key) else { super.keyDown(with: e); return }
+        guard side != nil else { super.keyDown(with: e); return }
         let big = e.modifierFlags.contains(.shift)
-        if e.modifierFlags.contains(.option) {
-            guard key == .leftArrow || key == .rightArrow else { return }
-            let step = (big ? 2 : 0.2) * CGFloat.pi / 180
-            angle += key == .leftArrow ? step : -step      // ← counter-clockwise, → clockwise
-        } else {
-            let mm: CGFloat = big ? 2 : 0.2
+        let chars = e.charactersIgnoringModifiers ?? ""
+        if e.modifierFlags.contains(.command) && chars == "0" {
+            center = CGPoint(x: glass.midX, y: glass.midY); angle = 0
+        } else if e.keyCode == 36 || e.keyCode == 76 {   // Return / Enter
+            onScan?(); return
+        } else if chars == "[" || chars == "{" || chars == "]" || chars == "}" ||
+                    (e.modifierFlags.contains(.option) && (e.specialKey == .leftArrow || e.specialKey == .rightArrow)) {
+            let ccw = chars == "[" || chars == "{" || e.specialKey == .leftArrow
+            let step = (big ? 5 : 0.5) * CGFloat.pi / 180
+            angle += ccw ? step : -step
+            flashAids()
+        } else if let key = e.specialKey, [NSEvent.SpecialKey.leftArrow, .rightArrow, .upArrow, .downArrow].contains(key) {
+            let mm: CGFloat = big ? 5 : 0.5
             var dx: CGFloat = 0, dy: CGFloat = 0
             switch key { case .leftArrow: dx = -mm; case .rightArrow: dx = mm; case .upArrow: dy = -mm; default: dy = mm }
             // the image moves on screen: undo its turn to get the move on the glass (same as a drag)
             let a = angle
             let gx = dx * cos(a) - dy * sin(a), gy = dx * sin(a) + dy * cos(a)
             center = CGPoint(x: min(max(center.x - gx, glass.minX), glass.maxX), y: min(max(center.y - gy, glass.minY), glass.maxY))
-        }
+        } else { super.keyDown(with: e); return }
         onNudge?(center, angle)
+    }
+
+    /// Grid, up figure and angle shown for 600 ms after a key turn
+    private var aidsTimer: Timer?
+    private func flashAids() {
+        aids = true
+        aidsTimer?.invalidate()
+        aidsTimer = Timer.scheduledTimer(withTimeInterval: 0.6, repeats: false) { [weak self] _ in self?.aids = false }
     }
 
     /// clockwise from straight up
@@ -196,6 +215,18 @@ final class GuideView: NSView {
         ctx.move(to: CGPoint(x: mid.x, y: square.minY)); ctx.addLine(to: CGPoint(x: mid.x, y: handle.y + 9)); ctx.strokePath()
         let hr = CGRect(x: handle.x - 9, y: handle.y - 9, width: 18, height: 18)
         ctx.setFillColor(NSColor.white.cgColor); ctx.fillEllipse(in: hr); ctx.strokeEllipse(in: hr)
+        if g.aids {   // angle badge next to the handle, 0.5° steps
+            var deg = -g.angle * 180 / .pi
+            deg = (deg * 2).rounded() / 2
+            deg = deg.truncatingRemainder(dividingBy: 360); if deg > 180 { deg -= 360 }; if deg <= -180 { deg += 360 }
+            let text = String(format: "%.1f°", deg) as NSString
+            let attrs: [NSAttributedString.Key: Any] = [.font: NSFont(name: "Inter-Medium", size: 12) ?? NSFont.systemFont(ofSize: 12),
+                                                        .foregroundColor: NSColor.black]
+            let size = text.size(withAttributes: attrs)
+            let box = CGRect(x: handle.x + 16, y: handle.y - size.height / 2 - 3, width: size.width + 12, height: size.height + 6)
+            ctx.setFillColor(NSColor.white.cgColor); ctx.fill(box); ctx.stroke(box.insetBy(dx: 0.5, dy: 0.5))
+            text.draw(at: CGPoint(x: box.minX + 6, y: box.minY + 3), withAttributes: attrs)
+        }
         if g.aids, let figure = NSImage(systemSymbolName: "figure.stand", accessibilityDescription: "Up") {
             let img = figure.withSymbolConfiguration(.init(pointSize: 28, weight: .regular)) ?? figure
             let r = CGRect(x: mid.x - img.size.width / 2, y: square.minY + 12, width: img.size.width, height: img.size.height)
@@ -216,6 +247,7 @@ struct GlassCanvas: NSViewRepresentable {
             model.turnFromPreview()
         }
         v.onNudge = { c, a in model.center = c; model.angle = a }
+        v.onScan = { if model.scanner.ready && !model.scanner.busy { model.runScan() } }
         return v
     }
 

@@ -4,6 +4,8 @@ import SwiftUI
 /// The app's state: names to scan, settings, preview and the selection square.
 final class AppModel: ObservableObject {
     let scanner = ScannerController()
+    /// The admin link (0138): sign in, picked draft, image positions
+    let drafts = DraftSession()
 
     @Published var steps: [ScanStep] = []
     /// Saved scans, shown as thumbnails in the steps
@@ -49,6 +51,7 @@ final class AppModel: ObservableObject {
     private var lastClipboard = -1
 
     init() {
+        drafts.app = self
         previewZone = zone(for: preset)
         center = CGPoint(x: previewZone.midX, y: previewZone.midY)
     }
@@ -112,6 +115,13 @@ final class AppModel: ObservableObject {
         return true
     }
 
+    /// With a draft picked, the file name is the name of the target position (from the admin)
+    func syncFileName() {
+        guard drafts.draft != nil else { return }
+        fileName = drafts.targetName ?? ""
+        if drafts.targetName == nil { caption = "All positions scanned: Add image for another photo" }
+    }
+
     func select(_ step: ScanStep) {
         currentID = step.id
         fileName = step.name
@@ -151,7 +161,7 @@ final class AppModel: ObservableObject {
                 self.turnFromPreview()
                 self.caption = self.preset.sideMM == nil
                     ? "Whole glass: Scan saves everything you see"
-                    : "Drag the record so the spindle hole sits in the middle (arrows to fine-tune, ⌥← ⌥→ to turn). The dashed square is the 4\" label"
+                    : "Drag the record so the spindle hole sits in the middle (arrows to fine-tune, [ ] to turn, Return to scan). The dashed square is the 4\" label"
             case .failure(let e):
                 self.caption = e.localizedDescription
             }
@@ -234,8 +244,12 @@ final class AppModel: ObservableObject {
             caption = archive == nil
                 ? "Saved in \(folder.lastPathComponent): \(file)"
                 : "Saved \(file): 4\" label in \(folder.lastPathComponent), whole record in \(originalsFolder.lastPathComponent)"
-            if let step = steps.first(where: { $0.name == name }) { thumbs[step.id] = label ?? original }
-            advance(after: name)
+            if drafts.draft != nil, name == drafts.targetName {
+                drafts.saved(DraftSession.thumbnail(main) ?? (label ?? original))
+            } else {
+                if let step = steps.first(where: { $0.name == name }) { thumbs[step.id] = label ?? original }
+                advance(after: name)
+            }
         } catch {
             caption = error.localizedDescription
         }

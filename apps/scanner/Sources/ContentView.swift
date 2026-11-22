@@ -28,32 +28,37 @@ struct RecordColumn: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(model.sku.map { "SKU \($0)" } ?? "No record").labelStyle(12, color: Theme.textModerate)
-                Text(model.recordTitle ?? "Copy the names of a draft").labelStyle(18)
-                    .fixedSize(horizontal: false, vertical: true)
-                if model.steps.isEmpty {
-                    Text("In the admin, open the draft and copy a name from File names. Come back here: it is pasted by itself (or press Paste names). Or just type the name.")
-                        .bodyStyle(14, color: Theme.textModerate).fixedSize(horizontal: false, vertical: true)
-                }
-                Button("Paste names") { model.pasteNames() }
-                    .buttonStyle(ZButtonStyle(primary: false))
-                    .keyboardShortcut("v", modifiers: [.command, .shift])
-            }
-
-            if !model.steps.isEmpty {
-                ScrollView {
-                    VStack(spacing: 4) {
-                        ForEach(model.steps) { step in
-                            StepRow(step: step, current: step.id == model.currentID, thumb: model.thumbs[step.id])
-                                .onTapGesture { model.select(step) }
-                        }
-                        Button("Add photo") { model.addPhoto() }
-                            .buttonStyle(.plain).bodyStyle(14, color: Theme.textModerate)
-                            .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 12).padding(.top, 4)
+            if Config.configured { AdminPanel(drafts: model.drafts) }
+            if model.drafts.draft == nil {   // v1: names pasted or typed (also when signed out or offline)
+                VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(model.sku.map { "SKU \($0)" } ?? "No record").labelStyle(12, color: Theme.textModerate)
+                    Text(model.recordTitle ?? "Copy the names of a draft").labelStyle(18)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if model.steps.isEmpty {
+                        Text("In the admin, open the draft and copy a name from File names. Come back here: it is pasted by itself (or press Paste names). Or just type the name.")
+                            .bodyStyle(14, color: Theme.textModerate).fixedSize(horizontal: false, vertical: true)
                     }
+                    Button("Paste names") { model.pasteNames() }
+                        .buttonStyle(ZButtonStyle(primary: false))
+                        .keyboardShortcut("v", modifiers: [.command, .shift])
                 }
-                .frame(maxHeight: 260)
+
+                if !model.steps.isEmpty {
+                    ScrollView {
+                        VStack(spacing: 4) {
+                            ForEach(model.steps) { step in
+                                StepRow(step: step, current: step.id == model.currentID, thumb: model.thumbs[step.id])
+                                    .onTapGesture { model.select(step) }
+                            }
+                            Button("Add photo") { model.addPhoto() }
+                                .buttonStyle(.plain).bodyStyle(14, color: Theme.textModerate)
+                                .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 12).padding(.top, 4)
+                        }
+                    }
+                    .frame(maxHeight: 260)
+                }
+                }
             }
 
             VStack(alignment: .leading, spacing: 12) {
