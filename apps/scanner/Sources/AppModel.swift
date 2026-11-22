@@ -96,8 +96,18 @@ final class AppModel: ObservableObject {
         }
         if onlyIfNew && found.map(\.name) == steps.map(\.name) { return false }
         if scanner.busy { return false }
-        steps = found
-        select(found[0])
+        if let sku = found[0].sku, sku == steps.first?.sku {
+            // same record: add the new roles (or the new name of a role), keep what is already scanned and ticked
+            for f in found {
+                if let i = steps.firstIndex(where: { $0.role == f.role }) { if !steps[i].done { steps[i].name = f.name } }
+                else { steps.append(f) }
+            }
+            steps.sort { (Int($0.role) ?? 99) < (Int($1.role) ?? 99) }
+            if let s = steps.first(where: { $0.role == found[0].role }) { select(s) }
+        } else {
+            steps = found
+            select(found[0])
+        }
         caption = found.count == 1 ? "1 name pasted" : "\(found.count) names pasted"
         return true
     }
@@ -233,6 +243,11 @@ final class AppModel: ObservableObject {
 
     private func advance(after name: String) {
         if let i = steps.firstIndex(where: { $0.name == name }) { steps[i].done = true }
+        else if let sku = Names.parse(name).first?.sku, sku == steps.first?.sku || steps.isEmpty {
+            // a typed name of this record: show it in the list as scanned
+            var s = ScanStep(name: name); s.done = true; steps.append(s)
+            steps.sort { (Int($0.role) ?? 99) < (Int($1.role) ?? 99) }
+        }
         if let next = steps.first(where: { !$0.done }) { select(next) }
         else if !steps.isEmpty { addPhoto() }
     }

@@ -40,12 +40,16 @@ enum Names {
             .filter(\.isImage)
     }
 
-    /// Next "other photo" name after the last one: 48213_3_x → 48213_4_x
+    /// The next image name for this record: the first role still missing (1 label A, 2 label B, then 3, 4… photos).
+    /// Before, a single pasted label A name led straight to _3 and label B was skipped (Gio 2026-11-22).
     static func nextPhoto(after steps: [ScanStep]) -> String? {
         guard let first = steps.first, let sku = first.sku else { return nil }
-        let last = steps.compactMap { Int($0.role) }.max() ?? 2
-        let slug = steps.first(where: { $0.role == "3" })?.slug ?? first.slug
-        return [sku, String(max(last, 2) + 1), slug].filter { !$0.isEmpty }.joined(separator: "_")
+        let roles = Set(steps.compactMap { Int($0.role) })
+        var role = 1
+        while roles.contains(role) { role += 1 }
+        // the slug only helps in Finder: reuse the one of the same role family (label or photo) when known
+        let slug = steps.first(where: { $0.role == (role <= 2 ? "1" : "3") })?.slug ?? first.slug
+        return [sku, String(role), slug].filter { !$0.isEmpty }.joined(separator: "_")
     }
 
     /// Characters that cannot be in a file name on macOS
