@@ -63,9 +63,10 @@ function page({ title, body, description }) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escape(title)}</title>
-<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
-<link rel="icon" href="/assets/favicon-32.png" type="image/png" sizes="32x32">
-<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<!-- live favicon (decision 0127): this page only runs on rythem-works.com -->
+<link rel="icon" href="/assets/favicon-live.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-live-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon-live.png">
 ${description ? `<meta name="description" content="${escape(description)}">\n` : ''}<meta name="robots" content="noindex">
 ${links}
 <script src="/js/newsletter.js?v=${hashOf(newsletterJs)}" defer></script>

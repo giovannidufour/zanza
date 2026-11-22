@@ -121,11 +121,19 @@ const footerCache = {};
 const footerHtml = (newsletter = true) => footerCache[newsletter] || (footerCache[newsletter] = renderToStaticMarkup(React.createElement(require('./pages/shell.js').SiteFooter, { site, url, newsletter })));
 const withFooter = (body, newsletter) => (body.startsWith('<div class="zz-page"') && body.endsWith('</div>') ? body.slice(0, -6) + footerHtml(newsletter) + '</div>' : body);
 
-// Favicon = the logo illustration (Gio 2026-11-15, decision 0097): files in public/, served from /assets/
+// Favicon = the logo illustration (decision 0097) on a ground that names the environment (decision 0127, Figma
+// component `favicon` on page assets): live = white, staging = acid-green. One build serves both hosts (the same Pages
+// deployment answers on staging.rythem-works.com, the pages.dev URLs and, at launch, rythem-works.com), so the choice is
+// made in the browser: the HTML carries the live icon (what crawlers and no-JS clients see) and a one-line script
+// switches to the staging icon on any host not listed in site.json → liveHosts.
+const faviconFiles = (env) => ({ svg: `/assets/favicon-${env}.svg`, png: `/assets/favicon-${env}-32.png`, touch: `/assets/apple-touch-icon-${env}.png` });
+const faviconLive = faviconFiles('live');
+const faviconStaging = faviconFiles('staging');
 const faviconLinks = [
-  `<link rel="icon" href="${url('/assets/favicon.svg')}" type="image/svg+xml">`,
-  `<link rel="icon" href="${url('/assets/favicon-32.png')}" type="image/png" sizes="32x32">`,
-  `<link rel="apple-touch-icon" href="${url('/assets/apple-touch-icon.png')}">`
+  `<link rel="icon" href="${url(faviconLive.svg)}" type="image/svg+xml" data-favicon="svg">`,
+  `<link rel="icon" href="${url(faviconLive.png)}" type="image/png" sizes="32x32" data-favicon="png">`,
+  `<link rel="apple-touch-icon" href="${url(faviconLive.touch)}" data-favicon="touch">`,
+  `<script>if(${JSON.stringify(site.liveHosts || [])}.indexOf(location.hostname)<0){var f=${JSON.stringify({ svg: url(faviconStaging.svg), png: url(faviconStaging.png), touch: url(faviconStaging.touch) })};document.querySelectorAll('link[data-favicon]').forEach(function(l){l.href=f[l.dataset.favicon]})}</script>`
 ].join('\n');
 
 function page({ title: t, body, footerNewsletter = true }) {

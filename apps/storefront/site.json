@@ -4,6 +4,8 @@
   "outputDir": "zanza",
   "basePath": "/zanza",
   "mediaBaseUrl": "https://media.rythem-works.com",
+  "liveHostsNote": "Hosts that show the live favicon (white ground, decision 0127). Every other host (staging.rythem-works.com, *.pages.dev, gio-d.xyz, local) shows the staging one (acid-green).",
+  "liveHosts": ["rythem-works.com", "www.rythem-works.com"],
   "owner": {
     "note": "Who runs the shop (Figma page Trade / About). PLACEHOLDERS until Gio fills them: name, bio, Instagram and Mixes links. Discogs (highmuzik) and Instagram (giouann) are real (Gio, 2026-11-12/13); Facebook is real too (Gio, 2026-11-13), used only for the verification button, not listed on About (the profile URL carries his full name); stats show only the join year until the ratings are checked. No legal name or address here (that is the Impressum).",
     "name": "Gio",

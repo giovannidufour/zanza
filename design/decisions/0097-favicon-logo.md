@@ -1,6 +1,6 @@
 # 0097 — Favicon = the logo illustration, on every site
 
-`2026-11-15` · accepted · Figma: none (the logo is the existing `apps/storefront/public/logo.png`)
+`2026-11-15` · accepted, grounds refined by 0127 · Figma: none (the logo is the existing `apps/storefront/public/logo.png`)
 
 **Context.** Gio (2026-11-15) wants the logo illustration as the favicon on all sites: shop, admin, coming-soon. The logo is black line art on a transparent background, so on a dark browser tab it would disappear.
 **Decision.** Three files next to the logo, generated from it: `favicon.svg` (the logo inside an SVG that inverts it to white when the browser is in dark mode; Chrome, Firefox, Edge), `favicon-32.png` (transparent fallback, Safari) and `apple-touch-icon.png` (180 px, logo on a white square with ~10% padding, because iOS fills transparent icons with black). Shop and coming-soon serve them from `/assets/`, the admin copies them into its `dist/`.
