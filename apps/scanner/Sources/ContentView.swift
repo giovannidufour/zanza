@@ -213,6 +213,10 @@ struct PreviewCanvas: View {
     @State private var dragStart: CGPoint?
     @State private var turnStart: (angle: CGFloat, pointer: CGFloat)?
     @State private var pinchStart: CGFloat?
+    // While a gesture runs, the canvas keeps the position and turn to itself and hands them to the model at the end:
+    // changing the model on every pointer move redrew the whole window (pickers included) and made the drag lag.
+    @State private var liveCenter: CGPoint?
+    @State private var liveAngle: CGFloat?
 
     var body: some View {
         GeometryReader { geo in
@@ -235,7 +239,8 @@ struct PreviewCanvas: View {
         let mid = CGPoint(x: size.width / 2, y: size.height / 2)
         // where the glass's corner lands so that model.center sits in the middle
         let imgSize = CGSize(width: glass.width * k, height: glass.height * k)
-        let offset = CGSize(width: (glass.midX - model.center.x) * k, height: (glass.midY - model.center.y) * k)
+        let center = liveCenter ?? model.center, angle = liveAngle ?? model.angle
+        let offset = CGSize(width: (glass.midX - center.x) * k, height: (glass.midY - center.y) * k)
         let s = side * k, r = s / 2 + 30
         return ZStack {
             Rectangle().fill(Theme.surfaceSubtle)
@@ -246,7 +251,7 @@ struct PreviewCanvas: View {
             }
             .frame(width: imgSize.width, height: imgSize.height)
             .offset(offset)
-            .rotationEffect(.radians(-model.angle))   // around the frame centre = the guide centre
+            .rotationEffect(.radians(-angle))   // around the frame centre = the guide centre
             .position(mid)
             // fixed guide
             SelectionSquare(side: s, record: (model.preset.recordMM ?? 0) * k, label: SizePreset.labelMM * k)
@@ -261,9 +266,9 @@ struct PreviewCanvas: View {
                     .onChanged { v in
                         let p = atan2(v.location.x - mid.x, -(v.location.y - mid.y))
                         if turnStart == nil { turnStart = (model.angle, p) }
-                        model.angle = turnStart!.angle - (p - turnStart!.pointer)   // the image turns with the pointer
+                        liveAngle = turnStart!.angle - (p - turnStart!.pointer)   // the image turns with the pointer
                     }
-                    .onEnded { _ in turnStart = nil })
+                    .onEnded { _ in if let a = liveAngle { model.angle = a }; liveAngle = nil; turnStart = nil })
                 .help("Drag sideways to turn the record")
         }
         .clipped()
@@ -272,19 +277,23 @@ struct PreviewCanvas: View {
         .simultaneousGesture(RotationGesture()
             .onChanged { v in
                 if pinchStart == nil { pinchStart = model.angle }
-                model.angle = pinchStart! - CGFloat(v.radians)   // two fingers on the trackpad turn the record
+                liveAngle = pinchStart! - CGFloat(v.radians)   // two fingers on the trackpad turn the record
             }
-            .onEnded { _ in pinchStart = nil })
+            .onEnded { _ in if let a = liveAngle { model.angle = a }; liveAngle = nil; pinchStart = nil })
         .gesture(DragGesture(minimumDistance: 1)
             .onChanged { v in
                 if dragStart == nil { dragStart = model.center }
                 // screen move → glass move: undo the image's turn, then scale
                 let a = model.angle, dx = v.translation.width, dy = v.translation.height
                 let gx = (dx * cos(a) - dy * sin(a)) / k, gy = (dx * sin(a) + dy * cos(a)) / k
-                model.center = CGPoint(x: dragStart!.x - gx, y: dragStart!.y - gy)
-                model.clampCenter()
+                liveCenter = CGPoint(x: min(max(dragStart!.x - gx, glass.minX), glass.maxX),
+                                     y: min(max(dragStart!.y - gy, glass.minY), glass.maxY))
             }
-            .onEnded { _ in dragStart = nil; model.turnFromPreview() })
+            .onEnded { _ in
+                if let c = liveCenter { model.center = c }
+                liveCenter = nil; dragStart = nil
+                model.turnFromPreview()
+            })
     }
 }
 
