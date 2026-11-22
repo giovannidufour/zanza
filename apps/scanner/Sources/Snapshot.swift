@@ -22,3 +22,34 @@ enum Snapshot {
         exit(0)
     }
 }
+
+/// `ZanzaScanner --test-scan <folder> <centerX mm> <centerY mm>`: real Preview + Scan with the scanner, files in <folder>, then quits.
+enum TestScan {
+    @MainActor static func runIfAsked() {
+        let a = CommandLine.arguments
+        guard let i = a.firstIndex(of: "--test-scan"), i + 3 < a.count else { return }
+        let dir = URL(fileURLWithPath: a[i + 1])
+        let model = AppModel()
+        model.folder = dir.appendingPathComponent("labels"); model.originalsFolder = dir.appendingPathComponent("originals")
+        model.dpi = 300; model.format = .jpeg; model.preset = .record7
+        model.center = CGPoint(x: Double(a[i + 2])!, y: Double(a[i + 3])!)
+        model.fileName = "00000_1_test"
+        model.scanner.start()
+        func waitReady() {
+            if !model.scanner.ready { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: waitReady); return }
+            print("glass mm", model.scanner.glassMM)
+            model.scanner.scan(areaMM: model.previewZone, dpi: model.previewDPI) { r in
+                if case .success(let img) = r { try? ImageOutput.write(img, to: dir.appendingPathComponent("preview.png"), format: .png, dpi: 75) }
+                print("preview", r)
+                model.runScan()
+                func waitDone() {
+                    if model.scanner.busy || model.caption.hasPrefix("Scanning") { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: waitDone); return }
+                    print(model.caption); exit(0)
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: waitDone)
+            }
+        }
+        DispatchQueue.main.async(execute: waitReady)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 120) { print("timeout"); exit(1) }
+    }
+}

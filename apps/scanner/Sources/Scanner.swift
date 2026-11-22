@@ -151,14 +151,24 @@ final class ScannerController: NSObject, ObservableObject, ICDeviceBrowserDelega
     }
 
     func scannerDevice(_ scanner: ICScannerDevice, didSelect functionalUnit: ICScannerFunctionalUnit, error: Error?) {
-        if let error { status = "Scanner error: \(error.localizedDescription)"; return }
-        functionalUnit.measurementUnit = .inches
+        if error != nil { return }   // the LiDE 100 first answers with -9922 and an empty unit, then with the flatbed
         let size = functionalUnit.physicalSize
-        if size.width > 0 { glassMM = CGSize(width: size.width * 25.4, height: size.height * 25.4) }
+        let mmPerUnit: CGFloat = functionalUnit.measurementUnit == .centimeters ? 10 : 25.4
+        if size.width > 0 { glassMM = CGSize(width: size.width * mmPerUnit, height: size.height * mmPerUnit) }
+        functionalUnit.measurementUnit = .inches
         let list = functionalUnit.supportedResolutions.map { $0 }
         if !list.isEmpty { resolutions = list }
         ready = true
         status = "\(scannerName) · ready"
+    }
+
+    /// A copy of the image in memory (sRGB, 8 bits), independent of the file it came from
+    static func decoded(_ image: CGImage) -> CGImage? {
+        guard let ctx = CGContext(data: nil, width: image.width, height: image.height, bitsPerComponent: 8, bytesPerRow: 0,
+                                  space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                  bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return nil }
+        ctx.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        return ctx.makeImage()
     }
 
     func scannerDevice(_ scanner: ICScannerDevice, didScanTo url: URL) {
@@ -167,9 +177,11 @@ final class ScannerController: NSObject, ObservableObject, ICDeviceBrowserDelega
 
     func scannerDevice(_ scanner: ICScannerDevice, didCompleteScanWithError error: Error?) {
         if let error { finish(.failure(error)); return }
+        // Decode now: a CGImage from a source is read lazily, and the file is deleted right after (the preview was black)
         guard let url = scannedURL,
               let src = CGImageSourceCreateWithURL(url as CFURL, nil),
-              let image = CGImageSourceCreateImageAtIndex(src, 0, nil) else { finish(.failure(ScanError.noFile)); return }
+              let lazy = CGImageSourceCreateImageAtIndex(src, 0, [kCGImageSourceShouldCacheImmediately: true] as CFDictionary),
+              let image = Self.decoded(lazy) else { finish(.failure(ScanError.noFile)); return }
         try? FileManager.default.removeItem(at: url)
         finish(.success(image))
     }

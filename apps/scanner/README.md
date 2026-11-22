@@ -13,7 +13,7 @@ Needs only the Command Line Tools (Swift 6, macOS SDK); no Xcode. Output: `apps/
 (git-ignored), signed ad hoc, so it runs on this Mac only. Copy it to `/Applications` to keep it in Launchpad.
 
 `ZanzaScanner --snapshot out.png` renders the window with sample names and quits (design check; native pickers and
-text fields are not drawn by the renderer).
+text fields are not drawn by the renderer). `ZanzaScanner --test-scan <folder> <x mm> <y mm>` does a real Preview + Scan (300 dpi, 7") centred at x, y and writes preview.png, labels/ and originals/ in <folder>.
 
 ## Files
 
