@@ -36,6 +36,8 @@ final class AppModel: ObservableObject {
         didSet { UserDefaults.standard.set(autoTurn, forKey: "autoTurn"); if autoTurn { turnFromPreview() } }
     }
     @Published var turning = false
+    /// Grid and "up" figure on the guide while the Turn slider is held
+    @Published var turnAids = false
 
     /// Last preview and the glass area it shows (mm, origin = corner of the glass)
     @Published var preview: CGImage?

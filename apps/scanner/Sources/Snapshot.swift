@@ -64,3 +64,21 @@ enum TestScan {
         DispatchQueue.main.asyncAfter(deadline: .now() + 120) { print("timeout"); exit(1) }
     }
 }
+
+/// `ZanzaScanner --glass out.png preview.png`: draws the GlassView alone (turned, with the aids) and quits.
+enum GlassSnapshot {
+    @MainActor static func runIfAsked() {
+        let a = CommandLine.arguments
+        guard let i = a.firstIndex(of: "--glass"), i + 2 < a.count,
+              let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: a[i + 2]) as CFURL, nil),
+              let img = CGImageSourceCreateImageAtIndex(src, 0, nil) else { return }
+        let v = GlassView(frame: NSRect(x: 0, y: 0, width: 520, height: 520))
+        v.glass = CGRect(x: 0, y: 0, width: 216, height: 216 * CGFloat(img.height) / CGFloat(img.width))
+        v.image = img; v.side = 180; v.record = 177.8; v.center = CGPoint(x: 110, y: 160); v.angle = 0.4; v.aids = true
+        if let rep = v.bitmapImageRepForCachingDisplay(in: v.bounds) {
+            v.cacheDisplay(in: v.bounds, to: rep)
+            try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: a[i + 1]))
+        }
+        exit(0)
+    }
+}

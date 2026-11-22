@@ -25,4 +25,5 @@ text fields are not drawn by the renderer). `ZanzaScanner --test-scan <folder> <
 | `Sources/AutoTurn.swift` | Finds the upright turn of a label by reading its text (Vision) |
 | `Sources/Names.swift` | Parses pasted names (`<sku>_<role>_<slug>`), role labels, next photo name |
 | `Sources/ContentView.swift` | The window (mirrors the Figma screens) |
+| `Sources/GlassView.swift` | The preview under the fixed guide (AppKit): drag, turn, trackpad rotate, grid and up figure while turning |
 | `Sources/Theme.swift` | Colours and type styles from `packages/ui/tokens.json` (backend theme) |

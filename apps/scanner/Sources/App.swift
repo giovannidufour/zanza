@@ -4,7 +4,7 @@ import SwiftUI
 struct ZanzaScannerApp: App {
     @StateObject private var model = AppModel()
 
-    @MainActor init() { Snapshot.runIfAsked(); TestScan.runIfAsked() }
+    @MainActor init() { Snapshot.runIfAsked(); TestScan.runIfAsked(); GlassSnapshot.runIfAsked() }
 
     var body: some Scene {
         WindowGroup("Zanza Scanner") {

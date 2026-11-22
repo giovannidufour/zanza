@@ -158,7 +158,7 @@ struct ScanColumn: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            PreviewCanvas(scanner: scanner)
+            GlassCanvas(model: model)
                 .aspectRatio(model.sideMM == nil ? model.previewZone.width / model.previewZone.height : 1, contentMode: .fit)
                 .padding(.top, 36)   // room for the turn handle above the square
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -166,7 +166,8 @@ struct ScanColumn: View {
                 HStack(spacing: 12) {
                     Text("Turn").bodyStyle(14)
                     Slider(value: Binding(get: { -Double(model.angle) * 180 / .pi },
-                                          set: { model.angle = -CGFloat($0) * .pi / 180 }), in: -180...180)
+                                          set: { model.angle = -CGFloat($0) * .pi / 180 }), in: -180...180,
+                           onEditingChanged: { editing in model.turnAids = editing })
                     Text(String(format: "%.1f°", -Double(model.angle) * 180 / .pi)).bodyStyle(14, color: Theme.textModerate)
                         .frame(width: 56, alignment: .trailing)
                     Button("0°") { model.angle = 0 }.buttonStyle(ZButtonStyle(primary: false))
@@ -201,99 +202,6 @@ struct ScanColumn: View {
             }
         }
         .padding(24)
-    }
-}
-
-/// The preview under a fixed guide (Gio 2026-11-22): the guide stays in the middle, the record is dragged under it and
-/// turned from the handle above the guide. The model keeps the square in glass coordinates (centre, clockwise angle):
-/// moving or turning the image is the inverse move of the square.
-struct PreviewCanvas: View {
-    @EnvironmentObject var model: AppModel
-    @ObservedObject var scanner: ScannerController
-    @State private var dragStart: CGPoint?
-    @State private var turnStart: (angle: CGFloat, pointer: CGFloat)?
-    @State private var pinchStart: CGFloat?
-    // While a gesture runs, the canvas keeps the position and turn to itself and hands them to the model at the end:
-    // changing the model on every pointer move redrew the whole window (pickers included) and made the drag lag.
-    @State private var liveCenter: CGPoint?
-    @State private var liveAngle: CGFloat?
-
-    var body: some View {
-        GeometryReader { geo in
-            if let side = model.sideMM { guided(side: side, size: geo.size) } else { wholeGlass(size: geo.size) }
-        }
-    }
-
-    /// Whole glass: the preview as it is, nothing to place
-    func wholeGlass(size: CGSize) -> some View {
-        ZStack {
-            Rectangle().fill(Theme.surfaceSubtle)
-            if let img = model.preview { Image(decorative: img, scale: 1).resizable().scaledToFit() }
-        }
-    }
-
-    func guided(side: CGFloat, size: CGSize) -> some View {
-        let glass = model.previewZone
-        let view = min(size.width, size.height)
-        let k = view * 0.78 / side                          // points per mm: the guide fills 78% of the frame
-        let mid = CGPoint(x: size.width / 2, y: size.height / 2)
-        // where the glass's corner lands so that model.center sits in the middle
-        let imgSize = CGSize(width: glass.width * k, height: glass.height * k)
-        let center = liveCenter ?? model.center, angle = liveAngle ?? model.angle
-        let offset = CGSize(width: (glass.midX - center.x) * k, height: (glass.midY - center.y) * k)
-        let s = side * k, r = s / 2 + 30
-        return ZStack {
-            Rectangle().fill(Theme.surfaceSubtle)
-            // the glass (preview or empty), moved and turned under the guide
-            ZStack {
-                Rectangle().fill(Color.white)
-                if let img = model.preview { Image(decorative: img, scale: 1).resizable() }
-            }
-            .frame(width: imgSize.width, height: imgSize.height)
-            .offset(offset)
-            .rotationEffect(.radians(-angle))   // around the frame centre = the guide centre
-            .position(mid)
-            // fixed guide
-            SelectionSquare(side: s, record: (model.preset.recordMM ?? 0) * k, label: SizePreset.labelMM * k)
-                .position(mid)
-                .allowsHitTesting(false)
-            // turn handle, fixed above the guide
-            Circle().fill(Theme.surfaceBase).overlay(Circle().stroke(Theme.textStrong, lineWidth: 1))
-                .frame(width: 18, height: 18)
-                .contentShape(Circle().inset(by: -14))
-                .position(x: mid.x, y: mid.y - r)
-                .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .named("canvas"))
-                    .onChanged { v in
-                        let p = atan2(v.location.x - mid.x, -(v.location.y - mid.y))
-                        if turnStart == nil { turnStart = (model.angle, p) }
-                        liveAngle = turnStart!.angle - (p - turnStart!.pointer)   // the image turns with the pointer
-                    }
-                    .onEnded { _ in if let a = liveAngle { model.angle = a }; liveAngle = nil; turnStart = nil })
-                .help("Drag sideways to turn the record")
-        }
-        .clipped()
-        .contentShape(Rectangle())
-        .coordinateSpace(name: "canvas")
-        .simultaneousGesture(RotationGesture()
-            .onChanged { v in
-                if pinchStart == nil { pinchStart = model.angle }
-                liveAngle = pinchStart! - CGFloat(v.radians)   // two fingers on the trackpad turn the record
-            }
-            .onEnded { _ in if let a = liveAngle { model.angle = a }; liveAngle = nil; pinchStart = nil })
-        .gesture(DragGesture(minimumDistance: 1)
-            .onChanged { v in
-                if dragStart == nil { dragStart = model.center }
-                // screen move → glass move: undo the image's turn, then scale
-                let a = model.angle, dx = v.translation.width, dy = v.translation.height
-                let gx = (dx * cos(a) - dy * sin(a)) / k, gy = (dx * sin(a) + dy * cos(a)) / k
-                liveCenter = CGPoint(x: min(max(dragStart!.x - gx, glass.minX), glass.maxX),
-                                     y: min(max(dragStart!.y - gy, glass.minY), glass.maxY))
-            }
-            .onEnded { _ in
-                if let c = liveCenter { model.center = c }
-                liveCenter = nil; dragStart = nil
-                model.turnFromPreview()
-            })
     }
 }
 
