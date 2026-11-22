@@ -103,13 +103,10 @@ struct DraftResult: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("SKU \(draft.skuText) · Draft").labelStyle(10, color: Theme.textModerate)
                 Text(draft.title).bodyStyle(14).fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: 10) {   // media status
-                    Label("\(scanned)", systemImage: "photo")
-                        .foregroundColor(scanned > 0 ? Theme.textStrong : Theme.textModerate)
-                    Label("\(clips)", systemImage: "waveform")
-                        .foregroundColor(clips > 0 ? Theme.textStrong : Theme.textModerate)
+                HStack(spacing: 6) {   // media status chips (Figma 2446:26829): green = some, red = none
+                    MediaChip(icon: "photo", count: scanned)
+                    MediaChip(icon: "waveform", count: clips)
                 }
-                .font(Theme.body(12)).labelStyle(.titleAndIcon)
             }
             Spacer(minLength: 0)
         }
@@ -276,5 +273,20 @@ struct Lightbox: View {
             .onAppear { image = drafts.image(at: i) }
             .onChange(of: drafts.lightbox) { new in image = new.flatMap { drafts.image(at: $0) } }
         }
+    }
+}
+
+/// `media status`: icon 16 + count (body/extra small); count ≥ 1 on surface/success, 0 on surface/alert
+struct MediaChip: View {
+    let icon: String
+    let count: Int
+    var body: some View {
+        HStack(spacing: 2) {
+            Image(systemName: icon).font(.system(size: 12)).frame(width: 16, height: 16)
+            Text("\(count)").font(Theme.body(12))
+        }
+        .foregroundColor(count > 0 ? Theme.onSuccess : Theme.onAlert)
+        .padding(.top, 2).padding(.bottom, 2).padding(.leading, 2).padding(.trailing, 4)
+        .background(count > 0 ? Theme.success : Theme.alert)
     }
 }
