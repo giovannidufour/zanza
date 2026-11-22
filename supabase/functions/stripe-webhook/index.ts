@@ -172,14 +172,14 @@ Deno.serve(async (req) => {
       `Thank you for your order ${ref}.`, "",
       "Your records:", ...lines.map((l) => `· ${l.text}`), "", ...totals, "",
       "Shipping to:", ...address, "",
-      "I pack every record by hand and write to you with the tracking number when it ships.",
+      "I pack every record by hand and post orders at least once a week, usually on Wednesday. You get the tracking number by email when it ships.",
       "Questions? Just reply to this email.", "", store,
     ].join("\n");
     const html = `<p>Thank you for your order <strong>${ref}</strong>.</p>` +
       `<p><strong>Your records</strong><br>${lines.map((l) => `<a href="${escapeHtml(l.href)}">${escapeHtml(l.text)}</a>`).join("<br>")}</p>` +
       `<p>${totals.map(escapeHtml).join("<br>")}</p>` +
       `<p><strong>Shipping to</strong><br>${address.map(escapeHtml).join("<br>")}</p>` +
-      `<p>I pack every record by hand and write to you with the tracking number when it ships.<br>Questions? Just reply to this email.</p>` +
+      `<p>I pack every record by hand and post orders at least once a week, usually on Wednesday. You get the tracking number by email when it ships.<br>Questions? Just reply to this email.</p>` +
       `<p>${escapeHtml(store)}</p>`;
     await send(order.email, `${store}: order ${ref} confirmed`, text, html);
   }

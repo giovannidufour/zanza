@@ -16,7 +16,7 @@
   var KEY = 'zanza-session';
   var RESEND_AFTER = 60;   // seconds (Figma note: new code after 60 s; Supabase's own limit is the same)
   var STATUS = { paid: 'Paid, packing', shipped: 'Shipped', refunded: 'Refunded', cancelled: 'Cancelled' };
-  var PACKING = 'I pack every record by hand and write to you with the tracking number when it ships.';   // = /checkout/thanks/
+  var PACKING = 'I pack every record by hand and post orders at least once a week, usually on Wednesday. You get the tracking number by email when it ships.';   // = /checkout/thanks/
   var WRONG_CODE = 'This code is wrong or has expired. Try again or send a new one.';
 
   function config() {
