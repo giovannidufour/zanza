@@ -16,7 +16,7 @@ The cost depends on your country and on how many records, and which formats, you
 
 Orders go out at least once a week, usually on Wednesday, sometimes more often. A record paid by Tuesday leaves on Wednesday; one paid on Wednesday leaves that day or the following Wednesday, so it never waits more than a week. You get the tracking number by email when it ships.
 
-Usual delivery times after shipping: [[p:Germany 1–3 working days, EU 3–7, rest of the world 7–21]].
+Delivery after shipping depends on the carrier and the destination.
 
 ## Customs
 
@@ -24,7 +24,7 @@ Outside the EU, import duties and taxes of the destination country may apply. Th
 
 ## Payment
 
-You pay at checkout with one of the methods offered there (handled by Stripe).
+You pay at checkout with one of the methods offered there.
 
 ## Returns and damage
 

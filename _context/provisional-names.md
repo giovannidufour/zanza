@@ -40,7 +40,7 @@ Gio vende da privato (2026-11-15): niente Impressum, niente indirizzo, niente te
 |---|---|---|
 | `site.json` → legal: name, email | name: nessun nome in Privacy (scelta di Gio 2026-11-22, rischio accettato, decisione 0130); email = gio@rythem-works.com, si vede su /contact/ e in Privacy | 🟢 scelta consapevole |
 | `site.json` → contact.endpoint | vuoto finché la funzione `contact` non è deployata: il form rimanda all'email | 🟡 |
-| `shipping.md` → When it arrives | spedizione: almeno una volta a settimana, di solito mercoledì (Gio 2026-11-22, decisione 0133) 🟢 · consegna "Germany 1–3 working days, EU 3–7, rest of the world 7–21" | 🟡 consegna = proposta di Claude |
+| `shipping.md` → When it arrives | spedizione: almeno una volta a settimana, di solito mercoledì (Gio 2026-11-22, decisione 0133) 🟢 · consegna: "dipende dal corriere e dalla destinazione", senza numeri (decisione 0134) | 🟢 |
 | Scelta di fondo | venditore privato (0093): niente recesso né garanzia oltre la descrizione | 🟡 da confermare con commercialista o avvocato |
 
 ## Account di servizi (email personale di Gio)
