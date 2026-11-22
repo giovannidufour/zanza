@@ -439,35 +439,9 @@
      role: 1 = label A, 2 = label B, 3 = other photos (then 4, 5…; gallery order), a1 b1… = the Discogs position of the
      line (a / b by line order when there is none). slug = what is in the file, for Gio in Finder only (ASCII, lowercase,
      hyphens, ≤ 60 chars): the track for clips and labels, line 1 for other photos. Matching reads sku and role only. */
-  function fileSlug(text) {
-    var s = String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-      .replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    if (s.length > 60) { s = s.slice(0, 60); var cut = s.lastIndexOf('-'); if (cut > 30) s = s.slice(0, cut); s = s.replace(/-+$/, ''); }
-    return s;
-  }
-  function fileLineSlug(f, i) {
-    var l = f.lines[i]; if (!l) return '';
-    return fileSlug([lineArtistText(l) || (i > 0 ? lineArtistText(f.lines[0]) : ''), l.title].filter(Boolean).join(' '));
-  }
-  // [{ key, role, name }] for a saved listing; positions = Discogs positions by line (null = still reading, [] = none)
+  // the rule lives in packages/file-names (shared with the Edge Function scan-targets, decision 0138)
   function fileNamesOf(f, positions) {
-    function name(role, slug) { return [f.sku, role, slug].filter(Boolean).join('_'); }
-    var pos = (positions || []).map(function (p) { return /^[a-z]{1,2}\d{0,2}$/i.test(p) ? p.toLowerCase() : ''; });
-    function sideLine(side, fallback) {
-      var i = pos.findIndex(function (p) { return p.charAt(0) === side; });
-      return i >= 0 ? i : f.lines[fallback] ? fallback : 0;
-    }
-    var rows = [
-      { key: 'label-a', role: 'Label A', name: name('1', fileLineSlug(f, sideLine('a', 0))) },
-      { key: 'label-b', role: 'Label B', name: name('2', fileLineSlug(f, sideLine('b', 1))) },
-      { key: 'photos', role: 'Other photos (then _4, _5…)', name: name('3', fileLineSlug(f, 0)) }
-    ];
-    if (positions === null) return rows;
-    f.lines.forEach(function (l, i) {
-      var role = pos[i] || (pos.length ? '' : i === 0 ? 'a' : i === 1 ? 'b' : '');
-      if (role) rows.push({ key: 'line-' + i, role: role.toUpperCase(), name: name(role, fileLineSlug(f, i)) });
-    });
-    return rows;
+    return ZanzaFileNames.fileNames(f.sku, f.lines.map(function (l) { return { artist: lineArtistText(l), title: l.title }; }), positions);
   }
   // "Artist - Title 1 / Title 2", or "Artist 1 - Title 1 / Artist 2 - Title 2" when a later line has its own artist;
   // tolerant of half-filled lines (the preview fills in while typing)

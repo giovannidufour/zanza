@@ -1,5 +1,5 @@
 // Copies the shared browser/server files into the Edge Functions that need them, so each function folder is complete
-// for the Supabase dashboard editor (one folder = what gets deployed). Run after changing packages/shipping/shipping.js or packages/images/images.js:
+// for the Supabase dashboard editor (one folder = what gets deployed). Run after changing packages/shipping/shipping.js, packages/images/images.js or packages/file-names/file-names.js:
 //   node supabase/scripts/sync-functions.js          (writes the copies)
 //   node supabase/scripts/sync-functions.js --check  (exit 1 if a copy is stale; part of npm run build)
 const fs = require('fs');
@@ -10,6 +10,7 @@ const COPIES = [
   ['packages/shipping/shipping.js', 'supabase/functions/create-checkout/shipping.js'],
   ['packages/images/images.js', 'supabase/functions/sign-upload/images.js'],   // decision 0108
   ['packages/images/images.js', 'supabase/functions/purge-media/images.js'],
+  ['packages/file-names/file-names.js', 'supabase/functions/scan-targets/file-names.js'],   // decision 0138
 ];
 const check = process.argv.includes('--check');
 let stale = 0;

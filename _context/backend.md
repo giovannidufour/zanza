@@ -57,6 +57,11 @@ Chiavi casuali e immutabili (2026-11-10): l'upload avviene prima che il listing 
 3. Salva = **una chiamata** a `admin_save_listing(payload)` (una transazione: release, righe, listing, sample). `draft` → **Pubblica** = `available` + `published_at`; poi ricostruzione del sito.
 4. Copertina: il grado è ammesso per busta `original` e `generic`, mai per `none` (0003).
 
+### Scanner macOS: nomi dei file dai draft (decisione 0138, 2026-11-22)
+- Edge Function `scan-targets` (sola lettura, **Verify JWT ON**, solo admin via `is_admin()`, stessa sessione email OTP dell'admin): `{ query }` → fino a 20 draft (SKU, titolo, cat. no, prima foto), filtrati in funzione su SKU, artista, titolo, custom title, cat. no; `{ id, roles }` → i nomi delle immagini 1…N (1 Label A, 2 Label B, 3+ Other photo). Non scrive niente: nessun upload, nessuna modifica ai draft (Gio: non ancora).
+- I nomi li calcola `packages/file-names/file-names.js`, lo **stesso** file usato dall'admin (File names, 0136): `file-names.js` nella funzione è una copia (`npm run sync:functions`). Lo Scanner non costruisce mai un nome. Per sapere qual è il lato B la funzione legge le posizioni Discogs della release (come l'admin); se Discogs non risponde, ordine delle righe (`positions_read: false`).
+- Deploy: dashboard → Edge Functions → nuova funzione `scan-targets` con `index.ts` + `file-names.js`; secret opzionale `DISCOGS_TOKEN` (già presente).
+
 ### Artisti ed etichette (0006, Gio 2026-11-10)
 - Nel form (decisione DS 0020, 2026-11-10): Artist, Label e Tags sono campi a **chips** (`EntityField`): ogni chip è un'entità, il testo che non diventa chip non si salva. Menu: entità esistenti, alias "grafia → ufficiale", "Create …". Artist e Tags più chips (gli artisti di una riga si uniscono con "&"), Label una. Checkbox "Different spelling" → compare il campo "Artist name on label" / "Label spelled on record" = grafia sul disco.
 - Al salvataggio (`admin_save_listing`) il collegamento: id scelto → id Discogs → nome o alias (maiuscole indifferenti, vince il più vecchio) → entità nuova. Una grafia diversa dall'ufficiale diventa alias in automatico.
