@@ -14,7 +14,9 @@ The cost depends on your country and on how many records, and which formats, you
 
 ## When it arrives
 
-I ship within [[p:3 working days]] after your payment. Usual delivery times after shipping: [[p:Germany 1–3 working days, EU 3–7, rest of the world 7–21]].
+Orders go out at least once a week, usually on Wednesday, sometimes more often. A record paid by Tuesday leaves on Wednesday; one paid on Wednesday leaves that day or the following Wednesday, so it never waits more than a week. You get the tracking number by email when it ships.
+
+Usual delivery times after shipping: [[p:Germany 1–3 working days, EU 3–7, rest of the world 7–21]].
 
 ## Customs
 

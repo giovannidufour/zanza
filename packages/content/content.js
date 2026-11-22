@@ -79,7 +79,7 @@
       ] },
     { key: 'short.order', path: '/checkout/thanks/',  group: 'short', title: 'Order confirmed', where: '/checkout/thanks/ · after paying',
       fields: [
-        { name: 'note', kind: 'textarea', label: 'Note', help: 'Under “Your order is confirmed”.', default: 'I pack every record by hand and write to you with the tracking number when it ships.' }
+        { name: 'note', kind: 'textarea', label: 'Note', help: 'Under “Your order is confirmed”.', default: 'I pack every record by hand and post orders at least once a week, usually on Wednesday. You get the tracking number by email when it ships.' }
       ] },
     { key: 'short.trade', path: '/trade/',  group: 'short', title: 'Trade: record page and offer', shows: 'trade', where: 'Records for trade · Make an offer',
       fields: [
