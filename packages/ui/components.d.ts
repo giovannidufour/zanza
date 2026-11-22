@@ -1052,8 +1052,8 @@ export interface BulkRecordProps extends HTMLAttributes<HTMLLIElement> {
   meta?: ReactNode;
   /** what was grouped: "3 photos · samples A, B · nooks-hero" */
   files?: ReactNode;
-  /** Figma `state`. reading shows a ProgressBar and no actions */
-  state?: 'reading' | 'matched' | 'choose' | 'not found' | 'confirmed' | 'skipped';
+  /** Figma `state`. reading shows a ProgressBar and no actions; attach = files named with a SKU, added to that listing (decision 0139, Remove only) */
+  state?: 'reading' | 'matched' | 'choose' | 'not found' | 'confirmed' | 'skipped' | 'attach';
   /** 0–100, while reading */
   progress?: number;
   /** Files of the record still converting or uploading, 0–100 (decision 0108): a ProgressBar under the files line, any state but reading. Omitted / null = none. */

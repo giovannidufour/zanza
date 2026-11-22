@@ -1056,7 +1056,7 @@
         'aria-label': (props.copied ? 'Copied: ' : 'Copy file name: ') + name }, props.copied ? 'Copied' : 'Copy') : null);
   }
   /* ── Bulk create (Figma BACKEND → Bulk, decision 0107) ──
-     BulkRecord (`bulk record`, device mobile | desktop, state reading | matched | choose | not found | confirmed | skipped,
+     BulkRecord (`bulk record`, device mobile | desktop, state reading | matched | choose | not found | confirmed | skipped | attach,
      boolean `warning`): one record found in the dropped files, MemoItem grammar. Text column: title body/medium
      text/strong, meta body/small text/moderate, files body/small, then (reading) a ProgressBar, the status line
      (support text, body/small text/strong) and the warning (support text, emphasis alert); actions = Review, Remove

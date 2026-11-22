@@ -1377,11 +1377,13 @@
     }) : h('tr', null, h('td', { colSpan: 7 }, props.empty))))), status);
   }
 
+  // a listing with everything the form needs (EditLoader, Bulk attach)
+  var LISTING_FORM_SELECT = '*,release:releases(*,label_entity:labels(id,name),genre_rows:release_genres(position,genre:genres(id,name)),tag_rows:release_tags(position,tag:tags(id,name)),lines:release_lines(*,credits:release_line_artists(position,artist:artists(id,name))),samples(*))';
   function EditLoader(props) {
     var st = useState(null), initial = st[0], setInitial = st[1];
     var er = useState(null), error = er[0], setError = er[1];
     useEffect(function () {
-      sb.from('listings').select('*,release:releases(*,label_entity:labels(id,name),genre_rows:release_genres(position,genre:genres(id,name)),tag_rows:release_tags(position,tag:tags(id,name)),lines:release_lines(*,credits:release_line_artists(position,artist:artists(id,name))),samples(*))').eq('id', props.id).single()
+      sb.from('listings').select(LISTING_FORM_SELECT).eq('id', props.id).single()
         .then(function (res) { if (res.error) setError(res.error.message); else setInitial(formFromRow(res.data)); });
     }, [props.id]);
     if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not open this listing: ' + error);
@@ -2693,6 +2695,43 @@
     if (!m || !/^(\d{1,2}|[a-z]+|[a-z]\d{1,2})$/i.test(m[2])) return null;
     return { prefix: m[1].trim(), key: m[1].trim().toLowerCase().replace(/\s+/g, '-'), role: m[2].toLowerCase() };
   }
+  /* Bulk attach (decision 0139): a scanner / File names file <sku>_<role>_<slug> (0136) goes to the listing with that SKU,
+     not to a new draft: no label read. Photo _n replaces the photo at place n (or comes last), _a / _b the sample of
+     that side (the Discogs position); a SKU that is not a draft or a live copy is refused. */
+  var SKU_NAME = /^(\d{5})_(\d{1,2}|[ab]\d{0,2})(?:_[^.]*)?(?:[ _-]?(?:copy|\(\d+\)))?\.([a-z0-9]+)$/i;
+  function skuParse(name) {
+    var m = SKU_NAME.exec(String(name || '').trim());
+    return m ? { sku: m[1], role: m[2].toLowerCase() } : null;
+  }
+  var ATTACH_OK = { draft: true, available: true };
+  // the form of the listing once the batch's files are in it: { form, photos: [places], sides: [A, B…], replaced }
+  function attachInto(f, r, positions) {
+    var images = f.images.slice(), places = [], replaced = 0;
+    r.photos.filter(function (x) { return x.key; }).slice().sort(photoSort).forEach(function (x) {
+      var n = parseInt(x.role, 10), item = { id: x.id, key: x.key, name: x.name };
+      if (!isNaN(n) && n >= 1 && n <= images.length) { images[n - 1] = item; replaced++; places.push(n); }
+      else { images.push(item); places.push(images.length); }
+    });
+    var samples = f.samples.slice(), sides = [];
+    r.samples.filter(function (x) { return x.key; }).forEach(function (x) {
+      var line = sampleLine(x.role, positions);
+      if (line && line > f.lines.length) line = null;
+      var item = { id: x.id, key: x.key, name: x.name, line: line, title: '' };
+      var at = line ? samples.findIndex(function (s) { return s.line === line; }) : -1;
+      if (at >= 0) { samples[at] = item; replaced++; } else samples.push(item);
+      sides.push(line ? x.role.toUpperCase() : 'extra');
+    });
+    return { form: Object.assign({}, f, { images: images, samples: samples }), places: places, sides: sides, replaced: replaced };
+  }
+  function attachStatus(r) {
+    if (r.state === 'looking') return 'Looking for SKU ' + r.sku + '…';
+    if (!r.form) return null;
+    var res = attachInto(r.form, Object.assign({}, r, { photos: r.photos.map(function (x) { return Object.assign({}, x, { key: x.key || 'x' }); }),
+                                                      samples: r.samples.map(function (x) { return Object.assign({}, x, { key: x.key || 'x' }); }) }), r.positions || []);
+    var what = [res.places.length ? (res.places.length === 1 ? 'photo ' : 'photos ') + res.places.join(', ') : null,
+                res.sides.length ? (res.sides.length === 1 ? 'sample ' : 'samples ') + res.sides.join(', ') : null].filter(Boolean).join(', ');
+    return 'Adds to this ' + (r.form.status === 'draft' ? 'draft' : 'listing') + ': ' + what + (res.replaced ? ' (' + plural(res.replaced, 'file') + ' replaced)' : '') + '. No label read.';
+  }
   // at most n promises at a time (uploads, AI reads): the free tiers prefer a queue to a burst
   function limiter(n) {
     var running = 0, queue = [];
@@ -2832,6 +2871,22 @@
       startUpload(recId, f);
     }
 
+    // SKU records (Bulk attach, 0139): the listing with that SKU, as the form loads it, and its Discogs positions
+    async function lookUpSkus(list) {
+      var res = await sb.from('listings').select(LISTING_FORM_SELECT).in('sku', list.map(function (r) { return r.sku; }));
+      list.forEach(function (r) {
+        if (res.error) { patchRecord(r.id, { state: 'attach', attachError: 'Could not look up SKU ' + r.sku + ': ' + res.error.message }); return; }
+        var row = (res.data || []).filter(function (x) { return String(x.sku) === r.sku; })[0];
+        if (!row) { patchRecord(r.id, { state: 'attach', attachError: 'No listing with SKU ' + r.sku + ': these files are left out.' }); return; }
+        var form = formFromRow(row);
+        if (!ATTACH_OK[form.status]) { patchRecord(r.id, { state: 'attach', form: form, attachError: 'SKU ' + r.sku + ' is ' + (STATUS_LABEL[form.status] || form.status).toLowerCase() + ': its files are left out.' }); return; }
+        patchRecord(r.id, { state: 'attach', form: form, positions: [] });
+        var relId = discogsId(form.discogs);
+        if (relId) invoke('discogs-lookup', { releaseId: relId })
+          .then(function (d) { patchRecord(r.id, { positions: positionsOf(d) }); })
+          .catch(function () { /* no positions: sides by line order (sampleLine) */ });
+      });
+    }
     function onFiles(files) {
       setMessage(null);
       var byKey = {}, added = [], extra = [], loose = [], ignored = 0;
@@ -2839,12 +2894,13 @@
       files.forEach(function (file) {
         var kind = bulkKind(file);
         if (!kind) { ignored++; return; }
-        var p = bulkParse(file.name);
+        var k = skuParse(file.name);
+        var p = k ? { prefix: k.sku, key: 'sku:' + k.sku, role: k.role, sku: k.sku } : bulkParse(file.name);
         if (!p) { loose.push({ id: nextId(), file: file, name: file.name, kind: kind, reading: kind === 'photo', url: kind === 'photo' ? URL.createObjectURL(file) : null }); return; }
         var slot = byKey[p.key];
         if (!slot) {
-          slot = byKey[p.key] = { old: false, rec: { id: nextId(), key: p.key, prefix: p.prefix, photos: [], samples: [], state: 'reading',
-                                                      progress: 0, found: null, release: null, query: '' } };
+          slot = byKey[p.key] = { old: false, rec: { id: nextId(), key: p.key, prefix: p.prefix, photos: [], samples: [], state: p.sku ? 'looking' : 'reading',
+                                                      sku: p.sku || null, progress: 0, found: null, release: null, query: '' } };
           added.push(slot.rec);
         }
         var item = fileItem(file, kind, p.role);
@@ -2864,8 +2920,10 @@
       setUnsorted(function (cur) { return cur.concat(loose); });
       if (ignored) setMessage({ error: true, text: ignored + (ignored === 1 ? ' file' : ' files') + ' left out: only photos (jpg, png, webp) and mp3 samples.' });
       // read the new records first, then the loose photos (they look for a record with the same release)
+      var attach = added.filter(function (r) { return r.sku; }), toRead = added.filter(function (r) { return !r.sku; });
+      if (attach.length) lookUpSkus(attach);
       setTimeout(function () {
-        Promise.all(added.map(function (r) { return readRecord(r.id); })).then(function () {
+        Promise.all(toRead.map(function (r) { return readRecord(r.id); })).then(function () {
           loose.filter(function (u) { return u.kind === 'photo'; }).forEach(readUnsorted);
         });
       }, 0);
@@ -2895,15 +2953,26 @@
     async function createDrafts() {
       var list = recRef.current;
       if (!list.length) return;
-      if (list.some(function (r) { return r.state === 'reading'; })) { setMessage({ error: true, text: 'Wait until every label is read.' }); return; }
+      if (list.some(function (r) { return r.state === 'reading' || r.state === 'looking'; })) { setMessage({ error: true, text: 'Wait until every label is read.' }); return; }
       if (list.some(function (r) { return r.photos.concat(r.samples).some(function (x) { return x.uploading; }); })) { setMessage({ error: true, text: 'Wait for the uploads to finish.' }); return; }
       setView({ name: 'creating' }); setMessage({ error: false, text: 'Creating drafts…' });
       var entities = null;
       try { entities = await loadEntities(); } catch (e) { /* the drafts bind entities by name on save */ }
-      var done = 0, failed = [];
+      var done = 0, updated = 0, failed = [];
       for (var i = 0; i < list.length; i++) {
         var r = list[i];
-        setMessage({ error: false, text: 'Creating draft ' + (i + 1) + ' of ' + list.length + '…' });
+        setMessage({ error: false, text: 'Saving record ' + (i + 1) + ' of ' + list.length + '…' });
+        if (r.sku) {
+          // Bulk attach (0139): the listing keeps its status; a SKU that was refused stays in the batch with its reason
+          try {
+            if (r.attachError || !r.form) throw new Error(r.attachError || 'SKU ' + r.sku + ' not found.');
+            var a = attachInto(r.form, r, r.positions || []);
+            var saved = await sb.rpc('admin_save_listing', { payload: payloadOf(a.form, r.form.status) });
+            if (saved.error) throw new Error(saved.error.message);
+            updated++;
+          } catch (err) { failed.push({ id: r.id, text: err.message }); }
+          continue;
+        }
         try {
           var f = emptyForm(), positions = [];
           var release = r.state === 'skipped' ? null : r.release;
@@ -2939,18 +3008,20 @@
       if (!failed.length) {
         setUnsorted([]);
         setMessage(null);
-        toast(plural(done, 'draft') + ' created. Fill in grading and price to publish.');
+        toast([done ? plural(done, 'draft') + ' created' : null, updated ? plural(updated, 'listing') + ' updated with the scans' : null].filter(Boolean).join(', ') +
+          (done ? '. Fill in grading and price to publish.' : '.'));
         location.hash = '#';
         return;
       }
-      setMessage({ error: true, text: plural(done, 'draft') + ' created; ' + plural(failed.length, 'record') + ' not saved: see below.' });
+      setMessage({ error: true, text: [plural(done, 'draft') + ' created', updated ? plural(updated, 'listing') + ' updated' : null].filter(Boolean).join(', ') + '; ' + plural(failed.length, 'record') + ' not saved: see below.' });
     }
 
     // ── render ──
     var statusLine = h('p', { className: 'body-small admin-status' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '');
     var help = h(Z.BulkHelp, { heading: 'Name the files record_role, one prefix per record:',
       lines: ['Photos: _1, _2, _3… in gallery order. Photo _1 is read to find the record on Discogs: make it the label.',
-              'Samples: _a and _b for the A and B side. On an LP _a1, _a2, _b1… Anything else becomes an additional sample.'],
+              'Samples: _a and _b for the A and B side. On an LP _a1, _a2, _b1… Anything else becomes an additional sample.',
+              'Scanner files 28529_1_… (SKU first) are added to the listing with that SKU: _1, _2… replace the photo at that place, _a, _b the sample of that side. No label read, no new draft.'],
       example: 'e.g. nooks-hero_1.jpg · nooks-hero_2.jpg · nooks-hero_a.mp3 · nooks-hero_b.mp3' });
     var drop = h(Z.DropZone, { label: records.length ? 'Add more files' : 'Browse photos and samples', multiple: true,
       accept: 'image/jpeg,image/png,image/webp,image/heic,audio/mpeg,.mp3', disabled: busy, onFiles: onFiles });
@@ -2979,13 +3050,15 @@
           : h('div', { className: 'admin-bulk-page__actions' }, nextBtn, skipBtn, statusLine));
     }
 
-    var reading = records.filter(function (x) { return x.state === 'reading'; }).length;
+    var reading = records.filter(function (x) { return x.state === 'reading' || x.state === 'looking'; }).length;
+    var nAttach = records.filter(function (x) { return x.sku; }).length;
     var toReview = records.filter(function (x) { return ['matched', 'choose', 'not found'].indexOf(x.state) >= 0; }).length;
     var nFiles = records.reduce(function (n, x) { return n + x.photos.length + x.samples.length; }, 0) + unsorted.length;
     var summary = records.length ? [plural(records.length, 'record'), plural(nFiles, 'file'), reading ? reading + ' reading' : null,
       toReview ? toReview + ' to review' : null, unsorted.length ? plural(unsorted.length, 'file') + ' not recognised' : null].filter(Boolean).join(' · ') : '';
     var createBtn = h(Z.Button, { key: 'create', hierarchy: toReview ? 'secondary' : 'primary', 'aria-busy': busy || undefined, disabled: !records.length || reading > 0,
-      onClick: busy ? undefined : createDrafts }, mobile && toReview ? 'Create drafts' : 'Create ' + plural(records.length, 'draft'));   // the count is in the summary line
+      onClick: busy ? undefined : createDrafts }, nAttach ? (mobile && toReview ? 'Save' : 'Save ' + plural(records.length, 'record'))
+        : mobile && toReview ? 'Create drafts' : 'Create ' + plural(records.length, 'draft'));   // the count is in the summary line
     var reviewBtn = toReview ? h(Z.Button, { key: 'review', hierarchy: 'primary', disabled: busy || reading > 0, onClick: function () { openReview(reviewIndexFrom(0)); } }, 'Review') : null;
     var options = records.map(function (x) { return [x.id, x.release ? x.release.title : x.prefix]; });
 
@@ -3004,7 +3077,12 @@
             onChange: function (e) { if (e.target.value) assign(u, e.target.value, 'picked'); } }, opts(options)));
       })) : null,
       records.length ? h('ul', { className: 'admin-memo__items', 'aria-label': 'Records found' }, records.map(function (x, i) {
-        var warn = [bulkWarnings(x), x.saveError ? 'Not saved: ' + x.saveError : ''].filter(Boolean).join(' ');
+        var warn = [x.attachError || '', x.sku ? '' : bulkWarnings(x), x.saveError && x.saveError !== x.attachError ? 'Not saved: ' + x.saveError : ''].filter(Boolean).join(' ');
+        if (x.sku) return h(Z.BulkRecord, { key: x.id, state: 'attach', uploadProgress: uploadProgressOf(x),
+          title: x.form ? previewName(x.form) || 'SKU ' + x.sku : 'SKU ' + x.sku,
+          meta: x.form ? 'SKU ' + x.sku + ' · ' + (STATUS_LABEL[x.form.status] || x.form.status) : undefined,
+          files: filesText(x), status: x.attachError ? null : attachStatus(x), warning: warn || undefined,
+          onRemove: busy ? undefined : function () { removeRecord(x); } });
         return h(Z.BulkRecord, { key: x.id, state: x.state, progress: x.progress, uploadProgress: uploadProgressOf(x),
           title: x.release && x.state !== 'skipped' ? x.release.title : x.prefix,
           meta: x.release && x.state !== 'skipped' ? x.release.meta : undefined,
