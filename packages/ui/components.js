@@ -1026,8 +1026,10 @@
      the text; desktop puts them on the right, centred (CSS @media, one markup). */
   function MemoItem(props) {
     var name = typeof props.title === 'string' ? props.title : 'record';
-    return h('li', Object.assign({}, omit(props, ['title', 'meta', 'note', 'href', 'onCreateDraft', 'onCreate', 'onRemove', 'createDraftLabel', 'createDraftBusy', 'createLabel', 'removeLabel', 'className']),
+    return h('li', Object.assign({}, omit(props, ['title', 'meta', 'note', 'href', 'select', 'onCreateDraft', 'onCreate', 'onRemove', 'createDraftLabel', 'createDraftBusy', 'createLabel', 'removeLabel', 'className']),
       { className: cx('zz-memo-item', props.className) }),
+      // Figma boolean `select` (decision 0140): the row's checkbox, first
+      props.select ? h('div', { className: 'zz-memo-item__select' }, props.select) : null,
       h('div', { className: 'zz-memo-item__text' },
         h('p', { className: 'zz-memo-item__title body-medium' }, props.title),
         props.meta ? h('p', { className: 'zz-memo-item__meta body-small' }, props.meta) : null,

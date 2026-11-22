@@ -1014,6 +1014,8 @@ export interface MemoItemProps extends HTMLAttributes<HTMLLIElement> {
   note?: ReactNode;
   /** the release on discogs.com (Figma: shown with `discogs release`). Omit → no link */
   href?: string;
+  /** Figma boolean `select` (decision 0140): the row's checkbox (a Checkbox with hideLabel). Omit → none */
+  select?: ReactNode;
   /** Figma boolean `create draft` (decision 0135): saves a draft from the memo, no form. Omit → no button */
   onCreateDraft?: () => void;
   /** true while the draft is being saved: the button reads "Creating…" and does nothing */

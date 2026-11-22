@@ -70,7 +70,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | ReleaseOption | page `Trade` → `release option` | ported (0069) |
 | ReleaseList | page `Trade` → `release list` | ported (0069) |
 | ChosenRelease | page `Trade` → `chosen release` | ported (0069) |
-| MemoItem | page `Memo` (BACKEND) → `memo item` | ported (0087): device mobile / desktop (responsive), meta + link, note, Create draft (0135) / Create listing / Remove |
+| MemoItem | page `Memo` (BACKEND) → `memo item` | ported (0087): device mobile / desktop (responsive), meta + link, note, select (0140), Create draft (0135) / Create listing / Remove |
 | FileNameRow | page `Create` (BACKEND) → `file name` | ported (0136): state default / copied, role + name, Copy |
 | BulkRecord | page `Bulk` (BACKEND) → `bulk record` | ported (0107): device mobile / desktop (responsive), state reading / matched / choose / not found / confirmed / skipped, warning |
 | BulkHelp | page `Bulk` (BACKEND) → `bulk naming help` | ported (0107) |
