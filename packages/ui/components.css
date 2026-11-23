@@ -1436,10 +1436,10 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-discogs-card p { margin: 0; }
 .zz-discogs-card__label { color: var(--text-moderate); }
 .zz-discogs-card__link { color: inherit; text-decoration: underline; align-self: flex-start; }
-.zz-trade-step { display: flex; gap: var(--medium-small); color: var(--text-strong); }
-.zz-trade-step__number { flex: none; width: 24px; }
-.zz-trade-step__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.zz-trade-step__title, .zz-trade-step__body { margin: 0; }
+.zz-step { display: flex; gap: var(--medium-small); color: var(--text-strong); }
+.zz-step__number { flex: none; width: 24px; }
+.zz-step__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.zz-step__title, .zz-step__body { margin: 0; }
 
 /* Discogs release picker (Figma page Trade: release option, release list, chosen release) */
 .zz-release-list { background: var(--surface-base); border: 1px solid var(--border-divider-strong); color: var(--text-strong); }

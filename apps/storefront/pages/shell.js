@@ -176,13 +176,15 @@ const productHref = (product, url) => url(`/products/${product.listing.slug}/`);
 const tradeOn = (site) => !site || site.tradeEnabled !== false;
 // Who I am (admin → Settings, decision 0106): off = the Store profile, no name, no personal profiles, no trade
 const identityOn = (site) => !site || site.identityEnabled !== false;
+// Check your wantlist (admin → Settings, migration 0033, decision 0152): set by build.js; off or undefined = no link
+const wantlistOn = (site) => !!site && site.wantlistEnabled === true;
 // a text Gio edits in the admin (page Content, decision 0106): site.texts (build.js) or, without it, today's text;
 // {{#trade}}…{{/trade}} already applied
 const DEFAULT_TEXTS = Content.defaults({});
 function textOf(site, key, field) {
   const saved = ((site && site.texts) || {})[key];
   const v = saved && saved[field] !== undefined ? saved[field] : (DEFAULT_TEXTS[key] || {})[field];
-  return typeof v === 'string' ? Content.applyFlags(v, { trade: tradeOn(site) }) : v;
+  return typeof v === 'string' ? Content.applyFlags(v, { trade: tradeOn(site), wantlist: wantlistOn(site) }) : v;
 }
 // a textarea's paragraphs (an empty line = a new paragraph) as <p>s
 const Paragraphs = ({ text, className = 'body-medium' }) => h(React.Fragment, null,
@@ -242,7 +244,8 @@ function SiteMenu({ site, url, current }) {
     h(Z.MenuLayer, { title: 'Menu', closeLabel: 'Close menu', legal },
       // Figma `menu layer`: the search field on top of the body (Gio 2026-11-12: mobile search in the menu, not the header)
       h(SearchForm, { url, id: 'site-search-menu', className: 'site-menu__search' }),
-      h(Z.MenuGroup, null, item('sale', 'For sale', '/sale/'), trade ? item('trade', 'For trade', '/trade/') : null),
+      h(Z.MenuGroup, null, item('sale', 'For sale', '/sale/'), trade ? item('trade', 'For trade', '/trade/') : null,
+        wantlistOn(site) ? item('wantlist', 'Check your wantlist', '/wantlist/') : null),
       // the detail becomes the signed-in email (scripts/account.js, [data-account-email]); decision 0101
       h(Z.MenuGroup, null, item('account', 'Account', '/account/', h('span', { 'data-account-email': '' }, 'Sign in to see your orders'))),
       h(Z.MenuGroup, null, item('about', 'About', '/about/'), trade ? item('how-trading-works', 'How trading works', '/how-trading-works/') : null,
@@ -271,7 +274,8 @@ function SiteFooter({ site, url, newsletter = true }) {
     legal: LEGAL_LINKS.map(([text, href]) => h('a', { key: href, href: url(href) }, text)),
     copyright: `\u00a9 ${new Date().getFullYear()} ${site.storeName}`
   },
-  h(Z.FooterLinks, { label: 'Shop', links: [link('For sale', '/sale/'), tradeOn(site) && link('For trade', '/trade/')].filter(Boolean) }),
+  h(Z.FooterLinks, { label: 'Shop', links: [link('For sale', '/sale/'), tradeOn(site) && link('For trade', '/trade/'),
+    wantlistOn(site) && link('Check your wantlist', '/wantlist/')].filter(Boolean) }),
   h(Z.FooterLinks, { label: 'Info', links: [link('About', '/about/'), tradeOn(site) && link('How trading works', '/how-trading-works/'),
     link('Grading', '/grading/'), link('Shipping', '/shipping/'), link('Contact', '/contact/')].filter(Boolean) }),
   social.length ? h(Z.FooterLinks, { label: 'Follow', links: social }) : null);
@@ -339,4 +343,4 @@ function ProductCardFor({ product, url, headingLevel }) {
   });
 }
 
-module.exports = { IMAGE_SIZES, imageOf, smallImageUrl, tradeOn, identityOn, textOf, Paragraphs, SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor };
+module.exports = { IMAGE_SIZES, imageOf, smallImageUrl, tradeOn, identityOn, wantlistOn, textOf, Paragraphs, SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor };

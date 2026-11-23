@@ -581,6 +581,9 @@
     var query = searchPage ? (params.get('q') || '').trim() : '';
     var matcher = searchMatcher(query);
     var baseTitle = document.title;   // as built: "Search · <store name>"
+    // Check your wantlist (decision 0152): the page shows only the cards initWantlist marked data-want="exact|other",
+    // grouped (exact first) under the two group headings; the match is read from the card at each apply
+    var wantPage = document.querySelector('[data-wantlist-page]');
     var values = items.map(function (el) {
       var v = {}; keys.forEach(function (k) { try { v[k] = JSON.parse(el.getAttribute('data-' + k) || '[]'); } catch (e) { v[k] = []; } });
       v.__q = !searchPage || (!!matcher && matcher(el.getAttribute('data-search') || ''));
@@ -589,6 +592,7 @@
     // sold: read from the card at each apply (site.js updates data-listing-status live)
     function soldNow() {
       items.forEach(function (el, i) {
+        if (wantPage) values[i].__want = el.getAttribute('data-want') || '';
         var card = el.querySelector('[data-listing-status]');
         var st = card ? card.getAttribute('data-listing-status') : 'available';
         values[i].__sold = st === 'sold' || st === 'traded';
@@ -628,6 +632,7 @@
     var lastSel = null;   // the selection of the last apply(), for analytics
     function matches(v, s, skip) {
       if (!v.__q) return false;
+      if (wantPage && !v.__want) return false;
       if (v.__sold && !s.__showSold) return false;
       return keys.every(function (k) {
         if (k === skip || !s[k].length) return true;
@@ -699,7 +704,9 @@
     }
     function applySort() {
       if (!list) return;
+      var group = function (el) { return el.getAttribute('data-want') === 'other' ? 1 : 0; };
       var sorted = items.slice().sort(function (a, b) {
+        if (wantPage && group(a) !== group(b)) return group(a) - group(b);
         var pa = +a.getAttribute('data-price'), pb = +b.getAttribute('data-price');
         var oa = +a.getAttribute('data-order'), ob = +b.getAttribute('data-order');
         if (sort === 'price-asc') return (pa - pb) || (oa - ob);
@@ -721,6 +728,18 @@
       refreshOptions(boxes, s, root);
       var empty = document.querySelector('[data-plp-empty]'); if (empty) empty.hidden = shown > 0;
       if (searchPage) renderSearch(shown);
+      if (wantPage) {
+        // each group heading right before the first card of its group still shown; none = hidden
+        ['exact', 'other'].forEach(function (g) {
+          var heading = list && list.querySelector('[data-wantlist-group="' + g + '"]');
+          if (!heading) return;
+          var first = items.filter(function (el) { return !el.hidden && (el.getAttribute('data-want') || '') === g; })
+            .sort(function (a, b) { return a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1; })[0];
+          heading.hidden = !first;
+          if (first) list.insertBefore(heading, first);
+        });
+        if (wantPage.__onApply) wantPage.__onApply(shown);
+      }
       var status = root.querySelector('[data-plp-status]');
       if (status && announce) status.textContent = shown + (shown === 1 ? ' record' : ' records');
       // mobile trigger: "Filter" + the number of applied filters as suffix (Figma `PLP header`, 0029)
@@ -904,11 +923,162 @@
     root.addEventListener('change', function () { apply(true); });
     applySort();
     apply(false);
+    // the wantlist check marks the cards later: it calls this to sort and show them
+    if (wantPage) wantPage.__reapply = function () { applySort(); apply(false); };
     // analytics: one search per results page; 0 results = what people look for and the shop doesn't have
     if (searchPage && query && window.ZanzaAnalytics) {
       var term = window.ZanzaAnalytics.safeTerm(query);
       var results = items.filter(function (el) { return !el.hidden; }).length;
       track('search', { term: term || '[redacted]', results: results, no_results: results === 0 });
+    }
+  }
+
+  /* ------------------------------------------------------- 5b. check your wantlist */
+  /* /wantlist/ (pages/plp.js → WantlistTop, Figma page `Wantlist`, decision 0152). Discogs OAuth 1.0a through the
+     function discogs-oauth, which only does what needs the app's secret: the request token, the access token, and
+     signing read URLs. This browser then reads the wantlist straight from api.discogs.com and compares it with the
+     cards of the page: the wantlist never reaches the shop's server and is never saved, only kept in memory while the
+     check runs. The visitor's Discogs permission lives in sessionStorage (this tab only, no cookie) until the tab is
+     closed or Disconnect is pressed. Matches: release id = "Exact matches" (data-want="exact"), else master id =
+     "Other pressings" (data-want="other"). */
+  var WANT_REQ = 'zanza-wantlist-request', WANT_ACCESS = 'zanza-wantlist-access';
+  var wantRun = 0;   // the running check; a new one (or Disconnect, or leaving the page) makes the old one stop
+  function sessionGet(k) { try { return JSON.parse(sessionStorage.getItem(k) || 'null'); } catch (e) { return null; } }
+  function sessionSet(k, v) { try { if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* no storage: the check still runs once */ } }
+  function initWantlist() {
+    wantRun++;
+    var page = document.querySelector('[data-wantlist-page]');
+    var top = page && page.querySelector('[data-wantlist]');
+    if (!top) return;
+    var endpoint = top.getAttribute('data-endpoint');
+    var connect = top.querySelector('[data-wantlist-connect]');
+    var heading = top.querySelector('[data-wantlist-heading]');
+    var title = top.querySelector('[data-wantlist-title]');
+    var errorBox = top.querySelector('[data-wantlist-error]');
+    var start = top.querySelector('[data-wantlist-start]');
+    var results = [page.querySelector('.plp-content'), page.querySelector('.plp-header'), page.querySelector('[data-plp-active]')];
+    var items = Array.prototype.slice.call(page.querySelectorAll('.plp-item'));
+    var callback = location.origin + location.pathname;
+    var state = { checking: false, total: 0 };
+    var count = function (n) { return n.toLocaleString('en-GB'); };
+
+    function call(body) {
+      return fetch(endpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); });
+    }
+    function show(view, message) {
+      connect.hidden = view !== 'connect';
+      heading.hidden = view === 'connect';
+      results.forEach(function (el) { if (el) el.hidden = view !== 'results'; });
+      errorBox.hidden = !message; errorBox.textContent = message || '';
+      if (start) start.removeAttribute('aria-busy');
+    }
+    function forget() { sessionSet(WANT_ACCESS, null); sessionSet(WANT_REQ, null); }
+    function unmark() { items.forEach(function (el) { el.removeAttribute('data-want'); }); if (page.__reapply) page.__reapply(); }
+    // the heading follows the filters ("N records from your wantlist"); before the check ends it shows the progress
+    page.__onApply = function (shown) {
+      if (state.checking || heading.hidden) return;
+      title.textContent = shown ? count(shown) + (shown === 1 ? ' record from your wantlist' : ' records from your wantlist')
+        : 'None of the ' + count(state.total) + ' records on your wantlist are here right now';
+    };
+
+    // Connect: a request token, then Discogs' "Authorize" page; Discogs sends the visitor back here
+    if (start) start.addEventListener('click', function () {
+      start.setAttribute('aria-busy', 'true');
+      call({ action: 'start', callback: callback }).then(function (j) {
+        sessionSet(WANT_REQ, { token: j.token, secret: j.secret });
+        track('wantlist_connect', {});
+        location.href = j.authorizeUrl;
+      }, function () { show('connect', 'Discogs can’t be reached right now. Try again in a minute.'); });
+    });
+    top.querySelector('[data-wantlist-disconnect]').addEventListener('click', function () {
+      wantRun++; forget(); unmark(); state.checking = false;
+      show('connect');
+      track('wantlist_disconnect', {});
+      if (start) start.focus();
+    });
+
+    // back from Discogs: ?oauth_token=…&oauth_verifier=… (or ?denied=… when the visitor said no)
+    var params = new URLSearchParams(location.search);
+    var verifier = params.get('oauth_verifier'), req = sessionGet(WANT_REQ);
+    if (params.has('oauth_token') || params.has('denied')) history.replaceState(history.state, '', location.pathname);
+    if (params.has('denied')) { forget(); show('connect', 'You said no on Discogs, so nothing was checked.'); return; }
+    if (verifier && req && req.token === params.get('oauth_token')) {
+      sessionSet(WANT_REQ, null);
+      show('checking'); title.textContent = 'Connecting to Discogs…';
+      call({ action: 'finish', token: req.token, secret: req.secret, verifier: verifier }).then(function (acc) {
+        sessionSet(WANT_ACCESS, { token: acc.token, secret: acc.secret });
+        check(acc);
+      }, function () { show('connect', 'Discogs didn’t confirm the connection. Try again.'); });
+      return;
+    }
+    var acc = sessionGet(WANT_ACCESS);
+    if (acc) check(acc); else show('connect');
+
+    function check(acc) {
+      var run = ++wantRun;
+      var alive = function () { return run === wantRun && document.body.contains(page); };
+      var releases = {}, masters = {};   // the wantlist, in memory only, gone when the check ends
+      state.checking = true;
+      show('checking'); title.textContent = 'Checking your wantlist…';
+      var sign = function (requests) { return call({ action: 'sign', token: acc.token, secret: acc.secret, requests: requests }).then(function (j) { return j.urls; }); };
+      // one page of Discogs; 429 = too fast (60 requests a minute): wait and ask again for a freshly signed URL
+      var get = function (request, tries) {
+        return sign([request]).then(function (urls) { return fetch(urls[0]); }).then(function (r) {
+          if (r.status === 429 && (tries || 0) < 6) return new Promise(function (ok) { setTimeout(ok, 10000); }).then(function () { return get(request, (tries || 0) + 1); });
+          if (r.status === 401 || r.status === 403) { var e = new Error('denied'); e.denied = true; throw e; }
+          if (!r.ok) throw new Error(String(r.status));
+          return r.json();
+        });
+      };
+      var progress = function (done) {
+        title.textContent = 'Checking your wantlist… ' + count(Math.min(done, state.total)) + ' of ' + count(state.total) + ' records';
+      };
+      get({ path: '/oauth/identity' }).then(function (me) {
+        var path = '/users/' + encodeURIComponent(me.username) + '/wants';
+        var pageOf = function (n) { return get({ path: path, query: { page: String(n), per_page: '100' } }); };
+        var take = function (data) {
+          (data.wants || []).forEach(function (w) {
+            var b = w.basic_information || {};
+            if (w.id || b.id) releases[String(w.id || b.id)] = true;
+            if (b.master_id) masters[String(b.master_id)] = true;
+          });
+        };
+        return pageOf(1).then(function (first) {
+          if (!alive()) return null;
+          var pages = (first.pagination && first.pagination.pages) || 1;
+          state.total = (first.pagination && first.pagination.items) || (first.wants || []).length;
+          take(first); progress(100);
+          var n = 2;
+          var next = function () {
+            if (!alive()) return null;
+            if (n > pages) return true;
+            return pageOf(n).then(function (data) { take(data); progress(n * 100); n++; return next(); });
+          };
+          return next();
+        });
+      }).then(function (done) {
+        if (!done || !alive()) return;
+        var exact = 0, other = 0;
+        items.forEach(function (el) {
+          var r = el.getAttribute('data-release'), m = el.getAttribute('data-master');
+          var want = r && releases[r] ? 'exact' : m && masters[m] ? 'other' : '';
+          if (want) el.setAttribute('data-want', want); else el.removeAttribute('data-want');
+          if (want === 'exact') exact++; else if (want === 'other') other++;
+        });
+        releases = masters = null;
+        state.checking = false;
+        show('results');
+        if (page.__reapply) page.__reapply();
+        track('wantlist_checked', { wants: state.total, exact: exact, other: other });
+      }, function (e) {
+        releases = masters = null;
+        state.checking = false;
+        if (!alive()) return;
+        unmark();
+        if (e && e.denied) { forget(); show('connect', 'Discogs no longer lets this shop read your wantlist. Connect again.'); }
+        else show('connect', 'The check stopped: Discogs can’t be reached right now. Try again in a minute.');
+      });
     }
   }
 
@@ -1983,6 +2153,7 @@
       initGallery();
       initRecordStack();
       initSearch();
+      initWantlist();   // before initFilters: it reads Discogs' ?oauth_… before the filters rewrite the URL
       initFilters();
       initStatus();
       initBag();
@@ -2111,6 +2282,7 @@
   initGallery();
   initRecordStack();
   initSearch();
+  initWantlist();
   initFilters();
   initStatus();
   initBag();
