@@ -55,7 +55,7 @@ async function send(to: string, subject: string, text: string, html: string) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${env("RESEND_API_KEY")}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: env("MAIL_FROM"), to, subject, text, html }),
+    body: JSON.stringify({ from: env("MAIL_FROM"), to, subject, text, ...(html ? { html } : {}) }),
   });
   if (!res.ok) console.error("Resend", res.status, await res.text());
 }
@@ -198,7 +198,7 @@ Deno.serve(async (req) => {
   for (const o of (result.closed_offers ?? []) as any[]) {
     const text = [`${o.name} has been sold, so your offer of ${euro(o.amount_cents)} is closed. Thanks for it.`, "",
       `Other records: ${shop}/sale/`, "", store].join("\n");
-    await send(o.email, `${store}: ${o.name} is sold`, text, text.split("\n").map(escapeHtml).join("<br>"));
+    await send(o.email, `${o.name} is sold`, text, ""); // plain text only, keeps it out of Gmail Promotions
   }
   return json({ ok: true, order: result.order_id });
 });

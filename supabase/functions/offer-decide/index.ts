@@ -6,8 +6,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const env = (k: string) => Deno.env.get(k) ?? "";
-const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
-const htmlOf = (text: string) => text.split("\n").map((l) => escapeHtml(l).replace(/https:\/\/\S+/g, (u) => `<a href="${u}">${u}</a>`)).join("<br>");
 const euro = (cents: number) => `€${(cents / 100).toFixed(2).replace(/\.00$/, "")}`;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const countryName = (code: string) => { try { return new Intl.DisplayNames(["en"], { type: "region" }).of(code) || code; } catch { return code; } };
@@ -47,13 +45,13 @@ Deno.serve(async (req) => {
   const shop = env("SHOP_URL").replace(/\/$/, "");
   let text: string, subject: string;
   if (r.status === "accepted") {
-    subject = `Your offer for ${r.name} is accepted`;
+    subject = `${r.name}: you can buy it now`;
     text = [`I accept your offer of ${euro(r.amount_cents)} for ${r.name}.`, "",
       `Pay here by ${berlin(r.expires_at)}: ${shop}/offer/pay/?t=${r.pay_token}`, "",
       `Shipping to ${countryName(r.country)} is added at checkout. The record is held for you until then; after that it goes back on sale.`,
       "", "Questions? Just reply to this email.", "", store].join("\n");
   } else {
-    subject = `About your offer for ${r.name}`;
+    subject = `${r.name}: my answer`;
     text = [`Thanks for your offer of ${euro(r.amount_cents)} for ${r.name}. This time I'll pass.`, "",
       `Other records: ${shop}/sale/`, "", store].join("\n");
   }
@@ -62,7 +60,7 @@ Deno.serve(async (req) => {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${env("RESEND_API_KEY")}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: env("MAIL_FROM"), to: r.email, subject, text, html: htmlOf(text) }),
+      body: JSON.stringify({ from: env("MAIL_FROM"), to: r.email, subject, text }),
     });
     emailed = res.ok;
     if (!res.ok) console.error("Resend", res.status, await res.text());
