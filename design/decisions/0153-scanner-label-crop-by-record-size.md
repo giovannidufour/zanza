@@ -9,3 +9,5 @@
 - The value lives once, `SizePreset.labelMM` (mm); the cut converts it to pixels of the scan (`mm × px/mm` at the chosen dpi), the dashed square of the guide and "Turn by itself" (which reads the text inside the label square) use the same value. The Record menu and the captions say 3.5" or 4".
 **Rule.** A label crop is set per record size in one place (`SizePreset.labelMM`); never a fixed 4" in the code.
 **Where.** `apps/scanner/Sources/Scanner.swift` (`SizePreset.labelMM`), `AppModel.swift` (cut, Turn by itself, captions), `GlassView.swift` (guide); Figma Scanner page.
+
+**Follow-up (Gio, 2026-11-23).** The label crop guide is white (`text/strong-invert`), so it reads on the dark label; the outer 7" guide (record edge) stays black (`text/strong`).
