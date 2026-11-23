@@ -71,15 +71,17 @@ const SOLD_STATUSES = ['sold', 'traded'];
 const isSold = (p) => SOLD_STATUSES.indexOf(p.listing.status) !== -1;
 // Figma `filters` / `filters layer` (main level): the first row, a `filter` (content=label, state=active, no count).
 // Not a facet: unticked = sold copies hidden (?sold=hide); it never counts as an applied filter (scripts/site.js).
+// Hidden while the page has no sold copy (Gio 2026-11-23, decision 0161; Figma boolean `show sold out`): a build-time
+// check, the shop rebuilds when a listing's sale state changes, so the tick comes back with the first sold record.
 const ShowSold = () => h(Z.Filter, { name: 'sold', value: 'show', label: 'Show sold out', defaultChecked: true, 'data-show-sold': '' });
 
-function PlpFilters({ facets, hidden, sorts }) {
+function PlpFilters({ facets, hidden, sorts, showSold }) {
   // Figma: `filters` > sort (Gio 2026-11-10: button hug, prefix "Sort:") + `filter block` per facet > `filter` (content=label, count)
   return h('aside', { className: 'plp-filters', 'aria-label': 'Filters', 'data-plp-filters': '',
     'data-hidden-facets': JSON.stringify(hidden) },
     h(Z.Filters, null,
       h(Z.SelectButton, { prefix: 'Sort:', className: 'plp-filters__sort', 'aria-label': 'Sort', 'data-plp-sort': '', defaultValue: 'newest', options: sorts }),
-      h(ShowSold),
+      showSold ? h(ShowSold) : null,
       facets.map((f) => h(Z.FilterBlock, { key: f.key, label: f.label },
         f.options.map((o) => h(Z.Filter, {
           key: o.value, name: f.key, value: o.value, label: optionLabel(f.key, o.value), count: o.count,
@@ -91,11 +93,11 @@ function PlpFilters({ facets, hidden, sorts }) {
 
 // Mobile filters (Figma `filters layer`, 2026-11-10): the same facets as the column, in a full-screen native dialog.
 // Its checkboxes are a draft: site.js copies the column's state in when it opens and back on Apply.
-function PlpLayer({ facets }) {
+function PlpLayer({ facets, showSold }) {
   return h('dialog', { className: 'plp-layer', 'aria-label': 'Filter', tabIndex: -1, 'data-plp-layer': '' },
     h(Z.FiltersLayer, { level: 'main', title: 'Filter', applied: null, appliedLabel: 'Applied', applyCount: null },
       // level=main: one row per facet (value = its ticked options, written by site.js)
-      h('div', { className: 'plp-layer__sold', 'data-layer-sold': '' }, h(ShowSold)),
+      showSold ? h('div', { className: 'plp-layer__sold', 'data-layer-sold': '' }, h(ShowSold)) : null,
       h('div', { className: 'plp-layer__facets', 'data-layer-facets': '' },
         facets.map((f) => h(Z.FilterFacet, { key: f.key, label: f.label, 'data-facet': f.key, 'data-facet-label': f.label }))),
       // level=facet: the options of one facet; the bar title names it, so the legend is for screen readers only
@@ -150,6 +152,7 @@ const groupHeading = (group, title) => h(Z.SectionHead, { className: 'wantlist-g
 
 function Plp({ section, products, allProducts = products, site, url, search = false, wantlist = false }) {
   const facets = facetsOf(products);
+  const showSold = products.some(isSold);
   const hint = 'Search by artist, title, label or catalogue number.';
   return h('div', { className: 'zz-page', 'data-search-page': search ? '' : undefined, 'data-wantlist-page': wantlist ? '' : undefined },
     h(SiteHeader, { site, url, section: search || wantlist ? undefined : section, current: wantlist ? 'wantlist' : undefined }),
@@ -172,7 +175,7 @@ function Plp({ section, products, allProducts = products, site, url, search = fa
 
     // Figma: `pdp content` (sic) — 12-col grid, gap gutter-small, padding-y small; filters cols 1–3, list cols 4–12
     h('div', { className: 'plp-content', 'data-search-results': search ? '' : undefined },
-      facets.length ? h(PlpFilters, { facets, hidden: hiddenFacetsOf(allProducts), sorts: sortsFor(section) }) : null,
+      facets.length ? h(PlpFilters, { facets, hidden: hiddenFacetsOf(allProducts), sorts: sortsFor(section), showSold }) : null,
       h('main', { className: 'plp-list' },
         search || wantlist ? null : h('h1', { className: 'plp-list__title' }, SECTION_LABEL[section]),
         wantlist ? groupHeading('exact', 'Exact matches') : null,
@@ -198,7 +201,7 @@ function Plp({ section, products, allProducts = products, site, url, search = fa
             ? h('p', { className: 'plp-list__empty body-medium', hidden: true, 'data-plp-empty': '' }, 'No records match these filters.')
             // a section with no copies yet (For trade at launch): said plainly, not designed (design/open.md)
             : h('p', { className: 'plp-list__empty body-medium' }, section === 'trade' ? 'Nothing up for trade right now. Come back soon.' : 'No records right now.')),
-      facets.length ? h(PlpLayer, { facets }) : null)
+      facets.length ? h(PlpLayer, { facets, showSold }) : null)
   );
 }
 
