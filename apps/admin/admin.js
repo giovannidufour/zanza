@@ -315,7 +315,7 @@
     if (publish && f.section === 'sale' && cents === null) e.price = 'Enter a price.';
     else if (Number.isNaN(cents)) e.price = 'Use a number, e.g. 12 or 12.50.';
     if (f.year.trim() && !parseYear(f.year)) e.year = 'Use a year (1983) or a decade (1990s).';
-    if (f.discogs && discogsId(f.discogs) === null) e.discogs = 'Paste a Discogs release URL or its number.';
+    if (f.discogs && discogsId(f.discogs) === null) e.discogs = 'Pick a release from the list, paste its link or number, or empty the field.';
     if (f.images.some(function (x) { return x.uploading; }) || f.samples.some(function (x) { return x.uploading; })) e.uploads = 'Wait for the uploads to finish.';
     return e;
   }
@@ -409,6 +409,7 @@
     var er = useState({}), errors = er[0], setErrors = er[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
     var sv = useState(false), saving = sv[0], setSaving = sv[1];
+    var discogsSearch = useDiscogsSearch('discogs');   // decision 0156: Discogs match searches while typing
     // decision 0118: the last saved form (Unsaved changes), when it was saved in this visit, when the shop was asked to update
     var baseline = useRef(null); if (baseline.current === null) baseline.current = formSnapshot(props.initial);
     var sa = useState(null), savedAt = sa[0], setSavedAt = sa[1];
@@ -545,7 +546,8 @@
         });
       };
     }
-    async function save(status) {
+    // andNew (decision 0155): Save draft and new, after the save a blank Create listing opens, to make drafts back to back
+    async function save(status, andNew) {
       var cur = fRef.current, e = validate(cur, status);
       setErrors(e);
       if (Object.keys(e).length) {
@@ -574,10 +576,14 @@
       }
       // decision 0118: the result in a toast; the status block at the top of the side column says the new state
       toast(d.status === 'available' ? (wasPublic ? 'Updated' : 'Published') + ' · SKU ' + d.sku + '. The shop updates in about 2 minutes.'
-        : d.status === 'draft' ? 'Draft saved · SKU ' + d.sku + '.' : 'Saved · SKU ' + d.sku + '.');
+        : d.status === 'draft' ? 'Draft saved · SKU ' + d.sku + '.' + (andNew ? ' Next one: a new listing.' : '') : 'Saved · SKU ' + d.sku + '.');
       if (!cur.listingId) history.replaceState(null, '', '#edit-' + d.listing_id);
+      // a new history entry, so Back returns to the draft just saved; the hash changes, so the form remounts blank
+      if (andNew) { location.hash = '#new'; window.scrollTo(0, 0); }
     }
 
+    // a pressing picked from the Discogs match search (0156): its link in the field, then Fetch Discogs
+    function pickRelease(r) { set({ discogs: 'https://www.discogs.com/release/' + r.id }); fetchDiscogs(r.id); }
     // Fetch Discogs: reads the release in "Discogs match" and fills the release fields
     async function fetchDiscogs(picked) {
       if (fetching) return;
@@ -753,8 +759,16 @@
       // images (Fetch from label reads them)
       h('section', sectionProps('discogs'),
         h(Z.FormSectionHead, { id: 'section-discogs-title' }, FORM_SECTION_LABEL['discogs']),
-        h(Z.Input, Object.assign({ id: 'discogs', label: 'Discogs match', optional: true, variant: 'search',
-          placeholder: 'Release URL or number', supportText: errors.discogs ? undefined : 'Paste the release link, then Fetch Discogs.' }, bind('discogs'))),
+        // decision 0156: typing searches Discogs (Figma Create → `discogs match` · searching); picking a pressing puts its
+        // link in the field and fetches it, as a pick from the photo does. A link or a number still goes by Fetch Discogs.
+        h('div', { className: 'admin-picker' },
+          h(Z.Input, Object.assign({ id: 'discogs', label: 'Discogs match', optional: true, variant: 'search',
+            placeholder: 'Artist – title, or release link',
+            clearLabel: locked ? undefined : 'Clear Discogs match', onClear: function () { set({ discogs: '' }); discogsSearch.close(); var el = document.getElementById('discogs'); if (el) el.focus(); },
+            supportText: errors.discogs ? undefined : 'Type to search Discogs, or paste the release link, then Fetch Discogs.' },
+            bind('discogs'), locked ? null : discogsSearch.inputProps(pickRelease),
+            { onChange: function (e) { set({ discogs: e.target.value }); if (!locked) discogsSearch.search(e.target.value); } })),
+          locked ? null : discogsSearch.list(pickRelease)),
         // Figma Create → `discogs link` (0150): the matched release on Discogs, in every status, while the field holds one
         discogsId(f.discogs) !== null ? h(Z.DiscogsLink, { href: 'https://www.discogs.com/release/' + discogsId(f.discogs) }) : null,
         // Figma Create → `discogs actions` (0092): Fetch Discogs + Photo of the label + Fetch from label (only with
@@ -878,10 +892,12 @@
     // a reserved, sold, traded or archived copy has no save at all
     var publishBtn = locked ? null : h(Z.Button, { key: 'publish', hierarchy: 'primary', disabled: saving || (published && !dirty), onClick: function () { save('available'); } }, published ? 'Update' : 'Publish now');
     var draftBtn = locked || published ? null : h(Z.Button, { key: 'draft', hierarchy: 'secondary', disabled: saving, onClick: function () { save('draft'); } }, 'Save draft');
+    // decision 0155 (Figma `action panel` → secondary 2 on Create and drafts): save, then a blank Create listing
+    var nextBtn = locked || published ? null : h(Z.Button, { key: 'next', hierarchy: 'secondary', disabled: saving, onClick: function () { save('draft', true); } }, 'Save draft and new');
     var shopBtn = shopUrl ? h(Z.Button, { key: 'shop', hierarchy: 'secondary', href: shopUrl, target: '_blank', rel: 'noopener' }, 'View in store') : null;
     // errors stay in an Alert under the buttons until the next save; other notes (Discogs, Memo) in a line of text
     var note = message ? (message.error ? h(Z.Alert, { role: 'alert' }, message.text) : h('p', { className: 'admin-status body-small', role: 'status' }, message.text)) : null;
-    var panelButtons = [publishBtn, draftBtn, shopBtn].filter(Boolean);
+    var panelButtons = [publishBtn, draftBtn, nextBtn, shopBtn].filter(Boolean);
     // mobile (decision 0089): Publish / Save draft in the ActionBar at the bottom of the viewport, with the note above
     // them; the status under the title; View in store and Change status in the side content, which follows the form
     var side = h('aside', { className: 'admin-side' },
@@ -2308,50 +2324,82 @@
   /* Record: the offer form's "Which record" (Figma `which record`, 0069) for the admin. ARIA 1.2 combobox: focus stays
      in the input, arrows move aria-activedescendant, Enter picks (or submits when nothing is highlighted), Escape
      closes. 3+ letters ask discogs-lookup { query } (debounced; a newer request wins); a pasted release link resolves. */
-  function RecordField(props) {
-    var id = props.id || 'memo-record', label = props.label || 'Record';
+  /* Search Discogs while typing (shared by Memo Record and Create listing → Discogs match, decision 0156). ARIA 1.2
+     combobox: focus stays in the input, arrows move aria-activedescendant, Enter picks, Escape closes. 3+ letters ask
+     discogs-lookup { query } (debounced; a newer request wins). opts.resolveLinks: a pasted release link is looked up
+     and offered as the one result (Memo); without it a link or a number closes the list (Discogs match fetches it). */
+  function useDiscogsSearch(id, opts) {
+    opts = opts || {};
     var rs = useState(null), box = rs[0], setBox = rs[1];          // null | { results: [] } | { message: '' }
     var ac = useState(-1), active = ac[0], setActive = ac[1];
     var timer = useRef(null), seq = useRef(0);
     useEffect(function () { return function () { clearTimeout(timer.current); }; }, []);
-    // releases found from a photo of the label (0090): shown as if typed; a newer photo or keystroke wins
-    useEffect(function () {
-      var f = props.found;
-      if (!f) return;
-      clearTimeout(timer.current); seq.current++;
-      setBox(f.results.length ? { results: f.results } : { message: 'No match on Discogs for what the photo shows. Fix the text, or keep it as it is.' });
-      setActive(-1);
-    }, [props.found]);
     function close() { clearTimeout(timer.current); seq.current++; setBox(null); setActive(-1); }
-    function show(next) { setBox(next); setActive(-1); }
-    function onText(e) {
-      var q = e.target.value;
-      props.onText(q);
+    function show(next) { clearTimeout(timer.current); seq.current++; setBox(next); setActive(-1); }
+    function search(q) {
       clearTimeout(timer.current);
       var n = ++seq.current, t = q.trim();
       var link = t.match(/discogs\.com\/(?:[a-z-]+\/)?(release|master)\/(\d+)/i);
-      if (link && link[1].toLowerCase() === 'master') { show({ message: 'That link is the master (every pressing). Search the title and pick your pressing, or paste its release link.' }); return; }
-      if (!link && t.length < 3) { setBox(null); return; }
+      if (link && link[1].toLowerCase() === 'master') { setBox({ message: 'That link is the master (every pressing). Search the title and pick your pressing, or paste its release link.' }); setActive(-1); return; }
+      if (!opts.resolveLinks && (link || /^\[?r?\d+\]?$/i.test(t))) { setBox(null); setActive(-1); return; }
+      if (!link && t.length < 3) { setBox(null); setActive(-1); return; }
+      var empty = opts.emptyMessage || 'No match on Discogs.';
       timer.current = setTimeout(function () {
         var ask = link ? invoke('discogs-lookup', { releaseId: parseInt(link[2], 10) }).then(function (d) { return [releaseFromLookup(d)]; })
                        : invoke('discogs-lookup', { query: t }).then(function (d) { return d.results || []; });
         ask.then(function (list) {
           if (n !== seq.current) return;
-          show(list.length ? { results: list } : { message: 'No match on Discogs. Keep it as you wrote it.' });
+          setBox(list.length ? { results: list } : { message: empty }); setActive(-1);
         }).catch(function (err) {
           if (n !== seq.current) return;
-          show({ message: 'Discogs isn’t answering (' + err.message + '). Keep it as you wrote it.' });
+          setBox({ message: 'Discogs isn’t answering (' + err.message + ').' + (opts.failHint ? ' ' + opts.failHint : '') }); setActive(-1);
         });
       }, link ? 0 : 350);
     }
-    function pick(r) { close(); props.onRelease(r); }
     var results = box && box.results || [];
-    function onKey(e) {
-      if (e.key === 'ArrowDown' && results.length) { e.preventDefault(); setActive((active + 1) % results.length); }
-      else if (e.key === 'ArrowUp' && results.length) { e.preventDefault(); setActive((active - 1 + results.length) % results.length); }
-      else if (e.key === 'Enter' && active >= 0 && results[active]) { e.preventDefault(); pick(results[active]); }
-      else if (e.key === 'Escape' && box) { e.preventDefault(); close(); }
-    }
+    function pickWith(onPick) { return function (r) { close(); onPick(r); }; }
+    return {
+      box: box, results: results, close: close, show: show, search: search,
+      // props for the Input
+      inputProps: function (onPick) {
+        var pick = pickWith(onPick);
+        return { autoComplete: 'off', role: 'combobox', 'aria-autocomplete': 'list', 'aria-expanded': results.length ? 'true' : 'false',
+          'aria-controls': id + '-list', 'aria-activedescendant': active >= 0 ? id + '-opt-' + active : undefined,
+          onKeyDown: function (e) {
+            if (e.key === 'ArrowDown' && results.length) { e.preventDefault(); setActive((active + 1) % results.length); }
+            else if (e.key === 'ArrowUp' && results.length) { e.preventDefault(); setActive((active - 1 + results.length) % results.length); }
+            else if (e.key === 'Enter' && active >= 0 && results[active]) { e.preventDefault(); pick(results[active]); }
+            else if (e.key === 'Escape' && box) { e.preventDefault(); close(); }
+          },
+          onBlur: function () { setTimeout(close, 150); } };
+      },
+      // the ReleaseList under the Input + the live region
+      list: function (onPick) {
+        var pick = pickWith(onPick);
+        return [
+          box ? h(Z.ReleaseList, { key: 'list', className: 'admin-picker__list', listId: id + '-list', label: 'Releases on Discogs', message: box.message },
+            results.map(function (r, i) {
+              return h(Z.ReleaseOption, { key: r.id, id: id + '-opt-' + i, title: r.title, meta: r.meta, thumb: r.thumb, highlighted: i === active,
+                onMouseDown: function (e) { e.preventDefault(); }, onClick: function () { pick(r); } });
+            })) : null,
+          h('p', { key: 'live', className: 'zz-visually-hidden', 'aria-live': 'polite' },
+            box ? (box.message || results.length + (results.length === 1 ? ' release' : ' releases') + ' found. Use the arrow keys to choose.') : '')
+        ];
+      }
+    };
+  }
+  /* Record: the offer form's "Which record" (Figma `which record`, 0069) for the admin; the search is useDiscogsSearch. */
+  function RecordField(props) {
+    var id = props.id || 'memo-record', label = props.label || 'Record';
+    var ds = useDiscogsSearch(id, { resolveLinks: true, emptyMessage: 'No match on Discogs. Keep it as you wrote it.', failHint: 'Keep it as you wrote it.' });
+    // releases found from a photo of the label (0090): shown as if typed; a newer photo or keystroke wins
+    useEffect(function () {
+      var f = props.found;
+      if (!f) return;
+      ds.show(f.results.length ? { results: f.results } : { message: 'No match on Discogs for what the photo shows. Fix the text, or keep it as it is.' });
+    }, [props.found]);
+    function onText(e) { props.onText(e.target.value); ds.search(e.target.value); }
+    function onPick(r) { props.onRelease(r); }
     if (props.release) {
       var r = props.release;
       return h('div', { className: 'admin-picker' },
@@ -2359,18 +2407,9 @@
         h(Z.ChosenRelease, { title: r.title, meta: r.meta, thumb: r.thumb, href: r.uri, 'aria-live': 'polite',
           changeLabel: 'Change', onChange: function () { props.onRelease(null); setTimeout(function () { var el = document.getElementById(id); if (el) el.focus(); }, 0); } }));
     }
-    return h('div', { className: 'admin-picker' },
-      h(Z.Input, { id: id, label: label, value: props.value, error: props.error, placeholder: 'Artist – title, or search Discogs',
-        autoComplete: 'off', role: 'combobox', 'aria-autocomplete': 'list', 'aria-expanded': results.length ? 'true' : 'false',
-        'aria-controls': id + '-list', 'aria-activedescendant': active >= 0 ? id + '-opt-' + active : undefined,
-        onChange: onText, onKeyDown: onKey, onBlur: function () { setTimeout(close, 150); } }),
-      box ? h(Z.ReleaseList, { className: 'admin-picker__list', listId: id + '-list', label: 'Releases on Discogs', message: box.message },
-        results.map(function (r, i) {
-          return h(Z.ReleaseOption, { key: r.id, id: id + '-opt-' + i, title: r.title, meta: r.meta, thumb: r.thumb, highlighted: i === active,
-            onMouseDown: function (e) { e.preventDefault(); }, onClick: function () { pick(r); } });
-        })) : null,
-      h('p', { className: 'zz-visually-hidden', 'aria-live': 'polite' },
-        box ? (box.message || results.length + (results.length === 1 ? ' release' : ' releases') + ' found. Use the arrow keys to choose.') : ''));
+    return h.apply(null, ['div', { className: 'admin-picker' },
+      h(Z.Input, Object.assign({ id: id, label: label, value: props.value, error: props.error, placeholder: 'Artist – title, or search Discogs',
+        onChange: onText }, ds.inputProps(onPick)))].concat(ds.list(onPick)));
   }
   /* Photo of the label (Figma BACKEND → Memo → `memo photo`, state default | reading | read | not read; decision 0090).
      Opens the phone's back camera (a file picker on desktop). The photo is shrunk here (longest side 1280 px, JPEG),
