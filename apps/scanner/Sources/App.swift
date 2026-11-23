@@ -12,7 +12,7 @@ struct ZanzaScannerApp: App {
             ContentView(scanner: model.scanner)
                 .environmentObject(model)
                 .onAppear {
-                    delegate.jobs = model.jobs; if !CommandLine.arguments.contains("--test-scan") { model.scanner.start(); model.pasteNames(onlyIfNew: true) } }
+                    delegate.jobs = model.jobs; if !CommandLine.arguments.contains("--test-scan") { model.scanner.start(); model.syncFileName() } }
         }
         .defaultSize(width: 1440, height: 900)
         .windowResizability(.contentMinSize)

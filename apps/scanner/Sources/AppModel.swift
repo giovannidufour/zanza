@@ -421,7 +421,7 @@ final class AppModel: ObservableObject {
 
     /// With a draft picked, the file name is the name of the target position (from the admin)
     func syncFileName() {
-        guard drafts.draft != nil else { return }
+        guard drafts.draft != nil else { fileName = nextFreeName(); return }   // free scan (0147)
         fileName = drafts.targetName ?? ""
         if drafts.targetName == nil { caption = "All positions scanned: Add image for another photo" }
     }
@@ -549,15 +549,51 @@ final class AppModel: ObservableObject {
     }
 
     /// Label (4") in Save to, original (whole record) in Originals; whole glass = one file in Save to.
+    // MARK: Free scans (0147): no draft selected
+
+    struct FreeScan: Identifiable { var id: String { name }; let name: String; let label: URL; let original: URL?; let thumb: CGImage? }
+    @Published var freeScans: [FreeScan] = []      // this session
+    @Published var freeLightbox: URL?
+    var freeFolder: URL { folder.appendingPathComponent("Free scans", isDirectory: true) }
+    var freeOriginals: URL { originalsFolder.appendingPathComponent("Free scans", isDirectory: true) }
+
+    /// scan_<yyyy-mm-dd>_<hhmm>, then _2, _3… when taken: a free scan never overwrites
+    func nextFreeName(base: String? = nil) -> String {
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd_HHmm"; f.locale = Locale(identifier: "en_US_POSIX")
+        let root = base ?? "scan_" + f.string(from: Date())
+        func taken(_ n: String) -> Bool {
+            let file = n + "." + format.ext
+            return FileManager.default.fileExists(atPath: freeFolder.appendingPathComponent(file).path)
+                || FileManager.default.fileExists(atPath: freeOriginals.appendingPathComponent(file).path)
+                || freeScans.contains { $0.name == n }
+        }
+        if !taken(root) { return root }
+        var i = 2
+        while taken("\(root)_\(i)") { i += 1 }
+        return "\(root)_\(i)"
+    }
+
+    func trashFreeScan(_ s: FreeScan) {
+        for u in [s.label, s.original].compactMap({ $0 }) where FileManager.default.fileExists(atPath: u.path) {
+            try? FileManager.default.trashItem(at: u, resultingItemURL: nil)
+        }
+        freeScans.removeAll { $0.name == s.name }
+        caption = "Moved to the Trash: \(s.name)"
+        if drafts.draft == nil { fileName = nextFreeName() }
+    }
+
     private func save(original: CGImage, label: CGImage?, dpi: Int) {
-        let name = Names.clean(fileName)
+        let free = drafts.draft == nil
+        // a free scan: the typed name, made unique (never overwrites), in the "Free scans" subfolders
+        let name = free ? nextFreeName(base: Names.clean(fileName)) : Names.clean(fileName)
         let fm = FileManager.default
         let file = name + "." + format.ext
-        let main = folder.appendingPathComponent(file)
-        let archive = label == nil ? nil : originalsFolder.appendingPathComponent(file)
+        let labelDir = free ? freeFolder : folder, origDir = free ? freeOriginals : originalsFolder
+        let main = labelDir.appendingPathComponent(file)
+        let archive = label == nil ? nil : origDir.appendingPathComponent(file)
         do {
-            try fm.createDirectory(at: folder, withIntermediateDirectories: true)
-            if archive != nil { try fm.createDirectory(at: originalsFolder, withIntermediateDirectories: true) }
+            try fm.createDirectory(at: labelDir, withIntermediateDirectories: true)
+            if archive != nil { try fm.createDirectory(at: origDir, withIntermediateDirectories: true) }
             let existing = [main, archive].compactMap { $0 }.filter { fm.fileExists(atPath: $0.path) }
             if !existing.isEmpty {
                 let alert = NSAlert()
@@ -567,7 +603,7 @@ final class AppModel: ObservableObject {
                 alert.addButton(withTitle: "Cancel")
                 if alert.runModal() != .alertFirstButtonReturn { caption = "Not saved: the file already exists"; return }
             }
-            let fmt = format, folderName = folder.lastPathComponent, origName = originalsFolder.lastPathComponent
+            let fmt = format, folderName = labelDir.lastPathComponent, origName = origDir.lastPathComponent
             caption = "Saving \(file)…"
             DispatchQueue.global(qos: .userInitiated).async {   // JPEG / TIFF encoding of large images: not on the main thread
                 do {
@@ -580,7 +616,10 @@ final class AppModel: ObservableObject {
                             : "Saved \(file): 4\" label in \(folderName), whole record in \(origName)"
                         self.refreshDisk()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.scheduleSync() }   // a label scan is a cover
-                        if self.drafts.draft != nil, name == self.drafts.targetName {
+                        if free {
+                            self.freeScans.append(FreeScan(name: name, label: main, original: archive, thumb: thumb ?? label ?? original))
+                            if self.drafts.draft == nil { self.fileName = self.nextFreeName() }
+                        } else if self.drafts.draft != nil, name == self.drafts.targetName {
                             self.drafts.saved(thumb ?? (label ?? original))
                         } else {
                             if let step = self.steps.first(where: { $0.name == name }) { self.thumbs[step.id] = thumb ?? label ?? original }

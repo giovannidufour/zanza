@@ -31,8 +31,8 @@ struct ContentView: View {
         .frame(minWidth: 1280, minHeight: 860)
         .background(Theme.surfacePage)
         .overlay { Lightbox(drafts: model.drafts) }
+        .overlay { FreeLightbox() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            if model.drafts.draft == nil { model.pasteNames(onlyIfNew: true) }
             model.refreshDisk()   // files may have changed in Finder
         }
     }
@@ -48,37 +48,7 @@ struct RecordColumn: View {
         VStack(alignment: .leading, spacing: 24) {
             DraftHead(drafts: model.drafts)
             if model.drafts.draft != nil { DraftDetail(drafts: model.drafts, session: model.session, kind: .images) }
-            if model.drafts.draft == nil {   // v1: names pasted or typed (also when signed out or offline)
-                VStack(alignment: .leading, spacing: 24) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(model.sku.map { "SKU \($0)" } ?? "No record").labelStyle(12, color: Theme.textModerate)
-                    Text(model.recordTitle ?? "Copy the names of a draft").labelStyle(18)
-                        .fixedSize(horizontal: false, vertical: true)
-                    if model.steps.isEmpty {
-                        Text("In the admin, open the draft and copy a name from File names. Come back here: it is pasted by itself (or press Paste names). Or just type the name.")
-                            .bodyStyle(14, color: Theme.textModerate).fixedSize(horizontal: false, vertical: true)
-                    }
-                    Button("Paste names") { model.pasteNames() }
-                        .buttonStyle(ZButtonStyle(primary: false))
-                        .keyboardShortcut("v", modifiers: [.command, .shift])
-                }
-
-                if !model.steps.isEmpty {
-                    ScrollView {
-                        VStack(spacing: 4) {
-                            ForEach(model.steps) { step in
-                                StepRow(step: step, current: step.id == model.currentID, thumb: model.thumbs[step.id])
-                                    .onTapGesture { model.select(step) }
-                            }
-                            Button("Add photo") { model.addPhoto() }
-                                .buttonStyle(.plain).bodyStyle(14, color: Theme.textModerate)
-                                .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 12).padding(.top, 4)
-                        }
-                    }
-                    .frame(maxHeight: 260)
-                }
-                }
-            }
+            if model.drafts.draft == nil { FreeScanSection() }   // free scans (0147)
 
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -145,14 +115,113 @@ struct RecordColumn: View {
     var dpiChoices: [Int] { AppModel.dpiSteps(supported: scanner.resolutions) }
 }
 
-/// Right column head, same in both tabs: SKU · Draft and the record title
+/// Right column head, same in both tabs: SKU · Draft and the record title, with × to deselect (0147, also Esc);
+/// without a draft, `free scan head`
 struct DraftHead: View {
     @ObservedObject var drafts: DraftSession
+    @EnvironmentObject var model: AppModel
     var body: some View {
         if let d = drafts.draft {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("SKU \(d.skuText) · Draft").labelStyle(12, color: Theme.textModerate)
-                Text(d.title).labelStyle(16).lineLimit(3).help(d.title)
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("SKU \(d.skuText) · Draft").labelStyle(12, color: Theme.textModerate)
+                    Text(d.title).labelStyle(16).lineLimit(3).help(d.title)
+                }
+                Spacer(minLength: 8)
+                let escFree = !model.scanner.busy && drafts.lightbox == nil && !drafts.newDraftOpen && model.freeLightbox == nil
+                Button { drafts.deselect() } label: {
+                    Image(systemName: "xmark").font(.system(size: 16, weight: .light)).frame(width: 24, height: 24).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain).help("Deselect the draft: free scans (Esc)")
+                .keyboardShortcut(escFree ? .escape : KeyEquivalent("\u{0}"), modifiers: escFree ? [] : [.command, .option, .control])
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 4) {   // `free scan head`
+                Text("No draft").labelStyle(12, color: Theme.textModerate)
+                Text("Free scan").labelStyle(16)
+                Text("Scans are saved in “Free scans” inside your labels folder. Pick a draft on the left to scan for it.")
+                    .bodyStyle(12, color: Theme.textModerate).fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+}
+
+/// Free scans of this session (0147): rows like image slots without handle; thumbnail = lightbox, × = Trash;
+/// last row = the next scan with its name
+struct FreeScanSection: View {
+    @EnvironmentObject var model: AppModel
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Free scans").labelStyle(12)
+                Spacer()
+                Text("\(model.freeScans.count) this session").bodyStyle(12, color: Theme.textModerate)
+            }
+            ScrollView {
+                VStack(spacing: 4) {
+                    ForEach(model.freeScans) { s in
+                        HStack(spacing: 12) {
+                            Color.clear.frame(width: 24, height: 1)
+                            ZStack {
+                                Rectangle().fill(Theme.surfaceSubtle)
+                                if let t = s.thumb { Image(decorative: t, scale: 1).resizable().scaledToFill() }
+                            }
+                            .frame(width: 40, height: 40).clipped()
+                            .contentShape(Rectangle()).onTapGesture { model.freeLightbox = s.label }
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Free scan").labelStyle(10, color: Theme.textModerate)
+                                Text(s.name).bodyStyle(13)
+                            }
+                            Spacer(minLength: 0)
+                            Button { model.trashFreeScan(s) } label: {
+                                Image(systemName: "xmark").font(.system(size: 16, weight: .light)).frame(width: 24, height: 24)
+                            }.buttonStyle(.plain).help("Move both files to the Trash")
+                        }
+                        .padding(.horizontal, 8).padding(.vertical, 6)
+                    }
+                    HStack(spacing: 12) {   // target: next scan
+                        Color.clear.frame(width: 24, height: 1)
+                        Rectangle().strokeBorder(Theme.textModerate, style: StrokeStyle(lineWidth: 1, dash: [3, 3])).frame(width: 40, height: 40)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Free scan").labelStyle(10, color: Theme.textModerate)
+                            Text(model.fileName).bodyStyle(13)
+                        }
+                        Spacer(minLength: 0)
+                        Text("Next scan").bodyStyle(12).padding(.horizontal, 4).padding(.vertical, 2).background(Color.black.opacity(0.08))
+                    }
+                    .padding(.horizontal, 8).padding(.vertical, 6)
+                    .background(Theme.surfaceHover).overlay(Rectangle().stroke(Theme.divider, lineWidth: 1))
+                }
+            }
+            .frame(maxHeight: 290)
+        }
+    }
+}
+
+/// Lightbox of a free scan
+struct FreeLightbox: View {
+    @EnvironmentObject var model: AppModel
+    var body: some View {
+        if let u = model.freeLightbox {
+            ZStack {
+                Color.black.opacity(0.48).ignoresSafeArea().onTapGesture { model.freeLightbox = nil }
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Free scan").labelStyle(10, color: Theme.textModerate)
+                            Text(u.deletingPathExtension().lastPathComponent).bodyStyle(14)
+                        }
+                        Spacer()
+                        Button { model.freeLightbox = nil } label: { Image(systemName: "xmark").font(.system(size: 20, weight: .light)) }
+                            .buttonStyle(.plain).keyboardShortcut(.escape, modifiers: [])
+                    }
+                    ZStack {
+                        Rectangle().fill(Theme.surfaceSubtle)
+                        if let img = NSImage(contentsOf: u) { Image(nsImage: img).resizable().scaledToFit() }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                .padding(.horizontal, 24).padding(.vertical, 16).background(Theme.surfaceBase).padding(40)
             }
         }
     }

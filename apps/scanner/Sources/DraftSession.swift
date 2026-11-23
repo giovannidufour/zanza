@@ -128,20 +128,39 @@ final class DraftSession: ObservableObject {
 
     func search() {
         let q = query
-        run { let found = try await Backend.shared.drafts(matching: q); return { if self.query == q { self.results = found } } }
+        run { let found = try await Backend.shared.drafts(matching: q); return { if self.query == q { self.results = found; self.restoreLastDraft() } } }
     }
 
     /// Picking a draft rebuilds the list from that draft only (bug 2026-11-22: the previous draft's scans stayed in the
     /// list under the new SKU's names). Nothing carries over: positions, thumbnails, target, undo, lightbox.
     func pick(_ d: DraftSummary) {
-        guard d.id != draft?.id else { return }
+        guard d.id != draft?.id else { deselect(); return }   // clicking the selected row again deselects (0147)
         // a scan in progress belongs to the draft it was started for: switch only when it is saved
         if app?.scanner.busy == true { app?.caption = "Wait for the scan to finish, then pick the other draft"; return }
         loadToken = UUID()
         draft = d; names = []; slots = []; clips = []; tags = nil; target = nil; lastRemoval = nil; lightbox = nil
+        UserDefaults.standard.set(d.id, forKey: "lastDraftID")
         app?.syncFileName()
         let onDisk = scannedRoles(sku: d.skuText)
         load(roles: max(3, onDisk.max() ?? 0))
+    }
+
+    /// No draft: free scans (0147). The list and the search stay as they are.
+    func deselect() {
+        if app?.scanner.busy == true { app?.caption = "Wait for the scan to finish"; return }
+        loadToken = UUID()
+        draft = nil; names = []; slots = []; clips = []; tags = nil; target = nil; lastRemoval = nil; lightbox = nil
+        UserDefaults.standard.removeObject(forKey: "lastDraftID")
+        app?.syncFileName()
+        app?.caption = "Free scan: no draft"
+    }
+
+    /// The app starts on the draft selected last time (none if it was deselected)
+    private var restored = false
+    private func restoreLastDraft() {
+        guard !restored, draft == nil, let id = UserDefaults.standard.string(forKey: "lastDraftID") else { restored = true; return }
+        restored = true
+        if let d = results.first(where: { $0.id == id }) { pick(d) }
     }
 
     func changeDraft() { loadToken = UUID(); draft = nil; names = []; slots = []; clips = []; tags = nil; target = nil; lastRemoval = nil; lightbox = nil; search() }
