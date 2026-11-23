@@ -8,10 +8,10 @@ begin;
 
 alter table public.listings drop constraint draft_or_graded;
 alter table public.listings add constraint draft_or_graded
-  check (status = 'draft' or archived_from = 'draft' or condition_media is not null);
+  check (status = 'draft' or coalesce(archived_from, '') = 'draft' or condition_media is not null);
 alter table public.listings drop constraint sale_needs_price;
 alter table public.listings add constraint sale_needs_price
-  check (status = 'draft' or archived_from = 'draft' or section <> 'sale' or price_mode = 'offers' or price_cents is not null);
+  check (status = 'draft' or coalesce(archived_from, '') = 'draft' or section <> 'sale' or price_mode = 'offers' or price_cents is not null);
 
 create or replace function public.listing_publish_check() returns trigger
   language plpgsql security invoker set search_path = ''
