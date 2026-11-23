@@ -18,6 +18,8 @@ struct Assignment: Codable, Equatable {
     let role: String                 // a1, b1… (clip role)
     let label: String                // A1, B1…
     let name: String                 // <sku>_<role>_<slug>
+    var wav: Bool? = false           // also a WAV for this clip (Gio: per clip, off by default)
+    var wantsWAV: Bool { wav ?? false }
 }
 
 /// The Samples session: local copies of the Zoom files, assignments, trims; kept across restarts until cleared.
@@ -179,6 +181,14 @@ final class SessionModel: ObservableObject {
         assignments = assignments.filter { $0.value.name != name }
         save()
     }
+    /// The WAV tick of a filled slot, stored with its assignment
+    func setWAV(_ on: Bool, slot name: String) {
+        guard let k = assignments.first(where: { $0.value.name == name })?.key else { return }
+        assignments[k]?.wav = on
+        save()
+    }
+    func wantsWAV(slot name: String) -> Bool { assignments.values.first { $0.name == name }?.wantsWAV ?? false }
+
     func undo() {
         guard let last = undoStack.popLast() else { return }
         assignments = last; save()

@@ -181,6 +181,12 @@ struct ClipSlotRow: View {
                 Text(slot.name).bodyStyle(13, color: clip == nil ? Theme.textModerate : Theme.textStrong).fixedSize(horizontal: false, vertical: true)
                 Text(clip.map { "From \(($0.file as NSString).deletingPathExtension) · \(timeText($0.duration))" } ?? "Drop to assign")
                     .bodyStyle(12, color: Theme.textModerate)
+                if clip != nil {   // per clip: also a WAV (archive / DJ), off by default
+                    Toggle(isOn: Binding(get: { session.wantsWAV(slot: slot.name) }, set: { session.setWAV($0, slot: slot.name) })) {
+                        Text("WAV").bodyStyle(12)
+                    }
+                    .toggleStyle(.checkbox)
+                }
             }
             Spacer(minLength: 0)
             if let clip {
@@ -215,11 +221,8 @@ struct ExportPanel: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Export").labelStyle(12)
             FolderField(title: "MP3 320 kbps to", url: model.mp3Folder) { model.chooseExportFolder(mp3: true) }
-            Toggle(isOn: $model.exportWAV) { Text("Also export a WAV (archive / DJ)").bodyStyle(14) }.toggleStyle(.checkbox)
-            if model.exportWAV {
-                FolderField(title: "WAV (lossless) to", url: model.wavFolder) { model.chooseExportFolder(mp3: false) }
-            }
-            Text("Files are named as the slot. Each file gets the tags (title, artist, album, label, year, genre, track A1/B1, SKU in the comment) and the cover: the label scan of that side, square.")
+            FolderField(title: "WAV to (clips with WAV ticked)", url: model.wavFolder) { model.chooseExportFolder(mp3: false) }
+            Text("Every assigned clip becomes an MP3; a WAV too when its WAV box is ticked. Files are named as the slot. Each file gets the tags (title, artist, album, label, year, genre, track A1/B1, SKU in the comment) and the cover: the label scan of that side, square.")
                 .bodyStyle(12, color: Theme.textModerate).fixedSize(horizontal: false, vertical: true)
             if AudioExport.lame == nil {
                 Text("LAME is not installed, so no MP3: install it with Homebrew (brew install lame).").bodyStyle(12, color: Theme.alert)

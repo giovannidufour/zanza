@@ -12,10 +12,6 @@ final class AppModel: ObservableObject {
     @Published var tab: Tab = .scans { didSet { session.active = tab == .samples; if tab == .scans { session.stop() } } }
     @Published var exporting = false
     @Published var exportReport: String?
-    /// "Also export a WAV" (Gio: not always wanted); off = MP3 only. Remembered.
-    @Published var exportWAV: Bool = UserDefaults.standard.object(forKey: "exportWAV") as? Bool ?? true {
-        didSet { UserDefaults.standard.set(exportWAV, forKey: "exportWAV") }
-    }
     @Published var wavFolder: URL = UserDefaults.standard.url(forKey: "wavFolder")
         ?? FileManager.default.urls(for: .musicDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza samples/WAV") {
         didSet { UserDefaults.standard.set(wavFolder, forKey: "wavFolder") }
@@ -164,7 +160,8 @@ final class AppModel: ObservableObject {
         let t = drafts.tags, sku = d.skuText
         let labelA = drafts.names.first { $0.role == 1 }.flatMap { drafts.file(named: $0.name, in: folder) }
         let labelB = drafts.names.first { $0.role == 2 }.flatMap { drafts.file(named: $0.name, in: folder) }
-        let wav: URL? = exportWAV ? wavFolder : nil, mp3 = mp3Folder
+        let wav = wavFolder, mp3 = mp3Folder
+        let wavFor = Set(drafts.clips.map(\.name).filter { session.wantsWAV(slot: $0) })
         exporting = true; exportReport = nil
         DispatchQueue.global(qos: .userInitiated).async {
             var done = 0, errors: [String] = [], noCover: [String] = []
@@ -179,13 +176,13 @@ final class AppModel: ObservableObject {
                 tags.track = slot.label; tags.comment = sku; tags.cover = cover
                 do {
                     try AudioExport.export(source: clip.url, trimStart: clip.trimStart, name: slot.name, tags: tags,
-                                           wavFolder: wav, mp3Folder: mp3, normalize: false)
+                                           wavFolder: wavFor.contains(slot.name) ? wav : nil, mp3Folder: mp3, normalize: false)
                     done += 1
                 } catch { errors.append("\(slot.label): \(error.localizedDescription)") }
             }
             DispatchQueue.main.async {
                 self.exporting = false
-                var r = "Exported \(done) of \(jobs.count): MP3 in \(mp3.lastPathComponent)" + (wav.map { ", WAV in \($0.lastPathComponent)." } ?? ".")
+                var r = "Exported \(done) of \(jobs.count): MP3 in \(mp3.lastPathComponent)" + (wavFor.isEmpty ? "." : ", \(wavFor.count) WAV in \(wav.lastPathComponent).")
                 if !noCover.isEmpty { r += " No cover for \(noCover.joined(separator: ", ")) (label not scanned yet)." }
                 if !errors.isEmpty { r += " " + errors.joined(separator: " · ") }
                 self.exportReport = r
