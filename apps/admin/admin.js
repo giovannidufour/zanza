@@ -14,11 +14,12 @@
 
   // ── vocabularies ──────────────────────────────────────────────────────────
   var GRADES = ['M', 'NM', 'NM-', 'EX+', 'EX', 'EX-', 'VG+', 'VG', 'VG-', 'G+', 'G', 'G-', 'F'];   // Q8, table public.grades
-  var FORMATS = ['7"', '10"', '12"', 'LP'];
-  var MACRO_GENRES = ['Reggae', 'Funk / Soul', 'Hip Hop', 'Electronic', 'Jazz', 'Latin', 'Rock', 'Pop', 'Blues',
-                      'Folk, World, & Country', 'Classical', 'Stage & Screen', 'Non-Music', "Children's", 'Brass & Military'];   // Discogs genres = our macro genre (0048)
-  var COUNTRIES = [['JA', 'Jamaica'], ['UK', 'UK'], ['US', 'US'], ['CA', 'Canada'], ['DE', 'Germany'], ['FR', 'France'],
-                   ['IT', 'Italy'], ['NL', 'Netherlands'], ['JP', 'Japan'], ['Europe', 'Europe'], ['Unknown', 'Unknown']];
+  // the listing model shared with the Scanner's Edge Function scanner-draft (packages/listing-draft, decision 0145)
+  var LD = window.ZanzaListingDraft;
+  var FORMATS = LD.FORMATS, MACRO_GENRES = LD.MACRO_GENRES, COUNTRIES = LD.COUNTRIES;
+  var textToCents = LD.textToCents, discogsId = LD.discogsId, newLine = LD.newLine, namesOf = LD.namesOf, findEntity = LD.findEntity,
+      differs = LD.differs, emptyForm = LD.emptyForm, formatOf = LD.formatOf, positionsOf = LD.positionsOf,
+      patchFromDiscogs = LD.patchFromDiscogs, parseYear = LD.parseYear, yearText = LD.yearText, payloadOf = LD.payloadOf;
   var STATUS_LABEL = { draft: 'Draft', available: 'Available', reserved: 'Reserved', sold: 'Sold', traded: 'Traded', archived: 'Archived' };
   var STATUS_DONE = { draft: 'Unpublished.', available: 'Available again.', reserved: 'Reserved until you release it.', sold: 'Marked as sold.', traded: 'Marked as traded.' };
   var SLEEVES = [['original', 'Original'], ['generic', 'Generic'], ['none', 'None']];
@@ -53,23 +54,12 @@
     return list.map(function (o) { var v = Array.isArray(o) ? o[0] : o, l = Array.isArray(o) ? o[1] : o; return h('option', { key: v, value: v }, l); });
   }
   function centsToText(c) { return c === null || c === undefined ? '' : (c / 100).toFixed(2).replace(/\.00$/, ''); }
-  function textToCents(t) {
-    var s = String(t || '').trim().replace(',', '.');
-    if (!s) return null;
-    if (!/^\d+(\.\d{1,2})?$/.test(s)) return NaN;
-    return Math.round(parseFloat(s) * 100);
-  }
   // a checkout hold that has expired counts as available (public.effective_status, migration 0004)
   function effectiveStatus(row) {
     return row.status === 'reserved' && row.reserved_until && new Date(row.reserved_until) <= new Date() ? 'available' : row.status;
   }
   function checkoutUntil(row) {
     return effectiveStatus(row) === 'reserved' && row.stripe_session_id && row.reserved_until ? new Date(row.reserved_until) : null;
-  }
-  // a release link (…/release/249504-Artist-Title), its number, or Discogs' own [r249504]; a master link is not a release
-  function discogsId(t) {
-    var s = String(t || '').trim(), m = s.match(/\/release\/(\d+)/) || s.match(/^\[?r?(\d+)\]?$/i);
-    return m ? parseInt(m[1], 10) : null;
   }
 
   // ── uploads ───────────────────────────────────────────────────────────────
@@ -256,17 +246,8 @@
   // created on save). Artist and Label also have "Different spelling" → the name AS PRINTED on this record
   // (credit); the database learns it as an alias of the official name. Binding on save: id → Discogs id →
   // official name or alias → new entity.
-  function newLine(p) { return Object.assign({ id: nextId(), artists: [], artistCredit: '', artistSpelled: false, title: '' }, p); }
   function chip(e) { return { id: e.id || null, name: e.name, discogsId: e.discogsId || null }; }
-  function namesOf(chips) { return (chips || []).map(function (c) { return c.name; }).join(' & '); }
   // entities = { artists | labels | genres | tags: [{ id, name, aliases: [] }] }, loaded once per form
-  function findEntity(list, text) {
-    var t = String(text || '').trim().toLowerCase();
-    if (!t || !list) return null;
-    for (var i = 0; i < list.length; i++) if (list[i].name.toLowerCase() === t) return list[i];
-    return null;
-  }
-  function differs(a, b) { return !!a && !!b && a.trim().toLowerCase() !== b.trim().toLowerCase(); }
   function loadEntities() {
     function one(table, aliases) {
       return sb.from(table).select('id,name' + (aliases ? ',' + aliases + '(name)' : '')).order('name').then(function (res) {
@@ -278,20 +259,6 @@
       .then(function (r) { return { artists: r[0], labels: r[1], genres: r[2], tags: r[3] }; });
   }
 
-  // ── empty form ────────────────────────────────────────────────────────────
-  function emptyForm() {
-    return {
-      listingId: null, sku: null, status: 'draft', slug: null, checkoutUntil: null, soldAt: null, publishedAt: null, createdAt: null,
-      customTitle: '', discogs: '', catNo: '',
-      lines: [newLine()],
-      label: [], labelCredit: '', labelSpelled: false, preRelease: false, country: '', year: '', format: '', section: 'sale', price: '',
-      macroGenre: '', genres: [], tags: [],   // macro genre = a Discogs genre (Reggae), not shown in the shop; genres = Discogs styles (0048); tags = the shop's own (Rare, Killer version...)
-      condition: '', conditionB: '', conditionNotes: '', sleeveType: 'generic', sleeveCondition: '',
-      notes: '',
-      images: [],    // { id, key, name, url, uploading }
-      samples: []    // { id, key, name, url, line (1-based) | null, uploading }
-    };
-  }
   function formFromRow(row) {
     var f = emptyForm(), r = row.release || {};
     var lines = (r.lines || []).slice().sort(function (a, b) { return a.position - b.position; });
@@ -330,66 +297,10 @@
     return f;
   }
 
-  // ── Discogs → form (Edge Function discogs-lookup) ─────────────────────────
-  // Fills the release fields only; price, condition, notes, photos and samples stay as they are.
-  // Returns the patch and the Discogs values the form vocabularies could not take.
-  function formatOf(fmt) {
-    var d = (fmt && fmt.descriptions) || [];
-    if (d.indexOf('LP') >= 0) return 'LP';
-    for (var i = 0; i < FORMATS.length; i++) if (d.indexOf(FORMATS[i]) >= 0) return FORMATS[i];
-    return '';
-  }
-  // Discogs positions of the tracks that become lines (same filter as patchFromDiscogs): "A1", "B", …
-  function positionsOf(d) { return (d.tracks || []).filter(function (t) { return t.title; }).map(function (t) { return String(t.position || '').toUpperCase(); }); }
-  function patchFromDiscogs(cur, d, entities) {
-    var skipped = [];
-    var tracks = (d.tracks || []).filter(function (t) { return t.title; });
-    // one chip per Discogs artist (official name; its Discogs id binds the right entity on save) + the line as printed
-    function chipsOf(list) {
-      return (list || []).map(function (a) {
-        var m = findEntity(entities && entities.artists, a.name);
-        return { id: m ? m.id : null, name: a.name, discogsId: a.discogsId || null };
-      });
-    }
-    var first = tracks.length ? tracks[0].artist : d.artist;
-    var lines = tracks.length
-      ? tracks.map(function (t, i) {
-          if (i > 0 && t.artist === first) return newLine({ title: t.title });   // same as line 1: left empty
-          var spelled = differs(t.artistCredit, t.artist);
-          return newLine({ artists: chipsOf(t.artists || [{ name: t.artist, discogsId: t.artistDiscogsId }]),
-                           artistCredit: spelled ? t.artistCredit : '', artistSpelled: spelled, title: t.title });
-        })
-      : cur.lines;
-    // samples keep their line; a line that no longer exists turns them into additional samples
-    var samples = cur.samples.map(function (s) { return s.line && s.line > lines.length ? Object.assign({}, s, { line: null }) : s; });
-    var country = COUNTRIES.filter(function (c) { return c[1] === d.country; })[0];
-    if (d.country && !country) skipped.push('country ' + d.country);
-    var format = formatOf(d.format);
-    if (!format) skipped.push('format ' + [d.format && d.format.name].concat((d.format && d.format.descriptions) || []).filter(Boolean).join(' '));
-    // Discogs: genres → our macro genre (one), styles → our genres (0048)
-    var macroGenre = (d.genres || []).filter(function (g) { return MACRO_GENRES.indexOf(g) >= 0; })[0] || '';
-    if ((d.genres || []).length > 1) skipped.push('other macro genres ' + d.genres.filter(function (g) { return g !== macroGenre; }).join(', '));
-    return {
-      patch: {
-        discogs: String(d.releaseId), lines: lines, samples: samples,
-        label: d.label ? [{ id: (findEntity(entities && entities.labels, d.label) || {}).id || null, name: d.label, discogsId: d.labelDiscogsId || null }] : [],
-        labelCredit: '', labelSpelled: false, catNo: d.catNo || '', year: d.year ? String(d.year) : '',
-        country: country ? country[0] : '', format: format, macroGenre: macroGenre,
-        genres: (d.styles || []).map(function (n) { return { id: (findEntity(entities && entities.genres, n) || {}).id || null, name: n }; })
-      },
-      skipped: skipped
-    };
-  }
+  // Discogs → form, year field, payload: packages/listing-draft (decision 0145)
 
   // ── validation: what the database needs (format, condition, line 1, price for sale) ──
   // A draft needs only the line titles (decision 0107: bulk drafts are born incomplete); the rest is asked on publish.
-  // Year field (decision 0082): an exact year ("1983") or a decade ("1990s", stored as 1990 + year_precision 'decade')
-  function parseYear(text) {
-    var m = /^((?:19|20)\d\d)$/.exec(text.trim()) || /^((?:19|20)\d0)s$/i.exec(text.trim());
-    if (!m) return null;
-    return { year: m[1], precision: /s$/i.test(text.trim()) ? 'decade' : 'year' };
-  }
-  function yearText(year, precision) { return year ? String(year) + (precision === 'decade' ? 's' : '') : ''; }
   function validate(f, status) {
     var e = {}, publish = status !== 'draft';
     if (publish && !f.lines[0].artists.length) e['artist-0'] = 'Pick or create the artist.';
@@ -403,33 +314,6 @@
     if (f.discogs && discogsId(f.discogs) === null) e.discogs = 'Paste a Discogs release URL or its number.';
     if (f.images.some(function (x) { return x.uploading; }) || f.samples.some(function (x) { return x.uploading; })) e.uploads = 'Wait for the uploads to finish.';
     return e;
-  }
-  function payloadOf(f, status) {
-    return {
-      listing_id: f.listingId,
-      release: {
-        discogs_release_id: f.discogs ? discogsId(f.discogs) : null,
-        label: f.label.length ? f.label[0].name : '', label_credit: f.labelSpelled ? f.labelCredit : '',
-        pre_release: f.preRelease,
-        label_id: f.label.length ? f.label[0].id : null, label_discogs_id: f.label.length ? f.label[0].discogsId || null : null, cat_no: f.catNo, year: (parseYear(f.year) || {}).year || '', year_precision: (parseYear(f.year) || {}).precision || 'year', country: f.country, format: f.format,
-        macro_genre: f.macroGenre ? [f.macroGenre] : [],
-        genres: f.genres.map(function (t) { return { id: t.id, name: t.name }; }),
-        tags: f.tags.map(function (t) { return { id: t.id, name: t.name }; })
-      },
-      lines: f.lines.map(function (l) {
-        return { artist: namesOf(l.artists), artist_credit: l.artistSpelled ? l.artistCredit : '', title: l.title,
-                 artists: l.artists.map(function (a) { return { id: a.id, name: a.name, discogs_id: a.discogsId || null }; }) };
-      }),
-      listing: {
-        section: f.section, status: status, price_cents: textToCents(f.price),
-        condition_media: f.condition, condition_media_b: f.conditionB, condition_notes: f.conditionNotes,
-        sleeve_type: f.sleeveType, condition_sleeve: f.sleeveType === 'none' ? '' : f.sleeveCondition,
-        notes: f.notes, custom_title: f.customTitle,
-        photo_keys: f.images.map(function (x) { return x.key; })
-      },
-      // only a title typed by Gio is stored; without it the shop shows the line title (data/products.js)
-      samples: f.samples.map(function (s) { return { line: s.line, audio_key: s.key, title: s.title || '' }; })
-    };
   }
 
   // ── shop preview: form → the storefront's text (same mapping as apps/storefront/pages/shell.js and data/products.js) ──
@@ -2622,14 +2506,15 @@
     var cd = useState(null), drafting = cd[0], setDrafting = cd[1];   // id of the memo being turned into a draft
     // one memo → one draft (saved listing { listing_id, sku }); the memo is deleted after the save
     async function draftFromMemo(row, entities) {
-      var f = emptyForm();
+      var payload;
       if (row.discogs_release_id) {
-        var d = await invoke('discogs-lookup', { releaseId: row.discogs_release_id });
-        Object.assign(f, patchFromDiscogs(f, d, entities).patch);
+        payload = LD.draftPayload(await invoke('discogs-lookup', { releaseId: row.discogs_release_id }), entities);   // same as the Scanner (0145)
       } else {
+        var f = emptyForm();
         f.lines = [newLine({ title: row.title })];
+        payload = payloadOf(f, 'draft');
       }
-      var res = await sb.rpc('admin_save_listing', { payload: payloadOf(f, 'draft') });
+      var res = await sb.rpc('admin_save_listing', { payload: payload });
       if (res.error) throw new Error(res.error.message);
       var del = await sb.from('memos').delete().eq('id', row.id);
       return { saved: res.data, memoKept: del.error ? del.error.message : null };
