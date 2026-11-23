@@ -1,0 +1,8 @@
+# 0163 — Listings: full width, with columns that show what is filled in
+
+`2026-11-23` · accepted (Gio: "visto che abbiamo tanto spazio, facciamo che la lista è full width … colonne per vedere le informazioni già inserite, ad esempio … le condizioni, il prezzo") · amends the max-width 1024 of the admin for Listings · Figma: BACKEND → Listings, `listings table row` (2413:1734) gets text properties format, grading, genre, photos, samples; the desktop Listings frames are 1440 wide
+
+**Context.** At 1024 the Listings table showed only SKU, record, status, section and price: to know whether a copy had its grading, photos or samples Gio had to open it.
+**Decision.** The Listings page (every tab) is full width, like Create / Edit. Between Section and Price five columns: Format (7", 12"…), Grading ("VG+ / VG", "NM / generic", "VG+ / no sleeve"), Genre (the genres, one line, cut with an ellipsis), Photos and Samples (how many, right-aligned). Widths as in Figma (status 112, section 72, format 48, grading 96, genre 160, photos 56, samples 64, price 72); Record takes the rest. Anything not entered yet shows an em dash in `text/moderate`, read by screen readers as "Missing"; Price shows it only when the copy needs a price (sale, fixed price), so trade copies keep an empty cell. Mobile is unchanged (ListingRow: SKU · status · section, price).
+**Rule.** An admin overview table shows the state of each field as its value, and "—" (text/moderate, "Missing" for screen readers) where it is still empty; never a checkmark column.
+**Where.** `apps/admin/admin.js` (`INFO_COLUMNS`, `gradingOf`, `missingMark`, the listings query adds sleeve_type, condition_sleeve, genres), `apps/admin/admin.css` (`.admin:has(.admin-listings)`, column widths, `.admin-table__missing`).
