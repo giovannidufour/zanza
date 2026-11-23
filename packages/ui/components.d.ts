@@ -694,6 +694,41 @@ export interface EntityFieldProps {
 }
 export declare function EntityField(props: EntityFieldProps): JSX.Element;
 
+/** A custom title link: characters [start, end) of the text link to an artist (decision 0147). */
+export interface TextLink { start: number; end: number; artist: { id: string | null; name: string } }
+/** Figma BACKEND → Create → `custom title`, `title link bar`, `title link menu` (decision 0147): a text field whose
+ *  characters link to an artist. Select characters or click a name of the record / a link: a bar under the field offers
+ *  Link artist (or ⌘K / Ctrl+K) and Clear link / Remove link; it never takes the focus, so Delete and typing work as usual.
+ *  Clear unlinks exactly the selected characters. Typing moves the links with the text. Other props go to the Input. */
+export interface LinkedInputProps {
+  id?: string;
+  /** Figma: label text. */
+  label?: ReactNode;
+  optional?: boolean;
+  error?: ReactNode;
+  /** The text (controlled). */
+  value: string;
+  /** The links, as character ranges of `value` (controlled). */
+  links: TextLink[];
+  /** Called with the new text and links (typing moves the links; Link / Clear change them). */
+  onChange?: (value: string, links: TextLink[]) => void;
+  /** Every artist the menu can search. */
+  options?: EntityOption[];
+  /** The record's artists: listed first in the menu (the one matching the selection as "Suggested"). */
+  suggested?: { id: string | null; name: string }[];
+  /** Names on the record: a click on one of them (not linked yet) offers Link artist for the whole name. */
+  names?: string[];
+  /** @default "Link artist" */
+  linkLabel?: string;
+  /** @default "Search artist" */
+  menuPlaceholder?: string;
+  readOnly?: boolean;
+  disabled?: boolean;
+  className?: string;
+  style?: CSSProperties;
+}
+export declare function LinkedInput(props: LinkedInputProps): JSX.Element;
+
 /** Figma `entity chip` (page tags; state default | hover | focus × size medium | large): `tag item` + a remove button. */
 export interface EntityChipProps extends HTMLAttributes<HTMLSpanElement> {
   label?: ReactNode;
@@ -1014,6 +1049,8 @@ export interface MemoItemProps extends HTMLAttributes<HTMLLIElement> {
   note?: ReactNode;
   /** the release on discogs.com (Figma: shown with `discogs release`). Omit → no link */
   href?: string;
+  /** Figma boolean `select` (decision 0140): the row's checkbox (a Checkbox with hideLabel). Omit → none */
+  select?: ReactNode;
   /** Figma boolean `create draft` (decision 0135): saves a draft from the memo, no form. Omit → no button */
   onCreateDraft?: () => void;
   /** true while the draft is being saved: the button reads "Creating…" and does nothing */
@@ -1032,17 +1069,12 @@ export interface MemoItemProps extends HTMLAttributes<HTMLLIElement> {
 export declare function MemoItem(props: MemoItemProps): JSX.Element;
 
 /** Figma `file name` (Create, decision 0136): a name to give a scan or a clip of a listing, with Copy. An <li>: wrap in a <ul>. */
-export interface FileNameRowProps extends HTMLAttributes<HTMLLIElement> {
-  /** what the file is: "Label A", "Other photos", "A1" */
-  role: ReactNode;
-  /** the name without extension: "48213_a1_gregory-isaacs-why-did-you-leave" */
-  name: ReactNode;
-  /** Figma `state=copied`: the button reads "Copied" */
-  copied?: boolean;
-  /** Copy. Omit → no button */
-  onCopy?: () => void;
+export interface BackLinkProps extends HTMLAttributes<HTMLAnchorElement> {
+  href: string;
+  /** the destination, without the arrow: "Drafts", "Listings" */
+  label: ReactNode;
 }
-export declare function FileNameRow(props: FileNameRowProps): JSX.Element;
+export declare function BackLink(props: BackLinkProps): JSX.Element;
 
 /** Figma `bulk record` (BACKEND → Bulk, decision 0107): one record found in the files dropped on Bulk create. An <li>: wrap in a <ul>. */
 export interface BulkRecordProps extends HTMLAttributes<HTMLLIElement> {

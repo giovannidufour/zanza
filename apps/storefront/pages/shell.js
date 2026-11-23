@@ -107,6 +107,10 @@ function customTitleNodes(title, release, url, plain) {
       taken.push([at, end, ref]); linked.add(ref.slug); break;
     }
   });
+  return rangeNodes(title, taken, url, plain);
+}
+// a custom title with its links as character ranges [[start, end, ref]] (found above, or set by hand: 0147)
+function rangeNodes(title, taken, url, plain) {
   if (!taken.length) return plain(title, 'p');
   taken.sort((a, b) => a[0] - b[0]);
   // the separators around an artist (" - ", " / ", " & ") stay text, as in the release name
@@ -130,6 +134,11 @@ function customTitleNodes(title, release, url, plain) {
 function productNameLinked(product, url, pdpHref) {
   const { listing, release } = product;
   const toPdp = (text, k) => pdpHref ? h('a', { key: k, className: 'site-inline-link', href: pdpHref, tabIndex: -1 }, text) : text;
+  // links set in the admin (0147): exactly those ranges; a title saved before 0147 derives them (0111)
+  if (listing.custom_title && Array.isArray(listing.custom_title_links)) {
+    const title = productName(release);
+    return rangeNodes(title, listing.custom_title_links.filter((l) => l.ref && l.end <= title.length).map((l) => [l.start, l.end, l.ref]), url, toPdp);
+  }
   if (listing.custom_title) return customTitleNodes(productName(release), release, url, toPdp);
   const lines = linesOf(release);
   const first = lines[0];
