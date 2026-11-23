@@ -319,6 +319,37 @@
   // ── shop preview: form → the storefront's text (same mapping as apps/storefront/pages/shell.js and data/products.js) ──
   // the shop shows the credit when it differs (Different spelling), as the database stores it
   function lineArtistText(l) { return l.artistSpelled && l.artistCredit.trim() ? l.artistCredit.trim() : namesOf(l.artists); }
+  // Custom title (decision 0147): which of the lines' artists the shop will link inside the title. Same matching as
+  // shell.js customTitleNodes: the artist's name, or the printed credit of a line with one artist; whole words,
+  // case-insensitive. (The shop also cuts a shared printed credit "A & B" at its join: not checked here.)
+  function titleLinks(title, lines) {
+    var t = String(title || '').toLowerCase(), seen = {}, linked = [], missing = [];
+    function isWord(c) { return !!c && /[\p{L}\p{N}]/u.test(c); }
+    function inTitle(name) {
+      var n = String(name || '').trim().toLowerCase();
+      if (!n) return false;
+      for (var at = t.indexOf(n); at >= 0; at = t.indexOf(n, at + 1)) if (!isWord(t[at - 1]) && !isWord(t[at + n.length])) return true;
+      return false;
+    }
+    lines.forEach(function (l) {
+      l.artists.forEach(function (a) {
+        var key = a.name.trim().toLowerCase();
+        if (!key || seen[key]) return;
+        seen[key] = true;
+        var found = inTitle(a.name) || (l.artists.length === 1 && l.artistSpelled && inTitle(l.artistCredit));
+        (found ? linked : missing).push(a.name.trim());
+      });
+    });
+    return { linked: linked, missing: missing };
+  }
+  // the support text under Custom title: says what becomes a link in the shop (Figma Create → `custom title`, 0147)
+  function titleLinksNote(title, lines) {
+    if (!String(title || '').trim()) return 'Empty = "Artist - Title" from the lines.';
+    var r = titleLinks(title, lines);
+    if (!r.linked.length && !r.missing.length) return 'Replaces "Artist - Title" in the shop.';
+    return (r.linked.length ? 'Artist links in the shop: ' + r.linked.join(', ') + '.' : 'No artist links in the shop.') +
+      (r.missing.length ? ' Not linked: ' + r.missing.join(', ') + ' (write it as in Artist).' : '');
+  }
   // "Artist - Title 1 / Title 2", or "Artist 1 - Title 1 / Artist 2 - Title 2" when a later line has its own artist;
   // tolerant of half-filled lines (the preview fills in while typing)
   function previewName(f) {
@@ -557,7 +588,7 @@
     }
 
     // From Discogs (0111): Custom title = the release as Discogs titles it, "Artist - Title" (the artist as printed).
-    // Only the title changes; the shop links the release's artists found in it.
+    // Only the title changes; the shop links the release's artists found in it, and the message names them (0147).
     var tt = useState(false), titling = tt[0], setTitling = tt[1];
     async function titleFromDiscogs() {
       var id = discogsId(fRef.current.discogs);
@@ -568,7 +599,7 @@
         var title = [d.artistCredit || d.artist, d.title].filter(Boolean).join(' - ');
         if (!title) throw new Error('the release has no title');
         set({ customTitle: title });
-        setMessage({ error: false, text: 'Custom title from Discogs: ' + title + '.' });
+        setMessage({ error: false, text: 'Custom title from Discogs. ' + titleLinksNote(title, fRef.current.lines) });
       } catch (err) {
         setMessage({ error: true, text: 'Discogs: ' + err.message });
       }
@@ -736,7 +767,7 @@
         // Figma Create → `custom title` (0111): From Discogs under the field, only while Discogs match holds a release
         h('div', { className: 'admin-custom-title' },
           h(Z.Input, Object.assign({ id: 'custom-title', label: 'Custom title', optional: true,
-            supportText: 'Replaces "Artist - Title" in the shop. Artist names in it link to their records.' }, bind('customTitle'))),
+            supportText: titleLinksNote(f.customTitle, f.lines) }, bind('customTitle'))),
           discogsId(f.discogs) !== null ? h(Z.Button, { hierarchy: 'secondary', disabled: locked || titling,
             'aria-busy': titling || undefined, onClick: titleFromDiscogs }, 'From Discogs') : null),
         h('div', { className: 'admin-stack' },
