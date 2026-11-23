@@ -1,8 +1,8 @@
 // supabase/functions/scan-targets — what the macOS Scanner needs to name its scans (decision 0138).
 // Read only: it never writes to the database or to storage (Gio 2026-11-22: no automatic upload for now).
 //   POST { query }        → { drafts: [{ id, sku, title, cat_no, photo_key, created_at }] }
-//                            drafts only, newest first, max 20; query matches SKU, artist, title, custom title or
-//                            catalogue number (all words, any order); empty query = the 20 most recent drafts.
+//                            drafts only, newest first, max 500 (the Scanner's drafts column lists them all, 0141); query matches SKU, artist, title, custom title or
+//                            catalogue number (all words, any order); empty query = all drafts (max 500).
 //   POST { id, roles? }   → { draft: { id, sku, title, cat_no }, positions_read, images: [{ role, label, name }],
 //                              clips: [{ role, label, name, artist, title }], tags: { album, label, cat_no, year, genres } }
 //                            names for image roles 1…roles (default 3, max 12): 1 Label A, 2 Label B, 3+ Other photo.
@@ -126,5 +126,5 @@ Deno.serve(async (req) => {
       .filter(Boolean).join(" "));
     return words.every((w) => hay.includes(w));
   });
-  return json({ drafts: hits.slice(0, 20).map(summary) });
+  return json({ drafts: hits.slice(0, 500).map(summary) });
 });
