@@ -29,8 +29,8 @@ const PLACEHOLDERS = {
 const read = (page) => fs.readFileSync(path.join(__dirname, '../content/legal', `${page}.md`), 'utf8');
 const get = (obj, key) => key.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
 
-// {{#flag}}…{{/flag}}: kept (markers removed) while the flag is on, dropped while it is off. One flag for now: trade.
-const FLAGS = { trade: (site) => site.tradeEnabled !== false };
+// {{#flag}}…{{/flag}}: kept (markers removed) while the flag is on, dropped while it is off: trade, wantlist (0150).
+const FLAGS = { trade: (site) => site.tradeEnabled !== false, wantlist: (site) => site.wantlistEnabled === true };
 function sections(text, site) {
   const kept = text.replace(/\{\{#(\w+)\}\}([\s\S]*?)\{\{\/\1\}\}/g, (m, flag, inner) => {
     if (!FLAGS[flag]) throw new Error(`legal: unknown flag {{#${flag}}}`);

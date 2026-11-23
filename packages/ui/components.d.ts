@@ -989,13 +989,13 @@ export interface DiscogsCardProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function DiscogsCard(props: DiscogsCardProps): JSX.Element;
 
-/** Figma `trade step` (page Trade): one numbered step of How trading works. An <li>: put it in an <ol>. */
-export interface TradeStepProps extends HTMLAttributes<HTMLLIElement> {
+/** Figma `step` (page Trade; was `trade step`, decision 0150): one numbered step (How trading works, Check your wantlist). An <li>: put it in an <ol>. */
+export interface StepProps extends HTMLAttributes<HTMLLIElement> {
   number: ReactNode;
   title: ReactNode;
   children?: ReactNode;
 }
-export declare function TradeStep(props: TradeStepProps): JSX.Element;
+export declare function Step(props: StepProps): JSX.Element;
 
 /** Figma `release option` (page Trade): one Discogs release in the "Which record" suggestions. An <li role="option">. */
 export interface ReleaseOptionProps extends HTMLAttributes<HTMLLIElement> {

@@ -94,7 +94,7 @@
 
   // {{key}} values the shop fills in (apps/storefront/pages/legal.js); anything else in braces is refused on save
   var KNOWN_KEYS = ['legal.name', 'legal.email', 'legal.updated', 'storeName', 'shipping.countries'];
-  var FLAGS = ['trade'];
+  var FLAGS = ['trade', 'wantlist'];
 
   function blockOf(key) { return BLOCKS.filter(function (b) { return b.key === key; })[0] || null; }
 

@@ -72,3 +72,15 @@ html[data-header-revealing] .plp-filters { transition: top 200ms ease-out, max-h
 /* "Show sold out" in the mobile filters layer: above the facet rows (Figma `filters layer` level=main) */
 .plp-layer__sold { padding: var(--small) 0; }
 .plp-layer__sold[hidden] { display: none; }
+
+/* Check your wantlist (Figma page `Wantlist`, decision 0150): /wantlist/ is the search results page with, on top, the
+   connect view (trade.css grid: the steps in 8 columns, "Connect Discogs" in the last 4) or, once connected, the
+   heading row: `search heading` + "Disconnect Discogs" (hug, padding-right small; mobile: under the heading, full
+   width). Group headings in the list = SectionHead (Figma `section head`: divider + title, Gio 2026-11-23). */
+.wantlist-connect[hidden], .wantlist-heading[hidden], .wantlist-group[hidden], .wantlist-top [data-wantlist-error][hidden] { display: none; }
+.wantlist-heading { display: flex; align-items: center; gap: var(--medium-small); padding-right: var(--small); }
+.wantlist-heading .search-heading { flex: 1 1 auto; min-width: 0; }
+.wantlist-heading__disconnect { flex: none; }
+@media (--mobile) {
+  .wantlist-heading { flex-direction: column; align-items: stretch; gap: 0; padding-right: 0; }
+}
