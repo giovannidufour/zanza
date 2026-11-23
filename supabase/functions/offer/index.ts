@@ -19,7 +19,6 @@ import "./shipping.js";
 // deno-lint-ignore no-explicit-any
 const Shipping = (globalThis as any).ZanzaShipping;
 const env = (k: string) => Deno.env.get(k) ?? "";
-const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
 const clip = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 const euro = (cents: number) => `€${(cents / 100).toFixed(2).replace(/\.00$/, "")}`;
 const TOKEN = /^[0-9a-f]{64}$/;
@@ -73,17 +72,16 @@ function allowedOrigin(origin: string | null) {
   return null;
 }
 
-async function send(to: string, subject: string, text: string, html: string, replyTo?: string) {
+// plain text only: transactional, so Gmail keeps it out of Promotions (no HTML part)
+async function send(to: string, subject: string, text: string, replyTo?: string) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${env("RESEND_API_KEY")}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: env("MAIL_FROM"), to, subject, text, html, ...(replyTo ? { reply_to: replyTo } : {}) }),
+    body: JSON.stringify({ from: env("MAIL_FROM"), to, subject, text, ...(replyTo ? { reply_to: replyTo } : {}) }),
   });
   if (!res.ok) console.error("Resend", res.status, await res.text());
   return res.ok;
 }
-// text → html: escaped lines, URLs as links
-const htmlOf = (text: string) => text.split("\n").map((l) => escapeHtml(l).replace(/https:\/\/\S+/g, (u) => `<a href="${u}">${u}</a>`)).join("<br>");
 
 // Stripe's API takes form encoding with brackets (as create-checkout)
 function form(obj: Record<string, unknown>, prefix = "", out = new URLSearchParams()) {
@@ -154,7 +152,7 @@ Deno.serve(async (req) => {
     const text = [`You offered ${euro(amount)} for ${r.name}, shipping to ${countryName(country)} not included.`, "",
       `Confirm it here: ${link}`, "", "The link works for 24 hours. Your offer reaches me only after you confirm it.",
       "If it wasn't you, ignore this email.", "", store].join("\n");
-    const sent = await send(email, `Confirm your offer for ${r.name}`, text, htmlOf(text));
+    const sent = await send(email, `Please confirm your email: ${r.name}`, text);
     if (!sent) return json({ error: "Could not send the email." }, 502);
     return json({ ok: true });
   }
@@ -173,7 +171,7 @@ Deno.serve(async (req) => {
           `Ships to: ${countryName(r.country)}`, `From: ${r.email}`, ...(r.note ? ["", `“${r.note}”`] : []), "",
           `Accept or decline: ${admin}/#offers`, `The record: ${shop}/products/${r.slug}/`, "",
           "Reply to this email to write to the buyer."].join("\n");
-        await send(to, `Offer ${euro(r.amount_cents)}: ${r.name}`, text, htmlOf(text), r.email);
+        await send(to, `New offer: ${r.name}`, text, r.email);
       }
     }
     return json({ result: r.result, name: r.name, slug: r.slug, amount_cents: r.amount_cents });
