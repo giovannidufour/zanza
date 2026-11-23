@@ -1076,6 +1076,15 @@ export interface BackLinkProps extends HTMLAttributes<HTMLAnchorElement> {
 }
 export declare function BackLink(props: BackLinkProps): JSX.Element;
 
+/** Figma `discogs link` (BACKEND → Create, decision 0150): the Discogs release a listing is matched to, "On Discogs ↗", new tab. An <a>. */
+export interface DiscogsLinkProps extends HTMLAttributes<HTMLAnchorElement> {
+  /** the release on discogs.com: https://www.discogs.com/release/<id> */
+  href: string;
+  /** Default "On Discogs" (the ↗ is added) */
+  label?: ReactNode;
+}
+export declare function DiscogsLink(props: DiscogsLinkProps): JSX.Element;
+
 /** Figma `bulk record` (BACKEND → Bulk, decision 0107): one record found in the files dropped on Bulk create. An <li>: wrap in a <ul>. */
 export interface BulkRecordProps extends HTMLAttributes<HTMLLIElement> {
   /** "Artist – Title" of the Discogs release, or the file-name prefix */
