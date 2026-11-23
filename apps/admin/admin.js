@@ -545,7 +545,8 @@
         });
       };
     }
-    async function save(status) {
+    // andNew (decision 0155): Save draft and new, after the save a blank Create listing opens, to make drafts back to back
+    async function save(status, andNew) {
       var cur = fRef.current, e = validate(cur, status);
       setErrors(e);
       if (Object.keys(e).length) {
@@ -574,8 +575,10 @@
       }
       // decision 0118: the result in a toast; the status block at the top of the side column says the new state
       toast(d.status === 'available' ? (wasPublic ? 'Updated' : 'Published') + ' · SKU ' + d.sku + '. The shop updates in about 2 minutes.'
-        : d.status === 'draft' ? 'Draft saved · SKU ' + d.sku + '.' : 'Saved · SKU ' + d.sku + '.');
+        : d.status === 'draft' ? 'Draft saved · SKU ' + d.sku + '.' + (andNew ? ' Next one: a new listing.' : '') : 'Saved · SKU ' + d.sku + '.');
       if (!cur.listingId) history.replaceState(null, '', '#edit-' + d.listing_id);
+      // a new history entry, so Back returns to the draft just saved; the hash changes, so the form remounts blank
+      if (andNew) { location.hash = '#new'; window.scrollTo(0, 0); }
     }
 
     // Fetch Discogs: reads the release in "Discogs match" and fills the release fields
@@ -878,10 +881,12 @@
     // a reserved, sold, traded or archived copy has no save at all
     var publishBtn = locked ? null : h(Z.Button, { key: 'publish', hierarchy: 'primary', disabled: saving || (published && !dirty), onClick: function () { save('available'); } }, published ? 'Update' : 'Publish now');
     var draftBtn = locked || published ? null : h(Z.Button, { key: 'draft', hierarchy: 'secondary', disabled: saving, onClick: function () { save('draft'); } }, 'Save draft');
+    // decision 0155 (Figma `action panel` → secondary 2 on Create and drafts): save, then a blank Create listing
+    var nextBtn = locked || published ? null : h(Z.Button, { key: 'next', hierarchy: 'secondary', disabled: saving, onClick: function () { save('draft', true); } }, 'Save draft and new');
     var shopBtn = shopUrl ? h(Z.Button, { key: 'shop', hierarchy: 'secondary', href: shopUrl, target: '_blank', rel: 'noopener' }, 'View in store') : null;
     // errors stay in an Alert under the buttons until the next save; other notes (Discogs, Memo) in a line of text
     var note = message ? (message.error ? h(Z.Alert, { role: 'alert' }, message.text) : h('p', { className: 'admin-status body-small', role: 'status' }, message.text)) : null;
-    var panelButtons = [publishBtn, draftBtn, shopBtn].filter(Boolean);
+    var panelButtons = [publishBtn, draftBtn, nextBtn, shopBtn].filter(Boolean);
     // mobile (decision 0089): Publish / Save draft in the ActionBar at the bottom of the viewport, with the note above
     // them; the status under the title; View in store and Change status in the side content, which follows the form
     var side = h('aside', { className: 'admin-side' },
