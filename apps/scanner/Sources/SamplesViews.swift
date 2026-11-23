@@ -17,12 +17,16 @@ struct ScannerTabs: View {
 
 func timeText(_ t: Double) -> String { String(format: "%d:%02d", Int(t) / 60, Int(t) % 60) }
 
-/// `waveform`: bars from the peaks; the part before `cut` (0…1) is shaded (Trim silence), `played` (0…1) is darker
+/// `waveform` (Figma 2446:26014): played bars text/strong, unplayed waveform-unplayed; the start silence (before
+/// `cut`) and end silence (after `cutEnd`) in waveform-silence (red), at 32% once the silence is removed
 struct Waveform: View {
     let peaks: [Float]
     var cut: Double = 0
-    var cutEnd: Double = 1      // 0…1: from here to the end is the end silence
+    var cutEnd: Double = 1
     var played: Double = 0
+    var removed = false
+    /// small row waveforms have no playhead: all bars "played" (black)
+    var tone = false
     var body: some View {
         GeometryReader { g in
             Canvas { ctx, size in
@@ -31,11 +35,12 @@ struct Waveform: View {
                 for (i, p) in peaks.enumerated() {
                     let x = CGFloat(i) * w, h = max(1, CGFloat(p) * size.height)
                     let r = CGRect(x: x, y: (size.height - h) / 2, width: max(1, w * 0.6), height: h)
-                    let f = Double(i) / Double(n)
-                    ctx.fill(Path(r), with: .color(f < cut || f > cutEnd ? Theme.textModerate.opacity(0.4) : (f < played ? Theme.textStrong : Theme.textStrong.opacity(0.8))))
+                    let f = (Double(i) + 0.5) / Double(n)
+                    let color: Color = f < cut || f > cutEnd
+                        ? Theme.waveformSilence.opacity(removed ? 0.32 : 1)
+                        : (tone || f < played ? Theme.waveformPlayed : Theme.waveformUnplayed)
+                    ctx.fill(Path(r), with: .color(color))
                 }
-                if cut > 0 { ctx.fill(Path(CGRect(x: 0, y: 0, width: size.width * cut, height: size.height)), with: .color(Color.black.opacity(0.08))) }
-                if cutEnd < 1 { ctx.fill(Path(CGRect(x: size.width * cutEnd, y: 0, width: size.width * (1 - cutEnd), height: size.height)), with: .color(Color.black.opacity(0.08))) }
             }
             .frame(width: g.size.width, height: g.size.height)
         }
@@ -111,7 +116,8 @@ struct SessionRow: View {
             }
             .frame(width: 110, alignment: .leading)
             Waveform(peaks: clip.peaks, cut: clip.duration > 0 ? clip.trimStart / clip.duration : 0,
-                     cutEnd: clip.duration > 0 && clip.trimEnd > 0 ? clip.trimEnd / clip.duration : 1).frame(height: 24)
+                     cutEnd: clip.duration > 0 && clip.trimEnd > 0 ? clip.trimEnd / clip.duration : 1,
+                     removed: clip.silenceRemoved, tone: true).frame(height: 24)
             if let a {
                 Text("\(a.sku) · \(a.label)").bodyStyle(12).padding(.horizontal, 4).padding(.vertical, 2).background(Color.black.opacity(0.08))
             }
@@ -152,7 +158,7 @@ struct ClipPreview: View {
                     Waveform(peaks: c.peaks,
                              cut: (c.silenceRemoved ? c.trimStart : startSil) / d,
                              cutEnd: (c.silenceRemoved ? (c.trimEnd > 0 ? c.trimEnd : c.duration) : (c.soundEnd ?? c.duration)) / d,
-                             played: session.position / d)
+                             played: session.position / d, removed: c.silenceRemoved)
                         .contentShape(Rectangle())
                         .gesture(DragGesture(minimumDistance: 0).onChanged { v in
                             session.seek(to: Double(v.location.x / g.size.width) * c.duration)
@@ -160,11 +166,13 @@ struct ClipPreview: View {
                 }
                 .frame(height: 90)
                 HStack(spacing: 12) {
+                    // silence lengths on the outer side of the red buttons, 2 decimals
+                    Text(String(format: "%.2f s", startSil)).bodyStyle(12, color: Theme.waveformSilence)
                     playButton(.startSilence, red: true, help: "Play only the start silence").disabled(startSil < 0.01)
                     playButton(.clip, red: false, help: "Play the clip (Space)")
                     playButton(.endSilence, red: true, help: "Play only the end silence").disabled(endSil < 0.01)
-                    Text(c.soundStart == nil ? "Reading the silence…"
-                         : (c.silenceRemoved ? "Silence removed" : "Silence") + String(format: " · start %.1f s · end %.1f s", startSil, endSil))
+                    Text(String(format: "%.2f s", endSil)).bodyStyle(12, color: Theme.waveformSilence)
+                    Text(c.soundStart == nil ? "Reading the silence…" : (c.silenceRemoved ? "Silence removed" : "Silence at start and end"))
                         .bodyStyle(12, color: Theme.textModerate)
                     Spacer()
                     if c.silenceRemoved {

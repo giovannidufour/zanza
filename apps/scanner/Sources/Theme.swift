@@ -17,6 +17,11 @@ enum Theme {
     static let success = Color(red: 0x73 / 255, green: 0xff / 255, blue: 0x61 / 255)
     static let onSuccess = Color.black
     static let onAlert = Color.white
+    /// waveform (tokens.json, PR #210): played = text/strong, unplayed = waveform-unplayed (black-a16),
+    /// silence = waveform-silence (red, as the silence play buttons)
+    static let waveformPlayed = Color.black
+    static let waveformUnplayed = Color.black.opacity(0.16)
+    static let waveformSilence = Color(red: 0xe0 / 255, green: 0x20 / 255, blue: 0x1b / 255)
 
     // Type styles (Inter; label = uppercase, 0.1em tracking)
     static func label(_ size: CGFloat) -> Font { .custom("Inter-Medium", size: size) }
