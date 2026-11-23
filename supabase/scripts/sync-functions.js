@@ -12,6 +12,7 @@ const COPIES = [
   ['packages/images/images.js', 'supabase/functions/purge-media/images.js'],
   ['packages/file-names/file-names.js', 'supabase/functions/scan-targets/file-names.js'],   // decision 0138
   ['packages/listing-draft/listing-draft.js', 'supabase/functions/scanner-draft/listing-draft.js'],   // decision 0145
+  ['packages/listing-draft/listing-draft.js', 'supabase/functions/release-credits/listing-draft.js'],   // decision 0146
 ];
 const check = process.argv.includes('--check');
 let stale = 0;
