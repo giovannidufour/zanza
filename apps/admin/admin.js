@@ -755,6 +755,8 @@
         h(Z.FormSectionHead, { id: 'section-discogs-title' }, FORM_SECTION_LABEL['discogs']),
         h(Z.Input, Object.assign({ id: 'discogs', label: 'Discogs match', optional: true, variant: 'search',
           placeholder: 'Release URL or number', supportText: errors.discogs ? undefined : 'Paste the release link, then Fetch Discogs.' }, bind('discogs'))),
+        // Figma Create → `discogs link` (0150): the matched release on Discogs, in every status, while the field holds one
+        discogsId(f.discogs) !== null ? h(Z.DiscogsLink, { href: 'https://www.discogs.com/release/' + discogsId(f.discogs) }) : null,
         // Figma Create → `discogs actions` (0092): Fetch Discogs + Photo of the label + Fetch from label (only with
         // images, Gio 2026-11-17); picking a release found from a photo puts its link in Discogs match and fetches it
         h(PhotoField, { disabled: locked, images: f.images.filter(function (x) { return x.url; }).map(function (x) { return x.url; }), pickHint: 'Pick the pressing to fetch it.', onFound: setPhotoFound,

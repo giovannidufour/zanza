@@ -125,3 +125,4 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - DS artifact (https://claude.ai/artifact/9Q7SAYDqDnBAj4MEKLnphz) not republished since the `--mobile` type variants: needs `npm run build:artifact` + publish.
 - Component token tables in `docs/*/README.md` are still hand-written (API tables are generated).
 - **0141 red play buttons (Scanner clip preview)**: the start/end silence play icons use `surface/alert` (red) as icon fill; there is no `icon/alert` / `text/alert` semantic token yet. Add one if red icons spread.
+- **0150 one Discogs link**: MemoItem, ChosenRelease (and DiscogsCard) still draw their own "On Discogs ↗" `<a>`; make them render `DiscogsLink` (and in Figma nest the `discogs link` instance in `memo item` / `chosen release`) so the link has one source.
