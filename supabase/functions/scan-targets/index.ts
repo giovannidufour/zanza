@@ -4,7 +4,7 @@
 //                            drafts only, newest first, max 500 (the Scanner's drafts column lists them all, 0141); query matches SKU, artist, title, custom title or
 //                            catalogue number (all words, any order); empty query = all drafts (max 500).
 //   POST { id, roles? }   → { draft: { id, sku, title, cat_no }, positions_read, images: [{ role, label, name }],
-//                              clips: [{ role, label, name, artist, title }], tags: { album, label, cat_no, year, genres } }
+//                              clips: [{ role, label, name, line, artist, title }], tags: { album, label, cat_no, year, genres } }
 //                            names for image roles 1…roles (default 3, max 12): 1 Label A, 2 Label B, 3+ Other photo.
 //                            clips = one row per line with a clip role (a1, b1… or a / b), as the admin's File names;
 //                            with tags = what the Scanner's Samples tab writes in the ID3 tags (decision 0141).
@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
     const rows = FileNames.fileNames(r.sku, lines, positions ?? []) as { key: string; role: string; name: string }[];
     const clips = rows.filter((x) => x.key.startsWith("line-")).map((x) => {
       const i = Number(x.key.slice(5));
-      return { role: x.role.toLowerCase(), label: x.role, name: x.name,
+      return { role: x.role.toLowerCase(), label: x.role, name: x.name, line: i + 1,
         artist: lines[i]?.artist.trim() || lines[0]?.artist.trim() || "", title: lines[i]?.title.trim() ?? "" };
     });
     const rel = r.release;
