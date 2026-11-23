@@ -3,8 +3,24 @@ import AVFoundation
 
 /// Export of one assigned clip (0141): <name>.wav (source rate, 24-bit if the source is, else 16) and <name>.mp3
 /// (LAME 320 kbps CBR, 44.1 kHz), both with ID3v2.4 tags (in the WAV as an "id3 " chunk) and the side's label as cover.
-/// Re-export overwrites. Normalize (peak to 0 dB) only when asked: Gio doubts it (clicks on vinyl skew the peak).
+/// Re-export overwrites. Every exported file gets the fixed boost of 0157 (+8 dB, peak never above −2 dBFS); no normalize, no limiter.
 enum AudioExport {
+    /// 0157: plain gain, the same for every file and format, so the dynamics are untouched.
+    /// Capped so the sample peak stays at −2 dBFS: a hotter recording gets less than +8 dB instead of clipping.
+    static let boostDB: Float = 8
+    static let ceilingDB: Float = -2
+
+    static func boost(_ buf: AVAudioPCMBuffer) -> Float {
+        var peak: Float = 0
+        for ch in 0..<Int(buf.format.channelCount) {
+            let p = buf.floatChannelData![ch]
+            for i in 0..<Int(buf.frameLength) { peak = max(peak, abs(p[i])) }
+        }
+        let gain = powf(10, boostDB / 20)
+        guard peak > 0 else { return gain }
+        return min(gain, powf(10, ceilingDB / 20) / peak)
+    }
+
     struct Tags {
         var title = "", artist = "", album = "", albumArtist = "", label = "", year = "", genre = "", track = "", comment = ""
         var cover: Data?   // JPEG
@@ -23,11 +39,11 @@ enum AudioExport {
     }
 
     static func export(source: URL, trimStart: Double, trimEnd: Double = 0, name: String, tags: Tags,
-                       wavFolder: URL?, mp3Folder: URL, normalize: Bool) throws {
+                       wavFolder: URL?, mp3Folder: URL) throws {
         guard let lame else { throw ScanError.message("LAME is not installed (brew install lame): MP3 not made.") }
         let file = try AVAudioFile(forReading: source)
         let fmt = file.processingFormat
-        let rate = fmt.sampleRate, channels = Int(fmt.channelCount)
+        let rate = fmt.sampleRate
         let srcBits = (file.fileFormat.settings[AVLinearPCMBitDepthKey] as? Int) ?? 16
         let bits = srcBits >= 24 ? 24 : 16
         let start = AVAudioFramePosition(trimStart * rate)
@@ -36,12 +52,7 @@ enum AudioExport {
         let count = AVAudioFrameCount(max(0, stop - file.framePosition))
         guard let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: max(count, 1)) else { throw ScanError.message("Out of memory") }
         try file.read(into: buf, frameCount: count)
-        var gain: Float = 1
-        if normalize {
-            var peak: Float = 0
-            for ch in 0..<channels { let p = buf.floatChannelData![ch]; for i in 0..<Int(buf.frameLength) { peak = max(peak, abs(p[i])) } }
-            if peak > 0 { gain = 1 / peak }
-        }
+        let gain = boost(buf)
         let tag = id3(tags)
         try FileManager.default.createDirectory(at: mp3Folder, withIntermediateDirectories: true)
         if let wavFolder {   // optional (Gio: not always an archive / DJ copy)
@@ -62,7 +73,7 @@ enum AudioExport {
         try writeSafely(tag + mp3, to: mp3Folder.appendingPathComponent(name).appendingPathExtension("mp3"))
     }
 
-    /// MP3 at `kbps` (Push to admin: 128) from the session source, trim applied; no tags (the admin keeps its own data)
+    /// MP3 at `kbps` (Push to admin: 128) from the session source, trim applied, boost of 0157; no tags (the admin keeps its own data)
     static func mp3(source: URL, trimStart: Double, trimEnd: Double = 0, kbps: Int) throws -> Data {
         guard let lame else { throw ScanError.message("LAME is not installed (brew install lame).") }
         let file = try AVAudioFile(forReading: source)
@@ -75,7 +86,7 @@ enum AudioExport {
         let tmpIn = FileManager.default.temporaryDirectory.appendingPathComponent("zanza-\(UUID().uuidString).wav")
         let tmpOut = tmpIn.deletingPathExtension().appendingPathExtension("mp3")
         defer { try? FileManager.default.removeItem(at: tmpIn); try? FileManager.default.removeItem(at: tmpOut) }
-        try wavData(buf, bits: 16, rate: Int(rate), gain: 1, id3: nil).write(to: tmpIn)
+        try wavData(buf, bits: 16, rate: Int(rate), gain: boost(buf), id3: nil).write(to: tmpIn)
         let p = Process()
         p.executableURL = URL(fileURLWithPath: lame)
         p.arguments = ["--quiet", "-b", "\(kbps)", "--cbr", "--resample", "44.1", tmpIn.path, tmpOut.path]

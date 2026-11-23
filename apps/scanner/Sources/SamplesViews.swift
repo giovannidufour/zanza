@@ -255,7 +255,7 @@ struct ClipSlotRow: View {
     }
 }
 
-/// Right column of the Samples tab: folders and Export (WAV + MP3 320, tags, label cover). No normalize (Gio).
+/// Right column of the Samples tab: folders and Export (WAV + MP3 320, tags, label cover). +8 dB boost, peak ≤ −2 dBFS (0157); no normalize.
 struct ExportPanel: View {
     @EnvironmentObject var model: AppModel
     @ObservedObject var session: SessionModel
