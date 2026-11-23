@@ -59,7 +59,7 @@
     "endpoint": "https://hhpknvyfypqipxufmbys.supabase.co/functions/v1/contact"
   },
   "wantlist": {
-    "note": "Check your wantlist (decision 0150): endpoint = URL of the Supabase function discogs-oauth (secrets DISCOGS_CONSUMER_KEY / DISCOGS_CONSUMER_SECRET of the Discogs app rythem-works, Verify JWT OFF). The function only signs Discogs requests; the browser reads the wantlist and matches it. Empty = the feature is off whatever admin → Settings says.",
+    "note": "Check your wantlist (decision 0152): endpoint = URL of the Supabase function discogs-oauth (secrets DISCOGS_CONSUMER_KEY / DISCOGS_CONSUMER_SECRET of the Discogs app rythem-works, Verify JWT OFF). The function only signs Discogs requests; the browser reads the wantlist and matches it. Empty = the feature is off whatever admin → Settings says.",
     "endpoint": "https://hhpknvyfypqipxufmbys.supabase.co/functions/v1/discogs-oauth"
   },
   "trade": {

@@ -1478,6 +1478,8 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-memo-item__text > p { margin: 0; overflow-wrap: anywhere; }
 .zz-memo-item__meta { color: var(--text-moderate); }
 /* BackLink (Figma `admin` → `back link`) */
+/* DiscogsLink (Figma BACKEND → Create › `discogs link`, 0150): same as the MemoItem / ChosenRelease Discogs link */
+.zz-discogs-link { color: inherit; text-decoration: underline; align-self: flex-start; }
 .zz-back-link { display: inline-block; color: var(--text-moderate); text-decoration: none; }
 .zz-back-link:hover { text-decoration: underline; }
 .zz-memo-item__link { color: inherit; text-decoration: underline; align-self: flex-start; }

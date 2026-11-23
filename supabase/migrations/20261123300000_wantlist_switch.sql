@@ -1,4 +1,4 @@
--- 0033 wantlist switch (2026-11-23, Gio: "the feature can be switched on and off from the admin"; decision 0150).
+-- 0033 wantlist switch (2026-11-23, Gio: "the feature can be switched on and off from the admin"; decision 0152).
 -- "Check your wantlist": a visitor connects Discogs and sees which records of the shop are on their wantlist. The
 -- wantlist is fetched and matched in the visitor's browser (function discogs-oauth only signs the requests): nothing
 -- about it is stored anywhere, so this migration only adds the switch.

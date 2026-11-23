@@ -1,4 +1,4 @@
-# 0150 — Check your wantlist: Discogs OAuth, matched in the visitor's browser
+# 0152 — Check your wantlist: Discogs OAuth, matched in the visitor's browser
 
 `2026-11-23` · accepted · Figma: page `Wantlist` (2477:3348), BACKEND → `Settings` (`setting`), `footer link list` and `menu layer` (boolean `wantlist`)
 

@@ -212,7 +212,7 @@ const source = loaded.source;
 const settings = await loadSettings({ source, trade: tradeArg, identity: identityArg, wantlist: wantlistArg });
 site.tradeEnabled = settings.tradeEnabled;
 site.identityEnabled = settings.identityEnabled;
-// Check your wantlist (migration 0033, decision 0150): off = no /wantlist/ page, no link, no Privacy line
+// Check your wantlist (migration 0033, decision 0152): off = no /wantlist/ page, no link, no Privacy line
 site.wantlistEnabled = settings.wantlistEnabled && !!(site.wantlist && site.wantlist.endpoint);
 // the texts Gio edits in the admin (page Content, decision 0106): saved rows over today's texts (the defaults: site.json →
 // owner, content/legal/*.md, packages/content). The pages read site.texts; `owner` keeps its old shape (Profile, or
@@ -306,7 +306,7 @@ write('about/index.html', page({ template: 'about', title: 'About', body: render
 // (_context/stack.md: a search service only past ~2k).
 write('search/index.html', page({ template: 'search', title: 'Search', body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, allProducts: products, site, url, search: true })) }));
 
-// Check your wantlist (Figma page `Wantlist`, decision 0150): the visitor connects Discogs, their browser reads the
+// Check your wantlist (Figma page `Wantlist`, decision 0152): the visitor connects Discogs, their browser reads the
 // wantlist from Discogs and matches it here against each card's data-release / data-master (scripts/site.js →
 // initWantlist). Every record of the shop with a page, sold ones too (Gio 2026-11-23), as on /catalog/.
 // Also the Discogs OAuth callback (oauth_callback = this page).

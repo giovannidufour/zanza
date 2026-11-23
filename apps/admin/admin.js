@@ -755,6 +755,8 @@
         h(Z.FormSectionHead, { id: 'section-discogs-title' }, FORM_SECTION_LABEL['discogs']),
         h(Z.Input, Object.assign({ id: 'discogs', label: 'Discogs match', optional: true, variant: 'search',
           placeholder: 'Release URL or number', supportText: errors.discogs ? undefined : 'Paste the release link, then Fetch Discogs.' }, bind('discogs'))),
+        // Figma Create → `discogs link` (0150): the matched release on Discogs, in every status, while the field holds one
+        discogsId(f.discogs) !== null ? h(Z.DiscogsLink, { href: 'https://www.discogs.com/release/' + discogsId(f.discogs) }) : null,
         // Figma Create → `discogs actions` (0092): Fetch Discogs + Photo of the label + Fetch from label (only with
         // images, Gio 2026-11-17); picking a release found from a photo puts its link in Discogs match and fetches it
         h(PhotoField, { disabled: locked, images: f.images.filter(function (x) { return x.url; }).map(function (x) { return x.url; }), pickHint: 'Pick the pressing to fetch it.', onFound: setPhotoFound,
@@ -1934,7 +1936,7 @@
       var d = res.data || {};
       return { trade: d.trade_enabled !== false, tradeWanted: d.trade_wanted !== undefined ? d.trade_wanted !== false : d.trade_enabled !== false,
                identity: d.identity_enabled !== false, hasIdentity: d.identity_enabled !== undefined,
-               wantlist: d.wantlist_enabled !== false, hasWantlist: d.wantlist_enabled !== undefined };   // decision 0150
+               wantlist: d.wantlist_enabled !== false, hasWantlist: d.wantlist_enabled !== undefined };   // decision 0152
     });
   }
   function loadTradeEnabled(force) {
@@ -1955,7 +1957,7 @@
     var ss = useState(null), saved = ss[0], setSaved = ss[1];     // what the database says: { tradeWanted, identity, hasIdentity }
     var ts = useState(null), trade = ts[0], setTrade = ts[1];     // the Trade tick
     var is = useState(null), identity = is[0], setIdentity = is[1];   // the Who I am tick (decision 0106)
-    var ws = useState(null), wantlist = ws[0], setWantlist = ws[1];   // the Wantlist check tick (decision 0150)
+    var ws = useState(null), wantlist = ws[0], setWantlist = ws[1];   // the Wantlist check tick (decision 0152)
     var er = useState(null), error = er[0], setError = er[1];
     var ps = useState(null), problem = ps[0], setProblem = ps[1];
     var bs = useState(false), busy = bs[0], setBusy = bs[1];
@@ -2003,7 +2005,7 @@
           (identity ? '' : ' While “Show who I am” is off, trade stays off whatever this says.')),
         h('div', null, h(Z.Checkbox, { label: 'Show trade on the shop', checked: trade, 'aria-describedby': 'settings-trade-help',
           onChange: function (e) { setTrade(e.target.checked); setProblem(null); } }))),
-      // Figma BACKEND → Settings → `wantlist setting` (decision 0150). Hidden until migration 0033 is applied.
+      // Figma BACKEND → Settings → `wantlist setting` (decision 0152). Hidden until migration 0033 is applied.
       saved.hasWantlist ? h('section', { className: 'admin-shipping__section', 'aria-labelledby': 'settings-wantlist' },
         h('h2', { id: 'settings-wantlist', className: 'label-medium' }, 'Wantlist check'),
         h('p', { className: 'body-small', id: 'settings-wantlist-help' }, 'Off: the shop shows no trace of the wantlist check. On: visitors can connect their Discogs account and see which records here are on their wantlist. Their wantlist is compared in their browser and never reaches the shop. Saving rebuilds the shop, live in about 2 minutes.'),

@@ -1,4 +1,4 @@
-// supabase/functions/discogs-oauth — "Check your wantlist": Discogs OAuth 1.0a for visitors (decision 0150).
+// supabase/functions/discogs-oauth — "Check your wantlist": Discogs OAuth 1.0a for visitors (decision 0152).
 // The function never reads a wantlist. It only does what needs the consumer secret:
 //   POST { action: "start", callback }                 → { token, secret, authorizeUrl }   (request token)
 //   POST { action: "finish", token, secret, verifier } → { token, secret }                 (access token)

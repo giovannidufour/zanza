@@ -989,7 +989,7 @@ export interface DiscogsCardProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function DiscogsCard(props: DiscogsCardProps): JSX.Element;
 
-/** Figma `step` (page Trade; was `trade step`, decision 0150): one numbered step (How trading works, Check your wantlist). An <li>: put it in an <ol>. */
+/** Figma `step` (page Trade; was `trade step`, decision 0152): one numbered step (How trading works, Check your wantlist). An <li>: put it in an <ol>. */
 export interface StepProps extends HTMLAttributes<HTMLLIElement> {
   number: ReactNode;
   title: ReactNode;
@@ -1075,6 +1075,15 @@ export interface BackLinkProps extends HTMLAttributes<HTMLAnchorElement> {
   label: ReactNode;
 }
 export declare function BackLink(props: BackLinkProps): JSX.Element;
+
+/** Figma `discogs link` (BACKEND → Create, decision 0150): the Discogs release a listing is matched to, "On Discogs ↗", new tab. An <a>. */
+export interface DiscogsLinkProps extends HTMLAttributes<HTMLAnchorElement> {
+  /** the release on discogs.com: https://www.discogs.com/release/<id> */
+  href: string;
+  /** Default "On Discogs" (the ↗ is added) */
+  label?: ReactNode;
+}
+export declare function DiscogsLink(props: DiscogsLinkProps): JSX.Element;
 
 /** Figma `bulk record` (BACKEND → Bulk, decision 0107): one record found in the files dropped on Bulk create. An <li>: wrap in a <ul>. */
 export interface BulkRecordProps extends HTMLAttributes<HTMLLIElement> {

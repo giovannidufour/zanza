@@ -66,11 +66,12 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | ListingLine | page `listing form` → `listing line` | ported: removable, sample empty / uploaded, artist on label, marker (number, 0114) |
 | TradeNote | page `Trade` → `trade note` | ported (0068): title, body, signature |
 | DiscogsCard | page `Trade` → `discogs card` | ported (0068): label, handle, stats, link |
-| Step | page `Trade` → `step` (was `trade step`) | ported (0068, renamed 0150) |
+| Step | page `Trade` → `step` (was `trade step`) | ported (0068, renamed 0152) |
 | ReleaseOption | page `Trade` → `release option` | ported (0069) |
 | ReleaseList | page `Trade` → `release list` | ported (0069) |
 | ChosenRelease | page `Trade` → `chosen release` | ported (0069) |
 | BackLink | page `admin` → `back link` | ported (0146): ← + label, body/small text/moderate, hover underline; admin Edit listing → Listings tab |
+| DiscogsLink | page `Create` (BACKEND) → `discogs link` | ported (0150): "On Discogs ↗", body/small underlined, new tab; admin Create / Edit listing under Discogs match |
 | MemoItem | page `Memo` (BACKEND) → `memo item` | ported (0087): device mobile / desktop (responsive), meta + link, note, select (0140), Create draft (0135) / Create listing / Remove |
 | BulkRecord | page `Bulk` (BACKEND) → `bulk record` | ported (0107): device mobile / desktop (responsive), state reading / matched / choose / not found / confirmed / skipped, warning |
 | BulkHelp | page `Bulk` (BACKEND) → `bulk naming help` | ported (0107) |

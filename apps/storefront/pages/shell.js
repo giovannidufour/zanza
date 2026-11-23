@@ -176,7 +176,7 @@ const productHref = (product, url) => url(`/products/${product.listing.slug}/`);
 const tradeOn = (site) => !site || site.tradeEnabled !== false;
 // Who I am (admin → Settings, decision 0106): off = the Store profile, no name, no personal profiles, no trade
 const identityOn = (site) => !site || site.identityEnabled !== false;
-// Check your wantlist (admin → Settings, migration 0033, decision 0150): set by build.js; off or undefined = no link
+// Check your wantlist (admin → Settings, migration 0033, decision 0152): set by build.js; off or undefined = no link
 const wantlistOn = (site) => !!site && site.wantlistEnabled === true;
 // a text Gio edits in the admin (page Content, decision 0106): site.texts (build.js) or, without it, today's text;
 // {{#trade}}…{{/trade}} already applied

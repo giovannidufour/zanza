@@ -121,7 +121,7 @@ const sortsFor = (section) => SORTS.filter((o) => !o.section || o.section === se
 // search (Figma page `Search`, 2026-11-12): the results page /search/?q=… — the same page with no section tab, the
 // heading `search heading` ("N results for “q”", written by site.js), on mobile the `search field` under the header,
 // and `search message` as the empty state (no results: hint + "Browse all records"; no query: the hint only).
-// wantlist (Figma page `Wantlist`, decision 0150): /wantlist/ — first the connect view (the four steps that say what
+// wantlist (Figma page `Wantlist`, decision 0152): /wantlist/ — first the connect view (the four steps that say what
 // happens to the wantlist + "Connect Discogs"), then, once Discogs said yes, the same results page as Search: heading
 // "N records from your wantlist" + "Disconnect Discogs", two groups (your pressing / other pressings). scripts/site.js
 // (initWantlist) runs the check and marks each card's .plp-item with data-want="exact|other".
@@ -181,7 +181,7 @@ function Plp({ section, products, allProducts = products, site, url, search = fa
         products.map((product, i) => h('div', Object.assign({ key: product.listing.slug, className: 'plp-item',
           'data-order': i, 'data-price': product.listing.price ? product.listing.price.amount : undefined,
           'data-search': search ? searchTextOf(product) : undefined,
-          // Discogs ids, matched against the visitor's wantlist in their browser (decision 0150)
+          // Discogs ids, matched against the visitor's wantlist in their browser (decision 0152)
           'data-release': wantlist && product.release.discogs_release_id ? product.release.discogs_release_id : undefined,
           'data-master': wantlist && product.release.discogs_master_id ? product.release.discogs_master_id : undefined },
           ...FACETS.concat(HIDDEN_FACETS).map((f) => ({ [`data-${f.key}`]: JSON.stringify([...new Set(f.values(product))]) }))),

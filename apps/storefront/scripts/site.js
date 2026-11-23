@@ -581,7 +581,7 @@
     var query = searchPage ? (params.get('q') || '').trim() : '';
     var matcher = searchMatcher(query);
     var baseTitle = document.title;   // as built: "Search · <store name>"
-    // Check your wantlist (decision 0150): the page shows only the cards initWantlist marked data-want="exact|other",
+    // Check your wantlist (decision 0152): the page shows only the cards initWantlist marked data-want="exact|other",
     // grouped (exact first) under the two group headings; the match is read from the card at each apply
     var wantPage = document.querySelector('[data-wantlist-page]');
     var values = items.map(function (el) {
@@ -934,7 +934,7 @@
   }
 
   /* ------------------------------------------------------- 5b. check your wantlist */
-  /* /wantlist/ (pages/plp.js → WantlistTop, Figma page `Wantlist`, decision 0150). Discogs OAuth 1.0a through the
+  /* /wantlist/ (pages/plp.js → WantlistTop, Figma page `Wantlist`, decision 0152). Discogs OAuth 1.0a through the
      function discogs-oauth, which only does what needs the app's secret: the request token, the access token, and
      signing read URLs. This browser then reads the wantlist straight from api.discogs.com and compares it with the
      cards of the page: the wantlist never reaches the shop's server and is never saved, only kept in memory while the

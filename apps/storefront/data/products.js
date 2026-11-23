@@ -179,7 +179,7 @@ async function settingsFromSupabase(env, fetchImpl = fetch) {
   if (!res.ok) throw new Error(`Supabase shop_settings: ${res.status} ${await res.text()}`);
   const row = (await res.json())[0];
   return { tradeEnabled: !row || row.trade_enabled !== false, identityEnabled: !row || row.identity_enabled !== false,
-    wantlistEnabled: !row || row.wantlist_enabled !== false };   // Check your wantlist (migration 0033, decision 0150)
+    wantlistEnabled: !row || row.wantlist_enabled !== false };   // Check your wantlist (migration 0033, decision 0152)
 }
 
 // the texts Gio saved in the admin (page Content, migration 0025, decision 0106): [{ key, value, updated_at }].
