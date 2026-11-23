@@ -1,4 +1,4 @@
-# 0152 — Scanner: the label crop depends on the record size (7" = 3.5", 10" / 12" = 4")
+# 0153 — Scanner: the label crop depends on the record size (7" = 3.5", 10" / 12" = 4")
 
 `2026-11-23` · accepted · Figma: BACKEND → `Scanner`: `scan preview` → `selection` → `label crop` (now 88.9 / 180 of the 7" square), Record menu text "7" · whole record + 3.5" label" on every screen
 

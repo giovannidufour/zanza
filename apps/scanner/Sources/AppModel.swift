@@ -551,7 +551,7 @@ final class AppModel: ObservableObject {
                 self.preview = ImageOutput.refresh(preview: self.preview, zone: self.previewZone, scan: img, area: area)
                 guard let side else { self.save(original: img, label: nil, dpi: dpi); return }
                 self.caption = "Cutting the label…"
-                let labelMM = self.preset.labelMM   // 3.5" for a 7", 4" for 10" / 12" (0152)
+                let labelMM = self.preset.labelMM   // 3.5" for a 7", 4" for 10" / 12" (0153)
                 // reading the label (OCR) and cutting two squares out of a ~25 MP scan: off the main thread
                 DispatchQueue.global(qos: .userInitiated).async {
                     let scale = CGFloat(img.width) / area.width   // px per mm, as scanned

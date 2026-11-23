@@ -1935,7 +1935,8 @@
       if (res.error) throw res.error;
       var d = res.data || {};
       return { trade: d.trade_enabled !== false, tradeWanted: d.trade_wanted !== undefined ? d.trade_wanted !== false : d.trade_enabled !== false,
-               identity: d.identity_enabled !== false, hasIdentity: d.identity_enabled !== undefined };
+               identity: d.identity_enabled !== false, hasIdentity: d.identity_enabled !== undefined,
+               wantlist: d.wantlist_enabled !== false, hasWantlist: d.wantlist_enabled !== undefined };   // decision 0152
     });
   }
   function loadTradeEnabled(force) {
@@ -1956,12 +1957,13 @@
     var ss = useState(null), saved = ss[0], setSaved = ss[1];     // what the database says: { tradeWanted, identity, hasIdentity }
     var ts = useState(null), trade = ts[0], setTrade = ts[1];     // the Trade tick
     var is = useState(null), identity = is[0], setIdentity = is[1];   // the Who I am tick (decision 0106)
+    var ws = useState(null), wantlist = ws[0], setWantlist = ws[1];   // the Wantlist check tick (decision 0152)
     var er = useState(null), error = er[0], setError = er[1];
     var ps = useState(null), problem = ps[0], setProblem = ps[1];
     var bs = useState(false), busy = bs[0], setBusy = bs[1];
 
     useEffect(function () {
-      loadShopSettings().then(function (st) { setSaved(st); setTrade(st.tradeWanted); setIdentity(st.identity); }, function (e) { setError(e.message || String(e)); });
+      loadShopSettings().then(function (st) { setSaved(st); setTrade(st.tradeWanted); setIdentity(st.identity); setWantlist(st.wantlist); }, function (e) { setError(e.message || String(e)); });
     }, []);
     if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' },
       'Could not load the settings: ' + error + '. Is migration 0023 (trade switch) applied?');
@@ -1969,15 +1971,19 @@
 
     async function save() {
       var identityChanged = identity !== saved.identity, tradeChanged = trade !== saved.tradeWanted;
-      if (!identityChanged && !tradeChanged) { toast('Nothing to save.'); return; }
+      var wantlistChanged = saved.hasWantlist && wantlist !== saved.wantlist;
+      if (!identityChanged && !tradeChanged && !wantlistChanged) { toast('Nothing to save.'); return; }
       setBusy(true);
       var res = identityChanged ? await sb.rpc('admin_set_identity_enabled', { p_enabled: identity }) : { error: null };
       if (!res.error && tradeChanged) res = await sb.rpc('admin_set_trade_enabled', { p_enabled: trade });
+      if (!res.error && wantlistChanged) res = await sb.rpc('admin_set_wantlist_enabled', { p_enabled: wantlist });
       setBusy(false);
       if (res.error) { setProblem('Not saved: ' + res.error.message); loadShopSettings().then(setSaved, function () {}); return; }
-      var next = { tradeWanted: trade, identity: identity, hasIdentity: saved.hasIdentity };
+      var next = { tradeWanted: trade, identity: identity, hasIdentity: saved.hasIdentity, wantlist: wantlist, hasWantlist: saved.hasWantlist };
       setProblem(null); setSaved(next); tradeSetting = Promise.resolve(trade && identity);
-      toast((identityChanged ? (identity ? 'The shop shows who you are.' : 'The shop no longer shows who you are, nor trade.') : (trade ? 'Trade is on.' : 'Trade is off.')) + ' It updates in about 2 minutes.');
+      toast((identityChanged ? (identity ? 'The shop shows who you are.' : 'The shop no longer shows who you are, nor trade.')
+        : tradeChanged ? (trade ? 'Trade is on.' : 'Trade is off.')
+        : (wantlist ? 'The wantlist check is on.' : 'The wantlist check is off.')) + ' It updates in about 2 minutes.');
     }
 
     return h('div', { className: 'admin-section admin-shipping admin-settings' },
@@ -1999,6 +2005,12 @@
           (identity ? '' : ' While “Show who I am” is off, trade stays off whatever this says.')),
         h('div', null, h(Z.Checkbox, { label: 'Show trade on the shop', checked: trade, 'aria-describedby': 'settings-trade-help',
           onChange: function (e) { setTrade(e.target.checked); setProblem(null); } }))),
+      // Figma BACKEND → Settings → `wantlist setting` (decision 0152). Hidden until migration 0033 is applied.
+      saved.hasWantlist ? h('section', { className: 'admin-shipping__section', 'aria-labelledby': 'settings-wantlist' },
+        h('h2', { id: 'settings-wantlist', className: 'label-medium' }, 'Wantlist check'),
+        h('p', { className: 'body-small', id: 'settings-wantlist-help' }, 'Off: the shop shows no trace of the wantlist check. On: visitors can connect their Discogs account and see which records here are on their wantlist. Their wantlist is compared in their browser and never reaches the shop. Saving rebuilds the shop, live in about 2 minutes.'),
+        h('div', null, h(Z.Checkbox, { label: 'Show the wantlist check on the shop', checked: wantlist, 'aria-describedby': 'settings-wantlist-help',
+          onChange: function (e) { setWantlist(e.target.checked); setProblem(null); } }))) : null,
       h(PhotoSizes));
   }
 

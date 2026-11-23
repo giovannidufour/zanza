@@ -9,7 +9,7 @@ final class GlassView: NSView {
     var glass = CGRect(x: 0, y: 0, width: 216, height: 297) { didSet { if glass != oldValue { place() } } }
     var side: CGFloat? { didSet { if side != oldValue { place(); guide.needsDisplay = true; window?.invalidateCursorRects(for: self) } } }
     var record: CGFloat = 0 { didSet { if record != oldValue { guide.needsDisplay = true } } }
-    var label: CGFloat = 101.6 { didSet { if label != oldValue { guide.needsDisplay = true } } }   // label crop, mm (0152)
+    var label: CGFloat = 101.6 { didSet { if label != oldValue { guide.needsDisplay = true } } }   // label crop, mm (0153)
     var center = CGPoint(x: 108, y: 148) { didSet { place() } }
     var angle: CGFloat = 0 { didSet { place(); if aids { guide.needsDisplay = true } } }
     var aids = false { didSet { if aids != oldValue { guide.needsDisplay = true } } }   // grid + "up" figure while turning

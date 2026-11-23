@@ -66,7 +66,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | ListingLine | page `listing form` → `listing line` | ported: removable, sample empty / uploaded, artist on label, marker (number, 0114) |
 | TradeNote | page `Trade` → `trade note` | ported (0068): title, body, signature |
 | DiscogsCard | page `Trade` → `discogs card` | ported (0068): label, handle, stats, link |
-| TradeStep | page `Trade` → `trade step` | ported (0068) |
+| Step | page `Trade` → `step` (was `trade step`) | ported (0068, renamed 0152) |
 | ReleaseOption | page `Trade` → `release option` | ported (0069) |
 | ReleaseList | page `Trade` → `release list` | ported (0069) |
 | ChosenRelease | page `Trade` → `chosen release` | ported (0069) |
