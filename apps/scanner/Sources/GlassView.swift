@@ -9,7 +9,7 @@ final class GlassView: NSView {
     var glass = CGRect(x: 0, y: 0, width: 216, height: 297) { didSet { if glass != oldValue { place() } } }
     var side: CGFloat? { didSet { if side != oldValue { place(); guide.needsDisplay = true; window?.invalidateCursorRects(for: self) } } }
     var record: CGFloat = 0 { didSet { if record != oldValue { guide.needsDisplay = true } } }
-    var label: CGFloat = 101.6
+    var label: CGFloat = 101.6 { didSet { if label != oldValue { guide.needsDisplay = true } } }   // label crop, mm (0153)
     var center = CGPoint(x: 108, y: 148) { didSet { place() } }
     var angle: CGFloat = 0 { didSet { place(); if aids { guide.needsDisplay = true } } }
     var aids = false { didSet { if aids != oldValue { guide.needsDisplay = true } } }   // grid + "up" figure while turning
@@ -212,7 +212,9 @@ final class GuideView: NSView {
         }
         let l = g.label * k
         ctx.setLineDash(phase: 0, lengths: [6, 6])
+        ctx.setStrokeColor(NSColor.white.cgColor)   // label crop in text/strong-invert (Gio: white on the label; 0153)
         ctx.stroke(CGRect(x: mid.x - l / 2, y: mid.y - l / 2, width: l, height: l))
+        ctx.setStrokeColor(ink)                     // record edge, square, handles stay text/strong
         ctx.setLineDash(phase: 0, lengths: [])
         ctx.strokeEllipse(in: CGRect(x: mid.x - 4, y: mid.y - 4, width: 8, height: 8))   // spindle hole
         for c in [CGPoint(x: square.minX, y: square.minY), CGPoint(x: square.maxX, y: square.minY),
@@ -264,7 +266,7 @@ struct GlassCanvas: NSViewRepresentable {
         v.glass = model.previewZone
         v.side = model.sideMM
         v.record = model.preset.recordMM ?? 0
-        v.label = SizePreset.labelMM
+        v.label = model.preset.labelMM
         if !v.interacting {
             if model.animateCenter { v.animateNext = true; model.animateCenter = false }
             v.center = model.center; v.angle = model.angle
