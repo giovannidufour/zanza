@@ -1,4 +1,4 @@
-# 0161 — Listings → Drafts: a filter column of what a draft still needs
+# 0162 — Listings → Drafts: a filter column of what a draft still needs
 
 `2026-11-23` · accepted (Gio: "vorrei la colonna filtri nei draft in admin") · applies [0028](0028-plp-filters.md) (facet rules) and [0128](0128-listings-tabs-and-search.md) (selection reset) · Figma: BACKEND → Listings → new component `drafts filters` (2503:2114), frame "Listings - desktop · Drafts filters" (2503:2281)
 

@@ -1046,7 +1046,7 @@
     return fold([r.sku, nameOf(r), (rel.label_entity || {}).name].concat((rel.lines || []).map(function (l) { return l.artist; })).join(' '));
   }
   function matches(r, words) { if (!words.length) return true; var hs = haystack(r); return words.every(function (w) { return hs.indexOf(w) >= 0; }); }
-  /* decision 0161: the Drafts filter column (Figma BACKEND → Listings → `drafts filters`). Facets of what a draft
+  /* decision 0162: the Drafts filter column (Figma BACKEND → Listings → `drafts filters`). Facets of what a draft
      still needs before it can go live; OR inside a block, AND between blocks (as the shop, 0028); a count is what
      ticking the option would show given the other blocks; an option at 0 hides unless ticked, an empty block hides. */
   function samplesOf(r) { var s = (r.release || {}).samples; return s && s[0] ? s[0].count : 0; }
@@ -1089,7 +1089,7 @@
     var er = useState(null), error = er[0], setError = er[1];
     var tb = useState(props.tab || 'live'), tab = tb[0], setTab = tb[1];
     var qs = useState(''), query = qs[0], setQuery = qs[1];
-    var fs = useState({}), facets = fs[0], setFacets = fs[1];   // Drafts filter column (0161): { facet: [values] }
+    var fs = useState({}), facets = fs[0], setFacets = fs[1];   // Drafts filter column (0162): { facet: [values] }
     var se = useState([]), selected = se[0], setSelected = se[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
     var bs = useState(false), busy = bs[0], setBusy = bs[1];
@@ -1124,7 +1124,7 @@
     var withStatus = all.filter(function (r) { return matches(r, words); });
     var current = TABS.filter(function (t) { return t[0] === tab; })[0];
     var inTab = withStatus.filter(function (r) { return current[2](r.eff); });
-    // decision 0161: the filter column is on Drafts only (desktop; mobile parked in design/open.md)
+    // decision 0162: the filter column is on Drafts only (desktop; mobile parked in design/open.md)
     var filtering = tab === 'draft' && !mobile;
     var visible = filtering ? inTab.filter(function (r) { return passes(r, facets); }) : inTab;
     var filtered = filtering && pickedCount(facets) > 0;
@@ -1205,7 +1205,7 @@
     /* decision 0129: drag & drop (or ↑ ↓ on the handle) puts the row between its new visible neighbours; the
        database (admin_move_listing) works out the place in the global order. Off while searching (hidden rows sit
        between the results) and in Archived (not in the shop). */
-    var canOrder = !words.length && !filtered && tab !== 'archived';   // filters hide rows too (0161)
+    var canOrder = !words.length && !filtered && tab !== 'archived';   // filters hide rows too (0162)
     function moveRow(from, to) {
       var ids = visible.map(function (r) { return r.id; });
       var id = ids.splice(from, 1)[0];
@@ -1290,7 +1290,7 @@
           onClear: function () { setQuery(''); setSelected([]); },
           onChange: function (e) { setQuery(e.target.value); setSelected([]); } }) }),
       // mobile (Figma page `admin` → Listings - mobile, decision 0089): rows instead of the table, the bulk bar after them
-      // (sticky at the bottom while something is selected); desktop: bulk bar + table, after the Drafts filter column (0161)
+      // (sticky at the bottom while something is selected); desktop: bulk bar + table, after the Drafts filter column (0162)
       mobile ? h(OrderedRows, { mobile: true, rows: visible, onMove: canOrder ? moveRow : null, selected: selected, toggle: toggle, empty: emptyText }) : null,
       mobile ? bar : h(filterColumn ? 'div' : React.Fragment, filterColumn ? { className: 'admin-listings__body' } : null, filterColumn, h('div', { className: 'admin-listings__list' }, bar, h(OrderedRows, { rows: visible, onMove: canOrder ? moveRow : null, selected: selected, toggle: toggle, empty: emptyText,
         head: h('thead', null, h('tr', null,
