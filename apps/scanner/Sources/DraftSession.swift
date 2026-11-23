@@ -38,6 +38,65 @@ final class DraftSession: ObservableObject {
     @Published var lightbox: Int?
 
     weak var app: AppModel?
+
+    // MARK: New draft from Discogs (0145): pick a release, the backend makes the draft (as Memo → Create draft)
+
+    @Published var newDraftOpen = false
+    @Published var discogsQuery = "" { didSet { scheduleDiscogs() } }
+    @Published var discogsResults: [DiscogsResult] = []
+    @Published var discogsSearching = false
+    @Published var creating: String?                       // release title while scanner-draft runs
+    @Published var duplicate: (release: DiscogsResult, existing: [(id: String, sku: String, status: String)])?
+    private var discogsTask: Task<Void, Never>?
+
+    func openNewDraft() { newDraftOpen = true; discogsQuery = ""; discogsResults = []; duplicate = nil; creating = nil; error = nil }
+    func closeNewDraft() { newDraftOpen = false; discogsTask?.cancel(); duplicate = nil; creating = nil }
+
+    private func scheduleDiscogs() {
+        discogsTask?.cancel()
+        let q = discogsQuery.trimmingCharacters(in: .whitespaces)
+        guard q.count >= 3 else { discogsResults = []; discogsSearching = false; return }
+        discogsTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            guard !Task.isCancelled else { return }
+            self.discogsSearching = true
+            let found = (try? await Backend.shared.discogsSearch(q)) ?? []
+            guard !Task.isCancelled, self.discogsQuery.trimmingCharacters(in: .whitespaces) == q else { return }
+            self.discogsResults = found; self.discogsSearching = false
+        }
+    }
+
+    func create(from r: DiscogsResult, force: Bool = false) {
+        creating = r.title; duplicate = nil; error = nil
+        Task { @MainActor in
+            do {
+                switch try await Backend.shared.createDraft(releaseId: r.id, force: force) {
+                case .created(let id, let sku):
+                    self.creating = nil; self.closeNewDraft()
+                    self.query = ""
+                    await self.openDraft(id: id, sku: sku)
+                case .existing(let list):
+                    self.creating = nil; self.duplicate = (r, list)
+                }
+            } catch {
+                self.creating = nil; self.error = error.localizedDescription
+            }
+        }
+    }
+
+    /// Select a draft by id: refresh the list, then pick it (its SKU is a sure search hit)
+    @MainActor func openDraft(id: String, sku: String) async {
+        closeNewDraft()
+        let latest = (try? await Backend.shared.drafts(matching: "")) ?? []
+        let bySKU = (try? await Backend.shared.drafts(matching: sku)) ?? []
+        results = latest
+        if let d = (latest + bySKU).first(where: { $0.id == id }) {
+            if !results.contains(where: { $0.id == id }) { results.insert(d, at: 0) }
+            pick(d)
+        } else {
+            app?.caption = "SKU \(sku) is not a draft (it may be published): open it in the admin"
+        }
+    }
     private var searchTask: Task<Void, Never>?
 
     // MARK: Sign in

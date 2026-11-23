@@ -52,9 +52,18 @@ struct DraftColumn: View {
 
     // MARK: Pick a draft
 
-    var picker: some View {
+    @ViewBuilder var picker: some View {
+        if drafts.newDraftOpen { NewDraftPanel(drafts: drafts) } else { draftList }
+    }
+
+    var draftList: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Drafts").labelStyle(12, color: Theme.textModerate)
+            HStack {   // `draft picker` head with the `new draft` button (0145)
+                Text("Drafts").labelStyle(12, color: Theme.textModerate)
+                Spacer()
+                Button("New draft") { drafts.openNewDraft() }.buttonStyle(ZButtonStyle(primary: false))
+                    .keyboardShortcut("n", modifiers: .command)
+            }
             HStack {
                 TextField("SKU, artist, title, cat. no.", text: $drafts.query).textFieldStyle(.plain).font(Theme.body(16))
                 Image(systemName: "magnifyingglass").foregroundColor(Theme.textModerate)
@@ -338,5 +347,75 @@ struct MediaChip: View {
         .help(media.note)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(icon == "photo" ? "Images" : "Clips") \(media.count): \(media.note)")
+    }
+}
+
+/// `new draft panel` (0145): Discogs search → pick a release → the draft is made by the backend and selected.
+/// States: results | duplicate | creating | no results. No photo (Gio is always at the laptop).
+struct NewDraftPanel: View {
+    @ObservedObject var drafts: DraftSession
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("New draft from Discogs").labelStyle(12, color: Theme.textModerate)
+                Spacer()
+                Button("Cancel") { drafts.closeNewDraft() }.buttonStyle(ZButtonStyle(primary: false)).keyboardShortcut(.escape, modifiers: [])
+            }
+            HStack {
+                TextField("Artist, title, label or cat. no.", text: $drafts.discogsQuery).textFieldStyle(.plain).font(Theme.body(16))
+                Image(systemName: "magnifyingglass").foregroundColor(Theme.textModerate)
+            }
+            .padding(.horizontal, 12).frame(height: 40).background(Theme.surfaceSubtle)
+            if let t = drafts.creating {
+                Text("Creating the draft of \(t)…").bodyStyle(12, color: Theme.textModerate)
+            } else if let dup = drafts.duplicate {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(dup.release.title).bodyStyle(14)
+                    ForEach(dup.existing, id: \.id) { e in
+                        Text("You already have SKU \(e.sku) (\(e.status)) of this release.").bodyStyle(12)
+                    }
+                    HStack(spacing: 8) {
+                        if let e = dup.existing.first(where: { $0.status == "draft" }) ?? dup.existing.first {
+                            Button("Open \(e.sku)") { Task { await drafts.openDraft(id: e.id, sku: e.sku) } }.buttonStyle(ZButtonStyle(primary: false))
+                        }
+                        Button("Create another") { drafts.create(from: dup.release, force: true) }.buttonStyle(ZButtonStyle())
+                    }
+                }
+                .padding(12).background(Theme.surfaceHover).overlay(Rectangle().stroke(Theme.divider, lineWidth: 1))
+            } else if drafts.discogsQuery.trimmingCharacters(in: .whitespaces).count < 3 {
+                Text("Type at least 3 characters").bodyStyle(12, color: Theme.textModerate)
+            } else if drafts.discogsSearching {
+                Text("Searching Discogs…").bodyStyle(12, color: Theme.textModerate)
+            } else if drafts.discogsResults.isEmpty {
+                Text("No release found. Try the catalogue number, or fewer words.").bodyStyle(12, color: Theme.textModerate)
+            }
+            if drafts.creating == nil && drafts.duplicate == nil {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(drafts.discogsResults) { r in
+                            HStack(alignment: .top, spacing: 12) {
+                                ZStack {
+                                    Rectangle().fill(Theme.surfaceSubtle)
+                                    if let t = r.thumb, let u = URL(string: t), !t.isEmpty {
+                                        AsyncImage(url: u) { $0.resizable().scaledToFill() } placeholder: { Color.clear }
+                                    }
+                                }
+                                .frame(width: 40, height: 40).clipped()
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(r.title).bodyStyle(14).fixedSize(horizontal: false, vertical: true)
+                                    if let m = r.meta, !m.isEmpty { Text(m).bodyStyle(12, color: Theme.textModerate).fixedSize(horizontal: false, vertical: true) }
+                                }
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.vertical, 8).padding(.horizontal, 12)
+                            .contentShape(Rectangle())
+                            .onTapGesture { drafts.create(from: r) }
+                            .help("Create a draft of this release")
+                        }
+                    }
+                }
+                .frame(maxHeight: .infinity)
+            }
+        }
     }
 }

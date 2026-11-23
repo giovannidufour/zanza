@@ -34,6 +34,10 @@ struct DraftTags: Codable, Equatable {
     let label: String?; let cat_no: String?; let year: Int?; let genres: [String]?
     let record: String?; let format: String?
 }
+/// A Discogs release found by discogs-lookup { query } (as the admin's Memo)
+struct DiscogsResult: Codable, Identifiable, Equatable { let id: Int; let title: String; let meta: String?; let thumb: String? }
+enum NewDraftResult { case created(id: String, sku: String), existing([(id: String, sku: String, status: String)]) }
+
 struct DraftInfo { let images: [ImageTarget]; let clips: [ClipTarget]; let tags: DraftTags? }
 
 enum BackendError: LocalizedError {
@@ -145,6 +149,48 @@ final class Backend {
             throw BackendError.server("Upload to storage failed (\((res as? HTTPURLResponse)?.statusCode ?? 0))")
         }
         return key
+    }
+
+    // MARK: New draft from Discogs (0145)
+
+    func discogsSearch(_ query: String) async throws -> [DiscogsResult] {
+        let r = try await post("/functions/v1/discogs-lookup", ["query": query], auth: true)
+        return (try? JSONDecoder().decode([DiscogsResult].self, from: JSONSerialization.data(withJSONObject: r["results"] ?? []))) ?? []
+    }
+
+    /// scanner-draft { releaseId, force? }: the draft, or 409 with the listings of that release already there
+    func createDraft(releaseId: Int, force: Bool) async throws -> NewDraftResult {
+        var body: [String: Any] = ["releaseId": releaseId]
+        if force { body["force"] = true }
+        let (status, r) = try await raw("/functions/v1/scanner-draft", body)
+        if status == 409 {
+            let list = (r["existing"] as? [[String: Any]] ?? []).map { e -> (String, String, String) in
+                let sku = (e["sku"] as? Int).map { String(format: "%05d", $0) } ?? "\(e["sku"] ?? "")"
+                return ((e["id"] as? String) ?? "", sku, (e["status"] as? String) ?? "")
+            }
+            return .existing(list)
+        }
+        guard (200..<300).contains(status), let d = r["draft"] as? [String: Any], let id = d["id"] as? String else {
+            throw BackendError.server((r["error"] as? String) ?? "Could not create the draft (\(status))")
+        }
+        let sku = (d["sku"] as? Int).map { String(format: "%05d", $0) } ?? "\(d["sku"] ?? "")"
+        return .created(id: id, sku: sku)
+    }
+
+    /// POST that hands back any status (scanner-draft answers 409 on purpose)
+    private func raw(_ path: String, _ body: [String: Any]) async throws -> (Int, [String: Any]) {
+        guard Config.configured, let url = URL(string: Config.supabaseURL + path) else { throw BackendError.notConfigured }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue(Config.supabaseKey, forHTTPHeaderField: "apikey")
+        req.setValue("Bearer " + (try await token()), forHTTPHeaderField: "Authorization")
+        req.httpBody = try JSONSerialization.data(withJSONObject: body)
+        req.timeoutInterval = 60
+        let (data, res) = try await URLSession.shared.data(for: req)
+        let status = (res as? HTTPURLResponse)?.statusCode ?? 0
+        if status == 401 { signOut(); throw BackendError.signedOut }
+        return (status, (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:])
     }
 
     // MARK: HTTP
