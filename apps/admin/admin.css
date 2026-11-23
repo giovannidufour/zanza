@@ -83,6 +83,10 @@ h1, h2, p { margin: 0; }
 .admin-sortable > [data-dragged] { position: relative; z-index: 1; transition: none; background: var(--surface-page); }
 @media (prefers-reduced-motion: reduce) { .admin-sortable > [data-key] { transition: none; } }
 .admin-listings { gap: 24px; }
+/* Drafts filter column (Figma BACKEND → Listings → `drafts filters`, decision 0162): 200 wide, gap 24 to the list;
+   the list keeps the bulk bar and the table, gap 24 as the page */
+.admin-listings__body { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 24px; align-items: start; }
+.admin-listings__list { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
 /* bulk bar: always rendered, fixed height (38 button + 2×8), so selecting never moves the table */
 .admin-bulk { display: flex; align-items: center; gap: 8px; min-height: 54px; padding: 8px 16px; background: var(--surface-subtle); }
 .admin-bulk__count { flex: 1 1 auto; }

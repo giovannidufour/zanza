@@ -1046,6 +1046,21 @@
     return fold([r.sku, nameOf(r), (rel.label_entity || {}).name].concat((rel.lines || []).map(function (l) { return l.artist; })).join(' '));
   }
   function matches(r, words) { if (!words.length) return true; var hs = haystack(r); return words.every(function (w) { return hs.indexOf(w) >= 0; }); }
+  /* decision 0162: the Drafts filter column (Figma BACKEND → Listings → `drafts filters`). Facets of what a draft
+     still needs before it can go live; OR inside a block, AND between blocks (as the shop, 0028); a count is what
+     ticking the option would show given the other blocks; an option at 0 hides unless ticked, an empty block hides. */
+  function samplesOf(r) { var s = (r.release || {}).samples; return s && s[0] ? s[0].count : 0; }
+  var DRAFT_FACETS = [
+    ['status', 'Status', function (r) { return [incomplete(r) ? 'incomplete' : 'ready']; }, [['ready', 'Ready to publish'], ['incomplete', 'Incomplete']]],
+    ['missing', 'Missing', function (r) { return missingOf(r); }, [['artist', 'Artist'], ['format', 'Format'], ['grading', 'Grading'], ['price', 'Price']]],
+    ['photos', 'Photos', function (r) { return [(r.photo_keys || []).length ? 'with' : 'none']; }, [['with', 'With photos'], ['none', 'No photos']]],
+    ['samples', 'Samples', function (r) { return [samplesOf(r) ? 'with' : 'none']; }, [['with', 'With samples'], ['none', 'No samples']]],
+    ['section', 'Section', function (r) { return [r.section]; }, [['sale', 'Sale'], ['trade', 'Trade']]],
+    ['format', 'Format', function (r) { return (r.release || {}).format ? [r.release.format] : []; }, FORMATS.map(function (f) { return [f, f]; })]
+  ];
+  function facetOk(r, f, picked) { var on = picked[f[0]] || []; if (!on.length) return true; var v = f[2](r); return on.some(function (x) { return v.indexOf(x) >= 0; }); }
+  function passes(r, picked, skip) { return DRAFT_FACETS.every(function (f) { return f[0] === skip || facetOk(r, f, picked); }); }
+  function pickedCount(picked) { return Object.keys(picked).reduce(function (n, k) { return n + picked[k].length; }, 0); }
   var BULK = [['publish', 'Publish'], ['unpublish', 'Unpublish'], ['archive', 'Archive'], ['delete', 'Delete']];
   var UNDO = { publish: 'unpublish', unpublish: 'publish', archive: 'restore' };
   var DONE_VERB = { publish: 'published', unpublish: 'unpublished', archive: 'archived', restore: 'restored', delete: 'deleted' };
@@ -1074,6 +1089,7 @@
     var er = useState(null), error = er[0], setError = er[1];
     var tb = useState(props.tab || 'live'), tab = tb[0], setTab = tb[1];
     var qs = useState(''), query = qs[0], setQuery = qs[1];
+    var fs = useState({}), facets = fs[0], setFacets = fs[1];   // Drafts filter column (0162): { facet: [values] }
     var se = useState([]), selected = se[0], setSelected = se[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
     var bs = useState(false), busy = bs[0], setBusy = bs[1];
@@ -1081,7 +1097,7 @@
     var focusAfter = useRef(null);
 
     function load() {
-      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_mode,price_cents,condition_media,custom_title,photo_keys,created_at,sort_order,orders:order_items(count),release:releases(format,label_entity:labels(name),lines:release_lines(position,artist,title))')
+      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_mode,price_cents,condition_media,custom_title,photo_keys,created_at,sort_order,orders:order_items(count),release:releases(format,samples(count),label_entity:labels(name),lines:release_lines(position,artist,title))')
         // decision 0129: one global order, Gio's (sort_order, lower = first); each tab shows it filtered
         .order('sort_order', { ascending: true }).order('created_at', { ascending: false })
         .then(function (res) { if (res.error) setError(res.error.message); else setRows(res.data); });
@@ -1107,7 +1123,11 @@
     // the search narrows every tab, and the tab counts follow it (where the matches are)
     var withStatus = all.filter(function (r) { return matches(r, words); });
     var current = TABS.filter(function (t) { return t[0] === tab; })[0];
-    var visible = withStatus.filter(function (r) { return current[2](r.eff); });
+    var inTab = withStatus.filter(function (r) { return current[2](r.eff); });
+    // decision 0162: the filter column is on Drafts only (desktop; mobile parked in design/open.md)
+    var filtering = tab === 'draft' && !mobile;
+    var visible = filtering ? inTab.filter(function (r) { return passes(r, facets); }) : inTab;
+    var filtered = filtering && pickedCount(facets) > 0;
     var picked = visible.filter(function (r) { return selected.indexOf(r.id) >= 0; });
     var allOn = visible.length > 0 && picked.length === visible.length;
     var someOn = picked.length > 0 && !allOn;
@@ -1185,7 +1205,7 @@
     /* decision 0129: drag & drop (or ↑ ↓ on the handle) puts the row between its new visible neighbours; the
        database (admin_move_listing) works out the place in the global order. Off while searching (hidden rows sit
        between the results) and in Archived (not in the shop). */
-    var canOrder = !words.length && tab !== 'archived';
+    var canOrder = !words.length && !filtered && tab !== 'archived';   // filters hide rows too (0162)
     function moveRow(from, to) {
       var ids = visible.map(function (r) { return r.id; });
       var id = ids.splice(from, 1)[0];
@@ -1204,7 +1224,7 @@
     }
 
     var counts = {}; TABS.forEach(function (t) { counts[t[0]] = withStatus.filter(function (r) { return t[2](r.eff); }).length; });
-    var emptyText = words.length ? 'Nothing matches “' + query.trim() + '”' + (withStatus.length ? ' here: see the counts on the other tabs.' : '.') : 'No listings here.';
+    var emptyText = filtered && inTab.length ? 'No drafts match these filters.' : words.length ? 'Nothing matches “' + query.trim() + '”' + (withStatus.length ? ' here: see the counts on the other tabs.' : '.') : 'No listings here.';
     var bar = h('div', { className: 'admin-bulk' },
       h('p', { className: 'admin-bulk__count body-medium', 'aria-live': 'polite' }, picked.length + ' selected'),
       picked.length
@@ -1217,6 +1237,27 @@
       h('div', { className: 'admin-bulk__message', role: 'status', hidden: !!picked.length },
         message ? h('span', { className: 'body-medium' + (message.error ? ' admin-status--error' : '') }, message.text) : null,
         null));
+
+    function tick(key, value, on) {
+      setFacets(function (cur) {
+        var next = Object.assign({}, cur), list = (cur[key] || []).filter(function (x) { return x !== value; });
+        if (on) list.push(value);
+        if (list.length) next[key] = list; else delete next[key];
+        return next;
+      });
+      setSelected([]);   // 0128: the selection never covers hidden rows
+    }
+    var filterColumn = !filtering ? null : h('aside', { className: 'admin-listings__filters', 'aria-label': 'Filter drafts' },
+      h(Z.Filters, null, DRAFT_FACETS.map(function (f) {
+        var base = inTab.filter(function (r) { return passes(r, facets, f[0]); }), on = facets[f[0]] || [];
+        var options = f[3].map(function (o) {
+          var n = base.filter(function (r) { return f[2](r).indexOf(o[0]) >= 0; }).length, checked = on.indexOf(o[0]) >= 0;
+          return n || checked ? h(Z.Filter, { key: o[0], label: o[1], count: String(n), checked: checked,
+            'aria-controls': 'listings-table', onChange: function (e) { tick(f[0], o[0], e.target.checked); } }) : null;
+        }).filter(Boolean);
+        return options.length ? h(Z.FilterBlock, { key: f[0], label: f[1] }, options) : null;
+      })),
+      h('p', { className: 'zz-visually-hidden', role: 'status', 'aria-live': 'polite' }, filtered ? plural(visible.length, 'draft') + ' shown' : ''));
 
     var dialog = null;
     if (confirm) {
@@ -1249,14 +1290,14 @@
           onClear: function () { setQuery(''); setSelected([]); },
           onChange: function (e) { setQuery(e.target.value); setSelected([]); } }) }),
       // mobile (Figma page `admin` → Listings - mobile, decision 0089): rows instead of the table, the bulk bar after them
-      // (sticky at the bottom while something is selected)
-      mobile ? h(OrderedRows, { mobile: true, rows: visible, onMove: canOrder ? moveRow : null, selected: selected, toggle: toggle, empty: emptyText }) : bar,
-      mobile ? bar : h(OrderedRows, { rows: visible, onMove: canOrder ? moveRow : null, selected: selected, toggle: toggle, empty: emptyText,
+      // (sticky at the bottom while something is selected); desktop: bulk bar + table, after the Drafts filter column (0162)
+      mobile ? h(OrderedRows, { mobile: true, rows: visible, onMove: canOrder ? moveRow : null, selected: selected, toggle: toggle, empty: emptyText }) : null,
+      mobile ? bar : h(filterColumn ? 'div' : React.Fragment, filterColumn ? { className: 'admin-listings__body' } : null, filterColumn, h('div', { className: 'admin-listings__list' }, bar, h(OrderedRows, { rows: visible, onMove: canOrder ? moveRow : null, selected: selected, toggle: toggle, empty: emptyText,
         head: h('thead', null, h('tr', null,
           canOrder ? h('th', { className: 'handle' }, h('span', { className: 'zz-visually-hidden' }, 'Order')) : null,
           h('th', { className: 'select' }, visible.length ? h(Z.Checkbox, { id: 'select-all', hideLabel: true, label: 'Select all', checked: allOn, indeterminate: someOn, onChange: toggleAll }) : null),
           h('th', { className: 'thumb' }, h('span', { className: 'zz-visually-hidden' }, 'Photo')),
-          ['SKU', 'Record', 'Status', 'Section', 'Price'].map(function (t) { return h('th', { key: t, className: t === 'SKU' ? 'num' : t === 'Price' ? 'num price' : '' }, t); }))) }),
+          ['SKU', 'Record', 'Status', 'Section', 'Price'].map(function (t) { return h('th', { key: t, className: t === 'SKU' ? 'num' : t === 'Price' ? 'num price' : '' }, t); }))) }))),
       dialog);
   }
 

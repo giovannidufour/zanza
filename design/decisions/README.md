@@ -181,3 +181,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0159](0159-discogs-link-in-side-column.md) | Admin listing: Discogs link in the desktop side column (stays visible while scrolling), under the field on mobile; amends 0150 placement | accepted |
 | [0160](0160-scanner-update-draft.md) | Scanner: Update (⌘R, and on return to the app) re-reads the open draft and the list from the admin | accepted |
 | [0161](0161-show-sold-out-only-when-sold.md) | "Show sold out" in the filters only when the page has a sold record (build-time) | accepted |
+| [0162](0162-drafts-filter-column.md) | Admin Listings → Drafts: filter column (Status ready/incomplete, Missing, Photos, Samples, Section, Format) with the shop's `Filters`; 0028 rules; desktop only | accepted |
