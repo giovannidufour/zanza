@@ -1477,15 +1477,19 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-memo-item__text { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
 .zz-memo-item__text > p { margin: 0; overflow-wrap: anywhere; }
 .zz-memo-item__meta { color: var(--text-moderate); }
-/* FileNameRow (Figma Create → `file name`, decision 0136) */
-.zz-file-name { display: flex; align-items: center; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
-.zz-file-name__text { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
-.zz-file-name__text > p { margin: 0; overflow-wrap: anywhere; }
-.zz-file-name__role { color: var(--text-moderate); }
-.zz-file-name > .zz-button { flex: none; }
+/* BackLink (Figma `admin` → `back link`) */
+.zz-back-link { display: inline-block; color: var(--text-moderate); text-decoration: none; }
+.zz-back-link:hover { text-decoration: underline; }
 .zz-memo-item__link { color: inherit; text-decoration: underline; align-self: flex-start; }
 .zz-memo-item__actions { flex: none; display: flex; flex-wrap: wrap; gap: 8px; }
 @media (--mobile) { .zz-memo-item { flex-direction: column; align-items: stretch; gap: 8px; } }
+/* boolean `select` (decision 0140): the checkbox first; mobile = checkbox beside the stacked text and actions (gap 16 / 8) */
+.zz-memo-item__select { flex: none; display: flex; }
+@media (--mobile) {
+  .zz-memo-item:has(> .zz-memo-item__select) { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 16px; row-gap: 8px; align-items: start; }
+  .zz-memo-item:has(> .zz-memo-item__select) > .zz-memo-item__select { grid-row: 1 / span 2; }
+  .zz-memo-item:has(> .zz-memo-item__select) > .zz-memo-item__text, .zz-memo-item:has(> .zz-memo-item__select) > .zz-memo-item__actions { grid-column: 2; }
+}
 
 /* ── AdminBar (Figma page `admin` → `admin bar`, decision 0089): desktop = section buttons + account, mobile = menu · title (no Create since 0125) ── */
 .zz-admin-bar__desktop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
@@ -1708,3 +1712,28 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
   .zz-price-fields__row { grid-template-columns: minmax(0, 1fr); }
   .zz-price-fields__field { grid-column: auto; }
 }
+
+/* ── LinkedInput (Figma BACKEND → Create → `custom title`, `title link bar`, `title link menu`; decision 0147) ── */
+.zz-linked-input { position: relative; }
+/* the native input keeps caret, selection and editing; its text is drawn by the backdrop, links underlined */
+.zz-linked-input .zz-input__control { color: transparent; caret-color: var(--text-strong); }
+.zz-linked-input .zz-input__control::selection { color: transparent; background: var(--surface-subtle); }
+.zz-linked-input__backdrop { position: absolute; height: 20px; overflow: hidden; pointer-events: none; }
+.zz-linked-input__text { white-space: pre; color: var(--text-strong); }
+.zz-linked-input__link { text-decoration: underline; text-underline-offset: 3px; }
+.zz-linked-input__bar,
+.zz-linked-input__menu {
+  position: absolute; z-index: 10; top: calc(100% + 4px);
+  box-sizing: border-box; max-width: 100%;
+  background: var(--surface-base);   /* floats over the form: opaque in every mode, as the entity menu */
+  border: 1px solid var(--border-divider-strong);
+}
+.zz-linked-input__bar { display: flex; gap: 4px; padding: 4px; }
+.zz-linked-input__menu { width: 320px; display: flex; flex-direction: column; }
+.zz-linked-input__search {
+  margin: 0; padding: 8px; border: 0; border-bottom: 1px solid var(--border-divider-strong); border-radius: 0;
+  background: var(--surface-accent); color: var(--text-strong); font: inherit; appearance: none; -webkit-appearance: none;
+}
+.zz-linked-input__search::placeholder { color: var(--text-moderate); opacity: 1; }
+.zz-linked-input__options { margin: 0; padding: 0; list-style: none; max-height: 288px; overflow-y: auto; }
+.zz-linked-input__options .zz-entity-option[data-current="true"] .zz-entity-option__label { text-decoration: underline; text-underline-offset: 3px; }

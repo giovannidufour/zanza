@@ -15,6 +15,7 @@ on:
       - 'packages/content/**'
       - 'packages/images/**'
       - 'packages/file-names/**'
+      - 'packages/listing-draft/**'
       - 'apps/storefront/site.json'
       - 'apps/storefront/content/legal/**'
       - '.github/workflows/deploy-admin.yml'
