@@ -594,6 +594,18 @@ final class AppModel: ObservableObject {
         return "\(root)_\(i)"
     }
 
+    /// Clear list (0154): empties the session list only; the files stay in Free scans, the next name is unchanged
+    func clearFreeList() {
+        let kept = freeScans
+        guard !kept.isEmpty else { return }
+        freeScans = []
+        toasts.show("List cleared · \(kept.count) scan\(kept.count == 1 ? "" : "s") kept in Free scans") { [weak self] in
+            guard let self else { return nil }
+            self.freeScans = kept + self.freeScans
+            return nil
+        }
+    }
+
     func trashFreeScan(_ s: FreeScan) {
         var t = Trashed()
         for u in [s.label, s.original].compactMap({ $0 }) { t.trash(u) }

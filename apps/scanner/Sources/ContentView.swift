@@ -157,6 +157,10 @@ struct FreeScanSection: View {
                 Text("Free scans").labelStyle(12)
                 Spacer()
                 Text("\(model.freeScans.count) this session").bodyStyle(12, color: Theme.textModerate)
+                if !model.freeScans.isEmpty {   // `images head` boolean `clear list` (0154): list only, files stay
+                    Button("Clear list") { model.clearFreeList() }.buttonStyle(ZButtonStyle(primary: false))
+                        .help("Empty this list; the scans stay in the Free scans folder")
+                }
             }
             ScrollView {
                 VStack(spacing: 4) {
