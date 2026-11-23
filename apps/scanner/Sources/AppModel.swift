@@ -484,7 +484,7 @@ final class AppModel: ObservableObject {
                 self.preview = img
                 self.caption = self.preset.sideMM == nil
                     ? "Whole glass: Scan saves everything you see"
-                    : "Drag the record so the spindle hole sits in the middle (arrows to fine-tune, [ ] to turn, Return to scan). The dashed square is the \(self.preset == .record7 ? "3.5" : "4")\" label"
+                    : "Drag the record so the spindle hole sits in the middle (arrows to fine-tune, [ ] to turn, Return to scan). The dashed square is the \(self.preset == .record7 ? "3.8" : "4")\" label"
             case .failure(let e):
                 self.caption = (e as? ScanError).map { if case .cancelled = $0 { return "Preview cancelled" }; return e.localizedDescription } ?? e.localizedDescription
             }
@@ -631,7 +631,7 @@ final class AppModel: ObservableObject {
                 if alert.runModal() != .alertFirstButtonReturn { caption = "Not saved: the file already exists"; return }
             }
             let fmt = format, folderName = labelDir.lastPathComponent, origName = origDir.lastPathComponent
-            let labelInches = preset == .record7 ? "3.5" : "4"
+            let labelInches = preset == .record7 ? "3.8" : "4"
             caption = "Saving \(file)…"
             DispatchQueue.global(qos: .userInitiated).async {   // JPEG / TIFF encoding of large images: not on the main thread
                 do {

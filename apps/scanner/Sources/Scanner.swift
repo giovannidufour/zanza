@@ -9,10 +9,10 @@ enum SizePreset: String, CaseIterable, Identifiable {
     case record12 = "12\""
     case wholeGlass = "Whole glass"
     var id: String { rawValue }
-    /// The label image for the shop (decision 0153, Gio): 4" (101.6 mm) for 10" and 12", 3.5" (88.9 mm) for a 7"
+    /// The label image for the shop (decision 0153, Gio): 4" (101.6 mm) for 10" and 12", 3.8" (96.52 mm) for a 7" (3.5" was too tight)
     /// single, whose label is smaller. Whole glass has no label square (the 4" value is only a fallback).
     var labelMM: CGFloat {
-        switch self { case .record7: return 88.9; default: return 101.6 }
+        switch self { case .record7: return 96.52; default: return 101.6 }
     }
     /// Record diameter, drawn on the preview
     var recordMM: CGFloat? {
@@ -26,7 +26,7 @@ enum SizePreset: String, CaseIterable, Identifiable {
     var zoneMM: CGSize { CGSize(width: 1000, height: 1000) }
     var menuTitle: String {
         switch self {
-        case .record7: return "7\" · whole record + 3.5\" label"
+        case .record7: return "7\" · whole record + 3.8\" label"
         case .record10, .record12: return "\(rawValue) · centre (fits the glass) + 4\" label"
         case .wholeGlass: return "Whole glass · one file"
         }
