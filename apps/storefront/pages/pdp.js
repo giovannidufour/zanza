@@ -50,7 +50,7 @@ function Pdp({ product, related = [], site, url }) {
         className: 'pdp-content__info',
         title: productNameLinked(product, url),
         // trade (Figma page Trade): "Trade only" in the price slot; the description becomes Gio's note in the actions column
-        // best offer (Figma page Offers, decision 0158): "Best offer" in the price slot
+        // best offer (Figma page Offers, decision 0158): no price slot, the "Make an offer" CTA says it
         price: priceText(listing),
         releaseInfo: releaseInfoLinked(release, url),
         tags: tagsOf(release).length ? h(Z.TagGroup, null, tagLinksOf(release, url).map((t) => h(Z.Tag, { key: t.label, size: 'large', href: t.href }, t.label))) : null,
