@@ -33,6 +33,7 @@ struct ContentView: View {
         .overlay { Lightbox(drafts: model.drafts) }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             if model.drafts.draft == nil { model.pasteNames(onlyIfNew: true) }
+            model.refreshDisk()   // files may have changed in Finder
         }
     }
 }
@@ -242,8 +243,13 @@ struct ScanColumn: View {
             GlassCanvas(model: model)
                 .aspectRatio(model.sideMM == nil ? model.previewZone.width / model.previewZone.height : 1, contentMode: .fit)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            Text(scanner.busy ? "\(model.caption) · \(Int(scanner.progress * 100))%" : model.caption)
-                .bodyStyle(14, color: Theme.textModerate).lineLimit(2).multilineTextAlignment(.center)
+            HStack(spacing: 12) {   // caption row (Figma 2423:4111): Cancel next to it while scanning
+                ScanCaption(text: model.caption, busy: scanner.busy, progress: scanner.progressInfo)
+                if scanner.busy {
+                    Button("Cancel") { scanner.cancel() }.buttonStyle(ZButtonStyle(primary: false))
+                        .keyboardShortcut(.escape, modifiers: [])
+                }
+            }
             if model.sideMM != nil {   // preview tools (Figma 2438:1771)
                 HStack(spacing: 16) {
                     Button("Center") { model.centerRecord() }
@@ -284,5 +290,16 @@ struct SelectionSquare: View {
     }
     var handle: some View {
         Rectangle().fill(Theme.surfaceBase).overlay(Rectangle().stroke(Theme.textStrong, lineWidth: 1)).frame(width: 8, height: 8)
+    }
+}
+
+/// The caption with the scan percent: the only view that redraws on progress
+struct ScanCaption: View {
+    let text: String
+    let busy: Bool
+    @ObservedObject var progress: ScanProgress
+    var body: some View {
+        Text(busy ? "\(text) · \(Int(progress.value * 100))%" : text)
+            .bodyStyle(14, color: Theme.textModerate).lineLimit(2).multilineTextAlignment(.center)
     }
 }

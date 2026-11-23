@@ -31,11 +31,12 @@ enum SizePreset: String, CaseIterable, Identifiable {
 }
 
 enum ScanError: LocalizedError {
-    case noScanner, noFile, message(String)
+    case noScanner, noFile, cancelled, message(String)
     var errorDescription: String? {
         switch self {
         case .noScanner: return "No scanner: connect the CanoScan and switch it on."
         case .noFile: return "The scanner returned no image."
+        case .cancelled: return "Scan cancelled: nothing saved"
         case .message(let m): return m
         }
     }
@@ -46,7 +47,9 @@ final class ScannerController: NSObject, ObservableObject, ICDeviceBrowserDelega
     @Published var status = "Looking for a scanner…"
     @Published var ready = false
     @Published var busy = false
-    @Published var progress: Double = 0
+    /// Scan progress lives in its own object, observed only by the caption: publishing it on the controller
+    /// redrew the whole window 4 times a second during a scan (Gio: "lenta e scattosa")
+    let progressInfo = ScanProgress()
     @Published var resolutions: [Int] = [75, 150, 300, 600, 1200]
     /// Size of the glass in millimetres (A4-ish until the scanner says)
     @Published var glassMM = CGSize(width: 216, height: 297)
@@ -88,18 +91,25 @@ final class ScannerController: NSObject, ObservableObject, ICDeviceBrowserDelega
         scanner.downloadsDirectory = tempDir
         scanner.documentName = "scan-\(UUID().uuidString)"
         scanner.documentUTI = "public.tiff"
-        scannedURL = nil
+        scannedURL = nil; cancelled = false
         self.completion = completion
-        busy = true; progress = 0
+        busy = true; progressInfo.value = 0
         status = "\(scannerName) · scanning"
         timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
             guard let self, let u = self.flatbed else { return }
-            self.progress = Double(u.scanProgressPercentDone) / 100
+            let v = (Double(u.scanProgressPercentDone)).rounded() / 100
+            if v != self.progressInfo.value { self.progressInfo.value = v }
         }
         scanner.requestScan()
     }
 
-    func cancel() { scanner?.cancelScan() }
+    /// Cancel (button next to the caption, or Esc): nothing is saved, the temporary file is deleted
+    private var cancelled = false
+    func cancel() {
+        guard busy else { return }
+        cancelled = true
+        scanner?.cancelScan()
+    }
 
     private func closestResolution(to dpi: Int) -> Int {
         resolutions.min(by: { abs($0 - dpi) < abs($1 - dpi) }) ?? dpi
@@ -174,13 +184,22 @@ final class ScannerController: NSObject, ObservableObject, ICDeviceBrowserDelega
     }
 
     func scannerDevice(_ scanner: ICScannerDevice, didCompleteScanWithError error: Error?) {
+        if cancelled {   // ends quietly: temp file gone, no image
+            if let u = scannedURL { try? FileManager.default.removeItem(at: u) }
+            cancelled = false
+            finish(.failure(ScanError.cancelled)); return
+        }
         if let error { finish(.failure(error)); return }
         // Decode now: a CGImage from a source is read lazily, and the file is deleted right after (the preview was black)
-        guard let url = scannedURL,
-              let src = CGImageSourceCreateWithURL(url as CFURL, nil),
-              let lazy = CGImageSourceCreateImageAtIndex(src, 0, [kCGImageSourceShouldCacheImmediately: true] as CFDictionary),
-              let image = Self.decoded(lazy) else { finish(.failure(ScanError.noFile)); return }
-        try? FileManager.default.removeItem(at: url)
-        finish(.success(image))
+        guard let url = scannedURL else { finish(.failure(ScanError.noFile)); return }
+        DispatchQueue.global(qos: .userInitiated).async {   // a 600 dpi scan is ~25 MP: never decode it on the main thread
+            let image = CGImageSourceCreateWithURL(url as CFURL, nil)
+                .flatMap { CGImageSourceCreateImageAtIndex($0, 0, [kCGImageSourceShouldCacheImmediately: true] as CFDictionary) }
+                .flatMap { Self.decoded($0) }
+            try? FileManager.default.removeItem(at: url)
+            DispatchQueue.main.async { self.finish(image.map { .success($0) } ?? .failure(ScanError.noFile)) }
+        }
     }
 }
+
+final class ScanProgress: ObservableObject { @Published var value: Double = 0 }

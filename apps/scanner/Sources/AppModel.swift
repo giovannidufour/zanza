@@ -13,6 +13,26 @@ final class AppModel: ObservableObject {
     @Published var tab: Tab = .scans { didSet { session.active = tab == .samples; if tab == .scans { session.stop() } } }
     /// Export and Push to admin run here, one at a time, in the background (0143)
     let jobs = JobQueue()
+    /// What is on disk, read in the background when something changes (rows used to list folders on every redraw)
+    struct DiskIndex { var labels: [String: String] = [:]; var exported: Set<String> = [] }
+    @Published var disk = DiskIndex()
+    func refreshDisk() {
+        let labels = folder, wav = wavFolder, mp3 = mp3Folder
+        DispatchQueue.global(qos: .utility).async {
+            let fm = FileManager.default
+            var idx = DiskIndex()
+            for f in (try? fm.contentsOfDirectory(atPath: labels.path)) ?? [] where !f.hasPrefix(".") {
+                let a = try? fm.attributesOfItem(atPath: labels.appendingPathComponent(f).path)
+                idx.labels[f] = "\((a?[.size] as? Int) ?? 0):\(Int((a?[.modificationDate] as? Date)?.timeIntervalSince1970 ?? 0))"
+            }
+            for dir in [wav, mp3] {
+                for f in (try? fm.contentsOfDirectory(atPath: dir.path)) ?? [] where f.hasSuffix(".wav") || f.hasSuffix(".mp3") {
+                    idx.exported.insert((f as NSString).deletingPathExtension)
+                }
+            }
+            DispatchQueue.main.async { self.disk = idx }
+        }
+    }
     private var forward: [AnyCancellable] = []
     /// per draft id: the slot files last pushed to the admin (synced = the same now), 0142
     @Published var pushed: [String: [String]] = (UserDefaults.standard.dictionary(forKey: "pushed") as? [String: [String]]) ?? [:] {
@@ -20,11 +40,11 @@ final class AppModel: ObservableObject {
     }
     @Published var wavFolder: URL = UserDefaults.standard.url(forKey: "wavFolder")
         ?? FileManager.default.urls(for: .musicDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza samples/WAV") {
-        didSet { UserDefaults.standard.set(wavFolder, forKey: "wavFolder") }
+        didSet { UserDefaults.standard.set(wavFolder, forKey: "wavFolder"); refreshDisk() }
     }
     @Published var mp3Folder: URL = UserDefaults.standard.url(forKey: "mp3Folder")
         ?? FileManager.default.urls(for: .musicDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza samples/MP3") {
-        didSet { UserDefaults.standard.set(mp3Folder, forKey: "mp3Folder") }
+        didSet { UserDefaults.standard.set(mp3Folder, forKey: "mp3Folder"); refreshDisk() }
     }
 
     @Published var steps: [ScanStep] = []
@@ -45,7 +65,7 @@ final class AppModel: ObservableObject {
     }
     @Published var folder: URL = UserDefaults.standard.url(forKey: "folder")
         ?? FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza scans") {
-        didSet { UserDefaults.standard.set(folder, forKey: "folder") }
+        didSet { UserDefaults.standard.set(folder, forKey: "folder"); refreshDisk() }
     }
     /// Where the whole-record originals are archived
     @Published var originalsFolder: URL = UserDefaults.standard.url(forKey: "originalsFolder")
@@ -75,8 +95,9 @@ final class AppModel: ObservableObject {
     init() {
         drafts.app = self
         session.inJob = { [weak self] f in self?.jobs.uses(f) ?? false }
-        jobs.onIdle = { [weak self] in self?.session.flushPendingRemovals() }
+        jobs.onIdle = { [weak self] in self?.session.flushPendingRemovals(); self?.refreshDisk() }
         // draft rows read jobs and session (progress, push state, counts): redraw them when those change
+        refreshDisk()
         forward = [jobs.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() },
                    session.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }]
         previewZone = zone(for: preset)
@@ -154,12 +175,9 @@ final class AppModel: ObservableObject {
     func clipCount(_ d: DraftSummary) -> Int {
         let sku = d.skuText
         var names = Set(session.assignments.values.filter { $0.sku == sku }.map(\.name))
-        for folder in [wavFolder, mp3Folder] {   // exported clips of this SKU (MP3 always, WAV when chosen)
-            guard let items = try? FileManager.default.contentsOfDirectory(atPath: folder.path) else { continue }
-            for f in items where f.hasPrefix(sku + "_") && (f.hasSuffix(".wav") || f.hasSuffix(".mp3")) {
-                let parts = f.split(separator: "_")
-                if parts.count > 1, Int(parts[1]) == nil { names.insert((f as NSString).deletingPathExtension) }
-            }
+        for f in disk.exported where f.hasPrefix(sku + "_") {
+            let parts = f.split(separator: "_")
+            if parts.count > 1, Int(parts[1]) == nil { names.insert(f) }
         }
         return names.count
     }
@@ -202,12 +220,9 @@ final class AppModel: ObservableObject {
     /// What a draft would push now, as comparable strings: its scans (Labels folder, by SKU) and its assigned clips
     func pushItems(sku: String) -> [String] {
         var items: [String] = []
-        if let files = try? FileManager.default.contentsOfDirectory(atPath: folder.path) {
-            for f in files.sorted() where f.hasPrefix(sku + "_") {
-                let p = f.split(separator: "_"); guard p.count > 1, Int(p[1]) != nil else { continue }
-                let a = try? FileManager.default.attributesOfItem(atPath: folder.appendingPathComponent(f).path)
-                items.append("img:\(f):\((a?[.size] as? Int) ?? 0):\(Int((a?[.modificationDate] as? Date)?.timeIntervalSince1970 ?? 0))")
-            }
+        for f in disk.labels.keys.sorted() where f.hasPrefix(sku + "_") {
+            let p = f.split(separator: "_"); guard p.count > 1, Int(p[1]) != nil else { continue }
+            items.append("img:\(f):\(disk.labels[f]!)")
         }
         for (file, a) in session.assignments.sorted(by: { $0.value.name < $1.value.name }) where a.sku == sku {
             let c = session.clips.first { $0.file == file }
@@ -342,7 +357,7 @@ final class AppModel: ObservableObject {
                     ? "Whole glass: Scan saves everything you see"
                     : "Drag the record so the spindle hole sits in the middle (arrows to fine-tune, [ ] to turn, Return to scan). The dashed square is the 4\" label"
             case .failure(let e):
-                self.caption = e.localizedDescription
+                self.caption = (e as? ScanError).map { if case .cancelled = $0 { return "Preview cancelled" }; return e.localizedDescription } ?? e.localizedDescription
             }
         }
     }
@@ -399,18 +414,23 @@ final class AppModel: ObservableObject {
             case .success(let img):
                 self.preview = ImageOutput.refresh(preview: self.preview, zone: self.previewZone, scan: img, area: area)
                 guard let side else { self.save(original: img, label: nil, dpi: dpi); return }
-                let scale = CGFloat(img.width) / area.width   // px per mm, as scanned
-                let c = CGPoint(x: (center.x - area.minX) * scale, y: (center.y - area.minY) * scale)
-                var angle = angle
-                if self.autoTurn, let a = AutoTurn.angle(in: img, centerPx: c, sidePx: SizePreset.labelMM * scale, current: angle) {
-                    angle = a; self.angle = a
+                let autoTurn = self.autoTurn
+                self.caption = "Cutting the label…"
+                // reading the label (OCR) and cutting two squares out of a ~25 MP scan: off the main thread
+                DispatchQueue.global(qos: .userInitiated).async {
+                    let scale = CGFloat(img.width) / area.width   // px per mm, as scanned
+                    let c = CGPoint(x: (center.x - area.minX) * scale, y: (center.y - area.minY) * scale)
+                    var angle = angle
+                    if autoTurn, let a = AutoTurn.angle(in: img, centerPx: c, sidePx: SizePreset.labelMM * scale, current: angle) { angle = a }
+                    let original = ImageOutput.straighten(img, centerPx: c, sidePx: side * scale, angle: angle)
+                    let label = ImageOutput.straighten(img, centerPx: c, sidePx: SizePreset.labelMM * scale, angle: angle)
+                    DispatchQueue.main.async {
+                        if autoTurn { self.angle = angle }
+                        guard let original, let label else { self.caption = "Could not cut the squares out of the scan"; return }
+                        // The name is read now, so it can still be changed while the scanner runs
+                        self.save(original: original, label: label, dpi: dpi)
+                    }
                 }
-                guard let original = ImageOutput.straighten(img, centerPx: c, sidePx: side * scale, angle: angle),
-                      let label = ImageOutput.straighten(img, centerPx: c, sidePx: SizePreset.labelMM * scale, angle: angle) else {
-                    self.caption = "Could not cut the squares out of the scan"; return
-                }
-                // The name is read now, so it can still be changed while the scanner runs
-                self.save(original: original, label: label, dpi: dpi)
             }
         }
     }
@@ -434,16 +454,28 @@ final class AppModel: ObservableObject {
                 alert.addButton(withTitle: "Cancel")
                 if alert.runModal() != .alertFirstButtonReturn { caption = "Not saved: the file already exists"; return }
             }
-            try ImageOutput.write(label ?? original, to: main, format: format, dpi: dpi)
-            if let archive { try ImageOutput.write(original, to: archive, format: format, dpi: dpi) }
-            caption = archive == nil
-                ? "Saved in \(folder.lastPathComponent): \(file)"
-                : "Saved \(file): 4\" label in \(folder.lastPathComponent), whole record in \(originalsFolder.lastPathComponent)"
-            if drafts.draft != nil, name == drafts.targetName {
-                drafts.saved(DraftSession.thumbnail(main) ?? (label ?? original))
-            } else {
-                if let step = steps.first(where: { $0.name == name }) { thumbs[step.id] = label ?? original }
-                advance(after: name)
+            let fmt = format, folderName = folder.lastPathComponent, origName = originalsFolder.lastPathComponent
+            caption = "Saving \(file)…"
+            DispatchQueue.global(qos: .userInitiated).async {   // JPEG / TIFF encoding of large images: not on the main thread
+                do {
+                    try ImageOutput.write(label ?? original, to: main, format: fmt, dpi: dpi)
+                    if let archive { try ImageOutput.write(original, to: archive, format: fmt, dpi: dpi) }
+                    let thumb = DraftSession.thumbnail(main)
+                    DispatchQueue.main.async {
+                        self.caption = archive == nil
+                            ? "Saved in \(folderName): \(file)"
+                            : "Saved \(file): 4\" label in \(folderName), whole record in \(origName)"
+                        self.refreshDisk()
+                        if self.drafts.draft != nil, name == self.drafts.targetName {
+                            self.drafts.saved(thumb ?? (label ?? original))
+                        } else {
+                            if let step = self.steps.first(where: { $0.name == name }) { self.thumbs[step.id] = thumb ?? label ?? original }
+                            self.advance(after: name)
+                        }
+                    }
+                } catch {
+                    DispatchQueue.main.async { self.caption = error.localizedDescription }
+                }
             }
         } catch {
             caption = error.localizedDescription

@@ -116,7 +116,7 @@ final class DraftSession: ObservableObject {
 
     /// Roles of this SKU that already have a label file in the labels folder ("<sku>_<n>_…")
     func scannedRoles(sku: String) -> [Int] {
-        guard let folder = app?.folder, let items = try? FileManager.default.contentsOfDirectory(atPath: folder.path) else { return [] }
+        guard let items = app?.disk.labels.keys else { return [] }   // the disk index, not a folder listing per redraw
         return items.compactMap { f -> Int? in
             let p = f.split(separator: "_")
             return p.count >= 2 && p[0] == sku ? Int(p[1]) : nil
@@ -147,6 +147,7 @@ final class DraftSession: ObservableObject {
         slots = s
         target = targetID.flatMap { id in s.firstIndex { $0.id == id } } ?? s.firstIndex { !$0.scanned }
         app?.syncFileName()
+        app?.refreshDisk()
         app?.caption = "Order changed: files renamed"
     }
 
@@ -174,6 +175,7 @@ final class DraftSession: ObservableObject {
         slots[i].scanned = false; slots[i].thumb = nil
         target = slots.firstIndex { !$0.scanned }
         app?.syncFileName()
+        app?.refreshDisk()
         app?.caption = "Moved to the Trash: \(names[i].name)"
     }
 

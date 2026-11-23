@@ -37,7 +37,13 @@ final class SessionModel: ObservableObject {
     @Published var onlyUnassigned = false
     @Published var selected: String?                            // clip in the preview
     @Published var playing = false
-    @Published var position: Double = 0
+    /// The playhead lives in its own object, observed only by the preview: publishing it here 30 times a second
+    /// redrew the whole window while a clip played
+    let playhead = Playhead()
+    var position: Double {
+        get { playhead.value }
+        set { if newValue != playhead.value { playhead.value = newValue } }
+    }
     @Published var sourceLabel = ""                             // where the session came from (folder name)
     @Published var message: String?
 
@@ -339,3 +345,5 @@ final class SessionModel: ObservableObject {
         return nil
     }
 }
+
+final class Playhead: ObservableObject { @Published var value: Double = 0 }

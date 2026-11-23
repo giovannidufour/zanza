@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 import UniformTypeIdentifiers
 
 /// `scanner tabs` (0141): Scans / Samples switch the centre and right columns only (⌘1 / ⌘2)
@@ -148,6 +149,8 @@ struct SessionRow: View {
 /// what is cut is not part of the track). Remove silence cuts both ends for export; Undo restores. No fades.
 struct ClipPreview: View {
     @ObservedObject var session: SessionModel
+    @ObservedObject var playhead: PlayheadRef
+    init(session: SessionModel) { self.session = session; self.playhead = PlayheadRef(session.playhead) }
     var body: some View {
         if let c = session.current {
             let a = session.assignments[c.file]
@@ -341,4 +344,11 @@ struct JobLine: View {
         }
         .bodyStyle(11, color: Theme.textModerate).lineLimit(2)
     }
+}
+
+/// Observing the session's playhead from the preview only
+final class PlayheadRef: ObservableObject {
+    let source: Playhead
+    private var sub: Any?
+    init(_ p: Playhead) { source = p; sub = p.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() } }
 }
