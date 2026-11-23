@@ -1,4 +1,4 @@
--- 0030 release credits (2026-11-23, decision 0146): the people Discogs credits on a release (Producer, Mixed By,
+-- 0032 release credits (2026-11-23, decision 0148): the people Discogs credits on a release (Producer, Mixed By,
 -- Arranged By, Written-By, the band …), kept so the shop search finds a record by its producer ("Dodd", "Coxsone").
 -- Not shown in the shop for now (Gio: maybe later, as links like the artists).
 -- · release_credits: one row per Discogs credit (release "extraartists" and track-level ones), in Discogs order.
@@ -148,7 +148,7 @@ begin
         values (v_line.line_id, v_i, v_new_ids[v_i], case when v_i < array_length(v_new_ids, 1) then coalesce(v_new_joins[v_i], '&') end);
       end loop;
     end loop;
-    -- 0030: the Discogs credits go to the first target (a credit names one person), duplicates dropped
+    -- 0032: the Discogs credits go to the first target (a credit names one person), duplicates dropped
     update public.release_credits c set artist_id = v_targets[1]
      where c.artist_id = p_id
        and not exists (select 1 from public.release_credits d where d.release_id = c.release_id and d.artist_id = v_targets[1]

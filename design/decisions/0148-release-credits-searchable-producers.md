@@ -1,10 +1,10 @@
-# 0146 — Release credits from Discogs; producers searchable, not shown
+# 0148 — Release credits from Discogs; producers searchable, not shown
 
 `2026-11-23` · accepted · Figma: none (no UI change)
 
 **Context.** Gio (2026-11-23): a listing is bound to a Discogs release, so we know who produced it (e.g. Coxsone Dodd on a Studio One single). Not shown in the shop for now, but the search should find the record with "Dodd" or "Coxsone"; one day the producers may be shown.
 **Decision.**
-- **Store every Discogs credit** (release and track "extraartists": Producer, Mixed By, Arranged By, Backing Band, Written-By …) in `release_credits` (migration 0030): release, position, artist entity, role as written, credit as printed (ANV), tracks. Gio chose "all credits, search producers" (2026-11-23): reading Discogs again later is the expensive part, so all roles are kept now.
+- **Store every Discogs credit** (release and track "extraartists": Producer, Mixed By, Arranged By, Backing Band, Written-By …) in `release_credits` (migration 0032): release, position, artist entity, role as written, credit as printed (ANV), tracks. Gio chose "all credits, search producers" (2026-11-23): reading Discogs again later is the expensive part, so all roles are kept now.
 - **Same entities as the performers.** A credit points to `artists` (Lee Perry, King Tubby produce and perform). Showing producers later = links to the existing `?artist=` filter; one place for spelling variants.
 - **Spellings.** The printed credit and, for producers, the Discogs name variations + real name of the person (one extra Discogs request per producer, only the first time) become `artist_aliases`.
 - **Search only.** The shop search text (`pages/plp.js` `searchTextOf`) adds the producers' official name, printed credit and aliases. `SEARCH_ROLES = /produc/i` decides which roles are searchable. Nothing is rendered; the names are in the card's `data-search` attribute.

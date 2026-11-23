@@ -1,5 +1,5 @@
 // supabase/functions/discogs-lookup — reads one Discogs release for the admin's "Fetch Discogs" button,
-// with its credits (Producer, Mixed By …, decision 0146),
+// with its credits (Producer, Mixed By …, decision 0148),
 // and searches Discogs releases for the admin's Memo list (decision 0087): POST { query } → { results }, or, after a
 // photo of the label (decision 0090), POST { fields: { barcode, catno, label, artist, title } } → { results }.
 // Admin only: the caller's Supabase session must belong to a row of public.admins.
@@ -46,7 +46,7 @@ function credit(list: DiscogsArtist[] | undefined) {
   };
 }
 
-// credits (decision 0146): every Discogs credit of the release ("extraartists" of the release and of each track), with its
+// credits (decision 0148): every Discogs credit of the release ("extraartists" of the release and of each track), with its
 // role as written ("Producer", "Mixed By"). The admin stores them all after saving (admin_set_release_credits); the shop
 // searches the producers only.
 type DiscogsCredit = DiscogsArtist & { role?: string; tracks?: string };

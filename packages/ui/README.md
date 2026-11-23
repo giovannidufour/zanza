@@ -70,8 +70,8 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | ReleaseOption | page `Trade` → `release option` | ported (0069) |
 | ReleaseList | page `Trade` → `release list` | ported (0069) |
 | ChosenRelease | page `Trade` → `chosen release` | ported (0069) |
+| BackLink | page `admin` → `back link` | ported (0146): ← + label, body/small text/moderate, hover underline; admin Edit listing → Listings tab |
 | MemoItem | page `Memo` (BACKEND) → `memo item` | ported (0087): device mobile / desktop (responsive), meta + link, note, select (0140), Create draft (0135) / Create listing / Remove |
-| FileNameRow | page `Create` (BACKEND) → `file name` | ported (0136): state default / copied, role + name, Copy |
 | BulkRecord | page `Bulk` (BACKEND) → `bulk record` | ported (0107): device mobile / desktop (responsive), state reading / matched / choose / not found / confirmed / skipped, warning |
 | BulkHelp | page `Bulk` (BACKEND) → `bulk naming help` | ported (0107) |
 | ContentGroupHead | page `Content` (BACKEND) → `content group head` | ported (0106): heading + help of an admin Content group |
@@ -100,6 +100,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | Footer · FooterLinks · FooterNewsletter | page `footer` → `footer`, `footer link list`, `footer newsletter`, `footer legal` | ported (0077): `<footer>` landmark, newsletter slot, link columns, legal + copyright; desktop / mobile responsive |
 | SectionHead · GenreLinks · HomeIntro · HomeNewsletter · ProductTile · GalleryCounter · ViewToggle | page `Home` → `section head`, `genre links`, `home intro`, `home newsletter`, `view toggle`; page `product card` → `product tile`, `gallery counter` | ported (0120, Home v2; HomeAbout removed): home blocks; Header `homeCurrent` = `store name` state=active |
 | EntityField · EntityChip | `input` › `chips` + `_input chips`, `entity chip` (tags), `entity option` (input › building blocks) | ported: chips, menu (entity / alias / create), keyboard; Label = one chip; chip size medium / large |
+| LinkedInput | BACKEND → Create → `custom title`, `title link bar`, `title link menu` | ported (0147): links as character ranges over a native input; bar (Link artist / Clear link) never takes the focus; ⌘K; menu = search + record's artists first |
 
 ## Open items
 

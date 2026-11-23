@@ -2,7 +2,7 @@
    ONE mapping from a Discogs release to a listing: the admin (Create / Edit → Fetch Discogs, Memo → Create draft) and
    the Edge Function scanner-draft that the macOS Scanner calls to create a draft from a Discogs release.
    form = the admin's form state (emptyForm); patchFromDiscogs(form, release, entities) fills the release fields;
-   payloadOf(form, status) = the payload of public.admin_save_listing; saveCredits then stores the Discogs credits (0146). release = the answer of discogs-lookup { releaseId }.
+   payloadOf(form, status) = the payload of public.admin_save_listing; saveCredits then stores the Discogs credits (0148). release = the answer of discogs-lookup { releaseId }.
    entities = { artists, labels, genres, tags: [{ id, name }] } or null (then everything binds by name on save).
    No dependencies, no DOM. CommonJS (tests), classic script (window.ZanzaListingDraft), Deno via globalThis.
    The Edge Function holds a COPY (`npm run sync:functions`). */
@@ -57,7 +57,7 @@
       notes: '',
       images: [],    // { id, key, name, url, uploading }
       samples: [],   // { id, key, name, url, line (1-based) | null, uploading }
-      credits: null  // the Discogs credits (0146) read with the release; null = not read now, the stored ones stay
+      credits: null  // the Discogs credits (0148) read with the release; null = not read now, the stored ones stay
     };
   }
 
@@ -114,7 +114,7 @@
     };
   }
 
-  // Credits (decision 0146): every Discogs credit (Producer, Mixed By …) as admin_set_release_credits takes them.
+  // Credits (decision 0148): every Discogs credit (Producer, Mixed By …) as admin_set_release_credits takes them.
   // Not in the form UI: they are saved with the release and only searched in the shop (producers) for now.
   function creditsOf(d) {
     return (d.credits || []).map(function (c) {
@@ -168,7 +168,7 @@
       },
       // only a title typed by Gio is stored; without it the shop shows the line title (data/products.js)
       samples: f.samples.map(function (s) { return { line: s.line, audio_key: s.key, title: s.title || '' }; }),
-      // not read by admin_save_listing: saveCredits sends them after the save (0146)
+      // not read by admin_save_listing: saveCredits sends them after the save (0148)
       credits: Array.isArray(f.credits) ? f.credits : undefined
     };
   }

@@ -56,7 +56,7 @@ const optionLabel = (key, v) => (key === 'format' ? v.replace(/"$/, '”') : v);
 // Search (Figma page `Search`, 2026-11-12): what a query is matched against, normalised the same way as the query in
 // scripts/site.js (searchWords): no accents, lower case, punctuation = space. Artist (entities too: an alias credit
 // still finds the artist), title and track titles, label, catalogue number, genres, the shop's tags, and the producers
-// from the Discogs credits with every spelling of their name (decision 0146; not shown on the page, only searched).
+// from the Discogs credits with every spelling of their name (decision 0148; not shown on the page, only searched).
 // Which credit roles are searchable: SEARCH_ROLES (Gio 2026-11-23: producers only; all roles are stored).
 const searchWords = (s) => String(s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
   .replace(/[^a-z0-9]+/g, ' ').trim();

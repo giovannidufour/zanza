@@ -266,7 +266,7 @@
     lines.forEach(function (l) { lineIdToPos[l.id] = l.position; });
     f.listingId = row.id; f.sku = row.sku; f.status = effectiveStatus(row); f.slug = row.slug;
     f.checkoutUntil = checkoutUntil(row); f.soldAt = row.sold_at; f.publishedAt = row.published_at; f.createdAt = row.created_at;
-    f.customTitle = row.custom_title || ''; f.discogs = r.discogs_release_id ? String(r.discogs_release_id) : '';
+    f.customTitle = row.custom_title || ''; f.titleLinks = null; f.discogs = r.discogs_release_id ? String(r.discogs_release_id) : '';
     f.catNo = r.cat_no || '';
     // the field shows the official name; the stored text is the credit (Different spelling when it differs)
     f.lines = lines.length ? lines.map(function (l) {
@@ -277,6 +277,10 @@
       var spelled = artists.length > 0 && differs(l.artist, namesOf(artists));
       return newLine({ artists: artists, artistCredit: spelled ? l.artist : '', artistSpelled: spelled, title: l.title || '' });
     }) : f.lines;
+    // custom title links (0147): saved ranges; a title saved before 0147 shows the links the shop derived from it
+    f.titleLinks = Array.isArray(row.custom_title_links)
+      ? row.custom_title_links.map(function (l) { return { start: l.start, end: l.end, artist: { id: l.artist_id || null, name: l.name } }; })
+      : (f.customTitle ? autoTitleLinks(f.customTitle, f.lines) : []);
     var le = r.label_entity;
     f.label = le ? [chip(le)] : r.label ? [{ id: null, name: r.label }] : [];
     f.preRelease = !!r.pre_release;
@@ -319,13 +323,41 @@
   // ── shop preview: form → the storefront's text (same mapping as apps/storefront/pages/shell.js and data/products.js) ──
   // the shop shows the credit when it differs (Different spelling), as the database stores it
   function lineArtistText(l) { return l.artistSpelled && l.artistCredit.trim() ? l.artistCredit.trim() : namesOf(l.artists); }
-  /* ── File names (decision 0136): <sku>_<role>_<slug>, so a scan or a clip can be named before it is uploaded ──
-     role: 1 = label A, 2 = label B, 3 = other photos (then 4, 5…; gallery order), a1 b1… = the Discogs position of the
-     line (a / b by line order when there is none). slug = what is in the file, for Gio in Finder only (ASCII, lowercase,
-     hyphens, ≤ 60 chars): the track for clips and labels, line 1 for other photos. Matching reads sku and role only. */
-  // the rule lives in packages/file-names (shared with the Edge Function scan-targets, decision 0138)
-  function fileNamesOf(f, positions) {
-    return ZanzaFileNames.fileNames(f.sku, f.lines.map(function (l) { return { artist: lineArtistText(l), title: l.title }; }), positions);
+  // Custom title links (decision 0147): ranges of the title linked to an artist, [{ start, end, artist: { id, name } }].
+  // The record's artists (and the printed credit of a one-artist line), for the link menu and a click on a name.
+  function titleArtists(lines) {
+    var seen = {}, artists = [], names = [];
+    lines.forEach(function (l) {
+      l.artists.forEach(function (a) {
+        var k = a.id || a.name.toLowerCase();
+        if (!seen[k]) { seen[k] = true; artists.push(a); names.push(a.name); }
+      });
+      if (l.artists.length === 1 && l.artistSpelled && l.artistCredit.trim()) names.push(l.artistCredit.trim());
+    });
+    return { artists: artists, names: names };
+  }
+  // the links the shop derived before 0147 (0111): each artist of the lines found in the title, by name or printed credit
+  function autoTitleLinks(title, lines) {
+    var out = [];
+    lines.forEach(function (l) {
+      l.artists.forEach(function (a) {
+        var cands = [a.name];
+        if (l.artists.length === 1 && l.artistSpelled && l.artistCredit.trim()) cands.push(l.artistCredit.trim());
+        if (out.some(function (x) { return (x.artist.id || x.artist.name) === (a.id || a.name); })) return;
+        for (var i = 0; i < cands.length; i++) {
+          var at = Z.LinkedInput.find(title, cands[i]), end = at + cands[i].length;
+          if (at >= 0 && !out.some(function (x) { return at < x.end && end > x.start; })) { out.push({ start: at, end: end, artist: { id: a.id || null, name: a.name } }); break; }
+        }
+      });
+    });
+    return Z.LinkedInput.tidy(out);
+  }
+  // what is saved: the title is trimmed on save (admin_save_listing), the links follow it
+  function titleLinksRow(title, links) {
+    var lead = title.length - title.replace(/^\s+/, '').length, len = title.trim().length;
+    if (!len) return [];
+    return links.map(function (l) { return { start: Math.max(0, l.start - lead), end: Math.min(len, l.end - lead), artist_id: l.artist.id || null, name: l.artist.name }; })
+      .filter(function (l) { return l.end > l.start; });
   }
   // "Artist - Title 1 / Title 2", or "Artist 1 - Title 1 / Artist 2 - Title 2" when a later line has its own artist;
   // tolerant of half-filled lines (the preview fills in while typing)
@@ -408,18 +440,6 @@
     }, [openId, mobile]);
     useEffect(function () { return function () { document.documentElement.style.removeProperty('--admin-player-height'); document.body.removeAttribute('data-player-open'); }; }, []);
     var fRef = useRef(f); fRef.current = f;
-    // Discogs positions of the lines, for the file names (0136): read once per release, after typing stops
-    var ps = useState(null), positions = ps[0], setPositions = ps[1];   // null | { id, list }
-    var cp = useState(null), copied = cp[0], setCopied = cp[1], copyTimer = useRef(null);
-    var relId = discogsId(f.discogs);
-    useEffect(function () {
-      if (!f.sku || relId === null || (positions && positions.id === relId)) return;
-      var live = true, timer = setTimeout(function () {
-        invoke('discogs-lookup', { releaseId: relId }).then(function (d) { if (live) setPositions({ id: relId, list: positionsOf(d) }); },
-          function () { if (live) setPositions({ id: relId, list: [] }); });
-      }, 600);
-      return function () { live = false; clearTimeout(timer); };
-    }, [f.sku, relId]);
     var fd = useState(false), fetching = fd[0], setFetching = fd[1];
     var pf = useState(null), photoFound = pf[0], setPhotoFound = pf[1];   // releases from a photo of the label (0092)
     var en = useState(null), entities = en[0], setEntities = en[1];
@@ -536,13 +556,16 @@
       var payload = payloadOf(cur, status);
       var res = await sb.rpc('admin_save_listing', { payload: payload });
       if (!res.error) {
-        // 0146: the Discogs credits read with Fetch Discogs go with the release; a failure does not undo the save
+        // 0148: the Discogs credits read with Fetch Discogs go with the release; a failure does not undo the save
         var creditsError = await LD.saveCredits(sb.rpc.bind(sb), res.data, payload);
         if (creditsError) console.warn('Credits not saved: ' + creditsError);
       }
       setSaving(false);
       if (res.error) { setMessage({ error: true, text: (status === 'available' ? 'Not published: ' : 'Not saved: ') + res.error.message }); return; }
       var d = res.data, now = Date.now(), wasPublic = cur.status !== 'draft';
+      // custom title links (0147): a column of their own, written right after the listing (same row, same rebuild)
+      var tl = await sb.from('listings').update({ custom_title_links: titleLinksRow(cur.customTitle, cur.titleLinks || []) }).eq('id', d.listing_id);
+      if (tl.error) toast('Title links not saved: ' + tl.error.message);
       baseline.current = formSnapshot(cur);
       setSavedAt(now);
       set(function (x) { return { listingId: d.listing_id, sku: d.sku, status: d.status, slug: d.slug,
@@ -575,7 +598,6 @@
         var d = await invoke('discogs-lookup', { releaseId: id });
         var r = patchFromDiscogs(fRef.current, d, entities);
         set(r.patch);
-        setPositions({ id: id, list: positionsOf(d) });
         setMessage({ error: false, text: 'Filled from Discogs: check the fields before saving.' + (r.skipped.length ? ' Not filled: ' + r.skipped.join('; ') + '.' : '') });
       } catch (err) {
         setMessage({ error: true, text: 'Discogs: ' + err.message });
@@ -584,7 +606,7 @@
     }
 
     // From Discogs (0111): Custom title = the release as Discogs titles it, "Artist - Title" (the artist as printed).
-    // Only the title changes; the shop links the release's artists found in it.
+    // Only the title (and its links, 0147: the artists of the lines found in it) changes.
     var tt = useState(false), titling = tt[0], setTitling = tt[1];
     async function titleFromDiscogs() {
       var id = discogsId(fRef.current.discogs);
@@ -594,7 +616,7 @@
         var d = await invoke('discogs-lookup', { releaseId: id });
         var title = [d.artistCredit || d.artist, d.title].filter(Boolean).join(' - ');
         if (!title) throw new Error('the release has no title');
-        set({ customTitle: title });
+        set({ customTitle: title, titleLinks: autoTitleLinks(title, fRef.current.lines) });
         setMessage({ error: false, text: 'Custom title from Discogs: ' + title + '.' });
       } catch (err) {
         setMessage({ error: true, text: 'Discogs: ' + err.message });
@@ -723,7 +745,13 @@
       shopUpdate: !!shopAt
     });
 
+    // Back to the Listings tab that holds this listing (Gio 2026-11-23): Live, Drafts, Sold or Archived
+    var backTab = isNew ? null : f.status === 'draft' ? ['draft', 'Drafts']
+      : f.status === 'sold' || f.status === 'traded' ? ['sold', 'Sold']
+      : f.status === 'archived' ? ['archived', 'Archived'] : ['live', 'Live'];
+    var back = h(Z.BackLink, { href: backTab && backTab[0] !== 'live' ? '#listings/' + backTab[0] : '#', label: backTab ? backTab[1] : 'Listings' });
     var main = h('div', { className: 'admin-main' },
+      back,
       h('h1', { className: 'label-extra-large' }, isNew ? 'Create listing' : 'Edit listing'),
       mobile ? listingStatus : null,
 
@@ -756,8 +784,11 @@
         h(Z.FormSectionHead, { id: 'section-lines-title' }, FORM_SECTION_LABEL['lines']),
         // Figma Create → `custom title` (0111): From Discogs under the field, only while Discogs match holds a release
         h('div', { className: 'admin-custom-title' },
-          h(Z.Input, Object.assign({ id: 'custom-title', label: 'Custom title', optional: true,
-            supportText: 'Replaces "Artist - Title" in the shop. Artist names in it link to their records.' }, bind('customTitle'))),
+          // 0147: select characters or click a name → Link artist; links are character ranges, saved apart from the text
+          h(Z.LinkedInput, { id: 'custom-title', label: 'Custom title', optional: true, value: f.customTitle, links: f.titleLinks || [],
+            error: errors.customTitle, readOnly: locked, options: entities && entities.artists,
+            suggested: titleArtists(f.lines).artists, names: titleArtists(f.lines).names,
+            onChange: function (v, links) { set({ customTitle: v, titleLinks: links }); } }),
           discogsId(f.discogs) !== null ? h(Z.Button, { hierarchy: 'secondary', disabled: locked || titling,
             'aria-busy': titling || undefined, onClick: titleFromDiscogs }, 'From Discogs') : null),
         h('div', { className: 'admin-stack' },
@@ -862,29 +893,7 @@
       mobile ? shopBtn : panelButtons.length ? h(Z.ActionPanel, null, panelButtons) : null,
       mobile ? null : note,
       isNew ? null : statusPanel(),
-      fileNamesPanel(),
       shopPreview());
-
-    // Figma Create → `file names` (decision 0136): the names to give scans and clips, with Copy; once there is a SKU
-    function fileNamesPanel() {
-      if (!f.sku || (f.status !== 'draft' && f.status !== 'available')) return null;
-      var reading = relId !== null && !(positions && positions.id === relId);
-      var rows = fileNamesOf(f, reading ? null : relId === null ? [] : positions.list);
-      function copy(row) {
-        function done() { setCopied(row.key); clearTimeout(copyTimer.current); copyTimer.current = setTimeout(function () { setCopied(null); }, 2000); }
-        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(row.name).then(done, function () { setMessage({ error: true, text: 'Not copied: select the name and copy it.' }); });
-        else setMessage({ error: true, text: 'Not copied: select the name and copy it.' });
-      }
-      var done = copied ? rows.filter(function (r) { return r.key === copied; })[0] : null;
-      return h('section', { className: 'admin-section admin-file-names', 'aria-labelledby': 'file-names-title' },
-        h(Z.FormSectionHead, { id: 'file-names-title' }, 'File names'),
-        h('p', { className: 'body-small admin-file-names__help' }, 'Copy a name, then rename the scan or the clip in Finder: the extension stays.'),
-        h('ul', { className: 'admin-file-names__list' }, rows.map(function (r) {
-          return h(Z.FileNameRow, { key: r.key, role: r.role, name: r.name, copied: copied === r.key, onCopy: function () { copy(r); } });
-        })),
-        reading ? h('p', { className: 'body-small admin-file-names__help' }, 'Reading the track positions on Discogs…') : null,
-        h('p', { className: 'zz-visually-hidden', role: 'status' }, done ? 'Copied: ' + done.name : ''));
-    }
 
     function shopPreview() {
       var title = previewName(f), tags = previewTags(f);
@@ -1037,11 +1046,11 @@
                  many: 'are removed with their photos and samples, and their pages leave the shop. This cannot be undone.' }
   };
 
-  function Listings() {
+  function Listings(props) {
     var mobile = useIsMobile();
     var st = useState(null), rows = st[0], setRows = st[1];
     var er = useState(null), error = er[0], setError = er[1];
-    var tb = useState('live'), tab = tb[0], setTab = tb[1];
+    var tb = useState(props.tab || 'live'), tab = tb[0], setTab = tb[1];
     var qs = useState(''), query = qs[0], setQuery = qs[1];
     var se = useState([]), selected = se[0], setSelected = se[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
@@ -2522,7 +2531,7 @@
       }
       var res = await sb.rpc('admin_save_listing', { payload: payload });
       if (res.error) throw new Error(res.error.message);
-      await LD.saveCredits(sb.rpc.bind(sb), res.data, payload);   // 0146; the backfill catches a failure
+      await LD.saveCredits(sb.rpc.bind(sb), res.data, payload);   // 0148; the backfill catches a failure
       var del = await sb.from('memos').delete().eq('id', row.id);
       return { saved: res.data, memoKept: del.error ? del.error.message : null };
     }
@@ -2894,7 +2903,7 @@
           var payload = payloadOf(f, 'draft');
           var res = await sb.rpc('admin_save_listing', { payload: payload });
           if (res.error) throw new Error(res.error.message);
-          await LD.saveCredits(sb.rpc.bind(sb), res.data, payload);   // 0146; the backfill catches a failure
+          await LD.saveCredits(sb.rpc.bind(sb), res.data, payload);   // 0148; the backfill catches a failure
           done++;
           patchRecord(r.id, { created: true });
         } catch (err) {
@@ -3052,6 +3061,7 @@
     else if (hash === '#memo') body = h(Memo, { key: 'memo-' + route.visit });
     else if (hash === '#bulk') body = h(Bulk, { key: 'bulk' });
     else if (/^#new\/memo\/[^/]+$/.test(hash)) body = h(FromMemoLoader, { key: hash + route.visit, id: hash.split('/')[2] });
+    else if (/^#listings(\/(live|draft|sold|archived))?$/.test(hash)) body = h(Listings, { key: hash + route.visit, tab: hash.split('/')[1] || 'live' });
     else body = h(Listings, { key: 'list-' + route.visit });
 
     return h('div', { className: 'admin' },

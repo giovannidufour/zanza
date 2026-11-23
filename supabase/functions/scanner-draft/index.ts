@@ -5,8 +5,8 @@
 //   POST { releaseId, force: true } → { draft: { id, sku } }   always creates
 // The draft is the same as Memo → Create draft (0135): the release read by discogs-lookup, mapped by
 // packages/listing-draft (./listing-draft.js is a COPY, `npm run sync:functions`), saved by admin_save_listing,
-// then its Discogs credits by admin_set_release_credits (decision 0146).
-// Incomplete like every draft (grading, price, photos come later). Credits need migration 0030.
+// then its Discogs credits by admin_set_release_credits (decision 0148).
+// Incomplete like every draft (grading, price, photos come later). Credits need migration 0032.
 // Admin only: the caller's Supabase session (email OTP) must belong to public.admins. Deploy with "Verify JWT" ON.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import "./listing-draft.js";
@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
   const payload = ListingDraft.draftPayload(release, entities);
   const { data: saved, error: saveError } = await supabase.rpc("admin_save_listing", { payload });
   if (saveError) return json({ error: saveError.message }, 500);
-  // the Discogs credits (0146) go with the release; a failure does not undo the draft (the backfill catches it)
+  // the Discogs credits (0148) go with the release; a failure does not undo the draft (the backfill catches it)
   await ListingDraft.saveCredits(supabase.rpc.bind(supabase), saved, payload);
   return json({ draft: { id: saved.listing_id, sku: saved.sku } });
 });

@@ -1,4 +1,4 @@
-// supabase/functions/release-credits — reads the Discogs credits (Producer, Mixed By …, decision 0146) of the releases
+// supabase/functions/release-credits — reads the Discogs credits (Producer, Mixed By …, decision 0148) of the releases
 // saved before credits existed, and stores them with admin_set_release_credits. One-off backfill, safe to run again.
 //   POST { limit? }  → { done, failed: [{ releaseId, error }], remaining }
 // Takes the releases with a Discogs id whose credits were never read (releases.credits_fetched_at is null), at most
