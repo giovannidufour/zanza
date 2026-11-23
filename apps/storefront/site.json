@@ -82,6 +82,10 @@
     "text": "Reggae and dancehall records from my crates. The shop opens soon: leave your email and you’ll hear first.",
     "email": "gio@rythem-works.com"
   },
+  "offers": {
+    "note": "Best offer (migration 0034, decision 0158): endpoint = URL of the Supabase function offer (Verify JWT OFF; puzzle on GET like contact). It sends the offer, confirms it from the email link and starts the payment of an accepted offer. Empty = the offer form says offers are not switched on yet.",
+    "endpoint": "https://hhpknvyfypqipxufmbys.supabase.co/functions/v1/offer"
+  },
   "checkout": {
     "note": "Stripe Checkout (migration 0021, _context/backend.md → Checkout con hold). endpoint = URL of the Supabase function create-checkout; empty = Checkout in the Bag says checkout is not open yet.",
     "endpoint": "https://hhpknvyfypqipxufmbys.supabase.co/functions/v1/create-checkout"

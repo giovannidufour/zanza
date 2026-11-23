@@ -33,6 +33,11 @@ function smallImageUrl(product, src, px, url) {
 
 // ── data → text (mapping confirmed 2026-11-07) ──
 const formatPrice = (p) => `${p.amount % 100 === 0 ? p.amount / 100 : (p.amount / 100).toFixed(2)}€`;
+// best offer (migration 0034, decision 0158): a sale copy with no price, buyers make an offer on /products/<slug>/offer/
+const isOffers = (listing) => listing.section === 'sale' && listing.price_mode === 'offers';
+const OFFERS_PRICE = 'Best offer';
+// the price slot of a card, tile, PDP: the price, "Best offer" or "Trade only"
+const priceText = (listing) => listing.section !== 'sale' ? 'Trade only' : isOffers(listing) ? OFFERS_PRICE : formatPrice(listing.price);
 // `name` comes from the database (custom title or the release lines, see data/products.js); JSON test content has none
 const productName = (r) => r.name || `${r.artist} - ${r.title}`;
 // a pre-release ("blank") of the label: "Pre" right after the label name (Gio, 2026-11-10)
@@ -293,6 +298,7 @@ function sampleAttrs(product, s, url) {
     'data-product-href': productHref(product, url),
     'data-listing-id': product.listing.id,   // the player's "Add to bag" adds the playing product
     'data-listing-section': product.listing.section,   // trade listings: no Add to bag in the player
+    'data-price-mode': isOffers(product.listing) ? 'offers' : undefined,   // best offer (0158): no Add to bag either
     'data-listing-status': product.listing.status   // sold / traded: the player's button reads "Sold out", disabled
   };
 }
@@ -314,7 +320,7 @@ function tagLinksOf(release, url) {
   }));
   return out;
 }
-const TRADE_CARD_LABEL = { available: 'Make an offer', reserved: 'Reserved', traded: 'Traded' };
+const TRADE_CARD_LABEL = { available: 'Make an offer', reserved: 'Reserved', traded: 'Traded', sold: 'Sold out' };
 // Figma labels the card samples 1, 2…; the accessible name keeps the product and the sample title.
 function ProductCardFor({ product, url, headingLevel }) {
   const { listing, release, copy, samples } = product;
@@ -327,12 +333,13 @@ function ProductCardFor({ product, url, headingLevel }) {
     title: productNameLinked(product, url, productHref(product, url)),
     headingLevel,
     releaseInfo: releaseInfoLinked(release, url),
-    price: listing.section === 'sale' ? formatPrice(listing.price) : 'Trade only',
-    // trade (Figma page Trade): the card button is a link to the offer page, not a bag button
-    // (only while available: a reserved or traded trade copy shows its state, and site.js ignores its button)
-    addHref: listing.section === 'trade' && listing.status === 'available' ? url(`/products/${listing.slug}/offer/`) : undefined,
-    addLabel: listing.section === 'trade' ? TRADE_CARD_LABEL[listing.status] || TRADE_CARD_LABEL.available : undefined,
-    addLabelShort: listing.section === 'trade' ? (listing.status === 'available' ? 'Offer' : TRADE_CARD_LABEL[listing.status]) : undefined,
+    'data-price-mode': isOffers(listing) ? 'offers' : undefined,   // best offer: site.js leaves its button alone (0158)
+    price: priceText(listing),
+    // trade (Figma page Trade) and best offer (Figma page Offers, 0158): the card button is a link to the offer page,
+    // not a bag button (only while available: a reserved, sold or traded copy shows its state, and site.js ignores its button)
+    addHref: (listing.section === 'trade' || isOffers(listing)) && listing.status === 'available' ? url(`/products/${listing.slug}/offer/`) : undefined,
+    addLabel: listing.section === 'trade' || isOffers(listing) ? TRADE_CARD_LABEL[listing.status] || TRADE_CARD_LABEL.available : undefined,
+    addLabelShort: listing.section === 'trade' || isOffers(listing) ? (listing.status === 'available' ? 'Offer' : TRADE_CARD_LABEL[listing.status]) : undefined,
     tags: tagLinksOf(release, url),
     description: copy.notes,
     ...gradingProps(copy),
@@ -343,4 +350,4 @@ function ProductCardFor({ product, url, headingLevel }) {
   });
 }
 
-module.exports = { IMAGE_SIZES, imageOf, smallImageUrl, tradeOn, identityOn, wantlistOn, textOf, Paragraphs, SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor };
+module.exports = { isOffers, priceText, IMAGE_SIZES, imageOf, smallImageUrl, tradeOn, identityOn, wantlistOn, textOf, Paragraphs, SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor };

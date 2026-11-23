@@ -173,4 +173,4 @@ function About({ site, url }) {
       identityOn(site) ? h('div', { className: 'trade-col trade-col--2' }, h(Z.Divider), h(OwnerDiscogs, { site })) : null));
 }
 
-module.exports = { TradeActions, Offer, HowTrading, About, offerHref };
+module.exports = { TradeActions, Offer, OfferTarget, HowTrading, About, offerHref };

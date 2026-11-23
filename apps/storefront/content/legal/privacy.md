@@ -13,7 +13,7 @@ Last updated: {{legal.updated}}
 - **In your browser:** only your bag and your sign-in{{#wantlist}}, and your Discogs permission while you check your wantlist{{/wantlist}}.
 {{#wantlist}}- **Check your wantlist:** your browser gets your wantlist from Discogs and compares it with the shop, on your device. Your wantlist never reaches me and nothing is saved; the Discogs permission stays in that tab until you close it or press Disconnect.
 {{/wantlist}}- **Orders, account and "Notify me":** name, address, email and order, to sell and ship; given to the payment provider and the carrier. Art. 6(1)(b) and (c); kept as long as the law requires, reminders until sent.
-- **Messages{{#trade}} and trade offers{{/trade}}:** what you write, to answer you. Art. 6(1)(b).
+- **Messages, price offers{{#trade}} and trade offers{{/trade}}:** what you write (for a price offer also the amount and the ship-to country), to answer you. Art. 6(1)(b). Unconfirmed price offers are deleted after 2 days.
 - **Newsletter:** your email and proof of consent, until you unsubscribe. Art. 6(1)(a).
 
 I use service providers for hosting, database, email, payments and statistics. Some are in the USA: transfers are covered by the EU–U.S. Data Privacy Framework or the EU Standard Contractual Clauses. Without the data I can't ship an order or answer you.
