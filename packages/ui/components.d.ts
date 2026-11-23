@@ -1034,17 +1034,12 @@ export interface MemoItemProps extends HTMLAttributes<HTMLLIElement> {
 export declare function MemoItem(props: MemoItemProps): JSX.Element;
 
 /** Figma `file name` (Create, decision 0136): a name to give a scan or a clip of a listing, with Copy. An <li>: wrap in a <ul>. */
-export interface FileNameRowProps extends HTMLAttributes<HTMLLIElement> {
-  /** what the file is: "Label A", "Other photos", "A1" */
-  role: ReactNode;
-  /** the name without extension: "48213_a1_gregory-isaacs-why-did-you-leave" */
-  name: ReactNode;
-  /** Figma `state=copied`: the button reads "Copied" */
-  copied?: boolean;
-  /** Copy. Omit → no button */
-  onCopy?: () => void;
+export interface BackLinkProps extends HTMLAttributes<HTMLAnchorElement> {
+  href: string;
+  /** the destination, without the arrow: "Drafts", "Listings" */
+  label: ReactNode;
 }
-export declare function FileNameRow(props: FileNameRowProps): JSX.Element;
+export declare function BackLink(props: BackLinkProps): JSX.Element;
 
 /** Figma `bulk record` (BACKEND → Bulk, decision 0107): one record found in the files dropped on Bulk create. An <li>: wrap in a <ul>. */
 export interface BulkRecordProps extends HTMLAttributes<HTMLLIElement> {

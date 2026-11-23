@@ -319,14 +319,6 @@
   // ── shop preview: form → the storefront's text (same mapping as apps/storefront/pages/shell.js and data/products.js) ──
   // the shop shows the credit when it differs (Different spelling), as the database stores it
   function lineArtistText(l) { return l.artistSpelled && l.artistCredit.trim() ? l.artistCredit.trim() : namesOf(l.artists); }
-  /* ── File names (decision 0136): <sku>_<role>_<slug>, so a scan or a clip can be named before it is uploaded ──
-     role: 1 = label A, 2 = label B, 3 = other photos (then 4, 5…; gallery order), a1 b1… = the Discogs position of the
-     line (a / b by line order when there is none). slug = what is in the file, for Gio in Finder only (ASCII, lowercase,
-     hyphens, ≤ 60 chars): the track for clips and labels, line 1 for other photos. Matching reads sku and role only. */
-  // the rule lives in packages/file-names (shared with the Edge Function scan-targets, decision 0138)
-  function fileNamesOf(f, positions) {
-    return ZanzaFileNames.fileNames(f.sku, f.lines.map(function (l) { return { artist: lineArtistText(l), title: l.title }; }), positions);
-  }
   // "Artist - Title 1 / Title 2", or "Artist 1 - Title 1 / Artist 2 - Title 2" when a later line has its own artist;
   // tolerant of half-filled lines (the preview fills in while typing)
   function previewName(f) {
@@ -408,18 +400,6 @@
     }, [openId, mobile]);
     useEffect(function () { return function () { document.documentElement.style.removeProperty('--admin-player-height'); document.body.removeAttribute('data-player-open'); }; }, []);
     var fRef = useRef(f); fRef.current = f;
-    // Discogs positions of the lines, for the file names (0136): read once per release, after typing stops
-    var ps = useState(null), positions = ps[0], setPositions = ps[1];   // null | { id, list }
-    var cp = useState(null), copied = cp[0], setCopied = cp[1], copyTimer = useRef(null);
-    var relId = discogsId(f.discogs);
-    useEffect(function () {
-      if (!f.sku || relId === null || (positions && positions.id === relId)) return;
-      var live = true, timer = setTimeout(function () {
-        invoke('discogs-lookup', { releaseId: relId }).then(function (d) { if (live) setPositions({ id: relId, list: positionsOf(d) }); },
-          function () { if (live) setPositions({ id: relId, list: [] }); });
-      }, 600);
-      return function () { live = false; clearTimeout(timer); };
-    }, [f.sku, relId]);
     var fd = useState(false), fetching = fd[0], setFetching = fd[1];
     var pf = useState(null), photoFound = pf[0], setPhotoFound = pf[1];   // releases from a photo of the label (0092)
     var en = useState(null), entities = en[0], setEntities = en[1];
@@ -569,7 +549,6 @@
         var d = await invoke('discogs-lookup', { releaseId: id });
         var r = patchFromDiscogs(fRef.current, d, entities);
         set(r.patch);
-        setPositions({ id: id, list: positionsOf(d) });
         setMessage({ error: false, text: 'Filled from Discogs: check the fields before saving.' + (r.skipped.length ? ' Not filled: ' + r.skipped.join('; ') + '.' : '') });
       } catch (err) {
         setMessage({ error: true, text: 'Discogs: ' + err.message });
@@ -717,7 +696,13 @@
       shopUpdate: !!shopAt
     });
 
+    // Back to the Listings tab that holds this listing (Gio 2026-11-23): Live, Drafts, Sold or Archived
+    var backTab = isNew ? null : f.status === 'draft' ? ['draft', 'Drafts']
+      : f.status === 'sold' || f.status === 'traded' ? ['sold', 'Sold']
+      : f.status === 'archived' ? ['archived', 'Archived'] : ['live', 'Live'];
+    var back = h(Z.BackLink, { href: backTab && backTab[0] !== 'live' ? '#listings/' + backTab[0] : '#', label: backTab ? backTab[1] : 'Listings' });
     var main = h('div', { className: 'admin-main' },
+      back,
       h('h1', { className: 'label-extra-large' }, isNew ? 'Create listing' : 'Edit listing'),
       mobile ? listingStatus : null,
 
@@ -856,29 +841,7 @@
       mobile ? shopBtn : panelButtons.length ? h(Z.ActionPanel, null, panelButtons) : null,
       mobile ? null : note,
       isNew ? null : statusPanel(),
-      fileNamesPanel(),
       shopPreview());
-
-    // Figma Create → `file names` (decision 0136): the names to give scans and clips, with Copy; once there is a SKU
-    function fileNamesPanel() {
-      if (!f.sku || (f.status !== 'draft' && f.status !== 'available')) return null;
-      var reading = relId !== null && !(positions && positions.id === relId);
-      var rows = fileNamesOf(f, reading ? null : relId === null ? [] : positions.list);
-      function copy(row) {
-        function done() { setCopied(row.key); clearTimeout(copyTimer.current); copyTimer.current = setTimeout(function () { setCopied(null); }, 2000); }
-        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(row.name).then(done, function () { setMessage({ error: true, text: 'Not copied: select the name and copy it.' }); });
-        else setMessage({ error: true, text: 'Not copied: select the name and copy it.' });
-      }
-      var done = copied ? rows.filter(function (r) { return r.key === copied; })[0] : null;
-      return h('section', { className: 'admin-section admin-file-names', 'aria-labelledby': 'file-names-title' },
-        h(Z.FormSectionHead, { id: 'file-names-title' }, 'File names'),
-        h('p', { className: 'body-small admin-file-names__help' }, 'Copy a name, then rename the scan or the clip in Finder: the extension stays.'),
-        h('ul', { className: 'admin-file-names__list' }, rows.map(function (r) {
-          return h(Z.FileNameRow, { key: r.key, role: r.role, name: r.name, copied: copied === r.key, onCopy: function () { copy(r); } });
-        })),
-        reading ? h('p', { className: 'body-small admin-file-names__help' }, 'Reading the track positions on Discogs…') : null,
-        h('p', { className: 'zz-visually-hidden', role: 'status' }, done ? 'Copied: ' + done.name : ''));
-    }
 
     function shopPreview() {
       var title = previewName(f), tags = previewTags(f);
@@ -1031,11 +994,11 @@
                  many: 'are removed with their photos and samples, and their pages leave the shop. This cannot be undone.' }
   };
 
-  function Listings() {
+  function Listings(props) {
     var mobile = useIsMobile();
     var st = useState(null), rows = st[0], setRows = st[1];
     var er = useState(null), error = er[0], setError = er[1];
-    var tb = useState('live'), tab = tb[0], setTab = tb[1];
+    var tb = useState(props.tab || 'live'), tab = tb[0], setTab = tb[1];
     var qs = useState(''), query = qs[0], setQuery = qs[1];
     var se = useState([]), selected = se[0], setSelected = se[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
@@ -3043,6 +3006,7 @@
     else if (hash === '#memo') body = h(Memo, { key: 'memo-' + route.visit });
     else if (hash === '#bulk') body = h(Bulk, { key: 'bulk' });
     else if (/^#new\/memo\/[^/]+$/.test(hash)) body = h(FromMemoLoader, { key: hash + route.visit, id: hash.split('/')[2] });
+    else if (/^#listings(\/(live|draft|sold|archived))?$/.test(hash)) body = h(Listings, { key: hash + route.visit, tab: hash.split('/')[1] || 'live' });
     else body = h(Listings, { key: 'list-' + route.visit });
 
     return h('div', { className: 'admin' },
