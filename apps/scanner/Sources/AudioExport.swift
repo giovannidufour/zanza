@@ -22,7 +22,7 @@ enum AudioExport {
         ["/opt/homebrew/bin/lame", "/usr/local/bin/lame"].first { FileManager.default.isExecutableFile(atPath: $0) }
     }
 
-    static func export(source: URL, trimStart: Double, name: String, tags: Tags,
+    static func export(source: URL, trimStart: Double, trimEnd: Double = 0, name: String, tags: Tags,
                        wavFolder: URL?, mp3Folder: URL, normalize: Bool) throws {
         guard let lame else { throw ScanError.message("LAME is not installed (brew install lame): MP3 not made.") }
         let file = try AVAudioFile(forReading: source)
@@ -32,7 +32,8 @@ enum AudioExport {
         let bits = srcBits >= 24 ? 24 : 16
         let start = AVAudioFramePosition(trimStart * rate)
         file.framePosition = min(start, file.length)
-        let count = AVAudioFrameCount(file.length - file.framePosition)
+        let stop = trimEnd > 0 ? min(AVAudioFramePosition(trimEnd * rate), file.length) : file.length
+        let count = AVAudioFrameCount(max(0, stop - file.framePosition))
         guard let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: max(count, 1)) else { throw ScanError.message("Out of memory") }
         try file.read(into: buf, frameCount: count)
         var gain: Float = 1
@@ -62,12 +63,13 @@ enum AudioExport {
     }
 
     /// MP3 at `kbps` (Push to admin: 128) from the session source, trim applied; no tags (the admin keeps its own data)
-    static func mp3(source: URL, trimStart: Double, kbps: Int) throws -> Data {
+    static func mp3(source: URL, trimStart: Double, trimEnd: Double = 0, kbps: Int) throws -> Data {
         guard let lame else { throw ScanError.message("LAME is not installed (brew install lame).") }
         let file = try AVAudioFile(forReading: source)
         let fmt = file.processingFormat, rate = fmt.sampleRate
         file.framePosition = min(AVAudioFramePosition(trimStart * rate), file.length)
-        let count = AVAudioFrameCount(file.length - file.framePosition)
+        let stop = trimEnd > 0 ? min(AVAudioFramePosition(trimEnd * rate), file.length) : file.length
+        let count = AVAudioFrameCount(max(0, stop - file.framePosition))
         guard let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: max(count, 1)) else { throw ScanError.message("Out of memory") }
         try file.read(into: buf, frameCount: count)
         let tmpIn = FileManager.default.temporaryDirectory.appendingPathComponent("zanza-\(UUID().uuidString).wav")

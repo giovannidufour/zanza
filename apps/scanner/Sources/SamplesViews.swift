@@ -21,6 +21,7 @@ func timeText(_ t: Double) -> String { String(format: "%d:%02d", Int(t) / 60, In
 struct Waveform: View {
     let peaks: [Float]
     var cut: Double = 0
+    var cutEnd: Double = 1      // 0…1: from here to the end is the end silence
     var played: Double = 0
     var body: some View {
         GeometryReader { g in
@@ -31,9 +32,10 @@ struct Waveform: View {
                     let x = CGFloat(i) * w, h = max(1, CGFloat(p) * size.height)
                     let r = CGRect(x: x, y: (size.height - h) / 2, width: max(1, w * 0.6), height: h)
                     let f = Double(i) / Double(n)
-                    ctx.fill(Path(r), with: .color(f < cut ? Theme.textModerate.opacity(0.4) : (f < played ? Theme.textStrong : Theme.textStrong.opacity(0.8))))
+                    ctx.fill(Path(r), with: .color(f < cut || f > cutEnd ? Theme.textModerate.opacity(0.4) : (f < played ? Theme.textStrong : Theme.textStrong.opacity(0.8))))
                 }
                 if cut > 0 { ctx.fill(Path(CGRect(x: 0, y: 0, width: size.width * cut, height: size.height)), with: .color(Color.black.opacity(0.08))) }
+                if cutEnd < 1 { ctx.fill(Path(CGRect(x: size.width * cutEnd, y: 0, width: size.width * (1 - cutEnd), height: size.height)), with: .color(Color.black.opacity(0.08))) }
             }
             .frame(width: g.size.width, height: g.size.height)
         }
@@ -82,7 +84,7 @@ struct SessionPanel: View {
                     }
                 }
                 .frame(maxHeight: .infinity)
-                ClipPreview(session: session)
+                if session.current != nil { ClipPreview(session: session) }   // no placeholder (Gio)
             }
             if let m = session.message { Text(m).bodyStyle(12, color: Theme.textModerate) }
         }
@@ -108,7 +110,8 @@ struct SessionRow: View {
                 Text(timeText(clip.duration)).bodyStyle(12, color: Theme.textModerate)
             }
             .frame(width: 110, alignment: .leading)
-            Waveform(peaks: clip.peaks, cut: clip.duration > 0 ? clip.trimStart / clip.duration : 0).frame(height: 24)
+            Waveform(peaks: clip.peaks, cut: clip.duration > 0 ? clip.trimStart / clip.duration : 0,
+                     cutEnd: clip.duration > 0 && clip.trimEnd > 0 ? clip.trimEnd / clip.duration : 1).frame(height: 24)
             if let a {
                 Text("\(a.sku) · \(a.label)").bodyStyle(12).padding(.horizontal, 4).padding(.vertical, 2).background(Color.black.opacity(0.08))
             }
@@ -129,21 +132,27 @@ struct SessionRow: View {
     }
 }
 
-/// `clip preview`: the selected clip large; Space plays, click the waveform to seek; Trim silence (start only)
+/// `clip preview` (Figma 2446:26790): the selected clip large with its start and end silence shaded (−45 dBFS, 50 ms
+/// kept). Three plays: red = only the start silence, black = the clip, red = only the end silence (Gio: to check that
+/// what is cut is not part of the track). Remove silence cuts both ends for export; Undo restores. No fades.
 struct ClipPreview: View {
     @ObservedObject var session: SessionModel
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if let c = session.current {
-                let a = session.assignments[c.file]
+        if let c = session.current {
+            let a = session.assignments[c.file]
+            let d = max(c.duration, 0.001)
+            let startSil = c.soundStart ?? 0, endSil = c.soundEnd.map { c.duration - $0 } ?? 0
+            VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text("\((c.file as NSString).deletingPathExtension) · \(a.map { "\($0.sku) · \($0.label)" } ?? "not assigned")").labelStyle(12)
                     Spacer()
                     Text("\(timeText(session.position)) / \(timeText(c.duration))").bodyStyle(12, color: Theme.textModerate)
                 }
                 GeometryReader { g in
-                    Waveform(peaks: c.peaks, cut: c.duration > 0 ? c.trimStart / c.duration : 0,
-                             played: c.duration > 0 ? session.position / c.duration : 0)
+                    Waveform(peaks: c.peaks,
+                             cut: (c.silenceRemoved ? c.trimStart : startSil) / d,
+                             cutEnd: (c.silenceRemoved ? (c.trimEnd > 0 ? c.trimEnd : c.duration) : (c.soundEnd ?? c.duration)) / d,
+                             played: session.position / d)
                         .contentShape(Rectangle())
                         .gesture(DragGesture(minimumDistance: 0).onChanged { v in
                             session.seek(to: Double(v.location.x / g.size.width) * c.duration)
@@ -151,26 +160,35 @@ struct ClipPreview: View {
                 }
                 .frame(height: 90)
                 HStack(spacing: 12) {
-                    Button { session.togglePlay() } label: {
-                        Image(systemName: session.playing ? "pause.fill" : "play.fill").font(.system(size: 20))
-                    }.buttonStyle(.plain).help("Play / pause (Space)")
-                    Text(c.trimStart > 0 ? "Start trimmed at \(String(format: "%.2f", c.trimStart)) s" : "Space plays · ← → 5 s")
+                    playButton(.startSilence, red: true, help: "Play only the start silence").disabled(startSil < 0.01)
+                    playButton(.clip, red: false, help: "Play the clip (Space)")
+                    playButton(.endSilence, red: true, help: "Play only the end silence").disabled(endSil < 0.01)
+                    Text(c.soundStart == nil ? "Reading the silence…"
+                         : (c.silenceRemoved ? "Silence removed" : "Silence") + String(format: " · start %.1f s · end %.1f s", startSil, endSil))
                         .bodyStyle(12, color: Theme.textModerate)
                     Spacer()
-                    if c.trimStart > 0 {
-                        Button("Undo trim") { session.undoTrim() }.buttonStyle(ZButtonStyle(primary: false))
+                    if c.silenceRemoved {
+                        Button("Undo") { session.undoTrim() }.buttonStyle(ZButtonStyle(primary: false))
                     } else {
-                        Button("Trim silence") { session.trimSilence() }.buttonStyle(ZButtonStyle(primary: false))
-                            .help("Moves the start to the first sound (−45 dBFS), keeps 50 ms before it. The end is never trimmed.")
+                        Button("Remove silence") { session.removeSilence() }.buttonStyle(ZButtonStyle(primary: false))
+                            .disabled(c.soundStart == nil || (startSil < 0.01 && endSil < 0.01))
                     }
                 }
-            } else {
-                Text("Click a recording to listen to it").bodyStyle(14, color: Theme.textModerate)
             }
+            .padding(16)
+            .background(Theme.surfaceBase)
+            .overlay(Rectangle().stroke(Theme.divider, lineWidth: 1))
         }
-        .padding(16)
-        .background(Theme.surfaceBase)
-        .overlay(Rectangle().stroke(Theme.divider, lineWidth: 1))
+    }
+
+    func playButton(_ part: SessionModel.Part, red: Bool, help: String) -> some View {
+        Button { session.play(part) } label: {
+            Image(systemName: session.playing && session.playingPart == part ? "pause.fill" : "play.fill")
+                .font(.system(size: red ? 16 : 22))
+                .foregroundColor(red ? Theme.alert : Theme.textStrong)   // surface/alert (backend)
+                .frame(width: 28, height: 28).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain).help(help)
     }
 }
 

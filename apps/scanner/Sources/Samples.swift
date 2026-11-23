@@ -8,7 +8,13 @@ struct SessionClip: Identifiable, Equatable {
     let url: URL
     var duration: Double = 0
     var peaks: [Float] = []          // 0…1, for the waveform
-    var trimStart: Double = 0        // seconds cut at the start (Trim silence), 0 = none
+    var trimStart: Double = 0        // seconds cut at the start (Remove silence), 0 = none
+    var trimEnd: Double = 0          // where the clip ends after Remove silence (seconds), 0 = the real end
+    /// detected silence (−45 dBFS, 50 ms kept): sound starts at `soundStart`, ends at `soundEnd`; nil = not analysed
+    var soundStart: Double?
+    var soundEnd: Double?
+    var silenceRemoved: Bool { trimStart > 0 || trimEnd > 0 }
+    var end: Double { trimEnd > 0 ? trimEnd : duration }
 }
 
 /// Where a clip was dropped: the clip slot of a draft (name from scan-targets, never built here)
@@ -163,17 +169,21 @@ final class SessionModel: ObservableObject {
                 }
                 peaks[b] = m
             }
+            let edges = Self.soundEdges(in: clip.url)
             DispatchQueue.main.async {
                 if let i = self.clips.firstIndex(where: { $0.file == clip.file }) {
                     self.clips[i].peaks = peaks; self.clips[i].duration = Double(frames) / rate
+                    self.clips[i].soundStart = edges.map { max(0, $0.0 - 0.05) }
+                    self.clips[i].soundEnd = edges.map { min(Double(frames) / rate, $0.1 + 0.05) }
                 }
             }
         }
     }
 
-    private struct Saved: Codable { var assignments: [String: Assignment]; var trims: [String: Double]; var source: String }
+    private struct Saved: Codable { var assignments: [String: Assignment]; var trims: [String: Double]; var source: String; var trimEnds: [String: Double]? }
     func save() {
-        let s = Saved(assignments: assignments, trims: Dictionary(uniqueKeysWithValues: clips.filter { $0.trimStart > 0 }.map { ($0.file, $0.trimStart) }), source: sourceLabel)
+        let s = Saved(assignments: assignments, trims: Dictionary(uniqueKeysWithValues: clips.filter { $0.trimStart > 0 }.map { ($0.file, $0.trimStart) }),
+                      source: sourceLabel, trimEnds: Dictionary(uniqueKeysWithValues: clips.filter { $0.trimEnd > 0 }.map { ($0.file, $0.trimEnd) }))
         try? JSONEncoder().encode(s).write(to: Self.stateFile)
     }
     private func load() {
@@ -182,6 +192,7 @@ final class SessionModel: ObservableObject {
             assignments = s.assignments.filter { k, _ in clips.contains { $0.file == k } }
             sourceLabel = s.source
             for (k, t) in s.trims { if let i = clips.firstIndex(where: { $0.file == k }) { clips[i].trimStart = t } }
+            for (k, t) in s.trimEnds ?? [:] { if let i = clips.firstIndex(where: { $0.file == k }) { clips[i].trimEnd = t } }
         }
     }
 
@@ -236,18 +247,34 @@ final class SessionModel: ObservableObject {
     }
     var current: SessionClip? { selected.flatMap { s in clips.first { $0.file == s } } }
 
-    func togglePlay() {
+    /// The black play: the clip (without the removed silence); red plays: only the start / end silence (Gio: to check
+    /// that what is cut is not part of the track)
+    enum Part { case clip, startSilence, endSilence }
+    @Published var playingPart: Part?
+
+    func togglePlay() { play(.clip) }
+
+    func play(_ part: Part) {
         guard let c = current else { return }
-        if playing { player?.pause(); playing = false; return }
+        if playing && playingPart == part { player?.pause(); playing = false; playingPart = nil; return }
         if player == nil || player?.url != c.url { player = try? AVAudioPlayer(contentsOf: c.url) }
         guard let p = player else { return }
-        p.currentTime = max(position, c.trimStart)
-        p.play(); playing = true
+        let range: (Double, Double)
+        switch part {
+        case .clip: range = (max(position, c.trimStart) < c.end - 0.05 ? max(position, c.trimStart) : c.trimStart, c.end)
+        case .startSilence: range = (0, c.soundStart ?? 0)
+        case .endSilence: range = (c.soundEnd ?? c.duration, c.duration)
+        }
+        guard range.1 > range.0 else { return }
+        p.currentTime = range.0
+        p.play(); playing = true; playingPart = part
         timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 0.03, repeats: true) { [weak self] _ in
             guard let self, let p = self.player else { return }
             self.position = p.currentTime
-            if !p.isPlaying { self.playing = false; self.timer?.invalidate() }
+            if !p.isPlaying || p.currentTime >= range.1 {
+                p.pause(); self.playing = false; self.playingPart = nil; self.timer?.invalidate()
+            }
         }
     }
     func seek(to t: Double) {
@@ -257,23 +284,40 @@ final class SessionModel: ObservableObject {
     }
     func stop() { player?.stop(); player = nil; playing = false; timer?.invalidate() }
 
-    // MARK: Trim silence (start only, −45 dBFS, 50 ms kept; never automatic)
+    // MARK: Remove silence (start and end, −45 dBFS, 50 ms kept; never automatic, no fades)
 
-    func trimSilence() {
-        guard let c = current, let i = clips.firstIndex(of: c) else { return }
-        DispatchQueue.global(qos: .userInitiated).async {
-            let t = Self.firstSound(in: c.url)
-            DispatchQueue.main.async {
-                guard let t else { self.message = "No sound above −45 dBFS"; return }
-                self.clips[i].trimStart = max(0, t - 0.05)
-                self.position = self.clips[i].trimStart
-                self.save()
-            }
+    func removeSilence() {
+        guard let c = current, let i = clips.firstIndex(of: c), let a = c.soundStart, let b = c.soundEnd else {
+            message = "No sound above −45 dBFS"; return
         }
+        clips[i].trimStart = a; clips[i].trimEnd = b < c.duration - 0.01 ? b : 0
+        position = a; save()
     }
     func undoTrim() {
         guard let c = current, let i = clips.firstIndex(of: c) else { return }
-        clips[i].trimStart = 0; save()
+        clips[i].trimStart = 0; clips[i].trimEnd = 0; save()
+    }
+
+    /// First and last sample above −45 dBFS, in seconds
+    static func soundEdges(in url: URL) -> (Double, Double)? {
+        guard let file = try? AVAudioFile(forReading: url) else { return nil }
+        let threshold: Float = pow(10, -45 / 20)
+        let rate = file.processingFormat.sampleRate
+        guard let buf = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: 16384) else { return nil }
+        var frame: AVAudioFramePosition = 0, first: AVAudioFramePosition? = nil, last: AVAudioFramePosition? = nil
+        while (try? file.read(into: buf, frameCount: 16384)) != nil, buf.frameLength > 0 {
+            for i in 0..<Int(buf.frameLength) {
+                for ch in 0..<Int(buf.format.channelCount) where abs(buf.floatChannelData![ch][i]) > threshold {
+                    let f = frame + AVAudioFramePosition(i)
+                    if first == nil { first = f }
+                    last = f
+                    break
+                }
+            }
+            frame += AVAudioFramePosition(buf.frameLength)
+        }
+        guard let first, let last else { return nil }
+        return (Double(first) / rate, Double(last) / rate)
     }
 
     static func firstSound(in url: URL) -> Double? {

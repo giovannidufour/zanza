@@ -187,7 +187,7 @@ final class AppModel: ObservableObject {
                 tags.album = t?.album ?? d.title; tags.label = t?.label ?? ""
                 tags.year = t?.year.map(String.init) ?? ""; tags.genre = (t?.genres ?? []).joined(separator: ", ")
                 tags.track = slot.label; tags.comment = sku; tags.cover = cover
-                try AudioExport.export(source: clip.url, trimStart: clip.trimStart, name: slot.name, tags: tags,
+                try AudioExport.export(source: clip.url, trimStart: clip.trimStart, trimEnd: clip.trimEnd, name: slot.name, tags: tags,
                                        wavFolder: wavFor.contains(slot.name) ? wav : nil, mp3Folder: mp3, normalize: false)
             }
             var r = "Exported \(jobs.count) clip\(jobs.count == 1 ? "" : "s")"
@@ -210,8 +210,8 @@ final class AppModel: ObservableObject {
             }
         }
         for (file, a) in session.assignments.sorted(by: { $0.value.name < $1.value.name }) where a.sku == sku {
-            let trim = session.clips.first { $0.file == file }?.trimStart ?? 0
-            items.append("clip:\(a.name):\(file):\(trim)")
+            let c = session.clips.first { $0.file == file }
+            items.append("clip:\(a.name):\(file):\(c?.trimStart ?? 0):\(c?.trimEnd ?? 0)")
         }
         return items
     }
@@ -231,9 +231,9 @@ final class AppModel: ObservableObject {
         guard drafts.draft?.id == d.id else { drafts.pick(d); caption = "Draft opened: press Push again"; return }
         let sku = d.skuText
         let images: [(role: Int, url: URL)] = drafts.names.compactMap { n in drafts.file(named: n.name, in: folder).map { (n.role, $0) } }
-        let clips: [(line: Int, url: URL, trim: Double, label: String)] = drafts.clips.compactMap { slot in
+        let clips: [(line: Int, url: URL, trim: Double, trimEnd: Double, label: String)] = drafts.clips.compactMap { slot in
             guard let line = slot.line, let c = session.clip(assignedTo: slot.name) else { return nil }
-            return (line, c.url, c.trimStart, slot.label)
+            return (line, c.url, c.trimStart, c.trimEnd, slot.label)
         }
         guard !images.isEmpty || !clips.isEmpty else { return }
         let snapshot = pushItems(sku: sku)
@@ -267,7 +267,7 @@ final class AppModel: ObservableObject {
             }
             for (i, c) in clips.enumerated() {
                 progress(Double(images.count + i) / total, "clip \(i + 1) of \(clips.count)")
-                let key = try await Backend.shared.upload(try AudioExport.mp3(source: c.url, trimStart: c.trim, kbps: 128), kind: "sample", contentType: "audio/mpeg")
+                let key = try await Backend.shared.upload(try AudioExport.mp3(source: c.url, trimStart: c.trim, trimEnd: c.trimEnd, kbps: 128), kind: "sample", contentType: "audio/mpeg")
                 clipKeys.append((c.line, key))
             }
             progress(0.98, "attaching")
