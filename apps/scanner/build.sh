@@ -18,5 +18,7 @@ if [ -f "$ENV" ]; then
   MEDIA=$(sed -n 's/.*"mediaBaseUrl": *"\([^"]*\)".*/\1/p' ../storefront/site.json)
   /usr/libexec/PlistBuddy -c "Add :ZanzaSupabaseURL string $URL" -c "Add :ZanzaSupabaseKey string $KEY" -c "Add :ZanzaMediaBaseURL string $MEDIA" "$APP/Contents/Info.plist"
 fi
-codesign --force --sign - "$APP"
+# Ad-hoc signature with a fixed designated requirement (the bundle id): the Keychain's "Always Allow" for the
+# admin session stays valid across rebuilds (with the default cdhash requirement every build was a new app and asked again)
+codesign --force --sign - -r='designated => identifier "xyz.gio-d.zanza.scanner"' "$APP"
 echo "Built $APP"

@@ -48,7 +48,9 @@ final class Backend {
     private var expiry = Date.distantPast
     private(set) var email: String? = UserDefaults.standard.string(forKey: "adminEmail")
 
-    var signedIn: Bool { Keychain.read() != nil }
+    /// The refresh token, read from the Keychain once per launch and kept in memory (each read could ask for access)
+    private lazy var refreshToken: String? = Keychain.read()
+    var signedIn: Bool { refreshToken != nil }
 
     // MARK: Sign in
 
@@ -64,7 +66,7 @@ final class Backend {
     }
 
     func signOut() {
-        Keychain.delete(); accessToken = nil; expiry = .distantPast
+        Keychain.delete(); refreshToken = nil; accessToken = nil; expiry = .distantPast
     }
 
     private func keep(_ r: [String: Any]) throws {
@@ -73,12 +75,12 @@ final class Backend {
         }
         accessToken = access
         expiry = Date().addingTimeInterval(TimeInterval((r["expires_in"] as? Int) ?? 3600) - 60)
-        Keychain.save(refresh)
+        if refresh != refreshToken { Keychain.save(refresh); refreshToken = refresh }
     }
 
     private func token() async throws -> String {
         if let t = accessToken, Date() < expiry { return t }
-        guard let refresh = Keychain.read() else { throw BackendError.signedOut }
+        guard let refresh = refreshToken else { throw BackendError.signedOut }
         do {
             let r = try await post("/auth/v1/token?grant_type=refresh_token", ["refresh_token": refresh], auth: false)
             try keep(r)
