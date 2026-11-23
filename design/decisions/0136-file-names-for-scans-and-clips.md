@@ -11,3 +11,5 @@ On Edit listing (draft or published, once there is a SKU) the side column has **
 **Rule.** A file is matched to its listing by SKU and role only; any human-readable part of a name is decoration and must never be required to match. New file roles extend the Bulk role list, never a parallel one.
 **Where.** `apps/admin/admin.js` (fileSlug, fileNamesOf, positionsOf, ListingForm → fileNamesPanel), `apps/admin/admin.css`, `packages/ui` (`FileNameRow`).
 **Next (not built).** Bulk create recognises `<sku>_<role>_<slug>` and adds the files to the existing listing with that SKU (no AI read, no new draft); see design/open.md.
+
+> **2026-11-23 (0146):** the admin File names / Copy UI (the `FileNameRow` list) was removed — the Scanner now names and uploads files itself (0145). The naming rule in `packages/file-names` stays (Scanner + `scan-targets`).
