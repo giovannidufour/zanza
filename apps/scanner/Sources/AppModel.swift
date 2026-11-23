@@ -254,23 +254,37 @@ final class AppModel: ObservableObject {
         let images: [(role: Int, url: URL)] = drafts.names.compactMap { n in drafts.file(named: n.name, in: folder).map { (n.role, $0) } }
         let clips: [(line: Int, url: URL, trim: Double, trimEnd: Double, label: String)] = drafts.clips.compactMap { slot in
             guard let line = slot.line, let c = session.clip(assignedTo: slot.name) else { return nil }
-            return (line, c.url, c.trimStart, c.trimEnd, slot.label)
+            // "Clip A1 · Artist - Title" for the confirm dialog, never a bare "A"
+            let track = [slot.artist, slot.title].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " - ")
+            return (line, c.url, c.trimStart, c.trimEnd, "Clip \(slot.label)" + (track.isEmpty ? "" : " · \(track)"))
         }
+        let recordTitle = d.title
         guard !images.isEmpty || !clips.isEmpty else { return }
         let snapshot = pushItems(sku: sku)
         let missingLines = drafts.clips.filter { $0.line == nil && session.clip(assignedTo: $0.name) != nil }.count
         jobs.enqueue(draftID: d.id, sku: sku, kind: .push, files: Set(clips.map { $0.url.lastPathComponent })) { progress in
             progress(0, "checking the admin")
             let has = try await Backend.shared.adminHas(d.id)
+            func photoName(_ r: Int) -> String { r == 1 ? "Label A" : r == 2 ? "Label B" : "Other photo \(r)" }
             let replacedPhotos = images.map(\.role).filter { has.photos.contains($0) }
+            let addedPhotos = images.map(\.role).filter { !has.photos.contains($0) }
             let replacedClips = clips.filter { has.clips.contains($0.line) }.map(\.label)
+            let addedClips = clips.filter { !has.clips.contains($0.line) }.map(\.label)
             if !replacedPhotos.isEmpty || !replacedClips.isEmpty {
-                let names = replacedPhotos.map { $0 == 1 ? "Label A" : $0 == 2 ? "Label B" : "Photo \($0)" } + replacedClips
-                let added = images.count - replacedPhotos.count + clips.count - replacedClips.count
+                // Figma `push · replace confirm` 2458:28040
+                func count(_ n: Int, _ one: String, _ many: String) -> String? { n == 0 ? nil : "\(n) \(n == 1 ? one : many)" }
+                let what = [count(replacedPhotos.count, "photo", "photos"), count(replacedClips.count, "clip", "clips")].compactMap { $0 }.joined(separator: " and ")
+                var body = "SKU \(sku) · \(recordTitle)\n\nReplaced (already in the admin):\n"
+                body += (replacedPhotos.map(photoName) + replacedClips).map { "• \($0)" }.joined(separator: "\n")
+                let added = addedPhotos.map(photoName) + addedClips
+                if !added.isEmpty { body += "\n\nAdded:\n" + added.map { "• \($0)" }.joined(separator: "\n") }
+                let n = replacedPhotos.count + replacedClips.count
+                body += n == 1 ? "\n\nThe old file stays in storage." : "\n\nThe old files stay in storage."
+                let text = body
                 let ok = await MainActor.run { () -> Bool in
                     let a = NSAlert()
-                    a.messageText = "Replace in the admin?"
-                    a.informativeText = "SKU \(sku) already has: \(names.joined(separator: ", ")). They will be replaced" + (added > 0 ? "; \(added) more will be added." : ".")
+                    a.messageText = "Replace \(what) in the admin?"
+                    a.informativeText = text
                     a.addButton(withTitle: "Replace and push"); a.addButton(withTitle: "Cancel")
                     return a.runModal() == .alertFirstButtonReturn
                 }
