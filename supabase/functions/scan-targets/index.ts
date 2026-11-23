@@ -4,7 +4,7 @@
 //                            drafts only, newest first, max 500 (the Scanner's drafts column lists them all, 0141); query matches SKU, artist, title, custom title or
 //                            catalogue number (all words, any order); empty query = all drafts (max 500).
 //   POST { id, roles? }   → { draft: { id, sku, title, cat_no }, positions_read, images: [{ role, label, name }],
-//                              clips: [{ role, label, name, line, artist, title }], tags: { album, label, cat_no, year, genres } }
+//                              clips: [{ role, label, name, line, artist, title }], tags: { album, album_artist, record, label, format, cat_no, year, genres } }
 //                            names for image roles 1…roles (default 3, max 12): 1 Label A, 2 Label B, 3+ Other photo.
 //                            clips = one row per line with a clip role (a1, b1… or a / b), as the admin's File names;
 //                            with tags = what the Scanner's Samples tab writes in the ID3 tags (decision 0141).
@@ -30,7 +30,7 @@ const json = (body: unknown, status = 200) =>
 
 type Line = { position: number; artist: string | null; title: string | null };
 type Release = {
-  cat_no: string | null; discogs_release_id: number | null; label: string | null; year: number | null;
+  cat_no: string | null; discogs_release_id: number | null; label: string | null; format: string | null; year: number | null;
   year_precision: string | null; genres: string[] | null; lines: Line[] | null;
 };
 type Row = {
@@ -68,7 +68,7 @@ async function discogsPositions(id: number): Promise<string[] | null> {
   } catch { return null; }
 }
 
-const SELECT = "id,sku,custom_title,photo_keys,created_at,release:releases(cat_no,discogs_release_id,label,year,year_precision,genres,lines:release_lines(position,artist,title))";
+const SELECT = "id,sku,custom_title,photo_keys,created_at,release:releases(cat_no,discogs_release_id,label,format,year,year_precision,genres,lines:release_lines(position,artist,title))";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers });
@@ -108,7 +108,9 @@ Deno.serve(async (req) => {
     });
     const rel = r.release;
     const tags = {
-      album: titleOf(r), label: rel?.label ?? null, cat_no: rel?.cat_no ?? null,
+      // Gio 2026-11-23: album = label + format ("Blue Trac 7\""), album artist = always "Gio"; the record title stays as record
+      album: [rel?.label?.trim(), rel?.format?.trim()].filter(Boolean).join(" ") || titleOf(r), album_artist: "Gio", record: titleOf(r),
+      label: rel?.label ?? null, format: rel?.format ?? null, cat_no: rel?.cat_no ?? null,
       year: rel?.year && rel?.year_precision !== "decade" ? rel.year : null, genres: rel?.genres ?? [],
     };
     return json({ draft: summary(r), positions_read: positions !== null, images, clips, tags });
