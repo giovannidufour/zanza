@@ -1056,8 +1056,17 @@
     ['photos', 'Photos', function (r) { return [(r.photo_keys || []).length ? 'with' : 'none']; }, [['with', 'With photos'], ['none', 'No photos']]],
     ['samples', 'Samples', function (r) { return [samplesOf(r) ? 'with' : 'none']; }, [['with', 'With samples'], ['none', 'No samples']]],
     ['section', 'Section', function (r) { return [r.section]; }, [['sale', 'Sale'], ['trade', 'Trade']]],
-    ['format', 'Format', function (r) { return (r.release || {}).format ? [r.release.format] : []; }, FORMATS.map(function (f) { return [f, f]; })]
+    ['format', 'Format', function (r) { return (r.release || {}).format ? [r.release.format] : []; }, FORMATS.map(function (f) { return [f, f]; })],
+    // Gio 2026-11-23: genres and tags too; their options come from the drafts (most used first)
+    ['genre', 'Genre', function (r) { return (r.release || {}).genres || []; }, null],
+    ['tag', 'Tags', function (r) { return ((r.release || {}).tag_rows || []).map(function (t) { return (t.tag || {}).name; }).filter(Boolean); }, null]
   ];
+  function facetOptions(f, rows) {
+    if (f[3]) return f[3];
+    var n = {};
+    rows.forEach(function (r) { f[2](r).forEach(function (v) { n[v] = (n[v] || 0) + 1; }); });
+    return Object.keys(n).sort(function (a, b) { return n[b] - n[a] || a.localeCompare(b); }).map(function (v) { return [v, v]; });
+  }
   function facetOk(r, f, picked) { var on = picked[f[0]] || []; if (!on.length) return true; var v = f[2](r); return on.some(function (x) { return v.indexOf(x) >= 0; }); }
   function passes(r, picked, skip) { return DRAFT_FACETS.every(function (f) { return f[0] === skip || facetOk(r, f, picked); }); }
   function pickedCount(picked) { return Object.keys(picked).reduce(function (n, k) { return n + picked[k].length; }, 0); }
@@ -1098,7 +1107,7 @@
     var focusAfter = useRef(null);
 
     function load() {
-      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_mode,price_cents,condition_media,custom_title,photo_keys,created_at,sort_order,orders:order_items(count),release:releases(format,samples(count),label_entity:labels(name),lines:release_lines(position,artist,title))')
+      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_mode,price_cents,condition_media,sleeve_type,condition_sleeve,custom_title,photo_keys,created_at,sort_order,orders:order_items(count),release:releases(format,genres,tag_rows:release_tags(tag:tags(name)),samples(count),label_entity:labels(name),lines:release_lines(position,artist,title))')
         // decision 0129: one global order, Gio's (sort_order, lower = first); each tab shows it filtered
         .order('sort_order', { ascending: true }).order('created_at', { ascending: false })
         .then(function (res) { if (res.error) setError(res.error.message); else setRows(res.data); });
@@ -1256,7 +1265,7 @@
         // the field matches the option or its block ("photos" keeps the whole block); a ticked option always stays
         var optWords = fold(optQuery).split(/\s+/).filter(Boolean);
         function shown(o) { var t = fold(f[1] + ' ' + o[1]); return optWords.every(function (w) { return t.indexOf(w) >= 0; }); }
-        var options = f[3].map(function (o) {
+        var options = facetOptions(f, inTab).map(function (o) {
           var n = base.filter(function (r) { return f[2](r).indexOf(o[0]) >= 0; }).length, checked = on.indexOf(o[0]) >= 0;
           return checked || (n && shown(o)) ? h(Z.Filter, { key: o[0], label: o[1], count: String(n), checked: checked,
             'aria-controls': 'listings-table', onChange: function (e) { tick(f[0], o[0], e.target.checked); } }) : null;
@@ -1303,12 +1312,32 @@
           canOrder ? h('th', { className: 'handle' }, h('span', { className: 'zz-visually-hidden' }, 'Order')) : null,
           h('th', { className: 'select' }, visible.length ? h(Z.Checkbox, { id: 'select-all', hideLabel: true, label: 'Select all', checked: allOn, indeterminate: someOn, onChange: toggleAll }) : null),
           h('th', { className: 'thumb' }, h('span', { className: 'zz-visually-hidden' }, 'Photo')),
-          ['SKU', 'Record', 'Status', 'Section', 'Price'].map(function (t) { return h('th', { key: t, className: t === 'SKU' ? 'num' : t === 'Price' ? 'num price' : '' }, t); }))) }))),
+          ['SKU', 'Record', 'Status', 'Section'].map(function (t) { return h('th', { key: t, className: t === 'SKU' ? 'num' : t.toLowerCase() }, t); }),
+          INFO_COLUMNS.map(function (c) { return h('th', { key: c[0], className: c[0] + (c[2] ? ' num' : '') }, c[1]); }),
+          h('th', { className: 'num price' }, 'Price'))) }))),
       dialog);
   }
 
   /* the rows of Listings (table body on desktop, ListingRow list on mobile) in Gio's order, reorderable by drag & drop
      with the admin's one drag logic (useDragOrder, the same as photos and samples; decision 0129) */
+  /* decision 0163: the overview columns between Section and Price, what is already filled in for each copy
+     [key, head, numeric, value of the row or null when missing] (Figma `listings table row`, Format … Samples) */
+  function gradingOf(r) {
+    if (!r.condition_media) return null;
+    var sleeve = r.sleeve_type === 'generic' ? 'generic' : r.sleeve_type === 'none' ? 'no sleeve' : r.condition_sleeve;
+    return sleeve ? r.condition_media + ' / ' + sleeve : r.condition_media;
+  }
+  var INFO_COLUMNS = [
+    ['format', 'Format', false, function (r) { return (r.release || {}).format || null; }],
+    ['grading', 'Grading', false, gradingOf],
+    ['genre', 'Genre', false, function (r) { var g = (r.release || {}).genres || []; return g.length ? g.join(', ') : null; }],
+    ['photos', 'Photos', true, function (r) { var n = (r.photo_keys || []).length; return n ? String(n) : null; }],
+    ['samples', 'Samples', true, function (r) { var n = samplesOf(r); return n ? String(n) : null; }]
+  ];
+  // nothing entered yet: an em dash in text/moderate, read as "Missing"
+  function missingMark() {
+    return h('span', { className: 'admin-table__missing' }, h('span', { 'aria-hidden': 'true' }, '—'), h('span', { className: 'zz-visually-hidden' }, 'Missing'));
+  }
   function OrderedRows(props) {
     var rows = props.rows, move = props.onMove;
     var d = Z.useDragOrder({ count: rows.length, onMove: move,
@@ -1339,10 +1368,11 @@
         h('td', { className: 'thumb' }, h(Z.Thumbnail, thumbOf(r))),
         h('td', { className: 'num' }, r.sku),
         h('td', null, h('a', { href: '#edit-' + r.id, draggable: false }, nameOf(r))),
-        h('td', null, statusText(r)),
-        h('td', null, r.section),
-        h('td', { className: 'num price' }, listPrice(r) || ''));
-    }) : h('tr', null, h('td', { colSpan: 7 }, props.empty))))), status);
+        h('td', { className: 'status' }, statusText(r)),
+        h('td', { className: 'section' }, r.section),
+        INFO_COLUMNS.map(function (c) { var v = c[3](r); return h('td', { key: c[0], className: c[0] + (c[2] ? ' num' : '') }, v || missingMark()); }),
+        h('td', { className: 'num price' }, listPrice(r) || (missingOf(r).indexOf('price') >= 0 ? missingMark() : '')));
+    }) : h('tr', null, h('td', { colSpan: 14 }, props.empty))))), status);
   }
 
   function EditLoader(props) {
