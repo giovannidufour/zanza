@@ -212,7 +212,9 @@ final class GuideView: NSView {
         }
         let l = g.label * k
         ctx.setLineDash(phase: 0, lengths: [6, 6])
+        ctx.setStrokeColor(NSColor.white.cgColor)   // label crop in text/strong-invert (Gio: white on the label; 0153)
         ctx.stroke(CGRect(x: mid.x - l / 2, y: mid.y - l / 2, width: l, height: l))
+        ctx.setStrokeColor(ink)                     // record edge, square, handles stay text/strong
         ctx.setLineDash(phase: 0, lengths: [])
         ctx.strokeEllipse(in: CGRect(x: mid.x - 4, y: mid.y - 4, width: 8, height: 8))   // spindle hole
         for c in [CGPoint(x: square.minX, y: square.minY), CGPoint(x: square.maxX, y: square.minY),
