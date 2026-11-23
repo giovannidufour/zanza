@@ -185,6 +185,7 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0161](0161-show-sold-out-only-when-sold.md) | "Show sold out" in the filters only when the page has a sold record (build-time) | accepted |
 | [0162](0162-drafts-filter-column.md) | Admin Listings → Drafts: filter column (Status ready/incomplete, Missing, Photos, Samples, Section, Format) with the shop's `Filters`; 0028 rules; desktop only | accepted |
 | [0163](0163-listings-full-width-overview-columns.md) | Admin Listings full width; columns Format, Grading, Genre, Photos, Samples; missing = "—" in text/moderate | accepted |
+| [0165](0165-scanner-push-all.md) | Scanner: Push all on the drafts column, pushes every listed draft out of sync, skips synced, one question for the batch | proposed |
 | [0166](0166-listings-year-column.md) | Admin Listings: Year column after Format (1983 or 1990s), every tab | accepted |
 | [0167](0167-home-more-records-view-all.md) | Home: Recent shows 12 records, then a full-width "View all for sale" → /sale/ | proposed |
 | [0168](0168-attribute-records-checklist.md) | Genre and tag pages: every copy as a ListingRow with a checkbox; a tick saves at once | proposed |
