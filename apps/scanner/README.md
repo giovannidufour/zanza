@@ -1,0 +1,36 @@
+# Zanza Scanner
+
+Small macOS app to scan record labels with the Canon CanoScan LiDE 100 straight to the file names of decision 0136.
+Why and how it behaves: `design/decisions/0137-label-scanner-app.md`. Figma: BACKEND → `Scanner`.
+
+## Build
+
+```sh
+apps/scanner/build.sh
+```
+
+Needs only the Command Line Tools (Swift 6, macOS SDK); no Xcode. Output: `apps/scanner/build/Zanza Scanner.app`
+(git-ignored), signed ad hoc, so it runs on this Mac only. Copy it to `/Applications` to keep it in Launchpad.
+
+`ZanzaScanner --snapshot out.png` renders the window with sample names and quits (design check; native pickers and
+text fields are not drawn by the renderer). `ZanzaScanner --test-scan <folder> <x mm> <y mm>` does a real Preview + Scan (300 dpi, 7") centred at x, y and writes preview.png, labels/ and originals/ in <folder>.
+
+## Files
+
+| File | Holds |
+| --- | --- |
+| `Sources/Scanner.swift` | ImageCaptureCore: finds and opens the scanner, scans an area (mm from the corner of the glass) to a CGImage; record presets (7", 10", 12", whole glass; 4" label) |
+| `Sources/AppModel.swift` | State: names, settings (remembered), preview, selection square, Preview / Scan / save |
+| `Sources/ImageOutput.swift` | Cuts and straightens the turned square; writes JPEG / PNG / TIFF with the dpi |
+| `Sources/AutoTurn.swift` | Finds the upright turn of a label by reading its text (Vision) |
+| `Sources/Names.swift` | Parses pasted names (`<sku>_<role>_<slug>`), role labels, next photo name |
+| `Sources/ContentView.swift` | The window (mirrors the Figma screens) |
+| `Sources/GlassView.swift` | The preview under the fixed guide (AppKit): drag, turn, trackpad rotate, grid and up figure while turning |
+| `Sources/Theme.swift` | Colours and type styles from `packages/ui/tokens.json` (backend theme) |
+
+## Icon
+
+`AppIcon.icns` = the shop logo on the staging favicon's acid-green ground (0127), in the macOS rounded square.
+Figma: `favicon`, variant `environment=scanner` (page assets). To remake it after a logo change:
+`swift tools/make-icon.swift <logo.png> icon1024.png`, then the iconset sizes with `sips` and `iconutil -c icns`.
+The logo PNG is the one embedded in `apps/storefront/public/favicon-staging.svg`.
