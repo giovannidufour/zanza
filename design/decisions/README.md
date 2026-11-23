@@ -176,3 +176,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0153](0153-scanner-label-crop-by-record-size.md) | Scanner: label crop by record size, 7" = 3.8" (96.52 mm), 10" / 12" = 4" (101.6 mm); one value in `SizePreset.labelMM` | accepted |
 | [0154](0154-scanner-free-scans-clear-list.md) | Scanner free scans: "Clear list" in the Free scans head empties the session list only, files stay in Free scans; toast with Undo (0149); not shown with a draft | accepted |
 | [0155](0155-save-draft-and-new.md) | Admin Create / Edit listing: "Save draft and new" (action panel third slot) saves the draft and opens a blank Create listing; desktop only, Back returns to the saved draft | accepted |
+| [0156](0156-discogs-match-search-while-typing.md) | Admin Create / Edit listing: Discogs match searches Discogs while typing (release list, pick = link + Fetch Discogs); link/number still by Fetch Discogs; shared `useDiscogsSearch` with Memo | accepted |
