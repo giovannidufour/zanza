@@ -36,7 +36,13 @@
   function fileNames(sku, lines, positions) {
     lines = lines || [];
     function name(role, slug) { return [sku, role, slug].filter(Boolean).join('_'); }
-    var pos = (positions || []).map(function (p) { return /^[a-z]{1,2}\d{0,2}$/i.test(p) ? String(p).toLowerCase() : ''; });
+    // "A1", "a-1", "A.1" → a1; numbers only ("1", "2", releases with no sides) give no side
+    var pos = (positions || []).map(function (p) {
+      var q = String(p || '').replace(/[^a-z0-9]/gi, '');
+      return /^[a-z]{1,2}\d{0,2}$/i.test(q) ? q.toLowerCase() : '';
+    });
+    // no position names a side (e.g. Discogs tracklist 1, 2): line order, as when there is no release (Gio 2026-11-23)
+    if (pos.length && pos.every(function (p) { return !p; })) pos = [];
     function sideLine(side, fallback) {
       var i = pos.findIndex(function (p) { return p.charAt(0) === side; });
       return i >= 0 ? i : lines[fallback] ? fallback : 0;

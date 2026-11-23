@@ -13,3 +13,4 @@ On Edit listing (draft or published, once there is a SKU) the side column has **
 **Next (not built).** Bulk create recognises `<sku>_<role>_<slug>` and adds the files to the existing listing with that SKU (no AI read, no new draft); see design/open.md.
 
 > **2026-11-23 (0146):** the admin File names / Copy UI (the `FileNameRow` list) was removed — the Scanner now names and uploads files itself (0145). The naming rule in `packages/file-names` stays (Scanner + `scan-targets`).
+**Update 2026-11-23 (Gio: no sample slots in the Scanner for SKU 30828).** Its Discogs release numbers the tracks `1`, `2` (no sides), so no line got a clip role. Positions are now cleaned of punctuation (`A-1`, `A.1` → `a1`); when no position names a side (numbers only), the rule falls back to line order (line 1 = `a`, line 2 = `b`), as for a draft without a release. Same file for the admin's File names and `scan-targets` (redeploy the function).

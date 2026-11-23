@@ -35,6 +35,7 @@ struct ContentView: View {
         .overlay(alignment: .topTrailing) { ToastView(center: model.toasts) }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             model.refreshDisk()   // files may have changed in Finder
+            if model.drafts.draft != nil && !model.drafts.busy { model.drafts.refresh(silent: true) }   // and the draft in the admin (0160)
         }
     }
 }
@@ -129,6 +130,12 @@ struct DraftHead: View {
                     Text(d.title).labelStyle(16).lineLimit(3).help(d.title)
                 }
                 Spacer(minLength: 8)
+                Button { drafts.refresh() } label: {   // `draft head` boolean `update` (0160)
+                    Image(systemName: "clock.arrow.circlepath").font(.system(size: 16, weight: .light)).frame(width: 24, height: 24).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain).disabled(drafts.busy)
+                .help("Update: read this draft again from the admin (⌘R)")
+                .keyboardShortcut("r", modifiers: .command)
                 let escFree = !model.scanner.busy && drafts.lightbox == nil && !drafts.newDraftOpen && model.freeLightbox == nil
                 Button { drafts.deselect() } label: {
                     Image(systemName: "xmark").font(.system(size: 16, weight: .light)).frame(width: 24, height: 24).contentShape(Rectangle())
