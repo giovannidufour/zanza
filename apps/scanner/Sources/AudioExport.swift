@@ -15,7 +15,7 @@ enum AudioExport {
     }
 
     static func export(source: URL, trimStart: Double, name: String, tags: Tags,
-                       wavFolder: URL, mp3Folder: URL, normalize: Bool) throws {
+                       wavFolder: URL?, mp3Folder: URL, normalize: Bool) throws {
         guard let lame else { throw ScanError.message("LAME is not installed (brew install lame): MP3 not made.") }
         let file = try AVAudioFile(forReading: source)
         let fmt = file.processingFormat
@@ -34,10 +34,11 @@ enum AudioExport {
             if peak > 0 { gain = 1 / peak }
         }
         let tag = id3(tags)
-        try FileManager.default.createDirectory(at: wavFolder, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: mp3Folder, withIntermediateDirectories: true)
-        let wav = wavFolder.appendingPathComponent(name).appendingPathExtension("wav")
-        try wavData(buf, bits: bits, rate: Int(rate), gain: gain, id3: tag).write(to: wav)
+        if let wavFolder {   // optional (Gio: not always an archive / DJ copy)
+            try FileManager.default.createDirectory(at: wavFolder, withIntermediateDirectories: true)
+            try wavData(buf, bits: bits, rate: Int(rate), gain: gain, id3: tag).write(to: wavFolder.appendingPathComponent(name).appendingPathExtension("wav"))
+        }
 
         // MP3: LAME reads a plain 16/24-bit WAV (no tag), the ID3v2.4 tag is put in front afterwards
         let tmpIn = FileManager.default.temporaryDirectory.appendingPathComponent("zanza-\(UUID().uuidString).wav")

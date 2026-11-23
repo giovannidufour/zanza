@@ -10,7 +10,10 @@ struct Slot: Identifiable, Equatable {
 
 /// Sign-in state, draft search, the picked draft and its image slots.
 final class DraftSession: ObservableObject {
-    enum SignIn { case signedOut, codeSent(String), signedIn }
+    enum SignIn {
+        case signedOut, codeSent(String), signedIn
+        var isSignedIn: Bool { if case .signedIn = self { return true }; return false }
+    }
     @Published var signIn: SignIn = Backend.shared.signedIn ? .signedIn : .signedOut
     @Published var busy = false
     @Published var error: String?

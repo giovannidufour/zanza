@@ -23,7 +23,7 @@ struct ContentView: View {
             Rectangle().fill(Theme.divider).frame(width: 1)
             Group {
                 if model.tab == .scans { RecordColumn(scanner: scanner) }
-                else { ExportPanel(session: model.session, drafts: model.drafts) }
+                else { SamplesColumn(scanner: scanner) }
             }
             .frame(width: 360)
         }
@@ -44,12 +44,8 @@ struct RecordColumn: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
-            if let d = model.drafts.draft {   // the open draft (its images are in the left column)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("SKU \(d.skuText) · Draft").labelStyle(12, color: Theme.textModerate)
-                    Text(d.title).labelStyle(16).lineLimit(3).help(d.title)
-                }
-            }
+            DraftHead(drafts: model.drafts)
+            if model.drafts.draft != nil { DraftDetail(drafts: model.drafts, session: model.session, kind: .images) }
             if model.drafts.draft == nil {   // v1: names pasted or typed (also when signed out or offline)
                 VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 8) {
@@ -146,6 +142,40 @@ struct RecordColumn: View {
     /// The scanner's resolutions, plus the chosen one so the menu always shows it
     var dpiChoices: [Int] {
         Array(Set(scanner.resolutions.filter { $0 >= 75 && $0 <= 2400 } + [model.dpi])).sorted()
+    }
+}
+
+/// Right column head, same in both tabs: SKU · Draft and the record title
+struct DraftHead: View {
+    @ObservedObject var drafts: DraftSession
+    var body: some View {
+        if let d = drafts.draft {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("SKU \(d.skuText) · Draft").labelStyle(12, color: Theme.textModerate)
+                Text(d.title).labelStyle(16).lineLimit(3).help(d.title)
+            }
+        }
+    }
+}
+
+/// Right column of the Samples tab: draft head, clip slots (drop targets), Export pinned at the bottom, status
+struct SamplesColumn: View {
+    @EnvironmentObject var model: AppModel
+    @ObservedObject var scanner: ScannerController
+    var body: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            DraftHead(drafts: model.drafts)
+            if model.drafts.draft != nil {
+                DraftDetail(drafts: model.drafts, session: model.session, kind: .clips).frame(maxHeight: .infinity, alignment: .top)
+            } else {
+                Text("Pick a draft on the left").bodyStyle(14, color: Theme.textModerate)
+                Spacer(minLength: 0)
+            }
+            ExportPanel(session: model.session, drafts: model.drafts)
+            Text(model.drafts.signIn.isSignedIn ? "Signed in" : "Signed out").bodyStyle(12, color: Theme.textModerate)
+        }
+        .padding(24)
+        .frame(maxHeight: .infinity, alignment: .top)
     }
 }
 

@@ -12,6 +12,10 @@ final class AppModel: ObservableObject {
     @Published var tab: Tab = .scans { didSet { session.active = tab == .samples; if tab == .scans { session.stop() } } }
     @Published var exporting = false
     @Published var exportReport: String?
+    /// "Also export a WAV" (Gio: not always wanted); off = MP3 only. Remembered.
+    @Published var exportWAV: Bool = UserDefaults.standard.object(forKey: "exportWAV") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(exportWAV, forKey: "exportWAV") }
+    }
     @Published var wavFolder: URL = UserDefaults.standard.url(forKey: "wavFolder")
         ?? FileManager.default.urls(for: .musicDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza samples/WAV") {
         didSet { UserDefaults.standard.set(wavFolder, forKey: "wavFolder") }
@@ -143,8 +147,9 @@ final class AppModel: ObservableObject {
     func clipCount(_ d: DraftSummary) -> Int {
         let sku = d.skuText
         var names = Set(session.assignments.values.filter { $0.sku == sku }.map(\.name))
-        if let items = try? FileManager.default.contentsOfDirectory(atPath: wavFolder.path) {
-            for f in items where f.hasPrefix(sku + "_") && f.hasSuffix(".wav") {
+        for folder in [wavFolder, mp3Folder] {   // exported clips of this SKU (MP3 always, WAV when chosen)
+            guard let items = try? FileManager.default.contentsOfDirectory(atPath: folder.path) else { continue }
+            for f in items where f.hasPrefix(sku + "_") && (f.hasSuffix(".wav") || f.hasSuffix(".mp3")) {
                 let parts = f.split(separator: "_")
                 if parts.count > 1, Int(parts[1]) == nil { names.insert((f as NSString).deletingPathExtension) }
             }
@@ -159,7 +164,7 @@ final class AppModel: ObservableObject {
         let t = drafts.tags, sku = d.skuText
         let labelA = drafts.names.first { $0.role == 1 }.flatMap { drafts.file(named: $0.name, in: folder) }
         let labelB = drafts.names.first { $0.role == 2 }.flatMap { drafts.file(named: $0.name, in: folder) }
-        let wav = wavFolder, mp3 = mp3Folder
+        let wav: URL? = exportWAV ? wavFolder : nil, mp3 = mp3Folder
         exporting = true; exportReport = nil
         DispatchQueue.global(qos: .userInitiated).async {
             var done = 0, errors: [String] = [], noCover: [String] = []
@@ -180,7 +185,7 @@ final class AppModel: ObservableObject {
             }
             DispatchQueue.main.async {
                 self.exporting = false
-                var r = "Exported \(done) of \(jobs.count): WAV in \(wav.lastPathComponent), MP3 in \(mp3.lastPathComponent)."
+                var r = "Exported \(done) of \(jobs.count): MP3 in \(mp3.lastPathComponent)" + (wav.map { ", WAV in \($0.lastPathComponent)." } ?? ".")
                 if !noCover.isEmpty { r += " No cover for \(noCover.joined(separator: ", ")) (label not scanned yet)." }
                 if !errors.isEmpty { r += " " + errors.joined(separator: " · ") }
                 self.exportReport = r

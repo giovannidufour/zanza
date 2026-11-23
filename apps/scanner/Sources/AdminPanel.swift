@@ -70,7 +70,6 @@ struct DraftColumn: View {
                             DraftResult(draft: d, scanned: drafts.scannedCount(d), imageSlots: drafts.slotCounts[d.id]?.images ?? 3,
                                         clips: model.clipCount(d), clipSlots: drafts.slotCounts[d.id]?.clips, selected: open)
                                 .onTapGesture { drafts.pick(d) }
-                            if open { DraftDetail(drafts: drafts, session: model.session).padding(.horizontal, 8).padding(.bottom, 8) }
                         }
                         .background(open ? Theme.surfaceHover : Color.clear)
                         .overlay(Rectangle().stroke(open ? Theme.divider : Color.clear, lineWidth: 1))
@@ -167,13 +166,16 @@ struct ImageSlotRow: View {
 }
 
 /// Column 3 top (0138): the picked draft and its image positions
+/// The open draft's slots in the right column (Gio 2026-11-23): Images in the Scans tab, Clips in the Samples tab
 struct DraftDetail: View {
+    enum Kind { case images, clips }
     @ObservedObject var drafts: DraftSession
     @ObservedObject var session: SessionModel
     @EnvironmentObject var model: AppModel
+    var kind: Kind
     var body: some View {
         if drafts.draft != nil {
-            VStack(alignment: .leading, spacing: 16) { slotList; clipList }
+            if kind == .images { slotList } else { ScrollView { clipList } }
         }
     }
 

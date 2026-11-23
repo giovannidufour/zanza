@@ -214,9 +214,12 @@ struct ExportPanel: View {
         let empty = drafts.clips.filter { session.clip(assignedTo: $0.name) == nil }.map(\.label)
         VStack(alignment: .leading, spacing: 16) {
             Text("Export").labelStyle(12)
-            FolderField(title: "WAV (lossless) to", url: model.wavFolder) { model.chooseExportFolder(mp3: false) }
             FolderField(title: "MP3 320 kbps to", url: model.mp3Folder) { model.chooseExportFolder(mp3: true) }
-            Text("Files are named as the slot. Both formats get the tags (title, artist, album, label, year, genre, track A1/B1, SKU in the comment) and the cover: the label scan of that side, square.")
+            Toggle(isOn: $model.exportWAV) { Text("Also export a WAV (archive / DJ)").bodyStyle(14) }.toggleStyle(.checkbox)
+            if model.exportWAV {
+                FolderField(title: "WAV (lossless) to", url: model.wavFolder) { model.chooseExportFolder(mp3: false) }
+            }
+            Text("Files are named as the slot. Each file gets the tags (title, artist, album, label, year, genre, track A1/B1, SKU in the comment) and the cover: the label scan of that side, square.")
                 .bodyStyle(12, color: Theme.textModerate).fixedSize(horizontal: false, vertical: true)
             if AudioExport.lame == nil {
                 Text("LAME is not installed, so no MP3: install it with Homebrew (brew install lame).").bodyStyle(12, color: Theme.alert)
@@ -230,8 +233,6 @@ struct ExportPanel: View {
                  : "\(assigned.count) clips assigned" + (empty.isEmpty ? "" : " · \(empty.joined(separator: ", ")) still empty"))
                 .bodyStyle(12, color: Theme.textModerate)
             if let r = model.exportReport { Text(r).bodyStyle(12).fixedSize(horizontal: false, vertical: true) }
-            Spacer(minLength: 0)
         }
-        .padding(24)
     }
 }
