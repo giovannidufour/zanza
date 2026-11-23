@@ -10,6 +10,14 @@ enum AudioExport {
         var cover: Data?   // JPEG
     }
 
+    /// Written next to the target under a temporary name, then moved over it: never a half file (0143)
+    static func writeSafely(_ data: Data, to url: URL) throws {
+        let tmp = url.deletingLastPathComponent().appendingPathComponent(".\(url.lastPathComponent).part")
+        try data.write(to: tmp)
+        if FileManager.default.fileExists(atPath: url.path) { _ = try FileManager.default.replaceItemAt(url, withItemAt: tmp) }
+        else { try FileManager.default.moveItem(at: tmp, to: url) }
+    }
+
     static var lame: String? {
         ["/opt/homebrew/bin/lame", "/usr/local/bin/lame"].first { FileManager.default.isExecutableFile(atPath: $0) }
     }
@@ -37,7 +45,7 @@ enum AudioExport {
         try FileManager.default.createDirectory(at: mp3Folder, withIntermediateDirectories: true)
         if let wavFolder {   // optional (Gio: not always an archive / DJ copy)
             try FileManager.default.createDirectory(at: wavFolder, withIntermediateDirectories: true)
-            try wavData(buf, bits: bits, rate: Int(rate), gain: gain, id3: tag).write(to: wavFolder.appendingPathComponent(name).appendingPathExtension("wav"))
+            try writeSafely(wavData(buf, bits: bits, rate: Int(rate), gain: gain, id3: tag), to: wavFolder.appendingPathComponent(name).appendingPathExtension("wav"))
         }
 
         // MP3: LAME reads a plain 16/24-bit WAV (no tag), the ID3v2.4 tag is put in front afterwards
@@ -50,7 +58,57 @@ enum AudioExport {
         p.arguments = ["--quiet", "-b", "320", "--cbr", "-q", "0", "--resample", "44.1", tmpIn.path, tmpOut.path]
         try p.run(); p.waitUntilExit()
         guard p.terminationStatus == 0, let mp3 = try? Data(contentsOf: tmpOut) else { throw ScanError.message("LAME could not make the MP3") }
-        try (tag + mp3).write(to: mp3Folder.appendingPathComponent(name).appendingPathExtension("mp3"))
+        try writeSafely(tag + mp3, to: mp3Folder.appendingPathComponent(name).appendingPathExtension("mp3"))
+    }
+
+    /// MP3 at `kbps` (Push to admin: 128) from the session source, trim applied; no tags (the admin keeps its own data)
+    static func mp3(source: URL, trimStart: Double, kbps: Int) throws -> Data {
+        guard let lame else { throw ScanError.message("LAME is not installed (brew install lame).") }
+        let file = try AVAudioFile(forReading: source)
+        let fmt = file.processingFormat, rate = fmt.sampleRate
+        file.framePosition = min(AVAudioFramePosition(trimStart * rate), file.length)
+        let count = AVAudioFrameCount(file.length - file.framePosition)
+        guard let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: max(count, 1)) else { throw ScanError.message("Out of memory") }
+        try file.read(into: buf, frameCount: count)
+        let tmpIn = FileManager.default.temporaryDirectory.appendingPathComponent("zanza-\(UUID().uuidString).wav")
+        let tmpOut = tmpIn.deletingPathExtension().appendingPathExtension("mp3")
+        defer { try? FileManager.default.removeItem(at: tmpIn); try? FileManager.default.removeItem(at: tmpOut) }
+        try wavData(buf, bits: 16, rate: Int(rate), gain: 1, id3: nil).write(to: tmpIn)
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: lame)
+        p.arguments = ["--quiet", "-b", "\(kbps)", "--cbr", "--resample", "44.1", tmpIn.path, tmpOut.path]
+        try p.run(); p.waitUntilExit()
+        guard p.terminationStatus == 0 else { throw ScanError.message("LAME could not make the MP3") }
+        return try Data(contentsOf: tmpOut)
+    }
+
+    /// WebP for the admin (0108): long side `long` (or exact `width`), quality 0.86, through Homebrew cwebp
+    static func webp(from url: URL, long: Int? = nil, width: Int? = nil) throws -> Data {
+        guard let cwebp = ["/opt/homebrew/bin/cwebp", "/usr/local/bin/cwebp"].first(where: { FileManager.default.isExecutableFile(atPath: $0) }) else {
+            throw ScanError.message("cwebp is not installed (brew install webp).")
+        }
+        guard let src = CGImageSourceCreateWithURL(url as CFURL, nil), let img = CGImageSourceCreateImageAtIndex(src, 0, nil) else {
+            throw ScanError.message("Cannot read \(url.lastPathComponent)")
+        }
+        let w0 = CGFloat(img.width), h0 = CGFloat(img.height)
+        let f: CGFloat = width.map { CGFloat($0) / w0 } ?? long.map { min(1, CGFloat($0) / max(w0, h0)) } ?? 1
+        let w = max(1, Int((w0 * f).rounded())), h = max(1, Int((h0 * f).rounded()))
+        guard let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0,
+                                  space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else {
+            throw ScanError.message("Out of memory")
+        }
+        ctx.interpolationQuality = .high
+        ctx.draw(img, in: CGRect(x: 0, y: 0, width: w, height: h))
+        let tmpIn = FileManager.default.temporaryDirectory.appendingPathComponent("zanza-\(UUID().uuidString).png")
+        let tmpOut = tmpIn.deletingPathExtension().appendingPathExtension("webp")
+        defer { try? FileManager.default.removeItem(at: tmpIn); try? FileManager.default.removeItem(at: tmpOut) }
+        try ImageOutput.write(ctx.makeImage()!, to: tmpIn, format: .png, dpi: 72)
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: cwebp)
+        p.arguments = ["-quiet", "-q", "86", tmpIn.path, "-o", tmpOut.path]
+        try p.run(); p.waitUntilExit()
+        guard p.terminationStatus == 0 else { throw ScanError.message("cwebp could not make the WebP") }
+        return try Data(contentsOf: tmpOut)
     }
 
     // MARK: WAV (PCM, little endian) with an optional "id3 " chunk

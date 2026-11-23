@@ -2,6 +2,7 @@ import SwiftUI
 
 @main
 struct ZanzaScannerApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var model = AppModel()
 
     @MainActor init() { Snapshot.runIfAsked(); TestScan.runIfAsked(); GlassSnapshot.runIfAsked() }
@@ -10,7 +11,8 @@ struct ZanzaScannerApp: App {
         WindowGroup("Rythem-Works Scanner") {
             ContentView(scanner: model.scanner)
                 .environmentObject(model)
-                .onAppear { if !CommandLine.arguments.contains("--test-scan") { model.scanner.start(); model.pasteNames(onlyIfNew: true) } }
+                .onAppear {
+                    delegate.jobs = model.jobs; if !CommandLine.arguments.contains("--test-scan") { model.scanner.start(); model.pasteNames(onlyIfNew: true) } }
         }
         .defaultSize(width: 1440, height: 900)
         .windowResizability(.contentMinSize)
@@ -33,4 +35,18 @@ struct ZanzaScannerApp: App {
             }
         }
     }
+}
+
+/// Quitting while a job runs asks first (0143)
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    weak var jobs: JobQueue?
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard let n = jobs?.activeCount, n > 0 else { return .terminateNow }
+        let a = NSAlert()
+        a.messageText = "Quit and stop \(n) job\(n == 1 ? "" : "s")?"
+        a.informativeText = "Exports and pushes still running or waiting will not finish."
+        a.addButton(withTitle: "Quit"); a.addButton(withTitle: "Cancel")
+        return a.runModal() == .alertFirstButtonReturn ? .terminateNow : .terminateCancel
+    }
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 }

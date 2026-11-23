@@ -26,7 +26,7 @@ struct DraftSummary: Codable, Identifiable, Equatable {
 
 struct ImageTarget: Codable { let role: Int; let label: String; let name: String }
 /// A clip slot (0141): one per line with a clip role (a1, b1… or a / b); artist/title for the ID3 tags
-struct ClipTarget: Codable, Equatable { let role: String; let label: String; let name: String; let artist: String?; let title: String? }
+struct ClipTarget: Codable, Equatable { let role: String; let label: String; let name: String; let artist: String?; let title: String?; let line: Int? }
 /// What the Samples tab writes in the tags (0141); every field optional until scan-targets is redeployed
 struct DraftTags: Codable, Equatable { let album: String?; let label: String?; let cat_no: String?; let year: Int?; let genres: [String]? }
 struct DraftInfo { let images: [ImageTarget]; let clips: [ClipTarget]; let tags: DraftTags? }
@@ -103,6 +103,41 @@ final class Backend {
         let clips = (try? JSONDecoder().decode([ClipTarget].self, from: JSONSerialization.data(withJSONObject: r["clips"] ?? []))) ?? []
         let tags = (r["tags"] as? [String: Any]).flatMap { try? JSONDecoder().decode(DraftTags.self, from: JSONSerialization.data(withJSONObject: $0)) }
         return DraftInfo(images: images, clips: clips, tags: tags)
+    }
+
+    // MARK: Push to admin (0142)
+
+    /// scanner-push { id, check } → what the admin has now: photo roles and clip lines with a key
+    func adminHas(_ id: String) async throws -> (photos: [Int], clips: [Int]) {
+        let r = try await post("/functions/v1/scanner-push", ["id": id, "check": true], auth: true)
+        let photos = (r["photos"] as? [[String: Any]] ?? []).compactMap { $0["role"] as? Int }
+        let clips = (r["clips"] as? [[String: Any]] ?? []).compactMap { $0["line"] as? Int }
+        return (photos, clips)
+    }
+
+    func attach(_ id: String, photos: [(role: Int, key: String)], clips: [(line: Int, key: String)]) async throws {
+        _ = try await post("/functions/v1/scanner-push", ["id": id, "mode": "replace",
+                                                          "photos": photos.map { ["role": $0.role, "key": $0.key] },
+                                                          "clips": clips.map { ["line": $0.line, "key": $0.key] }], auth: true)
+    }
+
+    /// sign-upload, then PUT the bytes to R2; returns the key. `of`/`width` = a smaller copy of a photo.
+    func upload(_ data: Data, kind: String, contentType: String, of: String? = nil, width: Int? = nil) async throws -> String {
+        var body: [String: Any] = ["kind": kind, "contentType": contentType, "size": data.count]
+        if let of, let width { body["of"] = of; body["width"] = width }
+        let r = try await post("/functions/v1/sign-upload", body, auth: true)
+        guard let key = r["key"] as? String, let u = r["uploadUrl"] as? String, let url = URL(string: u) else {
+            throw BackendError.server("sign-upload gave no URL")
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "PUT"
+        req.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        req.timeoutInterval = 120
+        let (_, res) = try await URLSession.shared.upload(for: req, from: data)
+        guard let code = (res as? HTTPURLResponse)?.statusCode, (200..<300).contains(code) else {
+            throw BackendError.server("Upload to storage failed (\((res as? HTTPURLResponse)?.statusCode ?? 0))")
+        }
+        return key
     }
 
     // MARK: HTTP

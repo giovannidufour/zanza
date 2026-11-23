@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 /// The app's state: names to scan, settings, preview and the selection square.
@@ -10,8 +11,13 @@ final class AppModel: ObservableObject {
     let session = SessionModel()
     enum Tab { case scans, samples }
     @Published var tab: Tab = .scans { didSet { session.active = tab == .samples; if tab == .scans { session.stop() } } }
-    @Published var exporting = false
-    @Published var exportReport: String?
+    /// Export and Push to admin run here, one at a time, in the background (0143)
+    let jobs = JobQueue()
+    private var forward: [AnyCancellable] = []
+    /// per draft id: the slot files last pushed to the admin (synced = the same now), 0142
+    @Published var pushed: [String: [String]] = (UserDefaults.standard.dictionary(forKey: "pushed") as? [String: [String]]) ?? [:] {
+        didSet { UserDefaults.standard.set(pushed, forKey: "pushed") }
+    }
     @Published var wavFolder: URL = UserDefaults.standard.url(forKey: "wavFolder")
         ?? FileManager.default.urls(for: .musicDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza samples/WAV") {
         didSet { UserDefaults.standard.set(wavFolder, forKey: "wavFolder") }
@@ -68,6 +74,11 @@ final class AppModel: ObservableObject {
 
     init() {
         drafts.app = self
+        session.inJob = { [weak self] f in self?.jobs.uses(f) ?? false }
+        jobs.onIdle = { [weak self] in self?.session.flushPendingRemovals() }
+        // draft rows read jobs and session (progress, push state, counts): redraw them when those change
+        forward = [jobs.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() },
+                   session.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }]
         previewZone = zone(for: preset)
         center = CGPoint(x: previewZone.midX, y: previewZone.midY)
     }
@@ -153,19 +164,21 @@ final class AppModel: ObservableObject {
         return names.count
     }
 
-    /// Export every assigned clip of the open draft: WAV + MP3, tags, the side's label as cover. Overwrites.
+    /// Export every assigned clip of the open draft as a background job: MP3 320 always, WAV for ticked clips, tags,
+    /// the side's label as cover. Overwrites. What it exports is fixed when queued (0143).
     func exportClips() {
         guard let d = drafts.draft else { return }
         let jobs: [(SessionClip, ClipTarget)] = drafts.clips.compactMap { slot in session.clip(assignedTo: slot.name).map { ($0, slot) } }
+        guard !jobs.isEmpty else { return }
         let t = drafts.tags, sku = d.skuText
         let labelA = drafts.names.first { $0.role == 1 }.flatMap { drafts.file(named: $0.name, in: folder) }
         let labelB = drafts.names.first { $0.role == 2 }.flatMap { drafts.file(named: $0.name, in: folder) }
         let wav = wavFolder, mp3 = mp3Folder
         let wavFor = Set(drafts.clips.map(\.name).filter { session.wantsWAV(slot: $0) })
-        exporting = true; exportReport = nil
-        DispatchQueue.global(qos: .userInitiated).async {
-            var done = 0, errors: [String] = [], noCover: [String] = []
-            for (clip, slot) in jobs {
+        self.jobs.enqueue(draftID: d.id, sku: sku, kind: .export, files: Set(jobs.map(\.0.file))) { progress in
+            var noCover: [String] = []
+            for (n, (clip, slot)) in jobs.enumerated() {
+                progress(Double(n) / Double(jobs.count), "clip \(n + 1) of \(jobs.count)")
                 let side = slot.role.lowercased().first == "b" ? labelB : labelA
                 let cover = AudioExport.cover(from: side)
                 if cover == nil { noCover.append(slot.label) }
@@ -174,20 +187,111 @@ final class AppModel: ObservableObject {
                 tags.album = t?.album ?? d.title; tags.label = t?.label ?? ""
                 tags.year = t?.year.map(String.init) ?? ""; tags.genre = (t?.genres ?? []).joined(separator: ", ")
                 tags.track = slot.label; tags.comment = sku; tags.cover = cover
-                do {
-                    try AudioExport.export(source: clip.url, trimStart: clip.trimStart, name: slot.name, tags: tags,
-                                           wavFolder: wavFor.contains(slot.name) ? wav : nil, mp3Folder: mp3, normalize: false)
-                    done += 1
-                } catch { errors.append("\(slot.label): \(error.localizedDescription)") }
+                try AudioExport.export(source: clip.url, trimStart: clip.trimStart, name: slot.name, tags: tags,
+                                       wavFolder: wavFor.contains(slot.name) ? wav : nil, mp3Folder: mp3, normalize: false)
             }
-            DispatchQueue.main.async {
-                self.exporting = false
-                var r = "Exported \(done) of \(jobs.count): MP3 in \(mp3.lastPathComponent)" + (wavFor.isEmpty ? "." : ", \(wavFor.count) WAV in \(wav.lastPathComponent).")
-                if !noCover.isEmpty { r += " No cover for \(noCover.joined(separator: ", ")) (label not scanned yet)." }
-                if !errors.isEmpty { r += " " + errors.joined(separator: " · ") }
-                self.exportReport = r
+            var r = "Exported \(jobs.count) clip\(jobs.count == 1 ? "" : "s")"
+            if !wavFor.isEmpty { r += " (\(wavFor.count) with WAV)" }
+            if !noCover.isEmpty { r += " · no cover for \(noCover.joined(separator: ", "))" }
+            return (r, mp3)
+        }
+    }
+
+    // MARK: Push to admin (0142)
+
+    /// What a draft would push now, as comparable strings: its scans (Labels folder, by SKU) and its assigned clips
+    func pushItems(sku: String) -> [String] {
+        var items: [String] = []
+        if let files = try? FileManager.default.contentsOfDirectory(atPath: folder.path) {
+            for f in files.sorted() where f.hasPrefix(sku + "_") {
+                let p = f.split(separator: "_"); guard p.count > 1, Int(p[1]) != nil else { continue }
+                let a = try? FileManager.default.attributesOfItem(atPath: folder.appendingPathComponent(f).path)
+                items.append("img:\(f):\((a?[.size] as? Int) ?? 0):\(Int((a?[.modificationDate] as? Date)?.timeIntervalSince1970 ?? 0))")
             }
         }
+        for (file, a) in session.assignments.sorted(by: { $0.value.name < $1.value.name }) where a.sku == sku {
+            let trim = session.clips.first { $0.file == file }?.trimStart ?? 0
+            items.append("clip:\(a.name):\(file):\(trim)")
+        }
+        return items
+    }
+
+    enum PushState { case none, push, pushing, synced, failed(String) }
+    func pushState(_ d: DraftSummary) -> PushState {
+        if jobs.isActive(d.id, .push) { return .pushing }
+        let now = pushItems(sku: d.skuText)
+        if now.isEmpty { return .none }
+        if let j = jobs.jobs.last(where: { $0.draftID == d.id && $0.kind == .push }), case .failed(let m) = j.state, pushed[d.id] != now { return .failed(m) }
+        return pushed[d.id] == now ? .synced : .push
+    }
+
+    /// Push to admin: check what the admin has, ask before replacing, upload (WebP + sizes, MP3 128), attach
+    func push(_ d: DraftSummary) {
+        // the open draft knows its clip lines; another one is opened first by the user (its lines come from scan-targets)
+        guard drafts.draft?.id == d.id else { drafts.pick(d); caption = "Draft opened: press Push again"; return }
+        let sku = d.skuText
+        let images: [(role: Int, url: URL)] = drafts.names.compactMap { n in drafts.file(named: n.name, in: folder).map { (n.role, $0) } }
+        let clips: [(line: Int, url: URL, trim: Double, label: String)] = drafts.clips.compactMap { slot in
+            guard let line = slot.line, let c = session.clip(assignedTo: slot.name) else { return nil }
+            return (line, c.url, c.trimStart, slot.label)
+        }
+        guard !images.isEmpty || !clips.isEmpty else { return }
+        let snapshot = pushItems(sku: sku)
+        let missingLines = drafts.clips.filter { $0.line == nil && session.clip(assignedTo: $0.name) != nil }.count
+        jobs.enqueue(draftID: d.id, sku: sku, kind: .push, files: Set(clips.map { $0.url.lastPathComponent })) { progress in
+            progress(0, "checking the admin")
+            let has = try await Backend.shared.adminHas(d.id)
+            let replacedPhotos = images.map(\.role).filter { has.photos.contains($0) }
+            let replacedClips = clips.filter { has.clips.contains($0.line) }.map(\.label)
+            if !replacedPhotos.isEmpty || !replacedClips.isEmpty {
+                let names = replacedPhotos.map { $0 == 1 ? "Label A" : $0 == 2 ? "Label B" : "Photo \($0)" } + replacedClips
+                let added = images.count - replacedPhotos.count + clips.count - replacedClips.count
+                let ok = await MainActor.run { () -> Bool in
+                    let a = NSAlert()
+                    a.messageText = "Replace in the admin?"
+                    a.informativeText = "SKU \(sku) already has: \(names.joined(separator: ", ")). They will be replaced" + (added > 0 ? "; \(added) more will be added." : ".")
+                    a.addButton(withTitle: "Replace and push"); a.addButton(withTitle: "Cancel")
+                    return a.runModal() == .alertFirstButtonReturn
+                }
+                if !ok { return ("Cancelled: nothing changed in the admin", nil) }
+            }
+            let total = Double(images.count + clips.count)
+            var photoKeys: [(role: Int, key: String)] = [], clipKeys: [(line: Int, key: String)] = []
+            for (i, img) in images.enumerated() {
+                progress(Double(i) / total, "image \(i + 1) of \(images.count)")
+                let key = try await Backend.shared.upload(try AudioExport.webp(from: img.url, long: 1600), kind: "photo", contentType: "image/webp")
+                for w in [200, 400, 800] {
+                    _ = try await Backend.shared.upload(try AudioExport.webp(from: img.url, width: w), kind: "photo", contentType: "image/webp", of: key, width: w)
+                }
+                photoKeys.append((img.role, key))
+            }
+            for (i, c) in clips.enumerated() {
+                progress(Double(images.count + i) / total, "clip \(i + 1) of \(clips.count)")
+                let key = try await Backend.shared.upload(try AudioExport.mp3(source: c.url, trimStart: c.trim, kbps: 128), kind: "sample", contentType: "audio/mpeg")
+                clipKeys.append((c.line, key))
+            }
+            progress(0.98, "attaching")
+            try await Backend.shared.attach(d.id, photos: photoKeys, clips: clipKeys)
+            await MainActor.run { self.pushed[d.id] = snapshot }
+            var r = "Pushed \(photoKeys.count) image\(photoKeys.count == 1 ? "" : "s") and \(clipKeys.count) clip\(clipKeys.count == 1 ? "" : "s")"
+            if missingLines > 0 { r += " · \(missingLines) clip(s) skipped: no line yet (scan-targets)" }
+            return (r, nil)
+        }
+    }
+
+    // MARK: Session: remove and clear (0141)
+
+    /// Clear asks first only when some assigned clips are not exported yet
+    func clearSession() {
+        let unexported = session.assignments.values.filter { !FileManager.default.fileExists(atPath: mp3Folder.appendingPathComponent($0.name).appendingPathExtension("mp3").path) }.count
+        if unexported > 0 {
+            let a = NSAlert()
+            a.messageText = "Clear \(session.clips.count) clips?"
+            a.informativeText = "\(unexported) assigned clip\(unexported == 1 ? " is" : "s are") not exported yet."
+            a.addButton(withTitle: "Clear"); a.addButton(withTitle: "Cancel")
+            guard a.runModal() == .alertFirstButtonReturn else { return }
+        }
+        session.clear(keeping: { self.jobs.uses($0) })
     }
 
     /// With a draft picked, the file name is the name of the target position (from the admin)

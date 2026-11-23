@@ -68,8 +68,10 @@ struct DraftColumn: View {
                         let open = drafts.draft?.id == d.id
                         VStack(alignment: .leading, spacing: 12) {
                             DraftResult(draft: d, scanned: drafts.scannedCount(d), imageSlots: drafts.slotCounts[d.id]?.images ?? 3,
-                                        clips: model.clipCount(d), clipSlots: drafts.slotCounts[d.id]?.clips, selected: open)
-                                .onTapGesture { drafts.pick(d) }
+                                        clips: model.clipCount(d), clipSlots: drafts.slotCounts[d.id]?.clips, selected: open,
+                                        push: model.pushState(d), onPush: { model.push(d) },
+                                        job: model.jobs.latest(for: d.id).flatMap { $0.seen ? nil : $0 }, jobs: model.jobs)
+                                .onTapGesture { drafts.pick(d); model.jobs.markSeen(d.id) }
                         }
                         .background(open ? Theme.surfaceHover : Color.clear)
                         .overlay(Rectangle().stroke(open ? Theme.divider : Color.clear, lineWidth: 1))
@@ -90,6 +92,10 @@ struct DraftResult: View {
     var clips = 0
     var clipSlots: Int?
     var selected = false
+    var push: AppModel.PushState = .none
+    var onPush: () -> Void = {}
+    var job: JobQueue.Job?
+    @ObservedObject var jobs: JobQueue
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             ZStack {
@@ -100,12 +106,17 @@ struct DraftResult: View {
             }
             .frame(width: 40, height: 40).clipped()
             VStack(alignment: .leading, spacing: 2) {
-                Text("SKU \(draft.skuText) · Draft").labelStyle(10, color: Theme.textModerate)
+                HStack {
+                    Text("SKU \(draft.skuText) · Draft").labelStyle(10, color: Theme.textModerate)
+                    Spacer()
+                    pushButton
+                }
                 Text(draft.title).bodyStyle(14).fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 6) {   // media status chips (Figma 2446:26829): green = some, red = none
                     MediaChip(icon: "photo", count: scanned)
                     MediaChip(icon: "waveform", count: clips)
                 }
+                if let job { JobLine(job: job, jobs: jobs) }
             }
             Spacer(minLength: 0)
         }
@@ -274,6 +285,29 @@ struct Lightbox: View {
             }
             .onAppear { image = drafts.image(at: i) }
             .onChange(of: drafts.lightbox) { new in image = new.flatMap { drafts.image(at: $0) } }
+        }
+    }
+}
+
+extension DraftResult {
+    /// `push status` (0142): upload = push, check = synced, warning = failed (tooltip = reason); hidden with nothing to push
+    @ViewBuilder var pushButton: some View {
+        switch push {
+        case .none: EmptyView()
+        case .push, .pushing, .failed:
+            let pushing: Bool = { if case .pushing = push { return true }; return false }()
+            let failed: String? = { if case .failed(let m) = push { return m }; return nil }()
+            Button(action: onPush) {
+                Image(systemName: failed != nil ? "exclamationmark.circle" : "arrow.up.circle")
+                    .font(.system(size: 16, weight: .light)).frame(width: 24, height: 24)
+                    .opacity(pushing ? 0.4 : 1).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain).disabled(pushing)
+            .help(failed.map { "Push failed: \($0). Press to retry" } ?? "Push SKU \(draft.skuText) to the admin")
+            .accessibilityLabel("Push SKU \(draft.skuText) to the admin")
+        case .synced:
+            Image(systemName: "checkmark.circle").font(.system(size: 16, weight: .light)).frame(width: 24, height: 24)
+                .help("SKU \(draft.skuText) synced with the admin").accessibilityLabel("SKU \(draft.skuText) synced")
         }
     }
 }

@@ -27,6 +27,7 @@ struct ContentView: View {
             }
             .frame(width: 360)
         }
+        .safeAreaInset(edge: .bottom, spacing: 0) { ActivityBar(jobs: model.jobs, drafts: model.drafts) }
         .frame(minWidth: 1280, minHeight: 860)
         .background(Theme.surfacePage)
         .overlay { Lightbox(drafts: model.drafts) }
@@ -171,7 +172,7 @@ struct SamplesColumn: View {
                 Text("Pick a draft on the left").bodyStyle(14, color: Theme.textModerate)
                 Spacer(minLength: 0)
             }
-            ExportPanel(session: model.session, drafts: model.drafts)
+            ExportPanel(session: model.session, drafts: model.drafts, jobs: model.jobs)
             Text(model.drafts.signIn.isSignedIn ? "Signed in" : "Signed out").bodyStyle(12, color: Theme.textModerate)
         }
         .padding(24)

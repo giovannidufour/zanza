@@ -56,6 +56,10 @@ struct SessionPanel: View {
                         .bodyStyle(12, color: Theme.textModerate)
                 }
                 Spacer()
+                if !session.clips.isEmpty {
+                    Button("Clear") { model.clearSession() }.buttonStyle(ZButtonStyle(primary: false))
+                        .help("Empty the list (the local copies go to the Trash; the card is never touched)")
+                }
                 Button("Import…") { session.chooseImport() }.buttonStyle(ZButtonStyle(primary: false))
             }
             if session.clips.isEmpty {
@@ -108,6 +112,10 @@ struct SessionRow: View {
             if let a {
                 Text("\(a.sku) · \(a.label)").bodyStyle(12).padding(.horizontal, 4).padding(.vertical, 2).background(Color.black.opacity(0.08))
             }
+            Button { session.remove(clip.file) } label: {   // out of the list; ⌘Z restores it
+                Image(systemName: "xmark").font(.system(size: 14, weight: .light)).frame(width: 24, height: 24).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain).help("Remove from the list (the copy goes to the Trash, ⌘Z restores it)")
         }
         .foregroundColor(Theme.textStrong)
         .opacity(a == nil ? 1 : 0.5)
@@ -215,7 +223,9 @@ struct ExportPanel: View {
     @EnvironmentObject var model: AppModel
     @ObservedObject var session: SessionModel
     @ObservedObject var drafts: DraftSession
+    @ObservedObject var jobs: JobQueue
     var body: some View {
+        let exporting = drafts.draft.map { jobs.isActive($0.id, .export) } ?? false
         let assigned = drafts.clips.filter { session.clip(assignedTo: $0.name) != nil }
         let empty = drafts.clips.filter { session.clip(assignedTo: $0.name) == nil }.map(\.label)
         VStack(alignment: .leading, spacing: 16) {
@@ -228,14 +238,75 @@ struct ExportPanel: View {
                 Text("LAME is not installed, so no MP3: install it with Homebrew (brew install lame).").bodyStyle(12, color: Theme.alert)
             }
             Button { model.exportClips() } label: {
-                Text(model.exporting ? "Exporting…" : "Export \(assigned.count) clip\(assigned.count == 1 ? "" : "s")").frame(maxWidth: .infinity)
+                Text(exporting ? "Exporting…" : "Export \(assigned.count) clip\(assigned.count == 1 ? "" : "s")").frame(maxWidth: .infinity)
             }
             .buttonStyle(ZButtonStyle())
-            .disabled(assigned.isEmpty || model.exporting || drafts.draft == nil)
+            .disabled(assigned.isEmpty || exporting || drafts.draft == nil)
             Text(drafts.draft == nil ? "Open a draft on the left"
                  : "\(assigned.count) clips assigned" + (empty.isEmpty ? "" : " · \(empty.joined(separator: ", ")) still empty"))
                 .bodyStyle(12, color: Theme.textModerate)
-            if let r = model.exportReport { Text(r).bodyStyle(12).fixedSize(horizontal: false, vertical: true) }
         }
+    }
+}
+
+/// `activity bar` (0143): the running (or last) job, a 240 px bar and "+N waiting"; Show in Finder when done,
+/// the reason and Retry when failed. Hidden until a job has run in this session. Clicking selects that draft.
+struct ActivityBar: View {
+    @ObservedObject var jobs: JobQueue
+    @ObservedObject var drafts: DraftSession
+    var body: some View {
+        if let j = jobs.shown {
+            HStack(spacing: 12) {
+                Text(text(j)).bodyStyle(12).lineLimit(1)
+                if j.state == .running || j.state == .waiting {
+                    ZStack(alignment: .leading) {
+                        Rectangle().fill(Color.black.opacity(0.08))
+                        Rectangle().fill(Theme.textStrong).frame(width: 240 * j.progress)
+                    }
+                    .frame(width: 240, height: 4)
+                }
+                if jobs.waitingCount > 0 { Text("+\(jobs.waitingCount) waiting").bodyStyle(12, color: Theme.textModerate) }
+                Spacer()
+                if j.state == .done, let f = j.folder {
+                    Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([f]) }.buttonStyle(.plain).bodyStyle(12).underline()
+                }
+                if case .failed = j.state { Button("Retry") { jobs.retry(j.id) }.buttonStyle(.plain).bodyStyle(12).underline() }
+            }
+            .padding(.horizontal, 24).frame(height: 36)
+            .background(Theme.surfacePage)
+            .overlay(Rectangle().fill(Theme.divider).frame(height: 1), alignment: .top)
+            .contentShape(Rectangle())
+            .onTapGesture { if let d = drafts.results.first(where: { $0.id == j.draftID }) { drafts.pick(d) } }
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.updatesFrequently)
+        }
+    }
+    func text(_ j: JobQueue.Job) -> String {
+        let verb = j.kind == .export ? "Exporting" : "Pushing"
+        switch j.state {
+        case .waiting: return "Waiting · SKU \(j.sku)"
+        case .running: return "\(verb) SKU \(j.sku)" + (j.detail.isEmpty ? "" : " · \(j.detail)")
+        case .done: return "SKU \(j.sku) · \(j.result)"
+        case .failed(let m): return "SKU \(j.sku) · \(j.kind == .export ? "Export" : "Push") failed: \(m)"
+        }
+    }
+}
+
+/// `job progress` under the chips of a draft row: "Exporting 1 of 2 · 45%", "Waiting to export", "Exported 2 clips",
+/// "Export failed · retry"; gone once the done row is selected again
+struct JobLine: View {
+    let job: JobQueue.Job
+    @ObservedObject var jobs: JobQueue
+    var body: some View {
+        let what = job.kind == .export ? "export" : "push"
+        Group {
+            switch job.state {
+            case .waiting: Text("Waiting to \(what)")
+            case .running: Text("\(job.kind == .export ? "Exporting" : "Pushing") \(job.detail) · \(Int(job.progress * 100))%")
+            case .done: Text(job.result)
+            case .failed: Button("\(what.capitalized) failed · retry") { jobs.retry(job.id) }.buttonStyle(.plain)
+            }
+        }
+        .bodyStyle(11, color: Theme.textModerate).lineLimit(2)
     }
 }

@@ -105,11 +105,34 @@ final class SessionModel: ObservableObject {
         if p.runModal() == .OK { importItems(p.urls) }
     }
 
-    func clear() {
+    /// Clear the list: local copies to the Trash (a file a job still reads waits until the job ends)
+    func clear(keeping inUse: (String) -> Bool = { _ in false }) {
         stop()
-        for c in clips { try? FileManager.default.removeItem(at: c.url) }
-        clips = []; assignments = [:]; selected = nil; sourceLabel = ""; undoStack = []
+        for c in clips { if inUse(c.file) { pendingRemoval.insert(c.url) } else { try? FileManager.default.trashItem(at: c.url, resultingItemURL: nil) } }
+        clips = []; assignments = [:]; selected = nil; sourceLabel = ""; undoStack = []; removed = []
         save()
+    }
+
+    /// x on a session clip: out of the list, its copy to the Trash, its slot emptied; ⌘Z restores it
+    var inJob: (String) -> Bool = { _ in false }
+    private var pendingRemoval: Set<URL> = []
+    private var removed: [(clip: SessionClip, assignment: Assignment?, trashed: URL?)] = []
+    func remove(_ file: String) {
+        guard let c = clips.first(where: { $0.file == file }) else { return }
+        if selected == file { stop(); selected = nil }
+        let a = assignments[file]
+        var trashed: URL?
+        if inJob(file) { pendingRemoval.insert(c.url) }
+        else { var t: NSURL?; try? FileManager.default.trashItem(at: c.url, resultingItemURL: &t); trashed = t as URL? }
+        removed.append((c, a, trashed))
+        undoStack.append(assignments)
+        assignments[file] = nil
+        clips.removeAll { $0.file == file }
+        save()
+    }
+    func flushPendingRemovals() {
+        for u in pendingRemoval where !clips.contains(where: { $0.url == u }) { try? FileManager.default.trashItem(at: u, resultingItemURL: nil) }
+        pendingRemoval = []
     }
 
     // MARK: Files, waveforms, persistence
@@ -190,6 +213,14 @@ final class SessionModel: ObservableObject {
     func wantsWAV(slot name: String) -> Bool { assignments.values.first { $0.name == name }?.wantsWAV ?? false }
 
     func undo() {
+        // the last action was a removal: bring the clip back first
+        if let r = removed.last, undoStack.last != nil, assignments[r.clip.file] == nil, !clips.contains(where: { $0.file == r.clip.file }) {
+            removed.removeLast()
+            if let t = r.trashed { try? FileManager.default.moveItem(at: t, to: r.clip.url) }
+            pendingRemoval.remove(r.clip.url)
+            clips.append(r.clip)
+            clips.sort { $0.file.localizedStandardCompare($1.file) == .orderedAscending }
+        }
         guard let last = undoStack.popLast() else { return }
         assignments = last; save()
     }
