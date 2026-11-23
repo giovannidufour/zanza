@@ -126,8 +126,9 @@ final class Backend {
         return (photos, clips)
     }
 
-    func attach(_ id: String, photos: [(role: Int, key: String)], clips: [(line: Int, key: String)]) async throws {
-        _ = try await post("/functions/v1/scanner-push", ["id": id, "mode": "replace",
+    /// mode "replace" = what is pushed replaces the admin's; "fill" = only empty roles/lines are set (0165)
+    func attach(_ id: String, photos: [(role: Int, key: String)], clips: [(line: Int, key: String)], mode: String = "replace") async throws {
+        _ = try await post("/functions/v1/scanner-push", ["id": id, "mode": mode,
                                                           "photos": photos.map { ["role": $0.role, "key": $0.key] },
                                                           "clips": clips.map { ["line": $0.line, "key": $0.key] }], auth: true)
     }

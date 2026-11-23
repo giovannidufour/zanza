@@ -71,6 +71,7 @@ struct DraftColumn: View {
             .padding(.horizontal, 12).frame(height: 40).background(Theme.surfaceSubtle)
             Text(drafts.busy ? "Searching…" : drafts.query.isEmpty ? "Latest drafts" : "\(drafts.results.count) drafts match “\(drafts.query)”")
                 .labelStyle(10, color: Theme.textModerate)
+            if let status = model.pushAllStatus { PushAllRow(status: status) { model.pushAll() } }
             ScrollView {
                 VStack(spacing: 0) {
                     ForEach(drafts.results) { d in
@@ -295,6 +296,31 @@ struct Lightbox: View {
             .onAppear { image = drafts.image(at: i) }
             .onChange(of: drafts.lightbox) { new in image = new.flatMap { drafts.image(at: $0) } }
         }
+    }
+}
+
+/// `push all` (0165, Figma 2519:7929): what is pending in the list + one button that pushes it; synced = check icon
+struct PushAllRow: View {
+    let status: AppModel.PushAllStatus
+    let action: () -> Void
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(status.summary).labelStyle(10, color: Theme.textModerate)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityAddTraits(.updatesFrequently)
+            if let title = status.button {
+                Button(title, action: action).buttonStyle(ZButtonStyle(primary: false))
+                    .disabled(status.state == .pushing)
+                    .keyboardShortcut("p", modifiers: [.command, .shift])
+                    .help("Push every listed draft that is not synced (⇧⌘P)")
+                    .accessibilityLabel(status.state == .pushing ? "Pushing drafts to the admin"
+                                        : "Push \(status.count) draft\(status.count == 1 ? "" : "s") to the admin")
+            } else {
+                Image(systemName: "checkmark.circle").font(.system(size: 16, weight: .light)).frame(width: 24, height: 24)
+                    .padding(.trailing, 12).accessibilityLabel("All listed drafts synced")
+            }
+        }
+        .accessibilityElement(children: .contain)
     }
 }
 
