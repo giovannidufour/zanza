@@ -20,6 +20,7 @@ struct ZanzaScannerApp: App {
             CommandGroup(replacing: .undoRedo) {
                 Button("Undo") {
                     if model.tab == .samples && model.session.canUndo { model.session.undo() }
+                    else if model.tab == .scans && model.angleBeforeTurn != nil && !(NSApp.keyWindow?.firstResponder is NSText) { model.undoTurn() }
                     else { NSApp.sendAction(Selector(("undo:")), to: nil, from: nil) }
                 }.keyboardShortcut("z", modifiers: .command)
                 Button("Redo") { NSApp.sendAction(Selector(("redo:")), to: nil, from: nil) }.keyboardShortcut("z", modifiers: [.command, .shift])

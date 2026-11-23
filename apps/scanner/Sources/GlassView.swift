@@ -252,8 +252,7 @@ struct GlassCanvas: NSViewRepresentable {
     func makeNSView(context: Context) -> GlassView {
         let v = GlassView()
         v.onCommit = { c, a in
-            model.center = c; model.angle = a
-            model.turnFromPreview()
+            model.center = c; model.angle = a   // by hand: never followed by an automatic turn
         }
         v.onNudge = { c, a in model.center = c; model.angle = a }
         v.onScan = { if model.scanner.ready && !model.scanner.busy { model.runScan() } }

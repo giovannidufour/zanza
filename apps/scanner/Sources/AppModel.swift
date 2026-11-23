@@ -73,10 +73,8 @@ final class AppModel: ObservableObject {
         didSet { UserDefaults.standard.set(originalsFolder, forKey: "originalsFolder") }
     }
 
-    /// Turn the record by itself so the label text reads upright (Gio 2026-11-22)
-    @Published var autoTurn: Bool = UserDefaults.standard.object(forKey: "autoTurn") as? Bool ?? true {
-        didSet { UserDefaults.standard.set(autoTurn, forKey: "autoTurn"); if autoTurn { turnFromPreview() } }
-    }
+    /// angle before the last "Turn by itself", for ⌘Z
+    @Published var angleBeforeTurn: CGFloat?
     @Published var turning = false
     /// Grid and "up" figure on the guide while the Turn slider is held
     @Published var turnAids = false
@@ -352,7 +350,6 @@ final class AppModel: ObservableObject {
             switch result {
             case .success(let img):
                 self.preview = img
-                self.turnFromPreview()
                 self.caption = self.preset.sideMM == nil
                     ? "Whole glass: Scan saves everything you see"
                     : "Drag the record so the spindle hole sits in the middle (arrows to fine-tune, [ ] to turn, Return to scan). The dashed square is the 4\" label"
@@ -362,9 +359,10 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Reads the label in the preview around the guide's centre and turns the record upright (in the background)
+    /// "Turn by itself" (a one-shot button since Gio 2026-11-23: moving the image by hand never turns it again):
+    /// reads the label in the preview around the guide's centre and turns the record upright, in the background
     func turnFromPreview() {
-        guard autoTurn, let img = preview, sideMM != nil, !turning else { return }
+        guard let img = preview, sideMM != nil, !turning else { return }
         let k = CGFloat(img.width) / previewZone.width
         let c = CGPoint(x: (center.x - previewZone.minX) * k, y: (center.y - previewZone.minY) * k)
         let current = angle
@@ -373,9 +371,15 @@ final class AppModel: ObservableObject {
             let a = AutoTurn.angle(in: img, centerPx: c, sidePx: SizePreset.labelMM * k, current: current)
             DispatchQueue.main.async {
                 self.turning = false
-                if let a { self.angle = a }
+                if let a { self.angleBeforeTurn = current; self.animateCenter = true; self.angle = a; self.caption = "Turned by the label text: ⌘Z to undo" }
+                else { self.caption = "Couldn't read the label: turn it by hand" }
             }
         }
+    }
+
+    func undoTurn() {
+        guard let a = angleBeforeTurn else { return }
+        animateCenter = true; angle = a; angleBeforeTurn = nil; caption = "Turn undone"
     }
 
     /// Center (⌘E): finds the record's outer edge on the preview and puts its centre on the guide's centre; angle kept
@@ -389,7 +393,6 @@ final class AppModel: ObservableObject {
                 self.animateCenter = true
                 self.center = CGPoint(x: self.previewZone.minX + c.x * k, y: self.previewZone.minY + c.y * k)
                 self.caption = "Record centred: fine-tune with the arrows"
-                self.turnFromPreview()
             }
         }
     }
@@ -414,18 +417,15 @@ final class AppModel: ObservableObject {
             case .success(let img):
                 self.preview = ImageOutput.refresh(preview: self.preview, zone: self.previewZone, scan: img, area: area)
                 guard let side else { self.save(original: img, label: nil, dpi: dpi); return }
-                let autoTurn = self.autoTurn
                 self.caption = "Cutting the label…"
                 // reading the label (OCR) and cutting two squares out of a ~25 MP scan: off the main thread
                 DispatchQueue.global(qos: .userInitiated).async {
                     let scale = CGFloat(img.width) / area.width   // px per mm, as scanned
                     let c = CGPoint(x: (center.x - area.minX) * scale, y: (center.y - area.minY) * scale)
-                    var angle = angle
-                    if autoTurn, let a = AutoTurn.angle(in: img, centerPx: c, sidePx: SizePreset.labelMM * scale, current: angle) { angle = a }
+                    let angle = angle   // the angle set on the preview: a scan never turns by itself
                     let original = ImageOutput.straighten(img, centerPx: c, sidePx: side * scale, angle: angle)
                     let label = ImageOutput.straighten(img, centerPx: c, sidePx: SizePreset.labelMM * scale, angle: angle)
                     DispatchQueue.main.async {
-                        if autoTurn { self.angle = angle }
                         guard let original, let label else { self.caption = "Could not cut the squares out of the scan"; return }
                         // The name is read now, so it can still be changed while the scanner runs
                         self.save(original: original, label: label, dpi: dpi)

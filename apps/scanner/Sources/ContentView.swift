@@ -257,10 +257,10 @@ struct ScanColumn: View {
                         .disabled(model.preview == nil)
                         .keyboardShortcut("e", modifiers: .command)
                         .help("Put the record in the middle of the guide (⌘E)")
-                    Toggle(isOn: $model.autoTurn) {
-                        Text(model.turning ? "Reading the label…" : "Turn by itself (reads the label text)").bodyStyle(12)
-                    }
-                    .toggleStyle(.checkbox)
+                    Button(model.turning ? "Reading the label…" : "Turn by itself") { model.turnFromPreview() }
+                        .buttonStyle(ZButtonStyle(primary: false))
+                        .disabled(model.preview == nil || model.turning)
+                        .help("Read the label text once and turn the record upright (⌘Z undoes)")
                 }
             }
         }
