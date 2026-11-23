@@ -231,9 +231,6 @@ struct DraftDetail: View {
             HStack {   // images head (Figma 2439:1860)
                 Text("Images").labelStyle(12)
                 Spacer()
-                if drafts.lastRemoval != nil {
-                    Button("Undo") { drafts.undoRemove() }.buttonStyle(.plain).bodyStyle(12).underline()
-                }
                 Text("\(drafts.slots.filter(\.scanned).count) scanned").bodyStyle(12, color: Theme.textModerate)
             }
             List {

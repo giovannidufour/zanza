@@ -101,6 +101,7 @@ struct SessionPanel: View {
 
 /// `session clip`: original name, length, waveform; assigned = grey with "SKU · A1"; drag it onto a clip slot
 struct SessionRow: View {
+    @EnvironmentObject var model: AppModel
     let clip: SessionClip
     @ObservedObject var session: SessionModel
     var body: some View {
@@ -127,7 +128,7 @@ struct SessionRow: View {
             if let a {
                 Text("\(a.sku) · \(a.label)").bodyStyle(12).padding(.horizontal, 4).padding(.vertical, 2).background(Color.black.opacity(0.08))
             }
-            Button { session.remove(clip.file) } label: {   // out of the list; ⌘Z restores it
+            Button { session.remove(clip.file); model.toasts.show("Removed from the session") { session.undo(); return nil } } label: {   // out of the list; ⌘Z restores it
                 Image(systemName: "xmark").font(.system(size: 14, weight: .light)).frame(width: 24, height: 24).contentShape(Rectangle())
             }
             .buttonStyle(.plain).help("Remove from the list (the copy goes to the Trash, ⌘Z restores it)")

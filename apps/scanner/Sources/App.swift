@@ -19,7 +19,8 @@ struct ZanzaScannerApp: App {
         .commands {
             CommandGroup(replacing: .undoRedo) {
                 Button("Undo") {
-                    if model.tab == .samples && model.session.canUndo { model.session.undo() }
+                    if model.toasts.item?.undo != nil && !(NSApp.keyWindow?.firstResponder is NSText) { model.toasts.performUndo() }   // the toast first (0149)
+                    else if model.tab == .samples && model.session.canUndo { model.session.undo() }
                     else if model.tab == .scans && model.angleBeforeTurn != nil && !(NSApp.keyWindow?.firstResponder is NSText) { model.undoTurn() }
                     else { NSApp.sendAction(Selector(("undo:")), to: nil, from: nil) }
                 }.keyboardShortcut("z", modifiers: .command)
@@ -27,12 +28,7 @@ struct ZanzaScannerApp: App {
             }
             CommandGroup(after: .appInfo) {
                 Button("Sign Out of the Admin") { model.drafts.signOut() }
-                Button("Clear Samples Session…") {
-                    let a = NSAlert(); a.messageText = "Clear the session?"
-                    a.informativeText = "The local copies of the recordings and their assignments are removed. Exported files and the card are not touched."
-                    a.addButton(withTitle: "Clear"); a.addButton(withTitle: "Cancel")
-                    if a.runModal() == .alertFirstButtonReturn { model.session.clear() }
-                }
+                Button("Clear Samples Session") { model.clearSession() }
             }
         }
     }

@@ -138,7 +138,7 @@ final class DraftSession: ObservableObject {
         // a scan in progress belongs to the draft it was started for: switch only when it is saved
         if app?.scanner.busy == true { app?.caption = "Wait for the scan to finish, then pick the other draft"; return }
         loadToken = UUID()
-        draft = d; names = []; slots = []; clips = []; tags = nil; target = nil; lastRemoval = nil; lightbox = nil
+        draft = d; names = []; slots = []; clips = []; tags = nil; target = nil; lightbox = nil
         UserDefaults.standard.set(d.id, forKey: "lastDraftID")
         app?.syncFileName()
         let onDisk = scannedRoles(sku: d.skuText)
@@ -149,7 +149,7 @@ final class DraftSession: ObservableObject {
     func deselect() {
         if app?.scanner.busy == true { app?.caption = "Wait for the scan to finish"; return }
         loadToken = UUID()
-        draft = nil; names = []; slots = []; clips = []; tags = nil; target = nil; lastRemoval = nil; lightbox = nil
+        draft = nil; names = []; slots = []; clips = []; tags = nil; target = nil; lightbox = nil
         UserDefaults.standard.removeObject(forKey: "lastDraftID")
         app?.syncFileName()
         app?.caption = "Free scan: no draft"
@@ -163,7 +163,7 @@ final class DraftSession: ObservableObject {
         if let d = results.first(where: { $0.id == id }) { pick(d) }
     }
 
-    func changeDraft() { loadToken = UUID(); draft = nil; names = []; slots = []; clips = []; tags = nil; target = nil; lastRemoval = nil; lightbox = nil; search() }
+    func changeDraft() { loadToken = UUID(); draft = nil; names = []; slots = []; clips = []; tags = nil; target = nil; lightbox = nil; search() }
 
     /// A load started for one draft never applies to another one picked meanwhile
     private var loadToken = UUID()
@@ -222,7 +222,6 @@ final class DraftSession: ObservableObject {
     /// Drag-and-drop or ⌥↑/⌥↓: the scans move, the names stay with the positions, files are renamed at once
     func move(from source: IndexSet, to destination: Int) {
         guard source.allSatisfy({ slots[$0].scanned }) else { return }   // only scanned images move
-        lastRemoval = nil
         var s = slots
         s.move(fromOffsets: source, toOffset: destination)
         renameFiles(from: slots, to: s)
@@ -241,25 +240,29 @@ final class DraftSession: ObservableObject {
         move(from: IndexSet(integer: t), to: delta > 0 ? to + 1 : to)
     }
 
-    /// Last removal, for Undo: (file in the Trash, where it was), plus the position and its thumbnail
-    @Published var lastRemoval: (files: [(URL, URL)], index: Int, thumb: CGImage?)?
-
-    /// Delete / context menu: both files of that position go to the Trash (Undo puts them back)
+    /// Delete / × : both files of that position go to the Trash; the toast offers Undo (0149)
     func remove(at i: Int) {
         guard i < slots.count, i < names.count, slots[i].scanned, ofCurrentDraft(names[i].name) else { return }
-        var moved: [(URL, URL)] = []
-        for folder in folders {
-            if let f = file(named: names[i].name, in: folder) {
-                var trashed: NSURL?
-                if (try? FileManager.default.trashItem(at: f, resultingItemURL: &trashed)) != nil, let t = trashed as URL? { moved.append((t, f)) }
-            }
-        }
-        lastRemoval = (moved, i, slots[i].thumb)
+        var t = Trashed()
+        let labelFile = file(named: names[i].name, in: app?.folder)
+        for folder in folders { if let f = file(named: names[i].name, in: folder) { t.trash(f) } }
+        let slotID = slots[i].id, thumb = slots[i].thumb, draftID = draft?.id
         slots[i].scanned = false; slots[i].thumb = nil
         target = slots.firstIndex { !$0.scanned }
         app?.syncFileName()
         app?.refreshDisk()
-        app?.caption = "Moved to the Trash: \(names[i].name)"
+        app?.toasts.show("Moved to Trash: \(labelFile?.lastPathComponent ?? names[i].name)") { [weak self] in
+            guard let self else { return nil }
+            if let e = t.restore() { return e }
+            if self.draft?.id == draftID, let k = self.slots.firstIndex(where: { $0.id == slotID }) {
+                self.slots[k].scanned = true; self.slots[k].thumb = thumb
+                self.target = self.slots.firstIndex { !$0.scanned }
+                self.app?.syncFileName()
+            }
+            self.app?.refreshDisk()
+            self.app?.scheduleSync()
+            return nil
+        }
     }
 
     /// The label file of a scanned position, full size
@@ -275,16 +278,6 @@ final class DraftSession: ObservableObject {
         var j = i + d
         while j >= 0 && j < slots.count && !slots[j].scanned { j += d }
         if j >= 0 && j < slots.count { lightbox = j }
-    }
-
-    func undoRemove() {
-        guard let r = lastRemoval else { return }
-        for (trashed, original) in r.files { try? FileManager.default.moveItem(at: trashed, to: original) }
-        if r.index < slots.count { slots[r.index].scanned = true; slots[r.index].thumb = r.thumb }
-        lastRemoval = nil
-        target = slots.firstIndex { !$0.scanned }
-        app?.syncFileName()
-        app?.caption = "Scan restored"
     }
 
     private var folders: [URL] { [app?.folder, app?.originalsFolder].compactMap { $0 } }

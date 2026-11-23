@@ -13,6 +13,8 @@ final class AppModel: ObservableObject {
     @Published var tab: Tab = .scans { didSet { session.active = tab == .samples; if tab == .scans { session.stop() } } }
     /// Export and Push to admin run here, one at a time, in the background (0143)
     let jobs = JobQueue()
+    /// Removal feedback with Undo (0149)
+    let toasts = ToastCenter()
     /// What is on disk, read in the background when something changes (rows used to list folders on every redraw)
     struct DiskIndex { var labels: [String: String] = [:]; var exported: Set<String> = [] }
     @Published var disk = DiskIndex()
@@ -242,10 +244,22 @@ final class AppModel: ObservableObject {
 
     func sync(_ id: String) {
         guard let p = plan(id), let c = drafts.cache[id] else { return }
-        for name in p.dropWAV {   // WAV unticked: that WAV goes to the Trash
-            let f = wavFolder.appendingPathComponent(name).appendingPathExtension("wav")
-            if FileManager.default.fileExists(atPath: f.path) { try? FileManager.default.trashItem(at: f, resultingItemURL: nil) }
+        for name in p.dropWAV {   // WAV unticked: that WAV goes to the Trash, the toast offers Undo
+            var t = Trashed()
+            t.trash(wavFolder.appendingPathComponent(name).appendingPathExtension("wav"))
+            let old = exports[name]
             exports[name]?.wav = false
+            let label = c.clips.first { $0.name == name }?.label ?? name
+            if !t.moves.isEmpty {
+                toasts.show("\(label) WAV moved to Trash") { [weak self] in
+                    guard let self else { return nil }
+                    if let e = t.restore() { return e }
+                    self.exports[name] = old          // same fingerprint: no rewrite
+                    self.session.setWAV(true, slot: name)
+                    self.refreshDisk()
+                    return nil
+                }
+            }
         }
         guard !p.writes.isEmpty else { return }
         let writes = p.writes, wavDir = wavFolder, mp3Dir = mp3Folder, tagsKnown = c.tags != nil
@@ -272,13 +286,25 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// x on a clip slot: unassign, and its exported files go to the Trash
+    /// x on a clip slot: unassign, and its exported files go to the Trash; Undo puts both back (0149)
     func unassignClip(_ name: String) {
-        for f in [mp3Folder.appendingPathComponent(name).appendingPathExtension("mp3"), wavFolder.appendingPathComponent(name).appendingPathExtension("wav")]
-        where FileManager.default.fileExists(atPath: f.path) { try? FileManager.default.trashItem(at: f, resultingItemURL: nil) }
+        var t = Trashed()
+        let hadWAV = t.trash(wavFolder.appendingPathComponent(name).appendingPathExtension("wav"))
+        t.trash(mp3Folder.appendingPathComponent(name).appendingPathExtension("mp3"))
+        let record = exports[name]
+        let assignment = session.assignments.first { $0.value.name == name }
         exports[name] = nil
         session.unassign(slot: name)
         refreshDisk()
+        let label = drafts.clips.first { $0.name == name }?.label ?? name
+        toasts.show("\(label) unassigned · " + (hadWAV ? "MP3 and WAV" : "MP3") + " moved to Trash") { [weak self] in
+            guard let self else { return nil }
+            if let e = t.restore() { return e }
+            self.exports[name] = record
+            if let a = assignment { self.session.assign(a.key, to: a.value) }
+            self.refreshDisk()
+            return nil
+        }
     }
 
     // MARK: Media status (0144): none = red, partial = orange, some = green
@@ -406,17 +432,11 @@ final class AppModel: ObservableObject {
 
     // MARK: Session: remove and clear (0141)
 
-    /// Clear asks first only when some assigned clips are not exported yet
+    /// Clear: no confirmation, a toast with Undo (0149)
     func clearSession() {
-        let unexported = session.assignments.values.filter { !FileManager.default.fileExists(atPath: mp3Folder.appendingPathComponent($0.name).appendingPathExtension("mp3").path) }.count
-        if unexported > 0 {
-            let a = NSAlert()
-            a.messageText = "Clear \(session.clips.count) clips?"
-            a.informativeText = "\(unexported) assigned clip\(unexported == 1 ? " is" : "s are") not exported yet."
-            a.addButton(withTitle: "Clear"); a.addButton(withTitle: "Cancel")
-            guard a.runModal() == .alertFirstButtonReturn else { return }
-        }
-        session.clear(keeping: { self.jobs.uses($0) })
+        let n = session.clips.count
+        let undo = session.clear(keeping: { self.jobs.uses($0) })
+        toasts.show("Session cleared (\(n) clip\(n == 1 ? "" : "s"))", undo: undo)
     }
 
     /// With a draft picked, the file name is the name of the target position (from the admin)
@@ -574,12 +594,18 @@ final class AppModel: ObservableObject {
     }
 
     func trashFreeScan(_ s: FreeScan) {
-        for u in [s.label, s.original].compactMap({ $0 }) where FileManager.default.fileExists(atPath: u.path) {
-            try? FileManager.default.trashItem(at: u, resultingItemURL: nil)
-        }
+        var t = Trashed()
+        for u in [s.label, s.original].compactMap({ $0 }) { t.trash(u) }
+        let index = freeScans.firstIndex { $0.name == s.name } ?? freeScans.count
         freeScans.removeAll { $0.name == s.name }
-        caption = "Moved to the Trash: \(s.name)"
         if drafts.draft == nil { fileName = nextFreeName() }
+        toasts.show("Moved to Trash: \(s.label.lastPathComponent)") { [weak self] in
+            guard let self else { return nil }
+            if let e = t.restore() { return e }
+            self.freeScans.insert(s, at: min(index, self.freeScans.count))
+            if self.drafts.draft == nil { self.fileName = self.nextFreeName() }
+            return nil
+        }
     }
 
     private func save(original: CGImage, label: CGImage?, dpi: Int) {

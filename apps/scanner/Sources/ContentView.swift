@@ -32,6 +32,7 @@ struct ContentView: View {
         .background(Theme.surfacePage)
         .overlay { Lightbox(drafts: model.drafts) }
         .overlay { FreeLightbox() }
+        .overlay(alignment: .topTrailing) { ToastView(center: model.toasts) }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             model.refreshDisk()   // files may have changed in Finder
         }

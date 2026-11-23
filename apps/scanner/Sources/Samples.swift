@@ -119,12 +119,23 @@ final class SessionModel: ObservableObject {
         if p.runModal() == .OK { importItems(p.urls) }
     }
 
-    /// Clear the list: local copies to the Trash (a file a job still reads waits until the job ends)
-    func clear(keeping inUse: (String) -> Bool = { _ in false }) {
+    /// Clear the list: local copies to the Trash (a file a job still reads waits until the job ends). Undo puts back
+    /// the files, rows, assignments and trims (0149).
+    func clear(keeping inUse: (String) -> Bool = { _ in false }) -> (() -> String?) {
         stop()
-        for c in clips { if inUse(c.file) { pendingRemoval.insert(c.url) } else { try? FileManager.default.trashItem(at: c.url, resultingItemURL: nil) } }
+        var t = Trashed()
+        let before = (clips: clips, assignments: assignments, source: sourceLabel)
+        for c in clips { if inUse(c.file) { pendingRemoval.insert(c.url) } else { t.trash(c.url) } }
         clips = []; assignments = [:]; selected = nil; sourceLabel = ""; undoStack = []; removed = []
         save()
+        return { [weak self] in
+            guard let self else { return nil }
+            if let e = t.restore() { return e }
+            for c in before.clips { self.pendingRemoval.remove(c.url) }
+            self.clips = before.clips; self.assignments = before.assignments; self.sourceLabel = before.source
+            self.save()
+            return nil
+        }
     }
 
     /// x on a session clip: out of the list, its copy to the Trash, its slot emptied; ⌘Z restores it
@@ -137,7 +148,7 @@ final class SessionModel: ObservableObject {
         let a = assignments[file]
         var trashed: URL?
         if inJob(file) { pendingRemoval.insert(c.url) }
-        else { var t: NSURL?; try? FileManager.default.trashItem(at: c.url, resultingItemURL: &t); trashed = t as URL? }
+        else { var t = Trashed(); t.trash(c.url); trashed = t.moves.first?.trashed }
         removed.append((c, a, trashed))
         undoStack.append(assignments)
         assignments[file] = nil
@@ -145,7 +156,7 @@ final class SessionModel: ObservableObject {
         save()
     }
     func flushPendingRemovals() {
-        for u in pendingRemoval where !clips.contains(where: { $0.url == u }) { try? FileManager.default.trashItem(at: u, resultingItemURL: nil) }
+        for u in pendingRemoval where !clips.contains(where: { $0.url == u }) { var t = Trashed(); t.trash(u) }
         pendingRemoval = []
     }
 
