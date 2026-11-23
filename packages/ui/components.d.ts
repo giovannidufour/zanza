@@ -694,6 +694,41 @@ export interface EntityFieldProps {
 }
 export declare function EntityField(props: EntityFieldProps): JSX.Element;
 
+/** A custom title link: characters [start, end) of the text link to an artist (decision 0147). */
+export interface TextLink { start: number; end: number; artist: { id: string | null; name: string } }
+/** Figma BACKEND → Create → `custom title`, `title link bar`, `title link menu` (decision 0147): a text field whose
+ *  characters link to an artist. Select characters or click a name of the record / a link: a bar under the field offers
+ *  Link artist (or ⌘K / Ctrl+K) and Clear link / Remove link; it never takes the focus, so Delete and typing work as usual.
+ *  Clear unlinks exactly the selected characters. Typing moves the links with the text. Other props go to the Input. */
+export interface LinkedInputProps {
+  id?: string;
+  /** Figma: label text. */
+  label?: ReactNode;
+  optional?: boolean;
+  error?: ReactNode;
+  /** The text (controlled). */
+  value: string;
+  /** The links, as character ranges of `value` (controlled). */
+  links: TextLink[];
+  /** Called with the new text and links (typing moves the links; Link / Clear change them). */
+  onChange?: (value: string, links: TextLink[]) => void;
+  /** Every artist the menu can search. */
+  options?: EntityOption[];
+  /** The record's artists: listed first in the menu (the one matching the selection as "Suggested"). */
+  suggested?: { id: string | null; name: string }[];
+  /** Names on the record: a click on one of them (not linked yet) offers Link artist for the whole name. */
+  names?: string[];
+  /** @default "Link artist" */
+  linkLabel?: string;
+  /** @default "Search artist" */
+  menuPlaceholder?: string;
+  readOnly?: boolean;
+  disabled?: boolean;
+  className?: string;
+  style?: CSSProperties;
+}
+export declare function LinkedInput(props: LinkedInputProps): JSX.Element;
+
 /** Figma `entity chip` (page tags; state default | hover | focus × size medium | large): `tag item` + a remove button. */
 export interface EntityChipProps extends HTMLAttributes<HTMLSpanElement> {
   label?: ReactNode;
