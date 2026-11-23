@@ -6,7 +6,7 @@ import AVFoundation
 /// Re-export overwrites. Normalize (peak to 0 dB) only when asked: Gio doubts it (clicks on vinyl skew the peak).
 enum AudioExport {
     struct Tags {
-        var title = "", artist = "", album = "", label = "", year = "", genre = "", track = "", comment = ""
+        var title = "", artist = "", album = "", albumArtist = "", label = "", year = "", genre = "", track = "", comment = ""
         var cover: Data?   // JPEG
     }
 
@@ -147,7 +147,7 @@ enum AudioExport {
         func frame(_ id: String, _ payload: Data) -> Data { Data(id.utf8) + syncsafe(payload.count) + Data([0, 0]) + payload }
         func text(_ id: String, _ s: String) -> Data? { s.isEmpty ? nil : frame(id, Data([3]) + Data(s.utf8)) }   // 3 = UTF-8
         var frames = Data()
-        for f in [text("TIT2", t.title), text("TPE1", t.artist), text("TALB", t.album), text("TPUB", t.label),
+        for f in [text("TIT2", t.title), text("TPE1", t.artist), text("TALB", t.album), text("TPE2", t.albumArtist), text("TPUB", t.label),
                   text("TDRC", t.year), text("TCON", t.genre), text("TRCK", t.track)].compactMap({ $0 }) { frames += f }
         if !t.comment.isEmpty { frames += frame("COMM", Data([3]) + Data("eng".utf8) + Data([0]) + Data(t.comment.utf8)) }
         if let jpg = t.cover {   // front cover

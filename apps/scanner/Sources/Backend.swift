@@ -28,7 +28,12 @@ struct ImageTarget: Codable { let role: Int; let label: String; let name: String
 /// A clip slot (0141): one per line with a clip role (a1, b1… or a / b); artist/title for the ID3 tags
 struct ClipTarget: Codable, Equatable { let role: String; let label: String; let name: String; let artist: String?; let title: String?; let line: Int? }
 /// What the Samples tab writes in the tags (0141); every field optional until scan-targets is redeployed
-struct DraftTags: Codable, Equatable { let album: String?; let label: String?; let cat_no: String?; let year: Int?; let genres: [String]? }
+struct DraftTags: Codable, Equatable {
+    let album: String?           // label + format, e.g. `Blue Trac 7"` (Gio, PR #212), else the record title
+    let album_artist: String?    // always "Gio"
+    let label: String?; let cat_no: String?; let year: Int?; let genres: [String]?
+    let record: String?; let format: String?
+}
 struct DraftInfo { let images: [ImageTarget]; let clips: [ClipTarget]; let tags: DraftTags? }
 
 enum BackendError: LocalizedError {

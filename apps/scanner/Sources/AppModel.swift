@@ -200,7 +200,8 @@ final class AppModel: ObservableObject {
                 if cover == nil { noCover.append(slot.label) }
                 var tags = AudioExport.Tags()
                 tags.title = slot.title ?? ""; tags.artist = slot.artist ?? ""
-                tags.album = t?.album ?? d.title; tags.label = t?.label ?? ""
+                tags.album = t?.album ?? d.title; tags.albumArtist = t?.album_artist ?? ""   // as scan-targets gives them
+                tags.label = t?.label ?? ""
                 tags.year = t?.year.map(String.init) ?? ""; tags.genre = (t?.genres ?? []).joined(separator: ", ")
                 tags.track = slot.label; tags.comment = sku; tags.cover = cover
                 try AudioExport.export(source: clip.url, trimStart: clip.trimStart, trimEnd: clip.trimEnd, name: slot.name, tags: tags,
