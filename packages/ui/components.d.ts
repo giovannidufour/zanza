@@ -1271,6 +1271,8 @@ export declare function Thumbnail(props: ThumbnailProps): JSX.Element;
 
 /** Mirrors the Figma component `listing row` (page `admin`, decision 0089): a row of an admin list on mobile, in a <ul>. */
 export interface ListingRowProps extends HTMLAttributes<HTMLLIElement> {
+  /** The element: 'li' in a list (default), 'div' inside another row (OfferRow). @default "li" */
+  as?: 'li' | 'div';
   /** Figma boolean `handle` (decision 0129): a DragHandle, before the select. Omit → fixed order. */
   handle?: ReactNode;
   /** A Checkbox with hideLabel (accessible name "Select <record>"). Omit → no select column. */
@@ -1287,6 +1289,23 @@ export interface ListingRowProps extends HTMLAttributes<HTMLLIElement> {
   price?: ReactNode;
 }
 export declare function ListingRow(props: ListingRowProps): JSX.Element;
+
+/** Mirrors the Figma component `offer row` (BACKEND → Offers, device=desktop | mobile, state=new | decided; decision 0158). */
+export interface OfferRowProps extends Omit<HTMLAttributes<HTMLLIElement>, 'title'> {
+  /** The record, as a ListingRow without select / handle: price = the offer. */
+  record: { image?: ThumbnailProps; title: ReactNode; href?: string; meta?: ReactNode; price?: ReactNode };
+  /** Who and where, e.g. "buyer@example.com · ships to Germany". */
+  buyer: ReactNode;
+  /** The buyer's note (Figma boolean `show note`). */
+  note?: ReactNode;
+  /** When the offer arrived (text/moderate). */
+  date?: ReactNode;
+  /** state=new: the Accept / Decline Buttons. */
+  actions?: ReactNode;
+  /** state=decided: the status line (used when there are no actions). */
+  status?: ReactNode;
+}
+export declare function OfferRow(props: OfferRowProps): JSX.Element;
 
 /** Figma `drag handle` (icon bars-three 24, in `file item`, `listing row`, `listings table row`; decision 0129): the
  *  chromeless button of a reorderable row. ↑ ↓ move the row by one; pointer drags start on the whole row (useDragOrder). */
@@ -1474,5 +1493,7 @@ export interface PriceFieldsProps extends HTMLAttributes<HTMLDivElement> {
   saleType?: ReactNode;
   /** Price Input. Desktop: 2 of 8 columns. */
   price?: ReactNode;
+  /** price=offers (decision 0158): a note in place of Price (Best offer has no price). Desktop: 6 of 8 columns. */
+  note?: ReactNode;
 }
 export declare function PriceFields(props: PriceFieldsProps): JSX.Element;

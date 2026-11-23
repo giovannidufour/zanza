@@ -110,6 +110,13 @@ Sostituisce l'hold qui sotto. **Avviare il checkout non blocca niente**: il disc
 5. Collisioni: `select count(*) from checkout_sessions where status = 'lost'`. Se diventano frequenti → altra strategia (Embedded Checkout + heartbeat).
 Gli hold creati prima della 0028 finiscono da soli entro 33 min (`checkout_release` resta per loro).
 
+### Best offer (decisione 0158, migrazione 0034, 2026-11-23)
+- `listings.price_mode` 'fixed' | 'offers' (solo sale). Offers = niente prezzo, niente Bag: "Best offer" + "Make an offer" → `/products/<slug>/offer/`. Nessun minimo (scelta di Gio).
+- Tabella `offers` (amount_cents, email, country, note, status unconfirmed → pending → accepted → paid | declined | closed; "expired" = accepted e 48 h passate). Solo via funzioni: `offer_submit`, `offer_confirm`, `offer_pay_info`, `offer_pay_open` (service role, Edge Function `offer`, Verify JWT OFF), `admin_offer_decide` (admin, Edge Function `offer-decide`, Verify JWT ON). Vista `admin_offers` per la pagina admin Offers.
+- Anti-bot nella funzione `offer`: honeypot, proof of work (GET = puzzle), time trap 3 s, conferma via email (24 h; gli unconfirmed si cancellano dopo 2 giorni), limiti per email/disco/giorno.
+- Accept: copia Reserved 48 h + link `/offer/pay/?t=` → Stripe Checkout al prezzo dell'offerta + spedizione (manual capture, come 0028). `checkout_claim` accetta la sessione dell'offerta; al Sold le altre offerte aperte si chiudono e `stripe-webhook` manda l'email "venduto". Trigger `listings_close_offers` le chiude anche quando Gio segna sold/traded a mano.
+- Secrets: `offer` usa RESEND_API_KEY, MAIL_FROM, SHOP_URL, STORE_NAME, ORDERS_TO (o OFFER_TO), STRIPE_SECRET_KEY, opz. ADMIN_URL, MEDIA_BASE_URL, POW_SECRET, ALLOWED_ORIGINS; `offer-decide` opz. ADMIN_ORIGINS.
+
 ### Checkout con hold
 Regola (Gio 2026-11-12): **il bag non blocca mai niente**. Un disco è bloccato solo mentre qualcuno è dentro Stripe Checkout (max 30 min) e per gli altri si vede **Reserved**, non sold: resta in PLP, il bottone apre la spiegazione e "Notify me".
 1. Il sito chiama `create-checkout` con gli id dei listing.

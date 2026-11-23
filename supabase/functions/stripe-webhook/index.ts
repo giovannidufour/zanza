@@ -6,7 +6,8 @@
 //   - a copy was sold first → nothing sold, the authorization is CANCELLED (the buyer is never charged; a payment
 //     method that can't be authorized only, already charged, is refunded), an email to the buyer and a note to Gio.
 // · checkout.session.expired → checkout_end (+ checkout_release for a hold made before 0028).
-// The listing ids come from the session's line items (product metadata listing_id, set by create-checkout).
+// The listing ids come from the session's line items (product metadata listing_id, set by create-checkout or by `offer`
+// for an accepted offer: checkout_claim then charges the offer's amount and closes the other offers, emailed here).
 // Called by Stripe, not by the browser: deploy with Verify JWT OFF; the Stripe-Signature header is the check.
 // It lives on Supabase, not on the shop's domain: the shop is behind Cloudflare Access until launch.
 // Secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET (whsec_… of this endpoint), RESEND_API_KEY, MAIL_FROM, SHOP_URL,
@@ -190,6 +191,14 @@ Deno.serve(async (req) => {
       "Ship to:", ...address, "", `Buyer: ${order.email}`, `Stripe: ${dashboard}`].join("\n");
     const html = text.split("\n").map(escapeHtml).join("<br>");
     await send(to, `${result.attention ? "⚠ CHECK " : ""}New order ${ref}: ${lines.length} record${lines.length === 1 ? "" : "s"}, ${euro(order.total_cents)}`, text, html);
+  }
+
+  // best offer (0034, decision 0158): the other open offers on the records just sold are closed; tell those buyers
+  // deno-lint-ignore no-explicit-any
+  for (const o of (result.closed_offers ?? []) as any[]) {
+    const text = [`${o.name} has been sold, so your offer of ${euro(o.amount_cents)} is closed. Thanks for it.`, "",
+      `Other records: ${shop}/sale/`, "", store].join("\n");
+    await send(o.email, `${store}: ${o.name} is sold`, text, text.split("\n").map(escapeHtml).join("<br>"));
   }
   return json({ ok: true, order: result.order_id });
 });

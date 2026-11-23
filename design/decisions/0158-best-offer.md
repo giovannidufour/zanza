@@ -1,0 +1,14 @@
+# 0158 — Best offer: sale listings without a price, buyers make offers
+
+`2026-11-23` · accepted · Figma: FRONTEND → `Offers` (PDP, cards, `price offer`, `offer pay`, behaviour + email notes) · BACKEND → `Create` (`price fields` price=offers), `Offers` (`offer row`, Offers - desktop / mobile), admin bar + menu
+
+**Context.** Gio (2026-11-23): some records he wants to sell without setting the price himself; buyers should make an economic offer ("Send offer"). No minimum offer (Gio's choice). Anti-bot protection required.
+**Decision.**
+- Listing `price_mode` 'fixed' | 'offers' (migration 0034, only for section sale). Admin Sale type: For sale · **Best offer** · For trade; Best offer hides Price and shows the note "No fixed price: buyers send offers, you accept or decline them in Offers." (`PriceFields` `note`).
+- Shop: price text "Best offer" on cards, tiles, PDP, player; the action is "Make an offer" → `/products/<slug>/offer/` (form: amount €, ship-to country, email, note). Never in the Bag (no Add to bag, also not in the player). Offers are never shown publicly.
+- Anti-bot: honeypot, invisible proof of work, 3 s time trap (as 0132), email confirmation (the offer reaches Gio only after the buyer opens the link, 24 h), rate limits (3 per email per record per day, 10 per email per day, 30 unconfirmed per record per day).
+- Admin → **Offers** (#offers, nav between Orders and Memo): tabs New · Accepted · All; `OfferRow` (record + buyer + note + date; Accept / Decline or a status line). Accept and Decline ask first in a Dialog (the admin's pattern for actions).
+- Accept: the copy goes Reserved for 48 h, the buyer gets a payment link `/offer/pay/?t=…` → Stripe Checkout at the offer amount + shipping (no minimum order, manual capture as 0028). Paid → Sold, the other open offers are closed with an email. Not paid in 48 h → back on sale, offer Expired. Decline: a polite email, nothing else changes.
+- Emails (plain, sender RYTHEM-WORKS): confirm (buyer), new offer (Gio, Reply-To the buyer), accepted, declined, record sold (buyer).
+**Rule.** A listing without a price is `price_mode = 'offers'`: show "Best offer", never a price or an Add to bag, and route every purchase through an accepted offer. New buyer-facing forms that reach Gio use the same anti-bot set (honeypot + proof of work + time trap) and, when they create something he must act on, an email confirmation.
+**Where.** `supabase/migrations/20261123400000_best_offer.sql` · Edge Functions `offer` (Verify JWT off) and `offer-decide` (Verify JWT on), `stripe-webhook` (closed offers) · `packages/listing-draft` (`priceMode`, `price_mode`) · `packages/ui` (`PriceFields` note, `OfferRow`, `ListingRow` `as`) · `apps/storefront/pages/offer.js`, `shell.js` (`isOffers`, `priceText`), `pdp.js`, `home.js`, `build.js`, `scripts/site.js` · `apps/admin/admin.js` (Sale type, Offers).

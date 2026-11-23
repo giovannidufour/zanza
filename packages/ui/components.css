@@ -1567,6 +1567,21 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-listing-row__meta { color: var(--text-moderate); }
 .zz-listing-row__price { flex: none; text-align: right; font-variant-numeric: tabular-nums; }
 
+/* ── OfferRow (Figma BACKEND → Offers → `offer row`, decision 0158) ── */
+.zz-offer-row { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
+.zz-offer-row .zz-offer-row__record { flex: 0 0 400px; padding: 0; border-bottom: 0; }
+.zz-offer-row__buyer { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
+.zz-offer-row__buyer p, .zz-offer-row__status { margin: 0; }
+.zz-offer-row__date { color: var(--text-moderate); }
+.zz-offer-row__actions { flex: none; display: flex; gap: 8px; }
+.zz-offer-row__status { flex: 0 0 195px; }
+@media (--mobile) {
+  .zz-offer-row { flex-direction: column; }
+  .zz-offer-row .zz-offer-row__record { flex: none; align-self: stretch; }
+  .zz-offer-row__buyer { align-self: stretch; }
+  .zz-offer-row__status { flex: none; }
+}
+
 /* ── ActionBar (Figma page `admin` → `action bar`, decision 0089): form actions stuck to the bottom of the viewport ──
    surface/base, not the ActionPanel's surface/subtle: that one is translucent in the backend mode and the form
    scrolls under the bar (Gio 2026-11-15). */
@@ -1710,9 +1725,11 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-price-fields { display: flex; align-items: flex-start; }
 .zz-price-fields__row { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 16px; align-items: start; }
 .zz-price-fields__field { grid-column: span 2; display: flex; flex-direction: column; min-width: 0; }
+.zz-price-fields__note { grid-column: span 6; align-self: center; margin: 0; color: var(--text-strong); }
 @media (--mobile) {
   .zz-price-fields__row { grid-template-columns: minmax(0, 1fr); }
-  .zz-price-fields__field { grid-column: auto; }
+  .zz-price-fields__field,
+  .zz-price-fields__note { grid-column: auto; }
 }
 
 /* ── LinkedInput (Figma BACKEND → Create → `custom title`, `title link bar`, `title link menu`; decision 0147) ── */

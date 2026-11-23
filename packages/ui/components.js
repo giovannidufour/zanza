@@ -1205,7 +1205,7 @@
      select (a Checkbox, label hidden) · text (title link body/small underlined, meta body/small text/moderate, gap 4)
      · price (body/small, right). Padding 16 top/bottom, gap 16, bottom border divider/strong. */
   function ListingRow(props) {
-    return h('li', Object.assign({}, omit(props, ['handle', 'select', 'image', 'title', 'href', 'meta', 'price', 'className']), { className: cx('zz-listing-row', props.className) }),
+    return h(props.as || 'li', Object.assign({}, omit(props, ['as', 'handle', 'select', 'image', 'title', 'href', 'meta', 'price', 'className']), { className: cx('zz-listing-row', props.className) }),
       props.handle || null,   // Figma boolean `handle` (decision 0129): a DragHandle, first
       props.select ? h('div', { className: 'zz-listing-row__select' }, props.select) : null,
       // Figma boolean `show thumbnail` (decision 0123): an `image` object, even without src (= the empty square)
@@ -1214,6 +1214,22 @@
         h('a', { className: 'zz-listing-row__title body-small', href: props.href }, props.title),
         props.meta ? h('p', { className: 'zz-listing-row__meta body-small' }, props.meta) : null),
       props.price ? h('p', { className: 'zz-listing-row__price body-small' }, props.price) : null);
+  }
+  /* ── OfferRow (Figma BACKEND → Offers → `offer row`, device=desktop | mobile, state=new | decided; decision 0158) ──
+     One offer in admin → Offers. record = a ListingRow (price = the offer) without its own padding and border ·
+     buyer (body/small: who and where, the note, the date in text/moderate, gap 4) · new: `actions` (Accept / Decline
+     Buttons, gap 8) · decided: `status` (body/small, 195 wide). Padding 16 top/bottom, gap 16, bottom border
+     divider/strong. desktop: in a row, record 400; mobile: stacked. Booleans: `show note` (on). */
+  function OfferRow(props) {
+    var r = props.record || {};
+    return h('li', Object.assign({}, omit(props, ['record', 'buyer', 'note', 'date', 'actions', 'status', 'className']), { className: cx('zz-offer-row', props.className) }),
+      h(ListingRow, { as: 'div', className: 'zz-offer-row__record', image: r.image, title: r.title, href: r.href, meta: r.meta, price: r.price }),
+      h('div', { className: 'zz-offer-row__buyer body-small' },
+        h('p', null, props.buyer),
+        props.note ? h('p', { className: 'zz-offer-row__note' }, props.note) : null,
+        props.date ? h('p', { className: 'zz-offer-row__date' }, props.date) : null),
+      props.actions ? h('div', { className: 'zz-offer-row__actions' }, props.actions)
+        : props.status ? h('p', { className: 'zz-offer-row__status body-small' }, props.status) : null);
   }
   /* ── ActionBar (Figma page `admin` → `action bar`, decision 0089) ──
      The ActionPanel buttons of a form on mobile, in a bar that stays at the bottom of the viewport (position: sticky,
@@ -1297,13 +1313,15 @@
     return h('span', Object.assign({ 'aria-hidden': 'true' }, omit(props, ['className', 'children']), { className: cx('zz-marker body-extra-large', props.className) }), props.children);
   }
   /* ── PriceFields (Figma page `Create` → `price fields`, device=desktop | mobile, Gio 2026-11-17) ──
-     Marker ("€€") + Sale type + Price. desktop: an 8-column grid gap 16, each field 2 columns; mobile: stacked, gap 16. */
+     Marker ("€€") + Sale type + Price. desktop: an 8-column grid gap 16, each field 2 columns; mobile: stacked, gap 16.
+     price=offers (decision 0158): a note (body-small, text/strong) instead of Price, 6 columns, centred on the select. */
   function PriceFields(props) {
-    return h('div', Object.assign({}, omit(props, ['marker', 'saleType', 'price', 'className']), { className: cx('zz-price-fields', props.className) }),
+    return h('div', Object.assign({}, omit(props, ['marker', 'saleType', 'price', 'note', 'className']), { className: cx('zz-price-fields', props.className) }),
       h(Marker, null, props.marker === undefined ? '€€' : props.marker),
       h('div', { className: 'zz-price-fields__row' },
         props.saleType ? h('div', { className: 'zz-price-fields__field' }, props.saleType) : null,
-        props.price ? h('div', { className: 'zz-price-fields__field' }, props.price) : null));
+        props.note ? h('p', { className: 'zz-price-fields__note body-small' }, props.note)
+          : props.price ? h('div', { className: 'zz-price-fields__field' }, props.price) : null));
   }
 
   /* ── Checkbox ───────────────────────────────────────────────────────────
@@ -2022,6 +2040,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, Step: Step,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, BackLink: BackLink, DiscogsLink: DiscogsLink, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, useDragOrder: useDragOrder, DragHandle: DragHandle, AdminBar: AdminBar, ListingsHead: ListingsHead, ListingsFilter: ListingsFilter, Thumbnail: Thumbnail, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, BackLink: BackLink, DiscogsLink: DiscogsLink, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, useDragOrder: useDragOrder, DragHandle: DragHandle, AdminBar: AdminBar, ListingsHead: ListingsHead, ListingsFilter: ListingsFilter, Thumbnail: Thumbnail, ListingRow: ListingRow, OfferRow: OfferRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
            NewsletterDialog: NewsletterDialog, SectionHead: SectionHead, GenreLinks: GenreLinks, HomeIntro: HomeIntro, HomeNewsletter: HomeNewsletter, ProductTile: ProductTile, GalleryCounter: GalleryCounter, ViewToggle: ViewToggle };
 });

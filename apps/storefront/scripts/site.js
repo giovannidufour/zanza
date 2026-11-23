@@ -166,7 +166,8 @@
       image: btn.getAttribute('data-product-image') || '',
       href: btn.getAttribute('data-product-href') || '',
       listing: btn.getAttribute('data-listing-id') || '',
-      section: btn.getAttribute('data-listing-section') || 'sale'
+      section: btn.getAttribute('data-listing-section') || 'sale',
+      offers: btn.getAttribute('data-price-mode') === 'offers'   // best offer (0158): no Add to bag, as trade
     };
   }
   // the queue of a sample button = the playable sample buttons of the same group (ProductInfo samples)
@@ -210,7 +211,9 @@
       if (view && cur.href) view.setAttribute('href', cur.href);
       var add = q('.site-player__add');
       // trade listings (decision 0068): no "Add to bag" in the player, the offer is made on the record's page
-      if (add) { add.hidden = cur.section === 'trade'; add.disabled = !cur.listing; if (cur.section !== 'trade') syncAddButton(add, cur.listing); }
+      // best offer (decision 0158): no "Add to bag" either, the offer is made on the record's page
+      var noBag = cur.section === 'trade' || cur.offers;
+      if (add) { add.hidden = noBag; add.disabled = !cur.listing; if (!noBag) syncAddButton(add, cur.listing); }
       q('.zz-player__previous').disabled = index <= 0;
       q('.zz-player__next').disabled = index >= queue.length - 1;
     }
@@ -1481,7 +1484,7 @@
   function syncAddButtons(ids) {
     Array.prototype.forEach.call(document.querySelectorAll('[data-listing-id] .zz-product-card__add'), function (b) {
       var holder = b.closest('[data-listing-id]');
-      if (holder.getAttribute('data-listing-section') === 'trade') return;   // a link to the offer page, not a bag button (0068)
+      if (holder.getAttribute('data-listing-section') === 'trade' || holder.getAttribute('data-price-mode') === 'offers') return;   // a link to the offer page, not a bag button (0068, 0158)
       syncAddButton(b, holder.getAttribute('data-listing-id'), ids);
     });
     Array.prototype.forEach.call(document.querySelectorAll('[data-add-to-bag]'), function (b) {
@@ -1489,7 +1492,7 @@
     });
     var add = player && player.querySelector('.site-player__add');
     var cur = typeof current === 'function' ? current() : null;
-    if (add && cur && cur.section !== 'trade') syncAddButton(add, cur.listing, ids);
+    if (add && cur && cur.section !== 'trade' && !cur.offers) syncAddButton(add, cur.listing, ids);
   }
   // the Add buttons: Add to bag, or open the bag when the copy is already in it (decision 0058). The header Bag link
   // does the opening, so the soft navigation keeps the player; no toast (decision 0050)
@@ -1713,14 +1716,14 @@
     var card = t.closest('.zz-product-card__add');
     if (card) {
       var holder = card.closest('[data-listing-id]');
-      if (holder && holder.getAttribute('data-listing-section') === 'trade') return;   // offer link, or a reserved/traded state (0068)
+      if (holder && (holder.getAttribute('data-listing-section') === 'trade' || holder.getAttribute('data-price-mode') === 'offers')) return;   // offer link, or a reserved/traded state (0068, 0158)
       if (holder) addOrOpen(holder.getAttribute('data-listing-id'));
       return;
     }
     var cta = t.closest('[data-add-to-bag]');
     if (cta) { addOrOpen(cta.getAttribute('data-add-to-bag')); return; }
     var padd = t.closest('.site-player__add');
-    if (padd) { var cur = typeof current === 'function' ? current() : null; if (cur && cur.section !== 'trade') addOrOpen(cur.listing); return; }
+    if (padd) { var cur = typeof current === 'function' ? current() : null; if (cur && cur.section !== 'trade' && !cur.offers) addOrOpen(cur.listing); return; }
     var checkoutBtn = t.closest('[data-bag-checkout]');
     if (checkoutBtn) { if (!checkoutBtn.disabled) startCheckout(checkoutBtn); return; }
     var remove = t.closest('.zz-bag-item__remove');
@@ -2129,6 +2132,173 @@
     });
   }
 
+  /* ---------------------------------------------------------------- best offer (migration 0034, decision 0158) */
+  // the Supabase function `offer` (site.json → offers.endpoint, on each page's root as data-endpoint)
+  function offerPost(endpoint, body) {
+    return fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (res) { return res.json().catch(function () { return {}; }).then(function (data) { return { ok: res.ok, status: res.status, data: data }; }); });
+  }
+  function offerToken() { var m = /[?&]t=([0-9a-f]{64})(?:&|$)/.exec(location.search); return m ? m[1] : ''; }
+  function showOfferState(root, state) {
+    Array.prototype.forEach.call(root.querySelectorAll('[data-offer-state]'), function (el) { el.hidden = el.getAttribute('data-offer-state') !== state; });
+  }
+  // the record on the confirm / pay pages, from the function's answer (Figma `offer target`)
+  function fillOfferTarget(root, info, label) {
+    var t = root.querySelector('[data-offer-target]');
+    if (!t || !info || !info.name) return;
+    t.hidden = false;
+    t.querySelector('[data-offer-target-name]').textContent = info.name;
+    if (label) t.querySelector('[data-offer-target-label]').textContent = label;
+    var link = t.querySelector('[data-offer-target-link]');
+    link.setAttribute('href', (root.getAttribute('data-products-base') || '/products/') + info.slug + '/');
+    var back = root.querySelector('[data-offer-back]');
+    if (back) back.setAttribute('href', link.getAttribute('href'));
+    var img = t.querySelector('[data-offer-target-image]');
+    if (img && info.image) { img.src = info.image; img.hidden = false; }
+  }
+
+  // /products/<slug>/offer/ of a best-offer copy: checks the fields, posts with the puzzle (0132), then "Check your email"
+  function initPriceOffer() {
+    var form = document.querySelector('[data-price-offer-form]');
+    if (!form || form.hasAttribute('data-ready')) return;
+    form.setAttribute('data-ready', '');
+    var errorEl = form.querySelector('[data-offer-error]');
+    var sendBtn = form.querySelector('[data-offer-send]');
+    var endpoint = form.getAttribute('data-endpoint');
+    var puzzle = endpoint ? solvePuzzle(endpoint) : null;
+    function field(name) { return form.querySelector('[name="' + name + '"]'); }
+    function val(name) { var el = field(name); return el ? String(el.value || '').trim() : ''; }
+    function mark(el, bad) {
+      el.setAttribute('aria-invalid', bad ? 'true' : 'false');
+      var box = el.closest('.zz-input');
+      if (box) box.setAttribute('data-invalid', bad ? 'true' : 'false');
+    }
+    function fail(text, el) { errorEl.textContent = text; errorEl.hidden = false; if (el) el.focus(); }
+    function cents(text) {
+      var t = text.replace(/\s|€/g, '').replace(',', '.');
+      return /^\d+(\.\d{1,2})?$/.test(t) ? Math.round(Number(t) * 100) : NaN;
+    }
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      errorEl.hidden = true;
+      var amount = field('amount'), email = field('email'), country = field('country');
+      var c = cents(val('amount'));
+      var badAmount = !(c > 0) || c > 1000000, badEmail = !val('email') || !email.checkValidity(), badCountry = !/^[A-Za-z]{2}$/.test(val('country'));
+      mark(amount, badAmount); mark(email, badEmail); mark(country, badCountry);
+      if (badAmount) { fail('Enter your offer in euros, for example 25.', amount); return; }
+      if (badCountry) { fail('Choose where the record ships to.', country); return; }
+      if (badEmail) { fail('Enter your email: the confirmation link goes there.', email); return; }
+      if (!endpoint) { fail('Offers aren’t switched on yet.'); return; }
+      var label = sendBtn.querySelector('.zz-button__label');
+      var idle = label ? label.textContent : '';
+      sendBtn.disabled = true;
+      if (label) label.textContent = 'Sending…';
+      var answer = puzzle || solvePuzzle(endpoint);
+      puzzle = null;   // one puzzle per send: after an error the next send solves a new one
+      answer.then(function (pow) {
+        return offerPost(endpoint, { action: 'submit', listing: form.getAttribute('data-listing-id'), amount: val('amount'),
+          country: val('country'), email: val('email'), note: val('note'), website: val('website'), pow: pow });
+      }).then(function (r) {
+        if (!r.ok) throw r;
+        track('price_offer_sent', { listing: form.getAttribute('data-listing-id') });
+        form.hidden = true;
+        var sent = document.querySelector('[data-price-offer-sent]');
+        if (sent) {
+          sent.querySelector('[data-offer-sent-email]').textContent = val('email');
+          sent.querySelector('[data-offer-sent-amount]').textContent = formatPrice(c);
+          sent.hidden = false;
+        }
+        var title = document.querySelector('[data-offer-title]');
+        if (title) { title.textContent = 'Offer sent'; title.setAttribute('tabindex', '-1'); title.focus(); }
+      }).catch(function (r) {
+        sendBtn.disabled = false;
+        if (label) label.textContent = idle;
+        var err = r && r.data && r.data.error;
+        fail(err === 'unavailable' ? 'This record isn’t taking offers right now: it may have been sold or reserved.'
+          : err === 'too_many' ? 'You’ve sent a few offers already today. Try again tomorrow, or write to me.'
+          : err === 'amount' ? 'Enter your offer in euros, for example 25.'
+          : 'Your offer didn’t go through. Try again in a moment.');
+      });
+    });
+  }
+
+  // /offer/confirm/?t=… (the link of the email): confirms the offer as the page opens
+  function initOfferConfirm() {
+    var root = document.querySelector('[data-offer-confirm-page]');
+    if (!root || root.hasAttribute('data-ready')) return;
+    root.setAttribute('data-ready', '');
+    var endpoint = root.getAttribute('data-endpoint'), token = offerToken();
+    if (!endpoint || !token) { showOfferState(root, 'invalid'); return; }
+    offerPost(endpoint, { action: 'confirm', token: token }).then(function (r) {
+      var d = r.data || {};
+      if (d.result === 'confirmed') {
+        fillOfferTarget(root, d);
+        root.querySelector('[data-offer-state="confirmed"] [data-offer-amount]').textContent = formatPrice(d.amount_cents);
+        root.querySelector('[data-offer-state="confirmed"] [data-offer-name]').textContent = d.name;
+        showOfferState(root, 'confirmed');
+        track('price_offer_confirmed');
+      } else showOfferState(root, d.result === 'expired' ? 'expired' : 'invalid');
+    }).catch(function () { showOfferState(root, 'invalid'); });
+  }
+
+  // /offer/pay/?t=… (the acceptance email): the accepted amount + shipping to the chosen country → Stripe Checkout
+  function initOfferPay() {
+    var root = document.querySelector('[data-offer-pay-page]');
+    if (!root || root.hasAttribute('data-ready')) return;
+    root.setAttribute('data-ready', '');
+    var endpoint = root.getAttribute('data-endpoint'), token = offerToken();
+    if (!endpoint || !token) { showOfferState(root, 'invalid'); return; }
+    var info = null, busy = false;
+    var select = root.querySelector('[data-offer-ship-to]');
+    var btn = root.querySelector('[data-offer-checkout]');
+    function render() {
+      var amount = info.amount_cents, shipEl = root.querySelector('[data-offer-shipping]'), totalEl = root.querySelector('[data-offer-total]');
+      var note = root.querySelector('[data-offer-note]');
+      root.querySelector('[data-offer-amount]').textContent = formatPrice(amount);
+      var configEl = root.querySelector('[data-shipping-config]'), config = null;
+      try { config = configEl ? JSON.parse(configEl.textContent) : null; } catch (e) { config = null; }
+      var served = true;
+      if (select && config && window.ZanzaShipping) {
+        var est = window.ZanzaShipping.estimate(config, [{ format: info.format, weight_g: info.weight_g }], select.value);
+        served = est.status === 'ok';
+        shipEl.textContent = served ? formatPrice(est.price_cents) : 'Not available';
+        totalEl.textContent = served ? formatPrice(amount + est.price_cents) : '—';
+      } else totalEl.textContent = formatPrice(amount) + ' + shipping';
+      var until = info.expires_at ? new Date(info.expires_at) : null;
+      var when = until ? until.toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+      note.textContent = served
+        ? (when ? 'Valid until ' + when + '. Then the record is back open to offers. ' : '') + 'You enter the address and pay on Stripe.'
+        : 'I don’t ship to ' + select.options[select.selectedIndex].text + ' yet. Reply to my email and we’ll find a way.';
+      btn.disabled = !served;
+    }
+    offerPost(endpoint, { action: 'pay-info', token: token }).then(function (r) {
+      var d = r.data || {};
+      if (!d.state) { showOfferState(root, 'invalid'); return; }
+      info = d;
+      fillOfferTarget(root, d, 'Yours for ' + formatPrice(d.amount_cents));
+      if (d.state !== 'ready') { showOfferState(root, d.state); return; }
+      if (select && d.country && select.querySelector('option[value="' + d.country + '"]')) select.value = d.country;
+      render();
+      showOfferState(root, 'ready');
+    }).catch(function () { showOfferState(root, 'invalid'); });
+    if (select) select.addEventListener('change', function () { if (info) render(); });
+    btn.addEventListener('click', function () {
+      if (busy || !info || btn.disabled) return;
+      busy = true;
+      btn.setAttribute('aria-disabled', 'true');
+      offerPost(endpoint, { action: 'pay', token: token, country: select ? select.value : info.country }).then(function (r) {
+        var d = r.data || {};
+        if (r.ok && d.url) { track('price_offer_checkout'); location.href = d.url; return; }
+        busy = false; btn.removeAttribute('aria-disabled');
+        if (d.state && d.state !== 'ready') { showOfferState(root, d.state); return; }
+        checkoutMessage(d.error === 'shipping' ? 'I can’t ship there yet: reply to my email and we’ll find a way.' : 'The checkout didn’t open. Try again in a moment.');
+      }).catch(function () {
+        busy = false; btn.removeAttribute('aria-disabled');
+        checkoutMessage('The checkout didn’t open. Try again in a moment.');
+      });
+    });
+  }
+
   var navToken = 0;
   function navigate(href, push) {
     var token = ++navToken;
@@ -2158,6 +2328,9 @@
       initStatus();
       initBag();
       initOffer();
+      initPriceOffer();
+      initOfferConfirm();
+      initOfferPay();
       initContact();
       initHome();
       if (window.ZanzaAccount) window.ZanzaAccount.init();   // customer account (scripts/account.js, decision 0101)
@@ -2287,6 +2460,9 @@
   initStatus();
   initBag();
   initOffer();
+  initPriceOffer();
+  initOfferConfirm();
+  initOfferPay();
   initContact();
   initHome();
   if (window.ZanzaAccount) window.ZanzaAccount.init();

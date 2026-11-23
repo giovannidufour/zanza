@@ -80,6 +80,8 @@ function toProduct(row, mediaUrl, artists = []) {
       section: row.section,
       status: effectiveStatus(row),
       price: row.price_cents == null ? null : { amount: row.price_cents, currency: row.currency },
+      // 'offers' = no price, buyers make offers (migration 0034, decision 0158); a database before 0034: 'fixed'
+      price_mode: row.price_mode || 'fixed',
       sku: row.sku,
       weight_g: row.weight_g || null,   // shipping: own weight; null = the format's (decision 0057)
       custom_title: row.custom_title,

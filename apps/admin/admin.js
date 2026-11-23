@@ -19,7 +19,7 @@
   var FORMATS = LD.FORMATS, MACRO_GENRES = LD.MACRO_GENRES, COUNTRIES = LD.COUNTRIES;
   var textToCents = LD.textToCents, discogsId = LD.discogsId, newLine = LD.newLine, namesOf = LD.namesOf, findEntity = LD.findEntity,
       differs = LD.differs, emptyForm = LD.emptyForm, formatOf = LD.formatOf, positionsOf = LD.positionsOf,
-      patchFromDiscogs = LD.patchFromDiscogs, parseYear = LD.parseYear, yearText = LD.yearText, payloadOf = LD.payloadOf;
+      patchFromDiscogs = LD.patchFromDiscogs, parseYear = LD.parseYear, yearText = LD.yearText, payloadOf = LD.payloadOf, priceModeOf = LD.priceModeOf;
   var STATUS_LABEL = { draft: 'Draft', available: 'Available', reserved: 'Reserved', sold: 'Sold', traded: 'Traded', archived: 'Archived' };
   var STATUS_DONE = { draft: 'Unpublished.', available: 'Available again.', reserved: 'Reserved until you release it.', sold: 'Marked as sold.', traded: 'Marked as traded.' };
   var SLEEVES = [['original', 'Original'], ['generic', 'Generic'], ['none', 'None']];
@@ -285,7 +285,7 @@
     f.label = le ? [chip(le)] : r.label ? [{ id: null, name: r.label }] : [];
     f.preRelease = !!r.pre_release;
     f.labelSpelled = !!le && differs(r.label, le.name); f.labelCredit = f.labelSpelled ? r.label : ''; f.country = r.country || ''; f.year = yearText(r.year, r.year_precision); f.format = r.format || '';
-    f.section = row.section; f.price = centsToText(row.price_cents);
+    f.section = row.section; f.priceMode = row.price_mode || 'fixed'; f.price = centsToText(row.price_cents);
     var byPos = function (a, b) { return a.position - b.position; };
     var genreRows = (r.genre_rows || []).slice().sort(byPos);
     f.genres = genreRows.length ? genreRows.map(function (t) { return chip(t.genre); }) : (r.genres || []).map(function (n) { return { id: null, name: n }; });
@@ -312,7 +312,7 @@
     if (publish && !f.format) e.format = 'Choose a format.';
     if (publish && !f.condition) e.condition = 'Choose the condition of side A.';
     var cents = textToCents(f.price);
-    if (publish && f.section === 'sale' && cents === null) e.price = 'Enter a price.';
+    if (publish && f.section === 'sale' && priceModeOf(f) === 'fixed' && cents === null) e.price = 'Enter a price.';
     else if (Number.isNaN(cents)) e.price = 'Use a number, e.g. 12 or 12.50.';
     if (f.year.trim() && !parseYear(f.year)) e.year = 'Use a year (1983) or a decade (1990s).';
     if (f.discogs && discogsId(f.discogs) === null) e.discogs = 'Pick a release from the list, paste its link or number, or empty the field.';
@@ -374,7 +374,10 @@
     var label = f.labelSpelled && f.labelCredit.trim() ? f.labelCredit.trim() : (f.label[0] || {}).name;
     return [label, label && f.preRelease ? 'Pre' : null, f.format, f.country ? '(' + f.country + ')' : null].filter(Boolean).join(' ');
   }
+  var OFFERS_PRICE = 'Best offer';   // the shop's text for a listing without a price (decision 0158, pages/shell.js)
+  function listPrice(r) { return r.price_mode === 'offers' ? OFFERS_PRICE : r.price_cents === null || r.price_cents === undefined ? null : centsToText(r.price_cents) + ' €'; }
   function previewPrice(f) {
+    if (priceModeOf(f) === 'offers') return OFFERS_PRICE;
     var c = f.section === 'sale' ? textToCents(f.price) : null;
     return c === null || c === undefined || isNaN(c) ? null : (c % 100 === 0 ? c / 100 : (c / 100).toFixed(2)) + '€';
   }
@@ -738,6 +741,8 @@
       : f.status === 'reserved' ? [f.checkoutUntil ? 'Checkout in progress until ' + timeText(f.checkoutUntil) : 'Held until you release it', sku]
       : f.status === 'sold' || f.status === 'traded' ? [f.soldAt ? dayText(f.soldAt) : null, sku, 'No longer editable']
       : [sku, 'Restore it to edit'];
+    // Figma Create → `discogs link` (0150): the matched release on Discogs, in every status, while the field holds one
+    var discogsLink = discogsId(f.discogs) !== null ? h(Z.DiscogsLink, { href: 'https://www.discogs.com/release/' + discogsId(f.discogs) }) : null;
     var listingStatus = h(Z.ListingStatus, {
       status: isNew ? 'Not saved yet' : f.status === 'available' ? 'Published' : STATUS_LABEL[f.status] || f.status,
       details: typeof details === 'string' ? details : details.filter(Boolean).join(' · '),
@@ -769,8 +774,8 @@
             bind('discogs'), locked ? null : discogsSearch.inputProps(pickRelease),
             { onChange: function (e) { set({ discogs: e.target.value }); if (!locked) discogsSearch.search(e.target.value); } })),
           locked ? null : discogsSearch.list(pickRelease)),
-        // Figma Create → `discogs link` (0150): the matched release on Discogs, in every status, while the field holds one
-        discogsId(f.discogs) !== null ? h(Z.DiscogsLink, { href: 'https://www.discogs.com/release/' + discogsId(f.discogs) }) : null,
+        // Figma Create → `discogs link` (0150); desktop: in the side column under the status instead, so it stays in view while the form scrolls (Gio 2026-11-23)
+        mobile ? discogsLink : null,
         // Figma Create → `discogs actions` (0092): Fetch Discogs + Photo of the label + Fetch from label (only with
         // images, Gio 2026-11-17); picking a release found from a photo puts its link in Discogs match and fetches it
         h(PhotoField, { disabled: locked, images: f.images.filter(function (x) { return x.url; }).map(function (x) { return x.url; }), pickHint: 'Pick the pressing to fetch it.', onFound: setPhotoFound,
@@ -846,7 +851,11 @@
       h('section', sectionProps('price'),
         h(Z.FormSectionHead, { id: 'section-price-title' }, FORM_SECTION_LABEL['price']),
         h(Z.PriceFields, {
-          saleType: h(Z.Input, Object.assign({ id: 'section', label: 'Sale type', variant: 'select' }, bind('section')), opts([['sale', 'For sale']].concat(tradeOn !== false || f.section === 'trade' ? [['trade', 'For trade']] : []))),
+          // Best offer (decision 0158) = a sale listing with price_mode 'offers': no price, buyers send offers (#offers)
+          saleType: h(Z.Input, { id: 'section', label: 'Sale type', variant: 'select', value: priceModeOf(f) === 'offers' ? 'offers' : f.section, error: errors.section,
+            onChange: function (e) { var v = e.target.value; set(v === 'offers' ? { section: 'sale', priceMode: 'offers' } : { section: v, priceMode: 'fixed' }); } },
+            opts([['sale', 'For sale'], ['offers', 'Best offer']].concat(tradeOn !== false || f.section === 'trade' ? [['trade', 'For trade']] : []))),
+          note: priceModeOf(f) === 'offers' ? 'No fixed price: buyers send offers, you accept or decline them in Offers.' : null,
           price: h(Z.Input, Object.assign({ id: 'price', label: 'Price', suffix: '€', inputMode: 'decimal', optional: f.section === 'trade' }, bind('price')))
         })),
       h(Z.Divider),
@@ -902,6 +911,7 @@
     // them; the status under the title; View in store and Change status in the side content, which follows the form
     var side = h('aside', { className: 'admin-side' },
       mobile ? null : listingStatus,
+      mobile ? null : discogsLink,
       mobile ? shopBtn : panelButtons.length ? h(Z.ActionPanel, null, panelButtons) : null,
       mobile ? null : note,
       isNew ? null : statusPanel(),
@@ -1013,7 +1023,7 @@
     if (!line1 || !line1.artist) m.push('artist');
     if (!r.format) m.push('format');
     if (!row.condition_media) m.push('grading');
-    if (row.section === 'sale' && (row.price_cents === null || row.price_cents === undefined)) m.push('price');
+    if (row.section === 'sale' && row.price_mode !== 'offers' && (row.price_cents === null || row.price_cents === undefined)) m.push('price');
     return m;
   }
   function incomplete(row) { return effectiveStatus(row) === 'draft' && missingOf(row).length > 0; }
@@ -1071,7 +1081,7 @@
     var focusAfter = useRef(null);
 
     function load() {
-      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_cents,condition_media,custom_title,photo_keys,created_at,sort_order,orders:order_items(count),release:releases(format,label_entity:labels(name),lines:release_lines(position,artist,title))')
+      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_mode,price_cents,condition_media,custom_title,photo_keys,created_at,sort_order,orders:order_items(count),release:releases(format,label_entity:labels(name),lines:release_lines(position,artist,title))')
         // decision 0129: one global order, Gio's (sort_order, lower = first); each tab shows it filtered
         .order('sort_order', { ascending: true }).order('created_at', { ascending: false })
         .then(function (res) { if (res.error) setError(res.error.message); else setRows(res.data); });
@@ -1270,7 +1280,7 @@
         h('ul', Object.assign({ id: 'listings-table', className: 'admin-rows admin-sortable' }, d.listProps), rows.length ? rows.map(function (r, i) {
           return h(Z.ListingRow, Object.assign({ href: '#edit-' + r.id, title: nameOf(r), image: thumbOf(r), handle: handle(r, i),
             meta: [r.sku, statusText(r), r.section].filter(Boolean).join(' · '),
-            price: r.price_cents === null ? null : centsToText(r.price_cents) + ' €',
+            price: listPrice(r),
             select: check(r) }, d.rowProps(i)));
         }) : h('li', { className: 'body-small admin-rows__empty' }, props.empty)), status);
     }
@@ -1284,7 +1294,7 @@
         h('td', null, h('a', { href: '#edit-' + r.id, draggable: false }, nameOf(r))),
         h('td', null, statusText(r)),
         h('td', null, r.section),
-        h('td', { className: 'num price' }, r.price_cents === null ? '' : centsToText(r.price_cents) + ' €'));
+        h('td', { className: 'num price' }, listPrice(r) || ''));
     }) : h('tr', null, h('td', { colSpan: 7 }, props.empty))))), status);
   }
 
@@ -1298,6 +1308,97 @@
     if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not open this listing: ' + error);
     if (!initial) return h('p', { className: 'body-medium' }, 'Loading…');
     return h(ListingForm, { initial: initial });
+  }
+
+  // ── Offers ────────────────────────────────────────────────────────────────
+  /* Figma BACKEND → Offers (decision 0158): the offers on Best offer listings (price_mode 'offers', migration 0034),
+     confirmed by the buyer's email link (unconfirmed ones never show). View admin_offers, newest first.
+     Tabs New (pending: Accept / Decline) · Accepted (payment link open) · All. Accept / Decline ask first in a Dialog,
+     then run the Edge Function offer-decide (admin_offer_decide + the email to the buyer). Route: #offers */
+  var OFFER_TABS = [
+    ['new', 'New', function (o) { return o.state === 'pending'; }],
+    ['accepted', 'Accepted', function (o) { return o.state === 'accepted'; }],
+    ['all', 'All', function () { return true; }]
+  ];
+  function dateTime(t) {
+    var d = new Date(t);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  }
+  function offerStatus(o) {
+    if (o.state === 'accepted') return 'Accepted · payment link open until ' + dateTime(o.expires_at);
+    if (o.state === 'expired') return 'Expired · not paid in 48 h';
+    if (o.state === 'paid') return o.order_id ? h(React.Fragment, null, 'Paid · ', h('a', { href: '#orders/' + o.order_id }, 'order ' + orderRef({ id: o.order_id }))) : 'Paid';
+    if (o.state === 'declined') return 'Declined';
+    if (o.state === 'closed') return 'Closed · record sold';
+    return o.state;
+  }
+
+  function Offers() {
+    var st = useState(null), rows = st[0], setRows = st[1];
+    var er = useState(null), error = er[0], setError = er[1];
+    var tb = useState('new'), tab = tb[0], setTab = tb[1];
+    var cf = useState(null), confirm = cf[0], setConfirm = cf[1];   // { offer, accept }
+    var bz = useState(false), busy = bz[0], setBusy = bz[1];
+    var ms = useState(null), message = ms[0], setMessage = ms[1];
+    function load() {
+      return sb.from('admin_offers').select('*').order('created_at', { ascending: false })
+        .then(function (res) { if (res.error) setError(res.error.message); else setRows(res.data); });
+    }
+    useEffect(function () { load(); }, []);
+    async function decided() {
+      var o = confirm.offer, accept = confirm.accept;
+      setBusy(true); setMessage(null);
+      try {
+        var r = await invoke('offer-decide', { id: o.id, accept: accept });
+        setConfirm(null);
+        await load();
+        var what = (accept ? 'Offer accepted' : 'Offer declined');
+        if (r && r.emailed) toast(what + ' · email sent to ' + o.email + '.');
+        else setMessage({ error: true, text: what + ', but the email to ' + o.email + ' did not go out: write to them by hand.' });
+      } catch (e) {
+        setConfirm(null);
+        setMessage({ error: true, text: 'Could not ' + (accept ? 'accept' : 'decline') + ' the offer: ' + e.message });
+        load();
+      }
+      setBusy(false);
+    }
+    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not load the offers: ' + error);
+    if (!rows) return h('p', { className: 'body-medium' }, 'Loading…');
+    var counts = {}; OFFER_TABS.forEach(function (t) { counts[t[0]] = rows.filter(t[2]).length; });
+    var visible = rows.filter(OFFER_TABS.filter(function (t) { return t[0] === tab; })[0][2]);
+    var empty = rows.length ? 'No offers here.' : 'No offers yet. They arrive here when a buyer confirms an offer on a Best offer listing.';
+    var dialog;
+    if (confirm) {
+      var o = confirm.offer, amount = euro(o.amount_cents), name = o.name || o.slug;
+      dialog = confirm.accept
+        ? h(Z.Dialog, { open: true, busy: busy, title: 'Accept ' + amount + '?', confirmLabel: 'Accept offer',
+            onCancel: function () { setConfirm(null); }, onConfirm: decided },
+            h('p', null, name + ' goes Reserved for 48 hours and ' + o.email + ' gets the payment link by email (' + amount + ' + shipping to ' + regionName(o.country) + '). Not paid in time: it goes back on sale.'))
+        : h(Z.Dialog, { open: true, busy: busy, title: 'Decline ' + amount + '?', confirmLabel: 'Decline offer',
+            onCancel: function () { setConfirm(null); }, onConfirm: decided },
+            h('p', null, o.email + ' gets a short "not this time" email. ' + name + ' stays as it is.'));
+    } else dialog = h(Z.Dialog, { open: false, title: '', confirmLabel: '', onCancel: function () {}, onConfirm: function () {} }, '');
+    return h('div', { className: 'admin-section admin-listings' },
+      h('h1', { className: 'label-extra-large' }, 'Offers'),
+      message ? h('p', { className: 'body-medium' + (message.error ? ' admin-status--error' : ''), role: message.error ? 'alert' : 'status' }, message.text) : null,
+      h(Z.Tabs, { value: tab, onValueChange: setTab, 'aria-label': 'Filter by status' },
+        OFFER_TABS.map(function (t) { return h(Z.Tab, { key: t[0], value: t[0], suffix: String(counts[t[0]]), 'aria-controls': 'offers-list' }, t[1]); })),
+      h('ul', { id: 'offers-list', className: 'admin-rows' }, visible.length ? visible.map(function (o) {
+        var pending = o.state === 'pending', live = o.listing_status === 'available';
+        return h(Z.OfferRow, { key: o.id,
+          record: { image: thumbOf({ photo_keys: [o.photo_key] }), title: o.name || o.slug, href: '#edit-' + o.listing_id,
+            meta: [o.sku, STATUS_LABEL[o.listing_status] || o.listing_status, OFFERS_PRICE].filter(Boolean).join(' · '), price: euro(o.amount_cents) },
+          buyer: o.email + ' · ships to ' + regionName(o.country),
+          note: o.note ? '“' + o.note + '”' : null,
+          date: dateTime(o.confirmed_at || o.created_at),
+          // Accept only while the record is live (one accepted offer per copy at a time: the database checks it too)
+          actions: pending ? [
+            h(Z.Button, { key: 'a', hierarchy: 'primary', disabled: !live, title: live ? null : 'The record is not live: it can take an offer only while it is.',
+              onClick: function () { setConfirm({ offer: o, accept: true }); } }, 'Accept'),
+            h(Z.Button, { key: 'd', hierarchy: 'secondary', onClick: function () { setConfirm({ offer: o, accept: false }); } }, 'Decline')] : null,
+          status: pending ? null : offerStatus(o) });
+      }) : h('li', { className: 'body-small admin-rows__empty' }, empty)),
+      dialog);
   }
 
   // ── Orders ────────────────────────────────────────────────────────────────
@@ -1449,7 +1550,7 @@
     if (taken.error) throw new Error(taken.error.message);
     var used = {}; (taken.data || []).forEach(function (r) { used[r.slug] = true; });
     var n = 2; while (used[base + '-' + n]) n++;
-    var row = { slug: base + '-' + n, release_id: l.release_id, section: l.section, status: 'draft', price_cents: l.price_cents,
+    var row = { slug: base + '-' + n, release_id: l.release_id, section: l.section, status: 'draft', price_mode: l.price_mode || 'fixed', price_cents: l.price_cents,
       currency: l.currency, condition_media: l.condition_media, condition_media_b: l.condition_media_b, sleeve_type: l.sleeve_type,
       condition_sleeve: l.condition_sleeve, condition_notes: l.condition_notes, notes: l.notes, photo_keys: l.photo_keys,
       weight_g: l.weight_g, custom_title: l.custom_title };
@@ -3101,6 +3202,7 @@
     else if (hash === '#content') body = h(Content, { key: 'content-' + route.visit });
     else if (/^#content\/[a-z_.]+$/.test(hash)) body = h(ContentEditor, { key: hash + route.visit, blockKey: hash.slice(9) });
     else if (hash === '#orders') body = h(Orders, { key: 'orders-' + route.visit });
+    else if (hash === '#offers') body = h(Offers, { key: 'offers-' + route.visit });
     else if (/^#orders\/[^/]+$/.test(hash)) body = h(OrderDetail, { key: hash + route.visit, id: hash.split('/')[1] });
     else if (hash === '#memo') body = h(Memo, { key: 'memo-' + route.visit });
     else if (hash === '#bulk') body = h(Bulk, { key: 'bulk' });
@@ -3116,9 +3218,10 @@
   /* Admin navigation (Figma page `admin`, decision 0089): AdminBar (desktop buttons / mobile Menu · title)
      + the mobile menu, a full-screen native modal <dialog> with a MenuLayer, like the shop's (0060): Esc, × or
      following a link closes it, focus goes back to the Menu button. */
-  var SECTIONS = [['listings', 'Listings', '#'], ['orders', 'Orders', '#orders'], ['memo', 'Memo', '#memo'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings'], ['content', 'Content', '#content']];
+  var SECTIONS = [['listings', 'Listings', '#'], ['orders', 'Orders', '#orders'], ['offers', 'Offers', '#offers'], ['memo', 'Memo', '#memo'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings'], ['content', 'Content', '#content']];
   function sectionOf(hash) {
     if (/^#orders/.test(hash)) return 'orders';
+    if (hash === '#offers') return 'offers';
     if (/^#(new\/)?memo/.test(hash)) return 'memo';   // a listing created from a memo starts in Memo
     if (/^#attributes/.test(hash)) return 'attributes';
     if (hash === '#shipping') return 'shipping';

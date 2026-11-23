@@ -73,6 +73,7 @@ const Plp = require('./pages/plp.js');
 const Bag = require('./pages/bag.js');
 const Checkout = require('./pages/checkout.js');
 const Trade = require('./pages/trade.js');
+const Offer = require('./pages/offer.js');
 const Legal = require('./pages/legal.js');
 const ContactPage = require('./pages/contact.js');
 const Newsletter = require('./pages/newsletter.js');
@@ -296,6 +297,14 @@ write('catalog/index.html', page({ template: 'plp', title: Plp.title('catalog'),
 for (const product of forTrade.filter(p => p.listing.status === 'available')) {
   write(`products/${product.listing.slug}/offer/index.html`, page({ template: 'trade_offer', title: `Make an offer · ${title(product)}`, body: renderToStaticMarkup(React.createElement(Trade.Offer, { product, site, url })) }));
 }
+// Best offer (Figma page `Offers`, decision 0158): one offer page per available best-offer copy (the same URL as a trade
+// offer: a copy is either), the email's confirmation page and the payment page of an accepted offer
+const offerCountries = shippingData.countries(shipping);
+for (const product of forSale.filter(p => p.listing.price_mode === 'offers' && p.listing.status === 'available')) {
+  write(`products/${product.listing.slug}/offer/index.html`, page({ template: 'price_offer', title: `Make an offer · ${title(product)}`, body: renderToStaticMarkup(React.createElement(Offer.PriceOffer, { product, site, url, countries: offerCountries })) }));
+}
+write('offer/confirm/index.html', page({ template: 'offer_confirm', title: 'Confirm your offer', body: renderToStaticMarkup(React.createElement(Offer.OfferConfirm, { site, url })) }));
+write('offer/pay/index.html', page({ template: 'offer_pay', title: 'Your offer was accepted', body: renderToStaticMarkup(React.createElement(Offer.OfferPay, { site, url, shipping: shipping && (shipping.rates || []).length ? shipping : null, countries: offerCountries })) }));
 // trade off: no /trade/, no offer pages (forTrade is empty), no How trading works. A Pages deploy replaces the whole
 // site, so the pages of the previous build are gone too.
 if (site.tradeEnabled) write('how-trading-works/index.html', page({ template: 'trade_info', title: 'How trading works', body: renderToStaticMarkup(React.createElement(Trade.HowTrading, { site, url })) }));
@@ -314,7 +323,7 @@ if (site.wantlistEnabled) write('wantlist/index.html', page({ template: 'wantlis
 
 // Bag (decision 0044): one hidden line per listing of the sale section, whatever its status (a copy sold after it was
 // added still shows, as unavailable); scripts/site.js shows the visitor's own lines from localStorage
-const bagProducts = products.filter(p => p.listing.section === 'sale');
+const bagProducts = products.filter(p => p.listing.section === 'sale' && p.listing.price_mode !== 'offers');   // best offer never goes in the Bag (0158)
 write('bag/index.html', page({ template: 'bag', title: Bag.title, body: renderToStaticMarkup(React.createElement(Bag.Bag, { products: bagProducts, site, url, shipping, countries: shippingData.countries(shipping) })) }));
 // after a paid Stripe Checkout (migration 0021, Figma page `Checkout`): site.js takes the paid records out of the bag
 write('checkout/thanks/index.html', page({ template: 'checkout_thanks', title: Checkout.title, body: renderToStaticMarkup(React.createElement(Checkout.Thanks, { site, url })) }));

@@ -13,7 +13,7 @@ const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 const { SiteHeader, ProductCardFor, plpHref, textOf, imageOf, IMAGE_SIZES, productNameLinked, releaseInfoLinked,
-  productHref, productName, formatPrice, sampleAttrs } = require('./shell.js');
+  productHref, productName, formatPrice, sampleAttrs, isOffers, priceText } = require('./shell.js');
 
 const SHELF_COUNT = 6;   // Figma: 2 rows of 3 tiles on desktop
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -39,13 +39,18 @@ function TileFor({ product, url }) {
     images: photos.map((src, i) => imageOf(product, src, url, { sizes: IMAGE_SIZES.tile, alt: i === 0 ? productName(release) : '' })),
     title: productNameLinked(product, url, href),
     releaseInfo: releaseInfoLinked(release, url),
-    price: formatPrice(listing.price),
+    'data-price-mode': isOffers(listing) ? 'offers' : undefined,
+    price: priceText(listing),
     samples: samples.length ? samples.map((s, i) => h(Z.PlayerButton, Object.assign({
       key: s.track_position,
       'aria-label': `${productName(release)}, sample ${i + 1}: ${s.title}`
     }, sampleAttrs(product, s, url)), String(i + 1))) : null,
     counter: false,   // Gio 2026-11-18 (0121): the next photo peeks in, no "1/3" needed
-    action: h(Z.Button, { hierarchy: 'secondary', 'data-add-to-bag': listing.id, 'data-listing-status': listing.status }, 'Add to bag')
+    // best offer (decision 0158): a link to the offer page instead of Add to bag
+    action: isOffers(listing)
+      ? h(Z.Button, { hierarchy: 'secondary', href: listing.status === 'available' ? url(`/products/${listing.slug}/offer/`) : undefined,
+          disabled: listing.status !== 'available' }, listing.status === 'available' ? 'Make an offer' : listing.status === 'sold' ? 'Sold out' : 'Reserved')
+      : h(Z.Button, { hierarchy: 'secondary', 'data-add-to-bag': listing.id, 'data-listing-status': listing.status }, 'Add to bag')
   });
 }
 
