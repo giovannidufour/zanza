@@ -17,6 +17,9 @@ enum Theme {
     static let success = Color(red: 0x73 / 255, green: 0xff / 255, blue: 0x61 / 255)
     static let onSuccess = Color.black
     static let onAlert = Color.white
+    /// surface/warning = orange #ff5d16, text/on-warning = black (0144): started, not finished
+    static let warning = Color(red: 0xff / 255, green: 0x5d / 255, blue: 0x16 / 255)
+    static let onWarning = Color.black
     /// waveform (tokens.json, PR #210): played = text/strong, unplayed = waveform-unplayed (black-a16),
     /// silence = waveform-silence (red, as the silence play buttons)
     static let waveformPlayed = Color.black

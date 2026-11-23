@@ -28,6 +28,9 @@ final class DraftSession: ObservableObject {
     @Published var tags: DraftTags?
     /// slots per draft id once opened, for the media status of the rows (images, clips)
     @Published var slotCounts: [String: (images: Int, clips: Int)] = [:]
+    /// what each opened draft needs for the automatic export (0144): kept after switching draft
+    struct Cached { let draft: DraftSummary; let names: [ImageTarget]; let clips: [ClipTarget]; let tags: DraftTags? }
+    var cache: [String: Cached] = [:]
     /// what is at each position (same count as names)
     @Published var slots: [Slot] = []
     @Published var target: Int?          // the first empty position: the next Scan fills it (rows are not selectable)
@@ -101,6 +104,8 @@ final class DraftSession: ObservableObject {
                 self.names = list
                 self.clips = detail.clips; self.tags = detail.tags
                 self.slotCounts[d.id] = (list.count, detail.clips.count)
+                self.cache[d.id] = Cached(draft: d, names: list, clips: detail.clips, tags: detail.tags)
+                self.app?.scheduleSync(d.id)   // tags may have changed on the server: rewrite what is out of date
                 var s = self.slots
                 while s.count < list.count { s.append(Slot(scanned: false, thumb: nil)) }
                 if s.count > list.count { s = Array(s.prefix(list.count)) }

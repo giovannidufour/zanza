@@ -189,7 +189,11 @@ final class SessionModel: ObservableObject {
     }
 
     private struct Saved: Codable { var assignments: [String: Assignment]; var trims: [String: Double]; var source: String; var trimEnds: [String: Double]? }
+    /// called after any change the exported files mirror (assignments, trims, WAV ticks): automatic export (0144)
+    var onChange: (() -> Void)?
+
     func save() {
+        defer { onChange?() }
         let s = Saved(assignments: assignments, trims: Dictionary(uniqueKeysWithValues: clips.filter { $0.trimStart > 0 }.map { ($0.file, $0.trimStart) }),
                       source: sourceLabel, trimEnds: Dictionary(uniqueKeysWithValues: clips.filter { $0.trimEnd > 0 }.map { ($0.file, $0.trimEnd) }))
         try? JSONEncoder().encode(s).write(to: Self.stateFile)

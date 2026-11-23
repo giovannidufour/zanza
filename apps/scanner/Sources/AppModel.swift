@@ -40,11 +40,11 @@ final class AppModel: ObservableObject {
     }
     @Published var wavFolder: URL = UserDefaults.standard.url(forKey: "wavFolder")
         ?? FileManager.default.urls(for: .musicDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza samples/WAV") {
-        didSet { UserDefaults.standard.set(wavFolder, forKey: "wavFolder"); refreshDisk() }
+        didSet { UserDefaults.standard.set(wavFolder, forKey: "wavFolder"); refreshDisk(); scheduleSync() }
     }
     @Published var mp3Folder: URL = UserDefaults.standard.url(forKey: "mp3Folder")
         ?? FileManager.default.urls(for: .musicDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza samples/MP3") {
-        didSet { UserDefaults.standard.set(mp3Folder, forKey: "mp3Folder"); refreshDisk() }
+        didSet { UserDefaults.standard.set(mp3Folder, forKey: "mp3Folder"); refreshDisk(); scheduleSync() }
     }
 
     @Published var steps: [ScanStep] = []
@@ -101,6 +101,7 @@ final class AppModel: ObservableObject {
         drafts.app = self
         session.inJob = { [weak self] f in self?.jobs.uses(f) ?? false }
         jobs.onIdle = { [weak self] in self?.session.flushPendingRemovals(); self?.refreshDisk() }
+        session.onChange = { [weak self] in self?.scheduleSync() }
         // draft rows read jobs and session (progress, push state, counts): redraw them when those change
         refreshDisk()
         forward = [jobs.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() },
@@ -187,38 +188,127 @@ final class AppModel: ObservableObject {
         return names.count
     }
 
-    /// Export every assigned clip of the open draft as a background job: MP3 320 always, WAV for ticked clips, tags,
-    /// the side's label as cover. Overwrites. What it exports is fixed when queued (0143).
-    func exportClips() {
-        guard let d = drafts.draft else { return }
-        let jobs: [(SessionClip, ClipTarget)] = drafts.clips.compactMap { slot in session.clip(assignedTo: slot.name).map { ($0, slot) } }
-        guard !jobs.isEmpty else { return }
-        let t = drafts.tags, sku = d.skuText
-        let labelA = drafts.names.first { $0.role == 1 }.flatMap { drafts.file(named: $0.name, in: folder) }
-        let labelB = drafts.names.first { $0.role == 2 }.flatMap { drafts.file(named: $0.name, in: folder) }
-        let wav = wavFolder, mp3 = mp3Folder
-        let wavFor = Set(drafts.clips.map(\.name).filter { session.wantsWAV(slot: $0) })
-        self.jobs.enqueue(draftID: d.id, sku: sku, kind: .export, files: Set(jobs.map(\.0.file))) { progress in
-            var noCover: [String] = []
-            for (n, (clip, slot)) in jobs.enumerated() {
-                progress(Double(n) / Double(jobs.count), "clip \(n + 1) of \(jobs.count)")
-                let side = slot.role.lowercased().first == "b" ? labelB : labelA
-                let cover = AudioExport.cover(from: side)
-                if cover == nil { noCover.append(slot.label) }
-                var tags = AudioExport.Tags()
-                tags.title = slot.title ?? ""; tags.artist = slot.artist ?? ""
-                tags.album = t?.album ?? d.title; tags.albumArtist = t?.album_artist ?? ""   // as scan-targets gives them
-                tags.label = t?.label ?? ""
-                tags.year = t?.year.map(String.init) ?? ""; tags.genre = (t?.genres ?? []).joined(separator: ", ")
-                tags.track = slot.label; tags.comment = sku; tags.cover = cover
-                try AudioExport.export(source: clip.url, trimStart: clip.trimStart, trimEnd: clip.trimEnd, name: slot.name, tags: tags,
-                                       wavFolder: wavFor.contains(slot.name) ? wav : nil, mp3Folder: mp3, normalize: false)
-            }
-            var r = "Exported \(jobs.count) clip\(jobs.count == 1 ? "" : "s")"
-            if !wavFor.isEmpty { r += " (\(wavFor.count) with WAV)" }
-            if !noCover.isEmpty { r += " · no cover for \(noCover.joined(separator: ", "))" }
-            return (r, mp3)
+    // MARK: Automatic export (0144): the exported files mirror each draft's clip assignments
+
+    /// What was last written for a clip slot: the inputs' fingerprint, with/without WAV, complete = tags and cover
+    struct ExportRecord: Codable { var hash: String; var wav: Bool; var complete: Bool; var missing: String? }
+    @Published var exports: [String: ExportRecord] = {   // slot name → record
+        (UserDefaults.standard.data(forKey: "exports").flatMap { try? JSONDecoder().decode([String: ExportRecord].self, from: $0) }) ?? [:]
+    }() { didSet { UserDefaults.standard.set(try? JSONEncoder().encode(exports), forKey: "exports") } }
+    private var dirty: Set<String> = []
+    private var syncTimer: Timer?
+
+    /// Debounced: rewrite what is out of date for a draft (the open one by default)
+    func scheduleSync(_ draftID: String? = nil) {
+        guard let id = draftID ?? drafts.draft?.id else { return }
+        dirty.insert(id)
+        syncTimer?.invalidate()
+        syncTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: false) { [weak self] _ in
+            guard let self else { return }
+            for id in self.dirty where !self.jobs.isActive(id, .export) { self.dirty.remove(id); self.sync(id) }
         }
+    }
+
+    private struct Planned { let clip: SessionClip; let slot: ClipTarget; let tags: AudioExport.Tags; let cover: URL?; let wav: Bool; let hash: String }
+
+    /// Plans the writes of one draft: assigned clips whose inputs changed (or whose files are gone); WAVs unticked go
+    private func plan(_ id: String) -> (writes: [Planned], dropWAV: [String])? {
+        guard let c = drafts.cache[id] else { return nil }
+        let sku = c.draft.skuText
+        func labelFile(_ role: Int) -> URL? { c.names.first { $0.role == role }.flatMap { drafts.file(named: $0.name, in: folder) } }
+        let labelA = labelFile(1), labelB = labelFile(2)
+        var writes: [Planned] = [], dropWAV: [String] = []
+        for slot in c.clips {
+            guard let clip = session.clip(assignedTo: slot.name) else { continue }
+            let wav = session.wantsWAV(slot: slot.name)
+            let side = slot.role.lowercased().first == "b" ? labelB : labelA
+            var t = AudioExport.Tags()
+            t.title = slot.title ?? ""; t.artist = slot.artist ?? ""
+            t.album = c.tags?.album ?? c.draft.title; t.albumArtist = c.tags?.album_artist ?? ""
+            t.label = c.tags?.label ?? ""; t.year = c.tags?.year.map(String.init) ?? ""
+            t.genre = (c.tags?.genres ?? []).joined(separator: ", "); t.track = slot.label; t.comment = sku
+            let coverStamp = side.map { "\($0.lastPathComponent):\(disk.labels[$0.lastPathComponent] ?? "")" } ?? "none"
+            let hash = [clip.file, "\(clip.trimStart)", "\(clip.trimEnd)", t.title, t.artist, t.album, t.albumArtist, t.label,
+                        t.year, t.genre, t.track, t.comment, coverStamp, wav ? "wav" : "", mp3Folder.path, wavFolder.path].joined(separator: "|")
+            let mp3 = mp3Folder.appendingPathComponent(slot.name).appendingPathExtension("mp3")
+            let old = exports[slot.name]
+            if old?.hash != hash || !FileManager.default.fileExists(atPath: mp3.path) {
+                writes.append(Planned(clip: clip, slot: slot, tags: t, cover: side, wav: wav, hash: hash))
+            }
+            if !wav, old?.wav == true { dropWAV.append(slot.name) }
+        }
+        return (writes, dropWAV)
+    }
+
+    func sync(_ id: String) {
+        guard let p = plan(id), let c = drafts.cache[id] else { return }
+        for name in p.dropWAV {   // WAV unticked: that WAV goes to the Trash
+            let f = wavFolder.appendingPathComponent(name).appendingPathExtension("wav")
+            if FileManager.default.fileExists(atPath: f.path) { try? FileManager.default.trashItem(at: f, resultingItemURL: nil) }
+            exports[name]?.wav = false
+        }
+        guard !p.writes.isEmpty else { return }
+        let writes = p.writes, wavDir = wavFolder, mp3Dir = mp3Folder, tagsKnown = c.tags != nil
+        jobs.enqueue(draftID: id, sku: c.draft.skuText, kind: .export, files: Set(writes.map(\.clip.file))) { progress in
+            var done: [(String, ExportRecord)] = []
+            for (n, w) in writes.enumerated() {
+                progress(Double(n) / Double(writes.count), "clip \(n + 1) of \(writes.count)")
+                var tags = w.tags
+                tags.cover = AudioExport.cover(from: w.cover)
+                try AudioExport.export(source: w.clip.url, trimStart: w.clip.trimStart, trimEnd: w.clip.trimEnd, name: w.slot.name, tags: tags,
+                                       wavFolder: w.wav ? wavDir : nil, mp3Folder: mp3Dir, normalize: false)
+                let side = w.slot.role.lowercased().first == "b" ? "Label B" : "Label A"
+                let missing = tags.cover == nil ? "\(w.slot.label) needs the \(side) scan" : (!tagsKnown ? "\(w.slot.label): tags not loaded" : nil)
+                done.append((w.slot.name, ExportRecord(hash: w.hash, wav: w.wav, complete: missing == nil, missing: missing)))
+            }
+            let finished = done
+            await MainActor.run {
+                for (k, r) in finished { self.exports[k] = r }
+                self.refreshDisk()
+                self.scheduleSync(id)   // anything changed while writing gets its turn
+            }
+            let noCover = done.compactMap { $0.1.missing }
+            return ("Exported \(done.count) clip\(done.count == 1 ? "" : "s")" + (noCover.isEmpty ? "" : " · " + noCover.joined(separator: ", ")), mp3Dir)
+        }
+    }
+
+    /// x on a clip slot: unassign, and its exported files go to the Trash
+    func unassignClip(_ name: String) {
+        for f in [mp3Folder.appendingPathComponent(name).appendingPathExtension("mp3"), wavFolder.appendingPathComponent(name).appendingPathExtension("wav")]
+        where FileManager.default.fileExists(atPath: f.path) { try? FileManager.default.trashItem(at: f, resultingItemURL: nil) }
+        exports[name] = nil
+        session.unassign(slot: name)
+        refreshDisk()
+    }
+
+    // MARK: Media status (0144): none = red, partial = orange, some = green
+
+    enum MediaState { case none, partial, complete }
+    struct Media { let count: Int; let state: MediaState; let note: String }
+
+    func imageMedia(_ d: DraftSummary) -> Media {
+        let roles = Set(drafts.scannedRoles(sku: d.skuText))
+        let missing = [roles.contains(1) ? nil : "Label A", roles.contains(2) ? nil : "Label B"].compactMap { $0 }
+        if roles.isEmpty { return Media(count: 0, state: .none, note: "No scans yet") }
+        return Media(count: roles.count, state: missing.isEmpty ? .complete : .partial,
+                     note: missing.isEmpty ? "\(roles.count) scans, both labels" : "Missing: " + missing.joined(separator: ", "))
+    }
+
+    func clipMedia(_ d: DraftSummary) -> Media {
+        let sku = d.skuText
+        let assigned = Set(session.assignments.values.filter { $0.sku == sku }.map(\.name))
+        let written = Set(exports.keys.filter { $0.hasPrefix(sku + "_") })
+        let all = assigned.union(written)
+        if all.isEmpty { return Media(count: 0, state: .none, note: "No clips yet") }
+        var notes: [String] = []
+        for n in all.sorted() {
+            let role = n.split(separator: "_").dropFirst().first.map { $0.uppercased() } ?? n
+            if let r = exports[n] { if let m = r.missing { notes.append(m) } }
+            else { notes.append("\(role) not written yet") }
+        }
+        if jobs.isActive(d.id, .export) { notes.append("writing…") }
+        return Media(count: all.count, state: notes.isEmpty ? .complete : .partial,
+                     note: notes.isEmpty ? "\(all.count) clips complete" : notes.joined(separator: " · "))
     }
 
     // MARK: Push to admin (0142)
@@ -489,6 +579,7 @@ final class AppModel: ObservableObject {
                             ? "Saved in \(folderName): \(file)"
                             : "Saved \(file): 4\" label in \(folderName), whole record in \(origName)"
                         self.refreshDisk()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.scheduleSync() }   // a label scan is a cover
                         if self.drafts.draft != nil, name == self.drafts.targetName {
                             self.drafts.saved(thumb ?? (label ?? original))
                         } else {

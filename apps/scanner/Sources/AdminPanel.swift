@@ -69,6 +69,7 @@ struct DraftColumn: View {
                         VStack(alignment: .leading, spacing: 12) {
                             DraftResult(draft: d, scanned: drafts.scannedCount(d), imageSlots: drafts.slotCounts[d.id]?.images ?? 3,
                                         clips: model.clipCount(d), clipSlots: drafts.slotCounts[d.id]?.clips, selected: open,
+                                        imageMedia: model.imageMedia(d), clipMedia: model.clipMedia(d),
                                         push: model.pushState(d), onPush: { model.push(d) },
                                         job: model.jobs.latest(for: d.id).flatMap { $0.seen ? nil : $0 }, jobs: model.jobs)
                                 .onTapGesture { drafts.pick(d); model.jobs.markSeen(d.id) }
@@ -92,6 +93,8 @@ struct DraftResult: View {
     var clips = 0
     var clipSlots: Int?
     var selected = false
+    var imageMedia: AppModel.Media?
+    var clipMedia: AppModel.Media?
     var push: AppModel.PushState = .none
     var onPush: () -> Void = {}
     var job: JobQueue.Job?
@@ -113,8 +116,8 @@ struct DraftResult: View {
                 }
                 Text(draft.title).bodyStyle(14).fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 6) {   // media status chips (Figma 2446:26829): green = some, red = none
-                    MediaChip(icon: "photo", count: scanned)
-                    MediaChip(icon: "waveform", count: clips)
+                    MediaChip(icon: "photo", media: imageMedia ?? AppModel.Media(count: scanned, state: scanned > 0 ? .partial : .none, note: ""))
+                    MediaChip(icon: "waveform", media: clipMedia ?? AppModel.Media(count: clips, state: clips > 0 ? .partial : .none, note: ""))
                 }
                 if let job { JobLine(job: job, jobs: jobs) }
             }
@@ -312,17 +315,28 @@ extension DraftResult {
     }
 }
 
-/// `media status`: icon 16 + count (body/extra small); count ≥ 1 on surface/success, 0 on surface/alert
+/// `media status` (0144): none = red (surface/alert), partial = orange (surface/warning), complete = green
+/// (surface/success); the number always shows, the tooltip says what is missing
 struct MediaChip: View {
     let icon: String
-    let count: Int
+    let media: AppModel.Media
     var body: some View {
+        let (bg, fg): (Color, Color) = {
+            switch media.state {
+            case .none: return (Theme.alert, Theme.onAlert)
+            case .partial: return (Theme.warning, Theme.onWarning)
+            case .complete: return (Theme.success, Theme.onSuccess)
+            }
+        }()
         HStack(spacing: 2) {
             Image(systemName: icon).font(.system(size: 12)).frame(width: 16, height: 16)
-            Text("\(count)").font(Theme.body(12))
+            Text("\(media.count)").font(Theme.body(12))
         }
-        .foregroundColor(count > 0 ? Theme.onSuccess : Theme.onAlert)
+        .foregroundColor(fg)
         .padding(.top, 2).padding(.bottom, 2).padding(.leading, 2).padding(.trailing, 4)
-        .background(count > 0 ? Theme.success : Theme.alert)
+        .background(bg)
+        .help(media.note)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(icon == "photo" ? "Images" : "Clips") \(media.count): \(media.note)")
     }
 }

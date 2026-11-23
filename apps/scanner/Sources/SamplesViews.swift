@@ -210,6 +210,7 @@ struct ClipPreview: View {
 
 /// `clip slot` (0141): filled (from STE-003 · 0:58, play, x) · empty (Drop to assign); drop a session clip on it
 struct ClipSlotRow: View {
+    @EnvironmentObject var model: AppModel
     let slot: ClipTarget
     let clip: SessionClip?
     @ObservedObject var session: SessionModel
@@ -235,9 +236,9 @@ struct ClipSlotRow: View {
                 Button { session.select(clip.file); session.togglePlay() } label: {
                     Image(systemName: session.playing && session.selected == clip.file ? "pause.fill" : "play.fill")
                 }.buttonStyle(.plain)
-                Button { session.unassign(slot: slot.name) } label: {
+                Button { model.unassignClip(slot.name) } label: {
                     Image(systemName: "xmark").font(.system(size: 16, weight: .light)).frame(width: 24, height: 24)
-                }.buttonStyle(.plain).help("Unassign (⌘Z undoes)")
+                }.buttonStyle(.plain).help("Unassign: its exported files go to the Trash (⌘Z re-assigns and rewrites them)")
             }
         }
         .foregroundColor(Theme.textStrong)
@@ -260,27 +261,31 @@ struct ExportPanel: View {
     @ObservedObject var drafts: DraftSession
     @ObservedObject var jobs: JobQueue
     var body: some View {
-        let exporting = drafts.draft.map { jobs.isActive($0.id, .export) } ?? false
-        let assigned = drafts.clips.filter { session.clip(assignedTo: $0.name) != nil }
-        let empty = drafts.clips.filter { session.clip(assignedTo: $0.name) == nil }.map(\.label)
         VStack(alignment: .leading, spacing: 16) {
-            Text("Export").labelStyle(12)
+            Text("Export · automatic").labelStyle(12)
             FolderField(title: "MP3 320 kbps to", url: model.mp3Folder) { model.chooseExportFolder(mp3: true) }
             FolderField(title: "WAV to (clips with WAV ticked)", url: model.wavFolder) { model.chooseExportFolder(mp3: false) }
-            Text("Every assigned clip becomes an MP3; a WAV too when its WAV box is ticked. Files are named as the slot. Each file gets the tags (title, artist, album, label, year, genre, track A1/B1, SKU in the comment) and the cover: the label scan of that side, square.")
+            Text("Assigned clips are written by themselves and kept up to date (trim, WAV, label scan as cover, tags). Unassigning moves their files to the Trash.")
                 .bodyStyle(12, color: Theme.textModerate).fixedSize(horizontal: false, vertical: true)
             if AudioExport.lame == nil {
                 Text("LAME is not installed, so no MP3: install it with Homebrew (brew install lame).").bodyStyle(12, color: Theme.alert)
             }
-            Button { model.exportClips() } label: {
-                Text(exporting ? "Exporting…" : "Export \(assigned.count) clip\(assigned.count == 1 ? "" : "s")").frame(maxWidth: .infinity)
-            }
-            .buttonStyle(ZButtonStyle())
-            .disabled(assigned.isEmpty || exporting || drafts.draft == nil)
-            Text(drafts.draft == nil ? "Open a draft on the left"
-                 : "\(assigned.count) clips assigned" + (empty.isEmpty ? "" : " · \(empty.joined(separator: ", ")) still empty"))
-                .bodyStyle(12, color: Theme.textModerate)
+            Text(status).bodyStyle(12).fixedSize(horizontal: false, vertical: true)
         }
+    }
+    /// "Up to date · 2 clips" / "Exporting 1 of 2…" / "A1 exported without cover: scan Label A"
+    var status: String {
+        guard let d = drafts.draft else { return "Open a draft on the left" }
+        if let j = jobs.jobs.first(where: { $0.draftID == d.id && $0.kind == .export && ($0.state == .running || $0.state == .waiting) }) {
+            return j.state == .waiting ? "Waiting to export…" : "Exporting \(j.detail)…"
+        }
+        let assigned = drafts.clips.filter { session.clip(assignedTo: $0.name) != nil }
+        if assigned.isEmpty { return "Nothing assigned yet" }
+        let missing = assigned.compactMap { model.exports[$0.name]?.missing }
+        if !missing.isEmpty {
+            return missing.map { $0.replacingOccurrences(of: " needs the ", with: " exported without cover: scan ") }.joined(separator: " · ")
+        }
+        return "Up to date · \(assigned.count) clip\(assigned.count == 1 ? "" : "s")"
     }
 }
 
