@@ -484,7 +484,7 @@ final class AppModel: ObservableObject {
                 self.preview = img
                 self.caption = self.preset.sideMM == nil
                     ? "Whole glass: Scan saves everything you see"
-                    : "Drag the record so the spindle hole sits in the middle (arrows to fine-tune, [ ] to turn, Return to scan). The dashed square is the 4\" label"
+                    : "Drag the record so the spindle hole sits in the middle (arrows to fine-tune, [ ] to turn, Return to scan). The dashed square is the \(self.preset == .record7 ? "3.5" : "4")\" label"
             case .failure(let e):
                 self.caption = (e as? ScanError).map { if case .cancelled = $0 { return "Preview cancelled" }; return e.localizedDescription } ?? e.localizedDescription
             }
@@ -497,10 +497,10 @@ final class AppModel: ObservableObject {
         guard let img = preview, sideMM != nil, !turning else { return }
         let k = CGFloat(img.width) / previewZone.width
         let c = CGPoint(x: (center.x - previewZone.minX) * k, y: (center.y - previewZone.minY) * k)
-        let current = angle
+        let current = angle, labelMM = preset.labelMM
         turning = true
         DispatchQueue.global(qos: .userInitiated).async {
-            let a = AutoTurn.angle(in: img, centerPx: c, sidePx: SizePreset.labelMM * k, current: current)
+            let a = AutoTurn.angle(in: img, centerPx: c, sidePx: labelMM * k, current: current)
             DispatchQueue.main.async {
                 self.turning = false
                 if let a { self.angleBeforeTurn = current; self.animateCenter = true; self.angle = a; self.caption = "Turned by the label text: ⌘Z to undo" }
@@ -551,13 +551,14 @@ final class AppModel: ObservableObject {
                 self.preview = ImageOutput.refresh(preview: self.preview, zone: self.previewZone, scan: img, area: area)
                 guard let side else { self.save(original: img, label: nil, dpi: dpi); return }
                 self.caption = "Cutting the label…"
+                let labelMM = self.preset.labelMM   // 3.5" for a 7", 4" for 10" / 12" (0152)
                 // reading the label (OCR) and cutting two squares out of a ~25 MP scan: off the main thread
                 DispatchQueue.global(qos: .userInitiated).async {
                     let scale = CGFloat(img.width) / area.width   // px per mm, as scanned
                     let c = CGPoint(x: (center.x - area.minX) * scale, y: (center.y - area.minY) * scale)
                     let angle = angle   // the angle set on the preview: a scan never turns by itself
                     let original = ImageOutput.straighten(img, centerPx: c, sidePx: side * scale, angle: angle)
-                    let label = ImageOutput.straighten(img, centerPx: c, sidePx: SizePreset.labelMM * scale, angle: angle)
+                    let label = ImageOutput.straighten(img, centerPx: c, sidePx: labelMM * scale, angle: angle)
                     DispatchQueue.main.async {
                         guard let original, let label else { self.caption = "Could not cut the squares out of the scan"; return }
                         // The name is read now, so it can still be changed while the scanner runs
@@ -630,6 +631,7 @@ final class AppModel: ObservableObject {
                 if alert.runModal() != .alertFirstButtonReturn { caption = "Not saved: the file already exists"; return }
             }
             let fmt = format, folderName = labelDir.lastPathComponent, origName = origDir.lastPathComponent
+            let labelInches = preset == .record7 ? "3.5" : "4"
             caption = "Saving \(file)…"
             DispatchQueue.global(qos: .userInitiated).async {   // JPEG / TIFF encoding of large images: not on the main thread
                 do {
@@ -639,7 +641,7 @@ final class AppModel: ObservableObject {
                     DispatchQueue.main.async {
                         self.caption = archive == nil
                             ? "Saved in \(folderName): \(file)"
-                            : "Saved \(file): 4\" label in \(folderName), whole record in \(origName)"
+                            : "Saved \(file): \(labelInches)\" label in \(folderName), whole record in \(origName)"
                         self.refreshDisk()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.scheduleSync() }   // a label scan is a cover
                         if free {
