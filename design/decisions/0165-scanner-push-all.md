@@ -1,6 +1,6 @@
 # 0165 — Scanner: Push all, one action on the drafts column that pushes every draft out of sync
 
-`2026-11-23` · proposed · Figma: BACKEND → `Scanner`: section `push all · components` → `push all` (state ready | pushing | failed | synced, TEXT `summary`), `push all · replace confirm` (instance of `dialog`, choices on); screens "Scanner v3 - push all, pushing", "Scanner v3 - push all, confirm replace"
+`2026-11-23` · accepted · Figma: BACKEND → `Scanner`: section `push all · components` → `push all` (state ready | pushing | failed | synced, TEXT `summary`), `push all · replace confirm` (instance of `dialog`, choices on); screens "Scanner v3 - push all, pushing", "Scanner v3 - push all, confirm replace"
 
 **Context.** Push to admin (0142) is one button per draft row. After a session Gio has several SKUs scanned and clipped and presses Push on each, opening each draft first (the app needs the draft's clip lines). He asked (2026-11-23) for one action on the SKU column that pushes everything that needs pushing and skips what is already aligned.
 **Decision.**
