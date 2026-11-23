@@ -113,8 +113,13 @@ struct SessionRow: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text((clip.file as NSString).deletingPathExtension).bodyStyle(14)
                 Text(timeText(clip.duration)).bodyStyle(12, color: Theme.textModerate)
+                if let a {   // the track it is assigned to: "A1 · Artist - Title" (Figma `track`)
+                    let track = [a.artist, a.title].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " - ")
+                    Text(track.isEmpty ? a.label : "\(a.label) · \(track)").bodyStyle(12, color: Theme.textModerate)
+                        .lineLimit(1).truncationMode(.tail).help(track)
+                }
             }
-            .frame(width: 110, alignment: .leading)
+            .frame(width: 220, alignment: .leading)
             Waveform(peaks: clip.peaks, cut: clip.duration > 0 ? clip.trimStart / clip.duration : 0,
                      cutEnd: clip.duration > 0 && clip.trimEnd > 0 ? clip.trimEnd / clip.duration : 1,
                      removed: clip.silenceRemoved, tone: true).frame(height: 24)
@@ -238,7 +243,8 @@ struct ClipSlotRow: View {
         .overlay(Rectangle().stroke(over ? Theme.divider : Color.clear, lineWidth: 1))
         .dropDestination(for: String.self) { files, _ in
             guard let f = files.first, let d = drafts.draft else { return false }
-            session.assign(f, to: Assignment(draftID: d.id, sku: d.skuText, role: slot.role, label: slot.label, name: slot.name))
+            session.assign(f, to: Assignment(draftID: d.id, sku: d.skuText, role: slot.role, label: slot.label, name: slot.name,
+                                             artist: slot.artist, title: slot.title))
             return true
         } isTargeted: { over = $0 }
     }

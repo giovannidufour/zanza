@@ -25,6 +25,8 @@ struct Assignment: Codable, Equatable {
     let label: String                // A1, B1…
     let name: String                 // <sku>_<role>_<slug>
     var wav: Bool? = false           // also a WAV for this clip (Gio: per clip, off by default)
+    var artist: String? = nil        // the line it is assigned to, shown under the clip in the session (Gio)
+    var title: String? = nil
     var wantsWAV: Bool { wav ?? false }
 }
 
