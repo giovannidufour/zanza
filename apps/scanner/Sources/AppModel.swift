@@ -73,6 +73,13 @@ final class AppModel: ObservableObject {
         didSet { UserDefaults.standard.set(originalsFolder, forKey: "originalsFolder") }
     }
 
+    static func dpiSteps(supported: [Int]) -> [Int] {
+        let main = [150, 300, 600, 1200, 2400].filter { supported.contains($0) }
+        return main.isEmpty ? [150, 300, 600, 1200, 2400] : main
+    }
+    /// a saved setting not in the list snaps to the nearest step
+    static func nearest(_ v: Int, in list: [Int]) -> Int { list.min { abs($0 - v) < abs($1 - v) } ?? v }
+
     /// angle before the last "Turn by itself", for ⌘Z
     @Published var angleBeforeTurn: CGFloat?
     @Published var turning = false
@@ -409,7 +416,8 @@ final class AppModel: ObservableObject {
         let name = Names.clean(fileName)
         guard !name.isEmpty else { caption = "Give the file a name first"; return }
         let area = scanArea.intersection(CGRect(origin: .zero, size: scanner.glassMM))
-        let side = sideMM, angle = self.angle, center = self.center, dpi = self.dpi
+        let side = sideMM, angle = self.angle, center = self.center
+        let dpi = AppModel.nearest(self.dpi, in: AppModel.dpiSteps(supported: scanner.resolutions))   // a main step only
         caption = "Scanning \(name).\(format.ext)"
         scanner.scan(areaMM: area, dpi: dpi) { [weak self] result in
             guard let self else { return }

@@ -113,7 +113,7 @@ struct RecordColumn: View {
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 4) {
                         FieldLabel(text: "Resolution")
-                        Picker("", selection: $model.dpi) {
+                        Picker("", selection: Binding(get: { AppModel.nearest(model.dpi, in: dpiChoices) }, set: { model.dpi = $0 })) {
                             ForEach(dpiChoices, id: \.self) { Text("\($0) dpi").tag($0) }
                         }.labelsHidden()
                     }
@@ -141,10 +141,8 @@ struct RecordColumn: View {
         .frame(maxHeight: .infinity, alignment: .top)
     }
 
-    /// The scanner's resolutions, plus the chosen one so the menu always shows it
-    var dpiChoices: [Int] {
-        Array(Set(scanner.resolutions.filter { $0 >= 75 && $0 <= 2400 } + [model.dpi])).sorted()
-    }
+    /// Main steps only (Gio: not every dpi the scanner accepts), among those the scanner supports
+    var dpiChoices: [Int] { AppModel.dpiSteps(supported: scanner.resolutions) }
 }
 
 /// Right column head, same in both tabs: SKU · Draft and the record title
