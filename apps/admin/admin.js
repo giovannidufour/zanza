@@ -266,7 +266,7 @@
     lines.forEach(function (l) { lineIdToPos[l.id] = l.position; });
     f.listingId = row.id; f.sku = row.sku; f.status = effectiveStatus(row); f.slug = row.slug;
     f.checkoutUntil = checkoutUntil(row); f.soldAt = row.sold_at; f.publishedAt = row.published_at; f.createdAt = row.created_at;
-    f.customTitle = row.custom_title || ''; f.discogs = r.discogs_release_id ? String(r.discogs_release_id) : '';
+    f.customTitle = row.custom_title || ''; f.titleLinks = null; f.discogs = r.discogs_release_id ? String(r.discogs_release_id) : '';
     f.catNo = r.cat_no || '';
     // the field shows the official name; the stored text is the credit (Different spelling when it differs)
     f.lines = lines.length ? lines.map(function (l) {
@@ -277,6 +277,10 @@
       var spelled = artists.length > 0 && differs(l.artist, namesOf(artists));
       return newLine({ artists: artists, artistCredit: spelled ? l.artist : '', artistSpelled: spelled, title: l.title || '' });
     }) : f.lines;
+    // custom title links (0147): saved ranges; a title saved before 0147 shows the links the shop derived from it
+    f.titleLinks = Array.isArray(row.custom_title_links)
+      ? row.custom_title_links.map(function (l) { return { start: l.start, end: l.end, artist: { id: l.artist_id || null, name: l.name } }; })
+      : (f.customTitle ? autoTitleLinks(f.customTitle, f.lines) : []);
     var le = r.label_entity;
     f.label = le ? [chip(le)] : r.label ? [{ id: null, name: r.label }] : [];
     f.preRelease = !!r.pre_release;
@@ -319,6 +323,42 @@
   // ── shop preview: form → the storefront's text (same mapping as apps/storefront/pages/shell.js and data/products.js) ──
   // the shop shows the credit when it differs (Different spelling), as the database stores it
   function lineArtistText(l) { return l.artistSpelled && l.artistCredit.trim() ? l.artistCredit.trim() : namesOf(l.artists); }
+  // Custom title links (decision 0147): ranges of the title linked to an artist, [{ start, end, artist: { id, name } }].
+  // The record's artists (and the printed credit of a one-artist line), for the link menu and a click on a name.
+  function titleArtists(lines) {
+    var seen = {}, artists = [], names = [];
+    lines.forEach(function (l) {
+      l.artists.forEach(function (a) {
+        var k = a.id || a.name.toLowerCase();
+        if (!seen[k]) { seen[k] = true; artists.push(a); names.push(a.name); }
+      });
+      if (l.artists.length === 1 && l.artistSpelled && l.artistCredit.trim()) names.push(l.artistCredit.trim());
+    });
+    return { artists: artists, names: names };
+  }
+  // the links the shop derived before 0147 (0111): each artist of the lines found in the title, by name or printed credit
+  function autoTitleLinks(title, lines) {
+    var out = [];
+    lines.forEach(function (l) {
+      l.artists.forEach(function (a) {
+        var cands = [a.name];
+        if (l.artists.length === 1 && l.artistSpelled && l.artistCredit.trim()) cands.push(l.artistCredit.trim());
+        if (out.some(function (x) { return (x.artist.id || x.artist.name) === (a.id || a.name); })) return;
+        for (var i = 0; i < cands.length; i++) {
+          var at = Z.LinkedInput.find(title, cands[i]), end = at + cands[i].length;
+          if (at >= 0 && !out.some(function (x) { return at < x.end && end > x.start; })) { out.push({ start: at, end: end, artist: { id: a.id || null, name: a.name } }); break; }
+        }
+      });
+    });
+    return Z.LinkedInput.tidy(out);
+  }
+  // what is saved: the title is trimmed on save (admin_save_listing), the links follow it
+  function titleLinksRow(title, links) {
+    var lead = title.length - title.replace(/^\s+/, '').length, len = title.trim().length;
+    if (!len) return [];
+    return links.map(function (l) { return { start: Math.max(0, l.start - lead), end: Math.min(len, l.end - lead), artist_id: l.artist.id || null, name: l.artist.name }; })
+      .filter(function (l) { return l.end > l.start; });
+  }
   // "Artist - Title 1 / Title 2", or "Artist 1 - Title 1 / Artist 2 - Title 2" when a later line has its own artist;
   // tolerant of half-filled lines (the preview fills in while typing)
   function previewName(f) {
@@ -517,6 +557,9 @@
       setSaving(false);
       if (res.error) { setMessage({ error: true, text: (status === 'available' ? 'Not published: ' : 'Not saved: ') + res.error.message }); return; }
       var d = res.data, now = Date.now(), wasPublic = cur.status !== 'draft';
+      // custom title links (0147): a column of their own, written right after the listing (same row, same rebuild)
+      var tl = await sb.from('listings').update({ custom_title_links: titleLinksRow(cur.customTitle, cur.titleLinks || []) }).eq('id', d.listing_id);
+      if (tl.error) toast('Title links not saved: ' + tl.error.message);
       baseline.current = formSnapshot(cur);
       setSavedAt(now);
       set(function (x) { return { listingId: d.listing_id, sku: d.sku, status: d.status, slug: d.slug,
@@ -557,7 +600,7 @@
     }
 
     // From Discogs (0111): Custom title = the release as Discogs titles it, "Artist - Title" (the artist as printed).
-    // Only the title changes; the shop links the release's artists found in it.
+    // Only the title (and its links, 0147: the artists of the lines found in it) changes.
     var tt = useState(false), titling = tt[0], setTitling = tt[1];
     async function titleFromDiscogs() {
       var id = discogsId(fRef.current.discogs);
@@ -567,7 +610,7 @@
         var d = await invoke('discogs-lookup', { releaseId: id });
         var title = [d.artistCredit || d.artist, d.title].filter(Boolean).join(' - ');
         if (!title) throw new Error('the release has no title');
-        set({ customTitle: title });
+        set({ customTitle: title, titleLinks: autoTitleLinks(title, fRef.current.lines) });
         setMessage({ error: false, text: 'Custom title from Discogs: ' + title + '.' });
       } catch (err) {
         setMessage({ error: true, text: 'Discogs: ' + err.message });
@@ -735,8 +778,11 @@
         h(Z.FormSectionHead, { id: 'section-lines-title' }, FORM_SECTION_LABEL['lines']),
         // Figma Create → `custom title` (0111): From Discogs under the field, only while Discogs match holds a release
         h('div', { className: 'admin-custom-title' },
-          h(Z.Input, Object.assign({ id: 'custom-title', label: 'Custom title', optional: true,
-            supportText: 'Replaces "Artist - Title" in the shop. Artist names in it link to their records.' }, bind('customTitle'))),
+          // 0147: select characters or click a name → Link artist; links are character ranges, saved apart from the text
+          h(Z.LinkedInput, { id: 'custom-title', label: 'Custom title', optional: true, value: f.customTitle, links: f.titleLinks || [],
+            error: errors.customTitle, readOnly: locked, options: entities && entities.artists,
+            suggested: titleArtists(f.lines).artists, names: titleArtists(f.lines).names,
+            onChange: function (v, links) { set({ customTitle: v, titleLinks: links }); } }),
           discogsId(f.discogs) !== null ? h(Z.Button, { hierarchy: 'secondary', disabled: locked || titling,
             'aria-busy': titling || undefined, onClick: titleFromDiscogs }, 'From Discogs') : null),
         h('div', { className: 'admin-stack' },

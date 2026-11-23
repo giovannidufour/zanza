@@ -1,0 +1,30 @@
+<!-- @dsCard group="Admin" height=420 subtitle="links · bar · menu" -->
+<!doctype html>
+<html data-theme="backend">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: var(--surface-page); color: var(--text-strong); font-family: var(--font-sans); }
+  .wrap { max-width: 645px; padding: 24px 24px 320px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function () {
+  var React = window.React, ReactDOM = window.ReactDOM, Z = window.Zanza, h = React.createElement, useState = React.useState;
+  var GI = { id: 'a1', name: 'Gregory Isaacs' }, DB = { id: 'a2', name: 'Dennis Brown' };
+  var ARTISTS = [GI, DB, { id: 'a3', name: 'Bounty Killer' }, { id: 'a4', name: 'Sister Nancy' }];
+  function Demo() {
+    var vs = useState('Gregory Isaacs & D. Brown - Let Off Supm'), v = vs[0], setV = vs[1];
+    var ls = useState([{ start: 0, end: 14, artist: GI }, { start: 17, end: 25, artist: DB }]), links = ls[0], setLinks = ls[1];
+    return h('div', { className: 'wrap' }, h(Z.LinkedInput, { id: 'title', label: 'Custom title', optional: true, value: v, links: links,
+      options: ARTISTS, suggested: [GI, DB], names: ['Gregory Isaacs', 'Dennis Brown'],
+      onChange: function (nv, nl) { setV(nv); setLinks(nl); } }));
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(h(Demo));
+})();
+</script>
+</body>
+</html>

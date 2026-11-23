@@ -58,7 +58,18 @@ function effectiveStatus(row) {
 
 // one DB row (listing + embedded release, its lines and samples) → the storefront contract.
 // Featured image = first photo: it is the release `cover`, the rest are the copy photos (none when there is one photo).
-function toProduct(row, mediaUrl) {
+// custom title links (migration 0031, decision 0147): [{ start, end, artist_id, name }] → [{ start, end, ref: { slug, name } }].
+// The artist by id, else by name; one that cannot be found stays text. null (a title saved before 0147) stays null.
+function titleLinksOf(row, artists) {
+  if (!Array.isArray(row.custom_title_links)) return null;
+  const byName = (n) => artists.find((a) => a.name.toLowerCase() === String(n || '').toLowerCase());
+  return row.custom_title_links.map((l) => {
+    const a = (l.artist_id && artists.find((x) => x.id === l.artist_id)) || byName(l.name);
+    return { start: l.start, end: l.end, ref: a ? { slug: a.slug, name: a.name } : null };
+  });
+}
+
+function toProduct(row, mediaUrl, artists = []) {
   const r = row.release;
   const lines = (r.lines || []).slice().sort((a, b) => a.position - b.position);
   const photos = row.photo_keys.map(mediaUrl);
@@ -72,6 +83,7 @@ function toProduct(row, mediaUrl) {
       sku: row.sku,
       weight_g: row.weight_g || null,   // shipping: own weight; null = the format's (decision 0057)
       custom_title: row.custom_title,
+      custom_title_links: titleLinksOf(row, artists),
       published_at: row.published_at || null   // the home's "This week" (decision 0120)
     },
     release: {
@@ -142,7 +154,16 @@ async function fromSupabase(env, site, fetchImpl = fetch) {
   if (!res.ok) throw new Error(`Supabase: ${res.status} ${await res.text()}`);
   const rows = await res.json();
   const mediaUrl = mediaUrlFor(site);
-  return rows.sort(byListingOrder).map((row) => toProduct(row, mediaUrl));
+  // the artists a custom title links to by hand (0147) may not be credited on the release: read them once
+  let artists = [];
+  if (rows.some((r) => Array.isArray(r.custom_title_links) && r.custom_title_links.length)) {
+    const ar = await fetchImpl(`${env.SUPABASE_URL.replace(/\/$/, '')}/rest/v1/artists?select=id,slug,name`, {
+      headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, Accept: 'application/json' }
+    });
+    if (!ar.ok) throw new Error(`Supabase artists: ${ar.status} ${await ar.text()}`);
+    artists = await ar.json();
+  }
+  return rows.sort(byListingOrder).map((row) => toProduct(row, mediaUrl, artists));
 }
 
 // shop-wide switches (migration 0023, decision 0102; migration 0025, decision 0106): shop_settings in the database is

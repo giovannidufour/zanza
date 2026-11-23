@@ -1730,6 +1730,180 @@
       support ? h('p', { id: supportId, className: 'zz-input__support body-small' }, support) : null);
   }
 
+  /* ── LinkedInput (Figma BACKEND → Create → `custom title`, decision 0147) ────────────────────────────
+     A text field whose characters can link to an entity (an artist): Custom title. The links are character ranges
+     [{ start, end, artist: { id, name } }] drawn underlined over the text (a backdrop behind a transparent input, so the
+     field stays a native input). Select characters, or click a name of the record (`names`) or a link: a small bar
+     (`title link bar`) appears under the field with Link artist / Change link and Clear link / Remove link. The bar never
+     takes the focus, so Delete and typing work as usual and hide it. Link artist or ⌘K / Ctrl+K opens the menu
+     (`title link menu`): a search box + the record's artists (`suggested`) first, then the matches in `options`.
+     Clear unlinks exactly the selected characters (a link can split). Typing moves the links with the text: inside a
+     link stays in it, right before or after it does not. onChange(value, links) gets both. */
+  function linksCut(links, s, e) {
+    var out = [];
+    links.forEach(function (l) {
+      if (l.end <= s || l.start >= e) { out.push(l); return; }
+      if (l.start < s) out.push({ start: l.start, end: s, artist: l.artist });
+      if (l.end > e) out.push({ start: e, end: l.end, artist: l.artist });
+    });
+    return out;
+  }
+  function linksTidy(links) {   // sorted, no empty link, same artist touching = one link
+    var out = [];
+    links.filter(function (l) { return l.end > l.start; }).sort(function (a, b) { return a.start - b.start; }).forEach(function (l) {
+      var p = out[out.length - 1];
+      var same = p && (p.artist.id && l.artist.id ? p.artist.id === l.artist.id : p.artist.name === l.artist.name);
+      if (same && p.end >= l.start) p.end = Math.max(p.end, l.end);
+      else out.push({ start: l.start, end: l.end, artist: l.artist });
+    });
+    return out;
+  }
+  function linksShift(links, a, b) {   // the text changed from a to b: [pre, oldEnd) became [pre, newEnd)
+    var pre = 0; while (pre < a.length && pre < b.length && a[pre] === b[pre]) pre++;
+    var suf = 0; while (suf < a.length - pre && suf < b.length - pre && a[a.length - 1 - suf] === b[b.length - 1 - suf]) suf++;
+    var oldEnd = a.length - suf, newEnd = b.length - suf, delta = b.length - a.length;
+    function ms(x) { return x >= oldEnd ? x + delta : x <= pre ? x : newEnd; }
+    function me(x) { return x <= pre ? x : x >= oldEnd ? x + delta : pre; }
+    return linksTidy(links.map(function (l) { return { start: ms(l.start), end: me(l.end), artist: l.artist }; }));
+  }
+  function wordChar(c) { return !!c && /[\p{L}\p{N}]/u.test(c); }
+  function findWhole(text, part, from) {
+    var lower = text.toLowerCase(), t = String(part || '').toLowerCase();
+    if (!t) return -1;
+    for (var at = lower.indexOf(t, from || 0); at >= 0; at = lower.indexOf(t, at + 1)) {
+      if (!wordChar(text[at - 1]) && !wordChar(text[at + t.length])) return at;
+    }
+    return -1;
+  }
+  function LinkMenu(props) {
+    var qs = React.useState(''), q = qs[0], setQ = qs[1];
+    var as = React.useState(0), active = as[0], setActive = as[1];
+    var ref = React.useRef(null);
+    React.useEffect(function () { if (ref.current) ref.current.focus(); }, []);
+    var t = q.trim().toLowerCase();
+    var sug = (props.suggested || []).filter(function (a) { return !t || a.name.toLowerCase().indexOf(t) >= 0; });
+    var x = props.text.trim().toLowerCase();
+    var guess = x && sug.filter(function (a) {
+      var n = a.name.toLowerCase();
+      return n.indexOf(x) >= 0 || n.split(' ').some(function (w) { return w.length > 2 && x.indexOf(w) >= 0; });
+    })[0];
+    if (guess) sug = [guess].concat(sug.filter(function (a) { return a !== guess; }));
+    var taken = {}; sug.forEach(function (a) { if (a.id) taken[a.id] = true; });
+    var list = sug.map(function (a) { return { entity: a, note: a === guess && !props.current ? 'Suggested' : 'On this record' }; })
+      .concat(entityMatches(props.options, q, taken, 8).map(function (m) { return { entity: m.entity, note: m.alias ? m.alias : null }; }))
+      .slice(0, 8);
+    var cur = Math.min(active, Math.max(0, list.length - 1));
+    function onKeyDown(e) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setActive(list.length ? (cur + 1) % list.length : 0); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(list.length ? (cur - 1 + list.length) % list.length : 0); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (list[cur]) props.onPick(list[cur].entity); }
+      else if (e.key === 'Escape') { e.preventDefault(); props.onClose(); }
+    }
+    var listId = props.id + '-menu';
+    return h('div', { className: 'zz-linked-input__menu', role: 'dialog', 'aria-label': props.label, style: { left: props.x + 'px' },
+      onMouseDown: function (e) { e.stopPropagation(); } },
+      h('input', { ref: ref, type: 'text', className: 'zz-linked-input__search body-medium', placeholder: props.placeholder,
+        'aria-label': props.placeholder, role: 'combobox', 'aria-expanded': 'true', 'aria-controls': listId, autoComplete: 'off',
+        'aria-activedescendant': list.length ? listId + '-' + cur : undefined,
+        value: q, onChange: function (e) { setQ(e.target.value); setActive(0); }, onKeyDown: onKeyDown }),
+      list.length ? h('ul', { id: listId, role: 'listbox', className: 'zz-linked-input__options', 'aria-label': props.label },
+        list.map(function (it, i) {
+          return h('li', { key: (it.entity.id || it.entity.name), id: listId + '-' + i, role: 'option',
+            className: 'zz-entity-option body-medium', 'aria-selected': i === cur ? 'true' : 'false',
+            'data-current': props.current && (props.current.id ? props.current.id === it.entity.id : props.current.name === it.entity.name) ? 'true' : undefined,
+            onMouseDown: function (e) { e.preventDefault(); }, onMouseEnter: function () { setActive(i); },
+            onClick: function () { props.onPick(it.entity); } },
+            h('span', { className: 'zz-entity-option__label' }, it.entity.name),
+            it.note ? h('span', { className: 'zz-entity-option__official body-small' }, it.note) : null);
+        })) : null);
+  }
+  function LinkedInput(props) {
+    var id = useStableId(props.id);
+    var value = props.value || '', links = props.links || [];
+    var wrap = React.useRef(null), ctl = React.useRef(null), dragging = React.useRef(false);
+    var bs = React.useState({ left: 0, top: 0, width: 0, scroll: 0 }), box = bs[0], setBox = bs[1];
+    var ms = React.useState(null), menu = ms[0], setMenu = ms[1];
+    function measure() {
+      var w = wrap.current; if (!w) return;
+      var c = w.querySelector('.zz-input__control'); if (!c) return; ctl.current = c;
+      var a = w.getBoundingClientRect(), b = c.getBoundingClientRect();
+      var nb = { left: b.left - a.left, top: b.top - a.top, width: b.width, scroll: c.scrollLeft };
+      setBox(function (o) { return o.left === nb.left && o.top === nb.top && o.width === nb.width && o.scroll === nb.scroll ? o : nb; });
+    }
+    React.useLayoutEffect(measure);
+    React.useEffect(function () {
+      function off() { setMenu(null); }
+      function up() { if (!dragging.current) return; dragging.current = false; setTimeout(function () { sel.current(true); }, 0); }
+      window.addEventListener('resize', measure); document.addEventListener('mousedown', off); document.addEventListener('mouseup', up);
+      return function () { window.removeEventListener('resize', measure); document.removeEventListener('mousedown', off); document.removeEventListener('mouseup', up); };
+    }, []);
+    function xAt(i) {
+      var bd = wrap.current.querySelector('.zz-linked-input__text'), w = document.createTreeWalker(bd, NodeFilter.SHOW_TEXT), n = 0, tn;
+      while ((tn = w.nextNode())) {
+        if (n + tn.length >= i) { var r = document.createRange(); r.setStart(tn, i - n); r.setEnd(tn, i - n); return r.getBoundingClientRect().left - wrap.current.getBoundingClientRect().left; }
+        n += tn.length;
+      }
+      return box.left;
+    }
+    function open(s, e, whole) {
+      setMenu({ open: false, start: s, end: e, text: value.slice(s, e), whole: whole || null,
+        inside: links.filter(function (l) { return l.start < e && l.end > s; }),
+        x: Math.max(0, Math.min(xAt(s), (wrap.current.clientWidth || 320) - 320)) });
+    }
+    function onSelect(fromMouse) {
+      var c = ctl.current; if (!c || props.disabled || props.readOnly) return; measure();
+      var s = c.selectionStart, e = c.selectionEnd;
+      if (e > s) { open(s, e, null); return; }
+      if (!fromMouse) { setMenu(null); return; }
+      var at = links.filter(function (l) { return s >= l.start && s <= l.end; })[0];
+      if (at) { open(at.start, at.end, at); return; }
+      var known = null;
+      (props.names || []).forEach(function (n) {
+        for (var i = findWhole(value, n); i >= 0 && !known; i = findWhole(value, n, i + 1)) if (s >= i && s <= i + n.length) known = [i, i + n.length];
+      });
+      if (known) open(known[0], known[1], null); else setMenu(null);
+    }
+    var sel = React.useRef(onSelect); sel.current = onSelect;
+    function emit(nextLinks) { if (props.onChange) props.onChange(value, nextLinks); }
+    function pick(a) {
+      emit(linksTidy(linksCut(links, menu.start, menu.end).concat([{ start: menu.start, end: menu.end, artist: { id: a.id || null, name: a.name } }])));
+      var end = menu.end; setMenu(null);
+      if (ctl.current) { ctl.current.focus(); ctl.current.setSelectionRange(end, end); }
+    }
+    function clear() { emit(linksTidy(linksCut(links, menu.start, menu.end))); setMenu(null); if (ctl.current) ctl.current.focus(); }
+    var current = menu && menu.whole ? menu.whole.artist : null;
+    var pieces = [], pos = 0;
+    links.forEach(function (l, i) {
+      if (l.start > pos) pieces.push(value.slice(pos, l.start));
+      pieces.push(h('span', { key: i, className: 'zz-linked-input__link' }, value.slice(l.start, l.end)));
+      pos = l.end;
+    });
+    if (pos < value.length) pieces.push(value.slice(pos));
+    var inputProps = omit(props, ['links', 'options', 'suggested', 'names', 'onChange', 'className', 'style', 'linkLabel', 'menuPlaceholder']);
+    return h('div', { ref: wrap, className: cx('zz-linked-input', props.className), style: props.style,
+        onMouseDown: function (e) { e.stopPropagation(); if (ctl.current && e.target === ctl.current) dragging.current = true; },
+        onKeyDown: function (e) {
+          if (e.target !== ctl.current || ['Shift', 'Control', 'Meta', 'Alt'].indexOf(e.key) >= 0) return;
+          if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); if (menu) setMenu(Object.assign({}, menu, { open: true })); return; }
+          if (!e.shiftKey && e.key.indexOf('Arrow') !== 0) setMenu(null);
+        },
+        onKeyUp: function (e) { if (e.target === ctl.current && e.shiftKey && e.key !== 'Shift') onSelect(false); } },
+      h(Input, Object.assign({}, inputProps, { id: id, value: value, onScroll: measure,
+        onChange: function (e) { var v = e.target.value; setMenu(null); if (props.onChange) props.onChange(v, linksShift(links, value, v)); },
+        onSelect: function () { if ('ontouchstart' in window) onSelect(true); } })),
+      h('div', { className: 'zz-linked-input__backdrop', 'aria-hidden': 'true', style: { left: box.left + 'px', top: box.top + 'px', width: box.width + 'px' } },
+        h('div', { className: 'zz-linked-input__text body-medium', style: { transform: 'translateX(' + (-box.scroll) + 'px)' } }, pieces)),
+      menu && !menu.open ? h('div', { className: 'zz-linked-input__bar', role: 'toolbar', 'aria-label': props.linkLabel || 'Link artist', style: { left: menu.x + 'px' },
+          onMouseDown: function (e) { e.preventDefault(); e.stopPropagation(); } },   // keeps the focus and the selection in the field
+        h(Button, { hierarchy: 'secondary', size: 'extra-small', title: '⌘K', onClick: function () { setMenu(Object.assign({}, menu, { open: true })); } },
+          current ? 'Change link' : (props.linkLabel || 'Link artist')),
+        menu.inside.length ? h(Button, { hierarchy: 'secondary', size: 'extra-small', onClick: clear }, menu.whole ? 'Remove link' : 'Clear link') : null) : null,
+      menu && menu.open ? h(LinkMenu, { key: menu.start + '-' + menu.end, id: id, label: props.linkLabel || 'Link artist', text: menu.text,
+        placeholder: props.menuPlaceholder || 'Search artist', suggested: props.suggested, options: props.options, current: current, x: menu.x,
+        onPick: pick, onClose: function () { setMenu(null); if (ctl.current) ctl.current.focus(); } }) : null);
+  }
+  LinkedInput.cut = linksCut; LinkedInput.tidy = linksTidy; LinkedInput.shift = linksShift; LinkedInput.find = findWhole;
+
   /* ── Create / Edit listing sections (Figma BACKEND → Create, Gio 2026-11-17) ──
      FormSectionHead (`form section head`): the heading of a form section, label/medium text/strong (like the old
        "Images" title).
@@ -1835,7 +2009,7 @@
            PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, BagItem: BagItem, OrderItem: OrderItem, OrderRow: OrderRow, BagSummary: BagSummary, RelatedProducts: RelatedProducts, ProductReturnCard: ProductReturnCard, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
            Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, ChevronDownLargeIcon: ChevronDownLargeIcon, DragHandleIcon: DragHandleIcon,
            Checkbox: Checkbox, Alert: Alert, Divider: Divider, ActionPanel: ActionPanel, ListingStatus: ListingStatus, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog, Toast: Toast, ToastRegion: ToastRegion,
-           EntityField: EntityField, EntityChip: EntityChip, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon, TickLargeThinIcon: TickLargeThinIcon, ClockCounterClockwiseIcon: ClockCounterClockwiseIcon, EnvelopeIcon: EnvelopeIcon,
+           EntityField: EntityField, EntityChip: EntityChip, LinkedInput: LinkedInput, XThinIcon: XThinIcon, PlusSmallThinIcon: PlusSmallThinIcon, TickLargeThinIcon: TickLargeThinIcon, ClockCounterClockwiseIcon: ClockCounterClockwiseIcon, EnvelopeIcon: EnvelopeIcon,
            Radio: Radio, RadioGroup: RadioGroup, RadioEmptyIcon: RadioEmptyIcon, RadioDotIcon: RadioDotIcon,
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
