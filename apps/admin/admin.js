@@ -1090,6 +1090,7 @@
     var tb = useState(props.tab || 'live'), tab = tb[0], setTab = tb[1];
     var qs = useState(''), query = qs[0], setQuery = qs[1];
     var fs = useState({}), facets = fs[0], setFacets = fs[1];   // Drafts filter column (0162): { facet: [values] }
+    var fo = useState(''), optQuery = fo[0], setOptQuery = fo[1];   // the field above it narrows its options (0162)
     var se = useState([]), selected = se[0], setSelected = se[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
     var bs = useState(false), busy = bs[0], setBusy = bs[1];
@@ -1248,15 +1249,20 @@
       setSelected([]);   // 0128: the selection never covers hidden rows
     }
     var filterColumn = !filtering ? null : h('aside', { className: 'admin-listings__filters', 'aria-label': 'Filter drafts' },
-      h(Z.Filters, null, DRAFT_FACETS.map(function (f) {
+      h(Z.Filters, null, [h(Z.Input, { key: 'options', variant: 'search', 'aria-label': 'Filter options', placeholder: 'Filter options',
+        value: optQuery, autoComplete: 'off', clearLabel: 'Clear', onClear: function () { setOptQuery(''); },
+        onChange: function (e) { setOptQuery(e.target.value); } })].concat(DRAFT_FACETS.map(function (f) {
         var base = inTab.filter(function (r) { return passes(r, facets, f[0]); }), on = facets[f[0]] || [];
+        // the field matches the option or its block ("photos" keeps the whole block); a ticked option always stays
+        var optWords = fold(optQuery).split(/\s+/).filter(Boolean);
+        function shown(o) { var t = fold(f[1] + ' ' + o[1]); return optWords.every(function (w) { return t.indexOf(w) >= 0; }); }
         var options = f[3].map(function (o) {
           var n = base.filter(function (r) { return f[2](r).indexOf(o[0]) >= 0; }).length, checked = on.indexOf(o[0]) >= 0;
-          return n || checked ? h(Z.Filter, { key: o[0], label: o[1], count: String(n), checked: checked,
+          return checked || (n && shown(o)) ? h(Z.Filter, { key: o[0], label: o[1], count: String(n), checked: checked,
             'aria-controls': 'listings-table', onChange: function (e) { tick(f[0], o[0], e.target.checked); } }) : null;
         }).filter(Boolean);
         return options.length ? h(Z.FilterBlock, { key: f[0], label: f[1] }, options) : null;
-      })),
+      }))),
       h('p', { className: 'zz-visually-hidden', role: 'status', 'aria-live': 'polite' }, filtered ? plural(visible.length, 'draft') + ' shown' : ''));
 
     var dialog = null;
