@@ -1,6 +1,6 @@
 # 0142 — Scanner: Push to admin, a button next to the SKU that attaches the draft's scans and clips in the admin
 
-`2026-11-23` · proposed · Figma: BACKEND → `Scanner`: section `samples · components` → `push status` (state push | pushing | synced | failed), `draft row` (new boolean `push`, `head` = SKU + `push status`), `push · replace confirm` (instance of `dialog`); icons `icon/icon-upload`, `icon/icon-upload-done` (page icons)
+`2026-11-23` · proposed · Figma: BACKEND → `Scanner`: section `samples · components` → `push status` (state push | pushing | synced | failed), `draft row` (new boolean `push`, `head` = SKU + `push status`), `push · replace confirm` (instance of `dialog`); icons `icon/icon-upload` (new, page icons) for push, `icon/icon-check-circle` for synced (Gio 2026-11-23)
 
 **Context.** Until now the Scanner only names and exports files (0138, 0141: "no automatic upload"); Gio then drops them into the admin by hand. He asked (2026-11-23) for a small button next to the SKU in the drafts column that sends that draft's images and clips to the admin, and then shows a "synced" icon.
 **Decision.**
