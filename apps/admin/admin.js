@@ -1162,7 +1162,8 @@
       setBusy(true);
       var res = await sb.rpc('admin_bulk_status', { p_ids: ids, p_action: action });
       setBusy(false);
-      if (res.error) { setMessage({ error: true, text: 'Nothing changed: ' + res.error.message }); return; }
+      // the message line is hidden while rows are selected: clear the selection so the reason shows (Gio 2026-11-23)
+      if (res.error) { setSelected([]); setMessage({ error: true, text: 'Nothing changed: ' + res.error.message }); return; }
       var done = res.data.done, skipped = res.data.skipped;
       setSelected([]);
       await load();
