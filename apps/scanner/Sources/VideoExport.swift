@@ -57,24 +57,28 @@ enum VideoExport {
         writer.startSession(atSourceTime: .zero)
         guard let pixels = pixelBuffer(image) else { throw ScanError.message("Cannot draw the label") }
 
-        // the same still frame 30 times a second, interleaved with the audio by time, so neither input starves the other
+        // the same still frame 30 times a second and the audio, each input fed on its own queue when the writer asks for it:
+        // the writer interleaves by time, so feeding both from one loop can wait forever on the input it is not asking for
         let frames = Int64(max(1, (duration * Double(fps)).rounded(.up)))
         var frame: Int64 = 0
-        func appendFrames(upTo t: Double) throws {
-            while frame < frames, Double(frame) / Double(fps) <= t {
-                while !video.isReadyForMoreMediaData { usleep(2000); if writer.status == .failed { throw writer.error! } }
-                adaptor.append(pixels, withPresentationTime: CMTime(value: frame, timescale: fps))
+        let group = DispatchGroup()
+        group.enter(); group.enter()
+        video.requestMediaDataWhenReady(on: DispatchQueue(label: "zanza.video.frames")) {
+            while video.isReadyForMoreMediaData {
+                if frame >= frames || writer.status != .writing { video.markAsFinished(); group.leave(); return }
+                if !adaptor.append(pixels, withPresentationTime: CMTime(value: frame, timescale: fps)) { video.markAsFinished(); group.leave(); return }
                 frame += 1
             }
         }
-        while let sample = pcm.copyNextSampleBuffer() {
-            try appendFrames(upTo: CMSampleBufferGetPresentationTimeStamp(sample).seconds + 0.5)
-            while !audio.isReadyForMoreMediaData { usleep(2000); if writer.status == .failed { throw writer.error! } }
-            audio.append(sample)
+        audio.requestMediaDataWhenReady(on: DispatchQueue(label: "zanza.video.audio")) {
+            while audio.isReadyForMoreMediaData {
+                guard writer.status == .writing, let sample = pcm.copyNextSampleBuffer(), audio.append(sample) else {
+                    audio.markAsFinished(); group.leave(); return
+                }
+            }
         }
-        audio.markAsFinished()
-        try appendFrames(upTo: duration)
-        video.markAsFinished()
+        group.wait()
+        if writer.status == .failed { reader.cancelReading(); try? FileManager.default.removeItem(at: tmp); throw writer.error ?? ScanError.message("Could not write \(out.lastPathComponent)") }
         writer.endSession(atSourceTime: CMTime(seconds: duration, preferredTimescale: 600))
         let done = DispatchSemaphore(value: 0)
         writer.finishWriting { done.signal() }
