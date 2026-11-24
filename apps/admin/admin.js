@@ -2068,6 +2068,228 @@
       mobile ? h(Z.ActionBar, { status: statusLine }, saveBtn, otherBtn) : null, dialog);
   }
 
+  // ── Collections ───────────────────────────────────────────────────────────
+  /* Figma BACKEND → Collections (decision 0174, migration 0038): curated groups of records shown as cards on the home
+     and as their own page /collections/<slug>/. A collection = name + slug + rules (Years, Genres, Tags: AND between
+     rules, OR inside one, decision 0028) + "Show on the home". The list is in the order of the cards: drag & drop (or
+     ↑ ↓ on the handle) with the admin's one drag logic (useDragOrder, 0129); the whole order is saved at once
+     (admin_order_collections). Which records match = packages/collections (window.ZanzaCollections), the same file as
+     the shop build. Writes go straight to the table (admin RLS); a trigger rebuilds the shop.
+     Routes: #collections · #collections/<id> · #collections/new */
+  var CR = window.ZanzaCollections;
+  // the copies the shop's collection pages can show: sale, public (available, reserved, sold), as the shop build
+  var SHOP_STATES = ['available', 'reserved', 'sold'];
+  function loadCatalogForCollections() {
+    return sb.from('listings').select('id,sku,slug,status,reserved_until,section,custom_title,photo_keys,sort_order,created_at,' +
+      'release:releases(year,year_precision,genres,lines:release_lines(position,artist,title),tag_rows:release_tags(tag:tags(name)))')
+      .neq('status', 'archived').order('sort_order', { ascending: true }).order('created_at', { ascending: false });
+  }
+  function recordOf(row) {
+    var r = row.release || {};
+    return { year: r.year, year_precision: r.year_precision, genres: r.genres || [],
+      tags: (r.tag_rows || []).map(function (t) { return t.tag && t.tag.name; }).filter(Boolean) };
+  }
+  function inShop(row) { return row.section === 'sale' && SHOP_STATES.indexOf(effectiveStatus(row)) >= 0; }
+  function loadNames() {
+    return Promise.all([sb.from('genres').select('id,name').order('name'), sb.from('tags').select('id,name').order('name')]);
+  }
+
+  function Collections() {
+    var mobile = useIsMobile();
+    var st = useState(null), data = st[0], setData = st[1];   // { rows, genres, tags, catalog }
+    var er = useState(null), error = er[0], setError = er[1];
+    var ms = useState(null), message = ms[0], setMessage = ms[1];
+    function load() {
+      return Promise.all([sb.from('collections').select('*').order('sort_order').order('created_at'), loadNames(), loadCatalogForCollections()])
+        .then(function (res) {
+          var bad = res[0].error || res[1][0].error || res[1][1].error || res[2].error;
+          if (bad) { setError(bad.message); return; }
+          setData({ rows: res[0].data, genres: res[1][0].data, tags: res[1][1].data, catalog: res[2].data.filter(inShop) });
+        });
+    }
+    useEffect(function () { load(); }, []);
+    var rows = data ? data.rows : [];
+    var resolved = data ? rows.map(function (r) { return CR.resolve(r, data.genres, data.tags); }) : [];
+    function countOf(c) { return data.catalog.filter(function (x) { return CR.matches(c, recordOf(x)); }).length; }
+    function move(from, to) {
+      var next = rows.slice(); var it = next.splice(from, 1)[0]; next.splice(to, 0, it);
+      setData(Object.assign({}, data, { rows: next }));   // at once on screen
+      sb.rpc('admin_order_collections', { p_ids: next.map(function (r) { return r.id; }) }).then(function (res) {
+        if (res.error) { setMessage({ error: true, text: 'Order not saved: ' + res.error.message }); load(); }
+        else setMessage({ error: false, text: 'Order saved. The shop updates in about 2 minutes.' });
+      });
+    }
+    var d = Z.useDragOrder({ count: rows.length, onMove: move,
+      keyOf: function (i) { return rows[i].id; }, nameOf: function (i) { return rows[i].name; } });
+    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not load the collections: ' + error);
+    if (!data) return h('p', { className: 'body-medium' }, 'Loading…');
+
+    function handle(r, i) { return h(Z.DragHandle, { index: d.slot(i).pos, count: rows.length, onMove: d.keyboardMove, name: r.name }); }
+    var empty = 'No collections yet.';
+    var list = mobile
+      ? h('ul', Object.assign({ className: 'admin-rows admin-sortable' }, d.listProps), resolved.length ? resolved.map(function (c, i) {
+          return h(Z.ListingRow, Object.assign({ key: c.id, href: '#collections/' + c.id, title: c.name, handle: handle(c, i),
+            meta: [CR.summary(c) || 'No rules', c.on_home ? 'On home' : 'Not on home', plural(countOf(c), 'record')].join(' · ') }, d.rowProps(i)));
+        }) : h('li', { className: 'body-small admin-rows__empty' }, empty))
+      : h('div', { className: 'admin-table-wrap' }, h('table', { className: 'admin-table admin-collections body-small' },
+          h('thead', null, h('tr', null,
+            h('th', { className: 'handle' }, h('span', { className: 'zz-visually-hidden' }, 'Order')),
+            h('th', { className: 'name' }, 'Name'), h('th', null, 'Rules'), h('th', { className: 'on-home' }, 'On home'), h('th', { className: 'num price' }, 'Records'))),
+          h('tbody', Object.assign({ className: 'admin-sortable' }, d.listProps), resolved.length ? resolved.map(function (c, i) {
+            return h('tr', d.rowProps(i),
+              h('td', { className: 'handle' }, handle(c, i)),
+              h('td', { className: 'name' }, h('a', { href: '#collections/' + c.id, draggable: false }, c.name)),
+              h('td', null, CR.summary(c) || missingMark()),
+              h('td', { className: 'on-home' }, c.on_home ? 'Yes' : 'No'),
+              h('td', { className: 'num price' }, countOf(c)));
+          }) : h('tr', null, h('td', { colSpan: 5 }, empty)))));
+    return h('div', { className: 'admin-section admin-listings' },
+      h('h1', { className: 'label-extra-large' }, 'Collections'),
+      h('div', { className: 'admin-toolbar admin-toolbar--support' },
+        h('p', { className: 'body-small' }, 'Curated groups of records, shown as cards on the home in this order. Drag to reorder.'),
+        h(Z.Button, { hierarchy: 'secondary', href: '#collections/new' }, 'New collection')),
+      list,
+      h('span', { className: 'zz-visually-hidden', role: 'status', 'aria-live': 'polite' }, d.live),
+      h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : ''));
+  }
+
+  /* Figma BACKEND → Collections › Collection - desktop · edit: Name, Slug, Rules (Years, Genres, Tags), Show on the home;
+     side = Save / Delete; right column = the records that match now (sale copies the shop can show, sold included),
+     recomputed while typing, so the rules can be checked before saving. */
+  function CollectionForm(props) {
+    var mobile = useIsMobile();
+    var isNew = props.id === 'new';
+    var st = useState(null), f = st[0], setF = st[1];
+    var ns = useState(null), names = ns[0], setNames = ns[1];       // { genres, tags }
+    var cs = useState(null), catalog = cs[0], setCatalog = cs[1];
+    var er = useState(null), error = er[0], setError = er[1];
+    var fe = useState({}), errors = fe[0], setErrors = fe[1];
+    var ms = useState(null), message = ms[0], setMessage = ms[1];
+    var sv = useState(false), saving = sv[0], setSaving = sv[1];
+    var cf = useState(false), confirm = cf[0], setConfirm = cf[1];
+    var qs = useState(''), query = qs[0], setQuery = qs[1];
+    var slugTouched = useRef(!isNew);
+
+    useEffect(function () {
+      Promise.all([loadNames(), loadCatalogForCollections(), isNew ? Promise.resolve({ data: null }) : sb.from('collections').select('*').eq('id', props.id).single()])
+        .then(function (res) {
+          var bad = res[0][0].error || res[0][1].error || res[1].error || res[2].error;
+          if (bad) { setError(bad.message); return; }
+          var genres = res[0][0].data, tags = res[0][1].data;
+          setNames({ genres: genres, tags: tags });
+          setCatalog(res[1].data.filter(inShop));
+          var row = res[2].data;
+          function chips(ids, list) {
+            return (ids || []).map(function (id) { var x = list.filter(function (t) { return t.id === id; })[0]; return x ? { id: x.id, name: x.name } : null; }).filter(Boolean);
+          }
+          setF(row ? { name: row.name, slug: row.slug, years: (row.years || []).map(function (y) { return { id: null, name: y }; }),
+                       genres: chips(row.genre_ids, genres), tags: chips(row.tag_ids, tags), onHome: row.on_home !== false }
+                   : { name: '', slug: '', years: [], genres: [], tags: [], onHome: true });
+        });
+    }, []);
+    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not open this collection: ' + error);
+    if (!f || !names || !catalog) return h('p', { className: 'body-medium' }, 'Loading…');
+
+    function set(patch) { setF(function (cur) { return Object.assign({}, cur, patch); }); }
+    function setName(e) {
+      var v = e.target.value;
+      set(slugTouched.current ? { name: v } : { name: v, slug: v.toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') });
+    }
+    var years = CR.cleanYears(f.years.map(function (y) { return y.name; }));
+    var rules = { years: years.years, genres: f.genres.map(function (g) { return g.name; }), tags: f.tags.map(function (t) { return t.name; }) };
+    var matching = CR.hasRule(rules) ? catalog.filter(function (x) { return CR.matches(rules, recordOf(x)); }) : [];
+    var soldRow = function (x) { return effectiveStatus(x) === 'sold'; };
+    matching = matching.filter(function (x) { return !soldRow(x); }).concat(matching.filter(soldRow));   // as the shop page (0174)
+
+    async function save() {
+      var e = {};
+      if (!f.name.trim()) e.name = 'Enter a name.';
+      if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(f.slug)) e.slug = 'Lowercase letters, numbers and hyphens, e.g. riddim-pick.';
+      if (years.bad.length) e.years = 'Not a year or a decade: ' + years.bad.join(', ') + '. Use 1983 or 1980s.';
+      if (!CR.hasRule(rules)) e.rules = 'Fill in at least one rule.';
+      setErrors(e);
+      if (Object.keys(e).length) { setMessage({ error: true, text: e.rules || 'Check the highlighted fields.' }); return; }
+      setSaving(true); setMessage(null);
+      var row = { name: f.name.trim(), slug: f.slug, years: years.years, on_home: f.onHome,
+        genre_ids: f.genres.map(function (g) { return g.id; }), tag_ids: f.tags.map(function (t) { return t.id; }) };
+      var res = isNew ? await sb.from('collections').insert(row).select('id').single() : await sb.from('collections').update(row).eq('id', props.id);
+      setSaving(false);
+      if (res.error) {
+        var dup = /duplicate key/.test(res.error.message);
+        if (dup && /slug/.test(res.error.message)) { setErrors({ slug: 'Another collection has this slug.' }); setMessage({ error: true, text: 'Another collection has this slug.' }); }
+        else if (dup) { setErrors({ name: 'Another collection has this name.' }); setMessage({ error: true, text: 'Another collection has this name.' }); }
+        else setMessage({ error: true, text: 'Not saved: ' + res.error.message });
+        return;
+      }
+      if (isNew) { location.hash = '#collections/' + res.data.id; return; }
+      setMessage({ error: false, text: 'Saved. The shop updates in about 2 minutes.' });
+    }
+    async function doDelete() {
+      setSaving(true);
+      var res = await sb.from('collections').delete().eq('id', props.id);
+      setSaving(false); setConfirm(false);
+      if (res.error) { setMessage({ error: true, text: 'Not deleted: ' + res.error.message }); return; }
+      toast('“' + f.name + '” deleted. The shop updates in about 2 minutes.');
+      location.hash = '#collections';
+    }
+
+    var title = isNew ? 'New collection' : (f.name.trim() || 'Collection');
+    var genreOptions = names.genres.map(function (g) { return { id: g.id, name: g.name, aliases: [] }; });
+    var tagOptions = names.tags.map(function (t) { return { id: t.id, name: t.name, aliases: [] }; });
+    var main = h('div', { className: 'admin-main' },
+      h('h1', { className: 'label-extra-large' }, title),
+      h('section', { className: 'admin-section' },
+        h('div', { className: 'admin-row' },
+          h(Z.Input, { className: 'span-8', id: 'name', label: 'Name', value: f.name, onChange: setName, error: errors.name,
+            supportText: 'The label on the home card and the title of the page.' })),
+        h('div', { className: 'admin-row' },
+          h(Z.Input, { className: 'span-8', id: 'slug', label: 'Slug', value: f.slug, error: errors.slug,
+            onChange: function (e) { slugTouched.current = true; set({ slug: e.target.value }); },
+            supportText: f.slug ? 'Page address: /collections/' + f.slug : 'Made from the name.' }))),
+      h(Z.Divider),
+      h('section', { className: 'admin-section', 'aria-labelledby': 'rules-title' },
+        h('h2', { id: 'rules-title', className: 'label-medium' }, 'Rules'),
+        h('p', { className: 'body-small' + (errors.rules ? ' admin-status--error' : '') }, 'A record is in the collection when it matches every rule you fill in. Inside a rule, any of the values is enough. Leave a rule empty to ignore it.'),
+        h('div', { className: 'admin-row' },
+          h(Z.EntityField, { className: 'span-8', id: 'years', label: 'Years', placeholder: 'Type a year or a decade', options: [], createLabel: 'Add',
+            value: f.years, onChange: function (chips) { set({ years: chips }); }, error: errors.years,
+            supportText: 'A year (1983) or a decade (1980s). Press Enter after each one.' })),
+        h('div', { className: 'admin-row' },
+          h(Z.EntityField, { className: 'span-8', id: 'genres', label: 'Genres', placeholder: 'Type a genre', options: genreOptions, allowCreate: false,
+            value: f.genres, onChange: function (chips) { set({ genres: chips }); }, supportText: f.genres.length ? undefined : 'Any genre' })),
+        h('div', { className: 'admin-row' },
+          h(Z.EntityField, { className: 'span-8', id: 'tags', label: 'Tags', placeholder: 'Type a tag', options: tagOptions, allowCreate: false,
+            value: f.tags, onChange: function (chips) { set({ tags: chips }); }, supportText: f.tags.length ? undefined : 'Any tag' })),
+        h(Z.Checkbox, { id: 'on-home', label: 'Show on the home', checked: f.onHome, onChange: function (e) { set({ onHome: e.target.checked }); } })));
+
+    var saveBtn = h(Z.Button, { key: 'save', hierarchy: 'primary', disabled: saving, onClick: save }, isNew ? 'Create' : 'Save');
+    var otherBtn = isNew ? h(Z.Button, { key: 'cancel', hierarchy: 'secondary', href: '#collections' }, 'Cancel')
+      : h(Z.Button, { key: 'delete', hierarchy: 'secondary', disabled: saving, onClick: function () { setConfirm(true); } }, 'Delete');
+    var statusLine = h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '');
+    var side = h('aside', { className: 'admin-side' },
+      mobile ? null : h(Z.ActionPanel, null, saveBtn, otherBtn),
+      isNew ? null : h('p', { className: 'body-small' }, 'Deleting a collection never changes its records.'),
+      mobile ? null : statusLine);
+
+    var q = query.trim().toLowerCase();
+    var visible = q ? matching.filter(function (r) { return nameOf(r).toLowerCase().indexOf(q) >= 0 || String(r.sku).indexOf(q) >= 0; }) : matching;
+    var records = h('div', { className: 'admin-records' }, h('section', { className: 'admin-section', 'aria-labelledby': 'records-title' },
+      h('h2', { id: 'records-title', className: 'label-medium' }, 'Records ' + matching.length),
+      h('p', { className: 'body-small' }, 'Records for sale that match the rules now, sold ones too (at the end of the shop page). The shop updates in about 2 minutes after you save.'),
+      h(Z.Input, { variant: 'search', 'aria-label': 'Search records', placeholder: 'Search records', value: query, onChange: function (e) { setQuery(e.target.value); } }),
+      h('ul', { className: 'admin-rows', 'aria-label': 'Records in the collection' }, visible.length ? visible.map(function (r) {
+        var rl = r.release || {};
+        return h(Z.ListingRow, { key: r.id, href: '#edit-' + r.id, title: nameOf(r), image: thumbOf(r),
+          meta: [r.sku, yearText(rl.year, rl.year_precision) || null, STATUS_LABEL[effectiveStatus(r)] || r.status].filter(Boolean).join(' · ') });
+      }) : h('li', { className: 'body-small admin-rows__empty' }, q ? 'Nothing matches “' + query.trim() + '”.' : CR.hasRule(rules) ? 'No record matches these rules yet.' : 'Fill in a rule to see the records.'))));
+
+    var dialog = h(Z.Dialog, { open: !!confirm, busy: saving, title: 'Delete 1 collection?', confirmLabel: 'Delete 1 collection',
+      onCancel: function () { setConfirm(false); }, onConfirm: doDelete },
+      h('p', null, '“' + f.name + '” and its page are removed. Its records do not change.'));
+    return h('div', { className: 'admin-page admin-page--attribute admin-page--records' }, main, side, records,
+      mobile ? h(Z.ActionBar, { status: statusLine }, saveBtn, otherBtn) : null, dialog);
+  }
+
   // ── Sign-in ───────────────────────────────────────────────────────────────
   function SignIn() {
     var st = useState(''), email = st[0], setEmail = st[1];
@@ -2964,6 +3186,8 @@
     else if (/^#edit-/.test(hash)) body = h(EditLoader, { key: hash + route.visit, id: hash.slice(6) });
     else if (/^#attributes\/[a-z]+\/[^/]+$/.test(hash)) body = h(AttributeForm, { key: hash + route.visit, kind: hash.split('/')[1], id: hash.split('/')[2] });
     else if (/^#attributes/.test(hash)) body = h(Attributes, { key: 'attributes', kind: hash.split('/')[1] || 'artist' });
+    else if (/^#collections\/[^/]+$/.test(hash)) body = h(CollectionForm, { key: hash + route.visit, id: hash.split('/')[1] });
+    else if (hash === '#collections') body = h(Collections, { key: 'collections-' + route.visit });
     else if (hash === '#shipping') body = h(Shipping, { key: 'shipping-' + route.visit });
     else if (hash === '#settings') body = h(Settings, { key: 'settings-' + route.visit });
     else if (hash === '#content') body = h(Content, { key: 'content-' + route.visit });
@@ -2982,12 +3206,13 @@
   /* Admin navigation (Figma page `admin`, decision 0089): AdminBar (desktop buttons / mobile Menu · title)
      + the mobile menu, a full-screen native modal <dialog> with a MenuLayer, like the shop's (0060): Esc, × or
      following a link closes it, focus goes back to the Menu button. */
-  var SECTIONS = [['dashboard', 'Dashboard', '#dashboard'], ['listings', 'Listings', '#listings'], ['orders', 'Orders', '#orders'], ['offers', 'Offers', '#offers'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings'], ['content', 'Content', '#content']];
+  var SECTIONS = [['dashboard', 'Dashboard', '#dashboard'], ['listings', 'Listings', '#listings'], ['orders', 'Orders', '#orders'], ['offers', 'Offers', '#offers'], ['attributes', 'Attributes', '#attributes'], ['collections', 'Collections', '#collections'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings'], ['content', 'Content', '#content']];
   function sectionOf(hash) {
     if (!hash || hash === '#' || hash === '#dashboard') return 'dashboard';
     if (/^#orders/.test(hash)) return 'orders';
     if (hash === '#offers') return 'offers';
     if (/^#attributes/.test(hash)) return 'attributes';
+    if (/^#collections/.test(hash)) return 'collections';
     if (hash === '#shipping') return 'shipping';
     if (hash === '#settings') return 'settings';
     if (/^#content/.test(hash)) return 'content';

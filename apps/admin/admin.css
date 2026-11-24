@@ -266,3 +266,9 @@ body[data-player-open] .zz-action-bar { bottom: var(--admin-player-height, 0px);
   .admin-dashboard__head > .zz-tabs { align-self: stretch; }   /* the tabs scroll sideways, as on the other admin pages */
   .admin-dashboard__stats { grid-template-columns: minmax(0, 1fr); gap: 16px; }
 }
+/* Collections (Figma BACKEND → Collections, decision 0174): the support line beside New collection; table columns as
+   the `collection row` (Name 240, On home 96, Records right) */
+.admin-toolbar--support { align-items: center; }
+.admin-toolbar--support > p { flex: 1 1 auto; margin: 0; color: var(--text-strong); }
+.admin-collections .name { width: 240px; }
+.admin-collections .on-home { width: 96px; }

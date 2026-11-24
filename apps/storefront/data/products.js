@@ -9,6 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const Images = require('../../../packages/images/images.js');
+const Collections = require('../../../packages/collections/collections.js');
 
 const APP = path.resolve(__dirname, '..');
 const ENV_FILE = path.join(APP, '.supabase.env');   // git-ignored: SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY
@@ -205,6 +206,33 @@ async function textsFromSupabase(env, fetchImpl = fetch) {
   return res.json();
 }
 
+// collections (migration 0038, decision 0174): [{ id, name, slug, years, genres, tags, on_home, sort_order }] in Gio's
+// order, genre and tag ids resolved to names (packages/collections → resolve). No table yet = none (no row on the home).
+// Local JSON: content/collections.json (examples, already with names).
+async function collectionsFromSupabase(env, fetchImpl = fetch) {
+  const base = env.SUPABASE_URL.replace(/\/$/, '');
+  const get = (q) => fetchImpl(`${base}/rest/v1/${q}`, { headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, Accept: 'application/json' } });
+  const res = await get('collections?select=*&order=sort_order.asc,created_at.asc');
+  if (res.status === 404) return [];
+  if (!res.ok) throw new Error(`Supabase collections: ${res.status} ${await res.text()}`);
+  const rows = await res.json();
+  if (!rows.length) return [];
+  const [g, t] = await Promise.all([get('genres?select=id,name'), get('tags?select=id,name')]);
+  if (!g.ok || !t.ok) throw new Error(`Supabase genres/tags: ${g.status} ${t.status}`);
+  const genres = await g.json(), tags = await t.json();
+  return rows.map((r) => Collections.resolve(r, genres, tags));
+}
+
+function collectionsFromJson() {
+  const f = path.join(APP, 'content/collections.json');
+  if (!fs.existsSync(f)) return [];
+  return JSON.parse(fs.readFileSync(f, 'utf8')).sort((a, b) => a.sort_order - b.sort_order);
+}
+
+async function loadCollections({ source } = {}) {
+  return source === 'supabase' ? collectionsFromSupabase(readEnv()) : collectionsFromJson();
+}
+
 async function loadSettings({ source, trade, identity, wantlist } = {}) {
   const env = readEnv();
   const fromDb = source === 'supabase' ? await settingsFromSupabase(env) : { tradeEnabled: true, identityEnabled: true, wantlistEnabled: true };
@@ -256,4 +284,4 @@ async function loadProducts(site, { source } = {}) {
   return { products, source: useDb ? 'supabase' : 'json' };
 }
 
-module.exports = { loadProducts, markSized, loadSettings, loadTexts, settingsFromSupabase, textsFromSupabase, readEnv, effectiveStatus, toProduct, nameOf, byListingOrder, mediaUrlFor, fromSupabase };
+module.exports = { loadProducts, loadCollections, collectionsFromSupabase, markSized, loadSettings, loadTexts, settingsFromSupabase, textsFromSupabase, readEnv, effectiveStatus, toProduct, nameOf, byListingOrder, mediaUrlFor, fromSupabase };

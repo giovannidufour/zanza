@@ -1600,6 +1600,25 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
   .zz-genre-links[data-layout="responsive"] .zz-genre-links__list { flex-direction: row; }
 }
 
+/* collection card + home collections (decision 0174, Figma `collection card` / `home collections`): a box with the
+   label centered, min height 96, 1px border divider/strong inside; hover = surface/hover (as the product card, 0088).
+   The row: wrapping grid, gap gutter/small; 4 per row on desktop (= the 3-of-12 side column), 2 on mobile. */
+.zz-collection-card {
+  display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 96px;
+  padding: var(--medium-small); border: 1px solid var(--border-divider-strong);
+  color: var(--text-strong); text-align: center; text-decoration: none; overflow-wrap: anywhere;
+}
+.zz-collection-card[data-state="hover"] { background: var(--surface-hover); }
+@media (hover: hover) { .zz-collection-card:hover { background: var(--surface-hover); } }
+.zz-collection-card:focus-visible { outline: auto; }   /* browser ring: no focus token yet (open.md) */
+.zz-home-collections__list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gutter-small); margin: 0; padding: 0; list-style: none; }
+.zz-home-collections__list > li { display: flex; }
+.zz-home-collections__list .zz-collection-card { flex: 1 1 auto; }
+.zz-home-collections[data-device="mobile"] .zz-home-collections__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (--mobile) {
+  .zz-home-collections[data-device="responsive"] .zz-home-collections__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 .zz-home-intro { margin: 0; color: var(--text-strong); }
 .zz-home-intro a { color: inherit; text-decoration: underline; }
 

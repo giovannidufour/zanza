@@ -1,0 +1,6 @@
+[
+  { "id": "c-lovers", "name": "Lovers", "slug": "lovers", "years": [], "genres": ["Lovers"], "tags": [], "on_home": true, "sort_order": 1 },
+  { "id": "c-roots", "name": "Roots & Dub", "slug": "roots-and-dub", "years": [], "genres": ["Roots", "Dub"], "tags": [], "on_home": true, "sort_order": 2 },
+  { "id": "c-oldies", "name": "Oldies", "slug": "oldies", "years": ["1960s", "1970s"], "genres": [], "tags": [], "on_home": true, "sort_order": 3 },
+  { "id": "c-90s", "name": "90s Dancehall", "slug": "90s-dancehall", "years": [], "genres": ["90's Dancehall"], "tags": [], "on_home": false, "sort_order": 4 }
+]

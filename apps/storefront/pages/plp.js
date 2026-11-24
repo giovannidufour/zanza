@@ -155,7 +155,14 @@ function WantlistTop({ site }) {
 // group heading = Figma `section head` (divider on top + title body/medium, as "More for sale" on the PDP; Gio 2026-11-23)
 const groupHeading = (group, title) => h(Z.SectionHead, { className: 'wantlist-group', title, hidden: true, 'data-wantlist-group': group });
 
-function Plp({ section, products, allProducts = products, site, url, search = false, wantlist = false }) {
+// every PLP (Gio 2026-11-24, decision 0174): the records for sale first, the sold ones at the end, each group in the
+// listing order. Reserved copies are paused, not gone: they stay with the ones for sale. Stable, so the order inside
+// each group is the one given.
+const soldLast = (list) => list.filter((p) => !isSold(p)).concat(list.filter(isSold));
+
+// collection (decision 0174, Figma PLP - desktop / collection): /collections/<slug>/, the records that match its rules.
+// Heading = the `search heading` "Oldies (23)"; with no record, the zero-results message (Gio: the card stays on the home).
+function Plp({ section, products, allProducts = products, site, url, search = false, wantlist = false, collection = null }) {
   const facets = facetsOf(products);
   const showSold = products.some(isSold);
   const hint = 'Search by artist, title, label or catalogue number.';
@@ -166,6 +173,7 @@ function Plp({ section, products, allProducts = products, site, url, search = fa
       h(SearchForm, { url, id: 'site-search-page', className: 'search-field' }),
       h('h1', { className: 'search-heading body-large', 'data-search-title': '' }, 'Search'),
       h('div', { className: 'search-message', 'data-search-hint': '' }, h('p', { className: 'body-medium' }, hint))) : null,
+    collection ? h('h1', { className: 'search-heading body-large' }, `${collection.name} (${products.length})`) : null,
     // Figma `active filter` (0041): in place of the breadcrumbs, the filter reached from a link (artist, label, genre,
     // tag) as a removable EntityChip, medium on desktop, large on mobile (plp.css shows one). Hidden until site.js fills it.
     h(Z.ActiveFilter, { hidden: true, 'data-plp-active': '' }),
@@ -182,12 +190,12 @@ function Plp({ section, products, allProducts = products, site, url, search = fa
     h('div', { className: 'plp-content', 'data-search-results': search ? '' : undefined },
       facets.length ? h(PlpFilters, { facets, hidden: hiddenFacetsOf(allProducts), sorts: sortsFor(section), showSold }) : null,
       h('main', { className: 'plp-list' },
-        search || wantlist ? null : h('h1', { className: 'plp-list__title' }, SECTION_LABEL[section]),
+        search || wantlist || collection ? null : h('h1', { className: 'plp-list__title' }, SECTION_LABEL[section]),
         wantlist ? groupHeading('exact', 'Exact matches') : null,
         wantlist ? groupHeading('other', 'Other pressings') : null,
         // no device: responsive card (desktop variant on PLP - desktop, mobile variant on PLP - mobile)
         products.map((product, i) => h('div', Object.assign({ key: product.listing.slug, className: 'plp-item',
-          'data-order': i, 'data-price': product.listing.price ? product.listing.price.amount : undefined,
+          'data-order': i, 'data-sold': isSold(product) ? '' : undefined, 'data-price': product.listing.price ? product.listing.price.amount : undefined,
           'data-search': search ? searchTextOf(product) : undefined,
           // Discogs ids, matched against the visitor's wantlist in their browser (decision 0152)
           'data-release': wantlist && product.release.discogs_release_id ? product.release.discogs_release_id : undefined,
@@ -205,9 +213,13 @@ function Plp({ section, products, allProducts = products, site, url, search = fa
           : products.length
             ? h('p', { className: 'plp-list__empty body-medium', hidden: true, 'data-plp-empty': '' }, 'No records match these filters.')
             // a section with no copies yet (For trade at launch): said plainly, not designed (design/open.md)
+            : collection
+              ? h('div', { className: 'search-message plp-list__empty' },
+                h('p', { className: 'body-medium' }, 'Nothing in this collection right now. Come back soon.'),
+                h(Z.Button, { hierarchy: 'secondary', href: url('/sale/') }, 'Browse all records'))
             : h('p', { className: 'plp-list__empty body-medium' }, section === 'trade' ? 'Nothing up for trade right now. Come back soon.' : 'No records right now.')),
       facets.length ? h(PlpLayer, { facets, showSold }) : null)
   );
 }
 
-module.exports = { Plp, title: (section) => SECTION_LABEL[section], facetsOf, searchTextOf, searchWords, isSold };
+module.exports = { Plp, title: (section) => SECTION_LABEL[section], facetsOf, searchTextOf, searchWords, isSold, soldLast };
