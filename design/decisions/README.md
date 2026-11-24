@@ -186,3 +186,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0166](0166-listings-year-column.md) | Admin Listings: Year column after Format (1983 or 1990s), every tab | accepted |
 | [0167](0167-home-more-records-view-all.md) | Home: Recent shows 12 records, then a full-width "View all for sale" → /sale/ | proposed |
 | [0168](0168-attribute-records-checklist.md) | Genre and tag pages: every copy as a ListingRow with a checkbox; a tick saves at once | proposed |
+| [0169](0169-delete-order.md) | Admin Order: Delete order (confirm dialog; records back on sale or kept sold); Stripe untouched | accepted |
