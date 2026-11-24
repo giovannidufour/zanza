@@ -197,3 +197,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0175](0175-header-home-link.md) | Header: logo + store name = one link to the home; a link to the current page (the home too) reloads it softly, the player keeps playing | accepted |
 | [0176](0176-collection-cards-fill-the-row.md) | Home collection cards share the full row (1 = whole, 2 = halves…), as many per row as fit at min width 200 desktop / 144 mobile; wrapped cards keep the column width | accepted |
 | [0177](0177-scanner-clip-videos.md) | Scanner: Video tick per clip → <name>.mp4, square 1080, label crop of that side still + the clip (same trim and boost), for Instagram feed and Reels; automatic like MP3/WAV, no label = no video | accepted |
+| [0178](0178-collection-as-active-filter.md) | Collection PLP: the collection is a removable chip in the active filter row (→ /sale/ keeping filters and sort), no visible heading; EntityChip `removeHref` | accepted |

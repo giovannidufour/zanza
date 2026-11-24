@@ -1602,10 +1602,13 @@
     var label = props.label !== undefined ? props.label : props.children;
     var size = props.size || 'medium';   // Figma `size` (2026-11-10): medium 24px | large 44px (mobile, body/medium, × 44 × 44)
     return h('span', Object.assign({ className: cx('zz-entity-chip', props.className), 'data-state': props.state, 'data-size': size },
-      omit(props, ['label', 'children', 'className', 'onRemove', 'removeLabel', 'state', 'size'])),
+      omit(props, ['label', 'children', 'className', 'onRemove', 'removeLabel', 'removeHref', 'state', 'size'])),
       h('span', { className: cx('zz-entity-chip__label', size === 'large' ? 'body-medium' : 'body-small') }, label),
-      h('button', { type: 'button', className: 'zz-entity-chip__remove', 'aria-label': props.removeLabel || ('Remove ' + label),
-        onClick: props.onRemove, tabIndex: props.onRemove ? undefined : -1 }, h(CloseIcon)));
+      // removeHref: removing goes to another page (the collection chip of a collection PLP, decision 0178): a link
+      props.removeHref
+        ? h('a', { className: 'zz-entity-chip__remove', href: props.removeHref, 'aria-label': props.removeLabel || ('Remove ' + label) }, h(CloseIcon))
+        : h('button', { type: 'button', className: 'zz-entity-chip__remove', 'aria-label': props.removeLabel || ('Remove ' + label),
+          onClick: props.onRemove, tabIndex: props.onRemove ? undefined : -1 }, h(CloseIcon)));
   }
   function entityMatches(options, text, taken, limit) {
     var t = String(text || '').trim().toLowerCase();

@@ -768,10 +768,17 @@
       var row = document.querySelector('[data-plp-active]');
       var holder = row && row.querySelector('.zz-active-filter__row');
       if (holder && chipTemplate) {
+        // the collection chip (built in the page, decision 0178) stays; its remove link keeps filters and sort on /sale/
+        var fixed = Array.prototype.slice.call(holder.querySelectorAll('[data-plp-fixed]'));
         holder.textContent = '';
+        fixed.forEach(function (el) {
+          var a = el.querySelector('a.zz-entity-chip__remove');
+          if (a) a.setAttribute('href', a.getAttribute('href').split('?')[0] + (qs ? '?' + qs : ''));
+          holder.appendChild(el);
+        });
         var chips = rowChipsOf(s);
         chips.forEach(function (c) { holder.appendChild(activeChips(c)); });
-        row.hidden = !chips.length;
+        row.hidden = !chips.length && !fixed.length;
       }
     }
     // Figma `search heading` + `search message`: "N results for “q”" / "No results for “q”"; no query = the hint only
