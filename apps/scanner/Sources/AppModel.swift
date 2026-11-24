@@ -270,7 +270,7 @@ final class AppModel: ObservableObject {
                 var tags = w.tags
                 tags.cover = AudioExport.cover(from: w.cover)
                 try AudioExport.export(source: w.clip.url, trimStart: w.clip.trimStart, trimEnd: w.clip.trimEnd, name: w.slot.name, tags: tags,
-                                       wavFolder: w.wav ? wavDir : nil, mp3Folder: mp3Dir, normalize: false)
+                                       wavFolder: w.wav ? wavDir : nil, mp3Folder: mp3Dir)
                 let side = w.slot.role.lowercased().first == "b" ? "Label B" : "Label A"
                 let missing = tags.cover == nil ? "\(w.slot.label) needs the \(side) scan" : (!tagsKnown ? "\(w.slot.label): tags not loaded" : nil)
                 done.append((w.slot.name, ExportRecord(hash: w.hash, wav: w.wav, complete: missing == nil, missing: missing)))
