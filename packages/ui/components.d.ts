@@ -28,6 +28,27 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
 
 export declare function Button(props: ButtonProps): JSX.Element;
 
+/** One item of the pagination: from packages/pagination (pagination.js → items). */
+export interface PaginationItem {
+  kind: "previous" | "page" | "current" | "gap" | "next";
+  /** The page the item links to (none for "gap"). */
+  page?: number;
+  /** Where the item shows: both, or one device (desktop shows the current page's neighbours, mobile does not). */
+  devices: Array<"desktop" | "mobile">;
+}
+/** Mirrors the Figma component `pagination` (device × position) + `_pagination gap` (decision 0179). A <nav> of
+ *  secondary Buttons: the current page is state="active" (aria-current="page", 0045); Previous / Next only when there
+ *  is a page to go to, never disabled. Desktop fluid (pages and gaps share the width), mobile 38 × 38 squares. */
+export interface PaginationProps extends HTMLAttributes<HTMLElement> {
+  /** The items to show, from packages/pagination `items(current, total)`. */
+  items: PaginationItem[];
+  /** The link of page n. @default n => "?page=" + n */
+  href?: (page: number) => string;
+  /** Accessible name of the nav. @default "Pages" */
+  "aria-label"?: string;
+}
+export declare function Pagination(props: PaginationProps): JSX.Element;
+
 /** Mirrors the Figma component `header` (device=desktop | mobile). A composition of logo, store name, Tabs and actions. */
 export interface HeaderProps extends HTMLAttributes<HTMLElement> {
   /** Which Figma variant to render. Omitted → responsive: one markup, CSS switches menu/tabs/logo size (breakpoint `--mobile` from tokens.json, <768px placeholder). */

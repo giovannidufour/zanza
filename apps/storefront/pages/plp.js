@@ -6,6 +6,7 @@
 'use strict';
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
+const Pages = require('../../../packages/pagination/pagination.js');
 const h = React.createElement;
 const { SECTION_LABEL, SiteHeader, ProductCardFor, SearchForm, labelRef, artistRefs } = require('./shell.js');
 
@@ -160,10 +161,25 @@ const groupHeading = (group, title) => h(Z.SectionHead, { className: 'wantlist-g
 // each group is the one given.
 const soldLast = (list) => list.filter((p) => !isSold(p)).concat(list.filter(isSold));
 
+// pagination (Gio 2026-11-24, decision 0179, Figma `pagination`): site.perPage records a page (admin → Settings →
+// Records per page; 20 by default). Every card is in the HTML (filters, sort and search work on all of them, and search
+// engines see every record); the build shows page 1, scripts/site.js shows the page in ?page= and re-draws the nav
+// from the template (one item of each kind) after every change.
+const PAGINATION_KINDS = ['previous', 'page', 'current', 'gap', 'next'].map((kind) => ({ kind, page: 1, devices: ['desktop', 'mobile'] }));
+function PlpPagination({ count, perPage }) {
+  const total = Pages.pageCount(count, perPage);
+  return [
+    h(Z.Pagination, { key: 'nav', className: 'plp-pagination', items: total > 1 ? Pages.items(1, total) : [], hidden: total <= 1,
+      href: (n) => (n === 1 ? '?' : `?page=${n}`), 'data-plp-pagination': '' }),
+    h('template', { key: 'tpl', 'data-pagination-template': '' }, h(Z.Pagination, { items: PAGINATION_KINDS }))
+  ];
+}
+
 // collection (decisions 0174, 0178; Figma PLP - desktop / collection): /collections/<slug>/, the records that match its
 // rules. The collection shows as a removable chip in the active filter row (→ /sale/); with no record, the zero-results
 // message (Gio: the card stays on the home).
 function Plp({ section, products, allProducts = products, site, url, search = false, wantlist = false, collection = null }) {
+  const perPage = (site && site.perPage) || Pages.DEFAULT_PER_PAGE;
   const facets = facetsOf(products);
   const showSold = products.some(isSold);
   const hint = 'Search by artist, title, label or catalogue number.';
@@ -196,12 +212,13 @@ function Plp({ section, products, allProducts = products, site, url, search = fa
     // Figma: `pdp content` (sic) — 12-col grid, gap gutter-small, padding-y small; filters cols 1–3, list cols 4–12
     h('div', { className: 'plp-content', 'data-search-results': search ? '' : undefined },
       facets.length ? h(PlpFilters, { facets, hidden: hiddenFacetsOf(allProducts), sorts: sortsFor(section), showSold }) : null,
-      h('main', { className: 'plp-list' },
+      h('main', { className: 'plp-list', 'data-per-page': perPage },
         search || wantlist || collection ? null : h('h1', { className: 'plp-list__title' }, SECTION_LABEL[section]),
         wantlist ? groupHeading('exact', 'Exact matches') : null,
         wantlist ? groupHeading('other', 'Other pressings') : null,
         // no device: responsive card (desktop variant on PLP - desktop, mobile variant on PLP - mobile)
         products.map((product, i) => h('div', Object.assign({ key: product.listing.slug, className: 'plp-item',
+          hidden: i >= perPage || undefined,   // page 1 as built; site.js takes over (filters, ?page=)
           'data-order': i, 'data-sold': isSold(product) ? '' : undefined, 'data-price': product.listing.price ? product.listing.price.amount : undefined,
           'data-search': search ? searchTextOf(product) : undefined,
           // Discogs ids, matched against the visitor's wantlist in their browser (decision 0152)
@@ -224,7 +241,8 @@ function Plp({ section, products, allProducts = products, site, url, search = fa
               ? h('div', { className: 'search-message plp-list__empty' },
                 h('p', { className: 'body-medium' }, 'Nothing in this collection right now. Come back soon.'),
                 h(Z.Button, { hierarchy: 'secondary', href: url('/sale/') }, 'Browse all records'))
-            : h('p', { className: 'plp-list__empty body-medium' }, section === 'trade' ? 'Nothing up for trade right now. Come back soon.' : 'No records right now.')),
+            : h('p', { className: 'plp-list__empty body-medium' }, section === 'trade' ? 'Nothing up for trade right now. Come back soon.' : 'No records right now.'),
+        products.length ? PlpPagination({ count: products.length, perPage }) : null),
       facets.length ? h(PlpLayer, { facets, showSold }) : null)
   );
 }
