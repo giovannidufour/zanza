@@ -165,11 +165,15 @@
     var showMenu = device !== 'desktop';
     var showTabs = device !== 'mobile' && !!props.tabs;
     var hasSearch = !!(props.search || props.searchHref);
-    var nameTag = props.homeHref ? 'a' : 'div';
+    // Logo + store name = one home link (decision 0175): one tab stop, accessible name = the store name (the logo is
+    // alt=""). Without homeHref the same pair sits in a plain div. On the home page the link stays clickable: the
+    // storefront reloads the page (scripts/site.js, soft navigation).
+    var homeTag = props.homeHref ? 'a' : 'div';
+    var homeAttrs = { className: 'zz-header__home' };
+    if (props.homeHref) homeAttrs.href = props.homeHref;
     var nameAttrs = { className: 'zz-header__name label-medium' };
-    if (props.homeHref) nameAttrs.href = props.homeHref;
     // Figma `store name` state=active (2026-11-14): on the home page the store name is lit like the tab of the current section
-    if (props.homeCurrent) { nameAttrs['data-state'] = 'active'; if (props.homeHref) nameAttrs['aria-current'] = 'page'; }
+    if (props.homeCurrent) { nameAttrs['data-state'] = 'active'; if (props.homeHref) homeAttrs['aria-current'] = 'page'; }
 
     return h('header', Object.assign({
       className: cx('zz-header', props.className),
@@ -178,12 +182,13 @@
       h('div', { className: 'zz-header__row' },
         h('div', { className: 'zz-header__leading' },
           showMenu ? h(Button, Object.assign({ className: 'zz-header__menu', hierarchy: 'secondary', leadingIcon: h(HamburgerIcon), 'aria-label': props.menuLabel || 'Menu', onClick: props.onMenuClick }, props.menuProps)) : null,
-          props.logo ? h('div', { className: 'zz-header__logo' }, props.logo) : null,
-          // Figma `store name` logo=true (2026-11-15, decision 0094): when the header has no room for the big logo
-          // (data-logo="hidden"), the same logo shows 36px inside the store name; CSS switches between the two.
-          props.storeName ? h(nameTag, nameAttrs,
-            props.logo ? h('span', { className: 'zz-header__name-logo', 'aria-hidden': 'true' }, props.logo) : null,
-            props.storeName) : null),
+          (props.logo || props.storeName) ? h(homeTag, homeAttrs,
+            props.logo ? h('span', { className: 'zz-header__logo' }, props.logo) : null,
+            // Figma `store name` logo=true (2026-11-15, decision 0094): when the header has no room for the big logo
+            // (data-logo="hidden"), the same logo shows 36px inside the store name; CSS switches between the two.
+            props.storeName ? h('span', nameAttrs,
+              props.logo ? h('span', { className: 'zz-header__name-logo', 'aria-hidden': 'true' }, props.logo) : null,
+              props.storeName) : null) : null),
         showTabs ? h('div', { className: 'zz-header__tabs' }, props.tabs) : null,
         (props.actions || hasSearch) ? h('div', { className: 'zz-header__trailing' },
           // Figma boolean `search` (2026-11-12): desktop = the search field (input type=search, 280 wide) before the

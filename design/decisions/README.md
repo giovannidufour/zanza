@@ -194,3 +194,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0172](0172-bulk-create-removed.md) | Admin Bulk create removed (the Scanner makes drafts and pushes files, 0142/0145): no #bulk, BulkRecord / BulkHelp dropped, ListingsHead without Bulk create | accepted |
 | [0173](0173-scanner-waveform-peak-differences.md) | Scanner waveform: one tone, 480 thin bars, height = (bar peak / clip peak)² so differences between peaks show; display only | accepted |
 | [0174](0174-curated-collections.md) | Curated collections: cards under the home intro → /collections/<slug>/ (rules Years / Genres / Tags, AND between, OR inside), admin → Collections with drag order; every PLP lists sold records last | accepted |
+| [0175](0175-header-home-link.md) | Header: logo + store name = one link to the home; a link to the current page (the home too) reloads it softly, the player keeps playing | accepted |

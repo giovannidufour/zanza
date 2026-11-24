@@ -313,7 +313,10 @@ a.zz-tab {
 .zz-header__trailing { align-items: center; }
 .zz-header__tabs { display: flex; }
 
-.zz-header__logo { flex: none; width: 64px; height: 64px; overflow: hidden; }
+/* logo + store name: one home link (decision 0175), laid out like the leading row (gap 8, top-aligned) */
+.zz-header__home { display: flex; align-items: flex-start; gap: 8px; color: inherit; text-decoration: none; }
+a.zz-header__home:focus-visible { outline: auto; }   /* browser ring: no focus token yet (open.md) */
+.zz-header__logo { display: block; flex: none; width: 64px; height: 64px; overflow: hidden; }
 .zz-header[data-device="mobile"] .zz-header__logo { width: 48px; height: 48px; }
 /* Figma `header` boolean `logo` (default on). The storefront turns it off when the row cannot hold everything
    (apps/storefront/scripts/site.js → fitHeaderLogo): the store name always stays. */
@@ -361,7 +364,6 @@ a.zz-tab {
 /* Figma `store name` state=active (2026-11-14): the home page lights the store name like the tab of the current
    section (tab/background/active, tab/border/active); the dashed border stays */
 .zz-header__name[data-state="active"] { --zz-name-border: var(--tab-border-active); background-color: var(--tab-background-active); }
-.zz-header__name[aria-current="page"] { cursor: default; }
 
 /* bottom rule — Figma has it hardcoded #000000; the token it should bind to is border divider/strong */
 .zz-header__rule { height: 1px; width: 100%; background: var(--border-divider-strong); }

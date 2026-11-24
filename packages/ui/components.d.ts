@@ -36,9 +36,9 @@ export interface HeaderProps extends HTMLAttributes<HTMLElement> {
   logo?: ReactNode;
   /** Store name shown in the bordered label box (from `site.json` → storeName). Figma: text layer `store name`. */
   storeName?: ReactNode;
-  /** When set, the store name becomes a link to this URL. */
+  /** When set, logo + store name become ONE link to this URL (decision 0175): one tab stop, named by the store name. */
   homeHref?: string;
-  /** Figma `store name` state=active: the page is the home page. Lit like the active tab; aria-current="page" on the link. */
+  /** Figma `store name` state=active: the page is the home page. Lit like the active tab; aria-current="page" on the home link, which stays clickable (the storefront reloads the page). */
   homeCurrent?: boolean;
   /** A <Tabs> element. Rendered on desktop only (Figma: no tabs in the mobile variant). */
   tabs?: ReactNode;
