@@ -1,4 +1,4 @@
-# 0169 — Delete an order from the admin, with a confirm dialog
+# 0170 — Delete an order from the admin, with a confirm dialog
 
 `2026-11-24` · accepted (Gio: "vorrei poter eliminare gli ordini dall'admin. Fallo attraverso un alert di conferma") · amends 0100 · Figma: BACKEND → Orders → `Order - desktop` (2322:5724, panel `secondary 2` on), `Order - mobile` (2322:6518, `delete order` button 2526:708), `Order - delete dialog` (2526:724, COMPONENTS → `dialog` with `choices` on)
 

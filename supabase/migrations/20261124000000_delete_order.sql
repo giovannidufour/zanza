@@ -1,4 +1,4 @@
--- 0036 delete order (2026-11-24, decision 0169, Gio: "vorrei poter eliminare gli ordini dall'admin").
+-- 0036 delete order (2026-11-24, decision 0170, Gio: "vorrei poter eliminare gli ordini dall'admin").
 -- Admin → Order → "Delete order" removes an order (mostly Stripe test-mode orders). The confirm dialog asks what
 -- happens to its records:
 -- · p_restock = true:  every record of the order that is still 'sold' goes back to 'available' (on sale again, the
