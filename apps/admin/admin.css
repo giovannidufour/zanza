@@ -272,3 +272,6 @@ body[data-player-open] .zz-action-bar { bottom: var(--admin-player-height, 0px);
 .admin-toolbar--support > p { flex: 1 1 auto; margin: 0; color: var(--text-strong); }
 .admin-collections .name { width: 240px; }
 .admin-collections .on-home { width: 96px; }
+
+/* Settings → Records per page (Figma `number setting`, decision 0179): the field is 120 wide */
+.admin-settings__number { width: 120px; }

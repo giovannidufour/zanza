@@ -623,6 +623,9 @@
     }
     var sortSelects = Array.prototype.slice.call(document.querySelectorAll('[data-plp-sort]'));
     var sort = params.get('sort') || 'newest';
+    var P = window.ZanzaPagination;
+    var perPage = list ? parseInt(list.getAttribute('data-per-page'), 10) || 0 : 0;
+    var page = parseInt(params.get('page'), 10) || 1, pages = 1, lastShown = 0;
 
     function selectionOf(checkboxes, hiddenState, sold) {
       var s = {}; keys.forEach(function (k) { s[k] = []; });
@@ -736,7 +739,12 @@
         s[k].forEach(function (x) { if (!lastSel[k] || lastSel[k].indexOf(x) === -1) track('filter_applied', { filter: k, value: x, search: !!searchPage }); });
       });
       lastSel = s;
-      items.forEach(function (el, i) { var ok = matches(values[i], s); el.hidden = !ok; if (ok) shown++; });
+      var matched = [];
+      items.forEach(function (el, i) { var ok = matches(values[i], s); el.hidden = !ok; if (ok) { shown++; matched.push(el); } });
+      // pagination (decision 0179): a change of filters starts again from page 1; then only the current page's cards
+      if (announce) page = 1;
+      paginate(matched);
+      lastShown = shown;
       refreshOptions(boxes, s, root);
       var empty = document.querySelector('[data-plp-empty]'); if (empty) empty.hidden = shown > 0;
       if (searchPage) renderSearch(shown);
@@ -762,8 +770,10 @@
       keys.forEach(function (k) { s[k].forEach(function (x) { q.append(k, x); }); });
       if (!s.__showSold) q.set('sold', 'hide');
       if (sort !== 'newest') q.set('sort', sort);
-      var qs = q.toString();
-      history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
+      var qs = q.toString();   // without the page: the collection chip's link and the pagination's links start from it
+      renderPagination(qs);
+      var withPage = page > 1 ? (qs ? qs + '&' : '') + 'page=' + page : qs;
+      history.replaceState(history.state, '', location.pathname + (withPage ? '?' + withPage : '') + location.hash);
       // active filter row (0041): the link filter's chip; hidden when there is none
       var row = document.querySelector('[data-plp-active]');
       var holder = row && row.querySelector('.zz-active-filter__row');
@@ -780,6 +790,46 @@
         chips.forEach(function (c) { holder.appendChild(activeChips(c)); });
         row.hidden = !chips.length && !fixed.length;
       }
+    }
+    // pagination (decision 0179, Figma `pagination`; packages/pagination decides which numbers show): `perPage` records a
+    // page (admin → Settings → Records per page, on the list as data-per-page), the page in ?page=. The cards of the other
+    // pages are hidden like filtered ones. A page link is a normal link to the same page with ?page=N: the soft
+    // navigation loads it (new history entry, back to the top, the player keeps playing) and this code runs again.
+    function paginate(matched) {
+      if (!perPage || !P) return;
+      var ordered = matched.slice().sort(function (a, b) { return a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1; });
+      pages = P.pageCount(ordered.length, perPage);
+      page = P.clamp(page, pages);
+      var from = (page - 1) * perPage, to = from + perPage;
+      ordered.forEach(function (el, i) { if (i < from || i >= to) el.hidden = true; });
+    }
+    // re-draws the nav from its template (one <li> per kind, rendered by the build with packages/ui Pagination)
+    function renderPagination(qs) {
+      var nav = document.querySelector('[data-plp-pagination]');
+      var tpl = document.querySelector('template[data-pagination-template]');
+      if (!nav || !tpl || !P) return;
+      nav.hidden = pages <= 1;
+      var ul = nav.querySelector('.zz-pagination__list');
+      if (!ul) return;
+      ul.textContent = '';
+      if (pages <= 1) return;
+      var base = location.pathname + '?' + (qs ? qs + '&' : '');
+      P.items(page, pages).forEach(function (it) {
+        var src = tpl.content.querySelector('[data-kind="' + it.kind + '"]');
+        if (!src) return;
+        var li = src.cloneNode(true);
+        if (it.devices.length === 1) li.setAttribute('data-device', it.devices[0]); else li.removeAttribute('data-device');
+        var a = li.querySelector('a');
+        if (a) {
+          a.setAttribute('href', it.page === 1 ? base.replace(/[?&]$/, '') : base + 'page=' + it.page);   // page 1 = no ?page=
+          if (it.kind === 'page' || it.kind === 'current') {
+            a.setAttribute('aria-label', 'Page ' + it.page);
+            var label = a.querySelector('.zz-button__label');
+            if (label) label.textContent = String(it.page);
+          }
+        }
+        ul.appendChild(li);
+      });
     }
     // Figma `search heading` + `search message`: "N results for “q”" / "No results for “q”"; no query = the hint only
     function renderSearch(shown) {
@@ -822,7 +872,7 @@
     };
     syncSort();
     sortSelects.forEach(function (sel) {
-      sel.addEventListener('change', function (e) { e.stopPropagation(); sort = sel.value; syncSort(); applySort(); apply(false); track('sort_changed', { sort: sort }); });
+      sel.addEventListener('change', function (e) { e.stopPropagation(); sort = sel.value; page = 1; syncSort(); applySort(); apply(false); track('sort_changed', { sort: sort }); });
     });
     if (layer && trigger && layer.showModal) {
       var draftSold = layer.querySelector('input[data-show-sold]');
@@ -947,7 +997,7 @@
     // analytics: one search per results page; 0 results = what people look for and the shop doesn't have
     if (searchPage && query && window.ZanzaAnalytics) {
       var term = window.ZanzaAnalytics.safeTerm(query);
-      var results = items.filter(function (el) { return !el.hidden; }).length;
+      var results = lastShown;
       track('search', { term: term || '[redacted]', results: results, no_results: results === 0 });
     }
   }

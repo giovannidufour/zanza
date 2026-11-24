@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const Images = require('../../../packages/images/images.js');
 const Collections = require('../../../packages/collections/collections.js');
+const Pagination = require('../../../packages/pagination/pagination.js');
 
 const APP = path.resolve(__dirname, '..');
 const ENV_FILE = path.join(APP, '.supabase.env');   // git-ignored: SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY
@@ -188,11 +189,13 @@ async function settingsFromSupabase(env, fetchImpl = fetch) {
   const res = await fetchImpl(`${env.SUPABASE_URL.replace(/\/$/, '')}/rest/v1/shop_settings?select=*`, {
     headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, Accept: 'application/json' }
   });
-  if (res.status === 404) return { tradeEnabled: true, identityEnabled: true, wantlistEnabled: true };   // PGRST205: no shop_settings table yet
+  if (res.status === 404) return { tradeEnabled: true, identityEnabled: true, wantlistEnabled: true, perPage: Pagination.DEFAULT_PER_PAGE };   // PGRST205: no shop_settings table yet
   if (!res.ok) throw new Error(`Supabase shop_settings: ${res.status} ${await res.text()}`);
   const row = (await res.json())[0];
   return { tradeEnabled: !row || row.trade_enabled !== false, identityEnabled: !row || row.identity_enabled !== false,
-    wantlistEnabled: !row || row.wantlist_enabled !== false };   // Check your wantlist (migration 0033, decision 0152)
+    wantlistEnabled: !row || row.wantlist_enabled !== false,   // Check your wantlist (migration 0033, decision 0152)
+    // Records per page of the PLPs (migration 0039, decision 0179); no column yet = the default (20)
+    perPage: row && row.records_per_page > 0 ? row.records_per_page : Pagination.DEFAULT_PER_PAGE };
 }
 
 // the texts Gio saved in the admin (page Content, migration 0025, decision 0106): [{ key, value, updated_at }].
@@ -235,7 +238,7 @@ async function loadCollections({ source } = {}) {
 
 async function loadSettings({ source, trade, identity, wantlist } = {}) {
   const env = readEnv();
-  const fromDb = source === 'supabase' ? await settingsFromSupabase(env) : { tradeEnabled: true, identityEnabled: true, wantlistEnabled: true };
+  const fromDb = source === 'supabase' ? await settingsFromSupabase(env) : { tradeEnabled: true, identityEnabled: true, wantlistEnabled: true, perPage: Pagination.DEFAULT_PER_PAGE };
   if (wantlist === 'off') fromDb.wantlistEnabled = false;
   if (wantlist === 'on') fromDb.wantlistEnabled = true;
   if (identity === 'off') fromDb.identityEnabled = false;

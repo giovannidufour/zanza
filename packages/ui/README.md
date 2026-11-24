@@ -38,6 +38,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | Component | Figma | Status |
 | --- | --- | --- |
 | Button | page `buttons` → section `button` | ported: hierarchy × size × state (incl. `active` = current page, aria-current), `suffix` |
+| Pagination | page `pagination` → `pagination`, `_pagination gap` | ported (0179): Buttons; numbers from packages/pagination; desktop fluid, mobile 38 squares |
 | Tabs / Tab | page `tabs` → `tab group`, `tab` | ported: controlled selection, 4 states, `suffix` (counts, 0029), size extra-small (account nav, 0101) |
 | Header | page `header` → `header` | ported: device desktop/mobile or responsive, composition of Button + Tabs |
 | Breadcrumbs | page `breadcrumbs` → `breadcrumbs` | ported (PDP; PLP uses ActiveFilter, 0041) |
