@@ -48,6 +48,11 @@ final class AppModel: ObservableObject {
         ?? FileManager.default.urls(for: .musicDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza samples/MP3") {
         didSet { UserDefaults.standard.set(mp3Folder, forKey: "mp3Folder"); refreshDisk(); scheduleSync() }
     }
+    /// Square videos of the clips with Video ticked (0177)
+    @Published var videoFolder: URL = UserDefaults.standard.url(forKey: "videoFolder")
+        ?? FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza videos") {
+        didSet { UserDefaults.standard.set(videoFolder, forKey: "videoFolder"); scheduleSync() }
+    }
 
     @Published var steps: [ScanStep] = []
     /// Saved scans, shown as thumbnails in the steps
@@ -171,12 +176,16 @@ final class AppModel: ObservableObject {
         return true
     }
 
-    func chooseExportFolder(mp3: Bool) {
+    enum ExportKind { case mp3, wav, video }
+    func chooseExportFolder(_ kind: ExportKind) {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true; panel.canChooseFiles = false; panel.canCreateDirectories = true
-        panel.prompt = "Choose"; panel.message = mp3 ? "Folder for the MP3 320" : "Folder for the WAV"
-        panel.directoryURL = mp3 ? mp3Folder : wavFolder
-        if panel.runModal() == .OK, let u = panel.url { if mp3 { mp3Folder = u } else { wavFolder = u } }
+        panel.prompt = "Choose"
+        panel.message = kind == .mp3 ? "Folder for the MP3 320" : kind == .wav ? "Folder for the WAV" : "Folder for the videos"
+        panel.directoryURL = kind == .mp3 ? mp3Folder : kind == .wav ? wavFolder : videoFolder
+        if panel.runModal() == .OK, let u = panel.url {
+            switch kind { case .mp3: mp3Folder = u; case .wav: wavFolder = u; case .video: videoFolder = u }
+        }
     }
 
     /// Clips of a draft for its row: assigned in the session or already exported (WAV of that SKU)
@@ -193,7 +202,7 @@ final class AppModel: ObservableObject {
     // MARK: Automatic export (0144): the exported files mirror each draft's clip assignments
 
     /// What was last written for a clip slot: the inputs' fingerprint, with/without WAV, complete = tags and cover
-    struct ExportRecord: Codable { var hash: String; var wav: Bool; var complete: Bool; var missing: String? }
+    struct ExportRecord: Codable { var hash: String; var wav: Bool; var complete: Bool; var missing: String?; var video: Bool? = false }
     @Published var exports: [String: ExportRecord] = {   // slot name → record
         (UserDefaults.standard.data(forKey: "exports").flatMap { try? JSONDecoder().decode([String: ExportRecord].self, from: $0) }) ?? [:]
     }() { didSet { UserDefaults.standard.set(try? JSONEncoder().encode(exports), forKey: "exports") } }
@@ -211,18 +220,20 @@ final class AppModel: ObservableObject {
         }
     }
 
-    private struct Planned { let clip: SessionClip; let slot: ClipTarget; let tags: AudioExport.Tags; let cover: URL?; let wav: Bool; let hash: String }
+    private struct Planned { let clip: SessionClip; let slot: ClipTarget; let tags: AudioExport.Tags; let cover: URL?; let wav: Bool; let video: Bool; let hash: String }
 
-    /// Plans the writes of one draft: assigned clips whose inputs changed (or whose files are gone); WAVs unticked go
-    private func plan(_ id: String) -> (writes: [Planned], dropWAV: [String])? {
+    func videoURL(_ name: String) -> URL { videoFolder.appendingPathComponent(name).appendingPathExtension("mp4") }
+
+    /// Plans the writes of one draft: assigned clips whose inputs changed (or whose files are gone); WAVs and videos unticked go
+    private func plan(_ id: String) -> (writes: [Planned], dropWAV: [String], dropVideo: [String])? {
         guard let c = drafts.cache[id] else { return nil }
         let sku = c.draft.skuText
         func labelFile(_ role: Int) -> URL? { c.names.first { $0.role == role }.flatMap { drafts.file(named: $0.name, in: folder) } }
         let labelA = labelFile(1), labelB = labelFile(2)
-        var writes: [Planned] = [], dropWAV: [String] = []
+        var writes: [Planned] = [], dropWAV: [String] = [], dropVideo: [String] = []
         for slot in c.clips {
             guard let clip = session.clip(assignedTo: slot.name) else { continue }
-            let wav = session.wantsWAV(slot: slot.name)
+            let wav = session.wantsWAV(slot: slot.name), video = session.wantsVideo(slot: slot.name)
             let side = slot.role.lowercased().first == "b" ? labelB : labelA
             var t = AudioExport.Tags()
             t.title = slot.title ?? ""; t.artist = slot.artist ?? ""
@@ -231,15 +242,18 @@ final class AppModel: ObservableObject {
             t.genre = (c.tags?.genres ?? []).joined(separator: ", "); t.track = slot.label; t.comment = sku
             let coverStamp = side.map { "\($0.lastPathComponent):\(disk.labels[$0.lastPathComponent] ?? "")" } ?? "none"
             let hash = [clip.file, "\(clip.trimStart)", "\(clip.trimEnd)", t.title, t.artist, t.album, t.albumArtist, t.label,
-                        t.year, t.genre, t.track, t.comment, coverStamp, wav ? "wav" : "", mp3Folder.path, wavFolder.path].joined(separator: "|")
+                        t.year, t.genre, t.track, t.comment, coverStamp, wav ? "wav" : "", mp3Folder.path, wavFolder.path,
+                        video ? "video:" + videoFolder.path : ""].joined(separator: "|")
             let mp3 = mp3Folder.appendingPathComponent(slot.name).appendingPathExtension("mp3")
             let old = exports[slot.name]
-            if old?.hash != hash || !FileManager.default.fileExists(atPath: mp3.path) {
-                writes.append(Planned(clip: clip, slot: slot, tags: t, cover: side, wav: wav, hash: hash))
+            let videoGone = video && side != nil && !FileManager.default.fileExists(atPath: videoURL(slot.name).path)
+            if old?.hash != hash || !FileManager.default.fileExists(atPath: mp3.path) || videoGone {
+                writes.append(Planned(clip: clip, slot: slot, tags: t, cover: side, wav: wav, video: video, hash: hash))
             }
             if !wav, old?.wav == true { dropWAV.append(slot.name) }
+            if !video, old?.video == true { dropVideo.append(slot.name) }
         }
-        return (writes, dropWAV)
+        return (writes, dropWAV, dropVideo)
     }
 
     func sync(_ id: String) {
@@ -261,8 +275,25 @@ final class AppModel: ObservableObject {
                 }
             }
         }
+        for name in p.dropVideo {   // Video unticked: the video goes to the Trash, Undo ticks it again (0177)
+            var t = Trashed()
+            t.trash(videoURL(name))
+            let old = exports[name]
+            exports[name]?.video = false
+            let label = c.clips.first { $0.name == name }?.label ?? name
+            if !t.moves.isEmpty {
+                toasts.show("\(label) video moved to Trash") { [weak self] in
+                    guard let self else { return nil }
+                    if let e = t.restore() { return e }
+                    self.exports[name] = old
+                    self.session.setVideo(true, slot: name)
+                    return nil
+                }
+            }
+        }
         guard !p.writes.isEmpty else { return }
         let writes = p.writes, wavDir = wavFolder, mp3Dir = mp3Folder, tagsKnown = c.tags != nil
+        let videoOf = { [videoFolder] (name: String) in videoFolder.appendingPathComponent(name).appendingPathExtension("mp4") }
         jobs.enqueue(draftID: id, sku: c.draft.skuText, kind: .export, files: Set(writes.map(\.clip.file))) { progress in
             var done: [(String, ExportRecord)] = []
             for (n, w) in writes.enumerated() {
@@ -271,9 +302,17 @@ final class AppModel: ObservableObject {
                 tags.cover = AudioExport.cover(from: w.cover)
                 try AudioExport.export(source: w.clip.url, trimStart: w.clip.trimStart, trimEnd: w.clip.trimEnd, name: w.slot.name, tags: tags,
                                        wavFolder: w.wav ? wavDir : nil, mp3Folder: mp3Dir)
+                // the square video (0177): only with the label scan of that side, never a video without its label
+                var madeVideo = false
+                if w.video, let label = w.cover {
+                    progress((Double(n) + 0.5) / Double(writes.count), "video \(w.slot.label)")
+                    try VideoExport.write(source: w.clip.url, trimStart: w.clip.trimStart, trimEnd: w.clip.trimEnd, label: label, to: videoOf(w.slot.name))
+                    madeVideo = true
+                }
                 let side = w.slot.role.lowercased().first == "b" ? "Label B" : "Label A"
-                let missing = tags.cover == nil ? "\(w.slot.label) needs the \(side) scan" : (!tagsKnown ? "\(w.slot.label): tags not loaded" : nil)
-                done.append((w.slot.name, ExportRecord(hash: w.hash, wav: w.wav, complete: missing == nil, missing: missing)))
+                let missing = tags.cover == nil ? "\(w.slot.label) needs the \(side) scan" + (w.video ? " (MP3 cover and video)" : "")
+                    : (!tagsKnown ? "\(w.slot.label): tags not loaded" : nil)
+                done.append((w.slot.name, ExportRecord(hash: w.hash, wav: w.wav, complete: missing == nil, missing: missing, video: madeVideo)))
             }
             let finished = done
             await MainActor.run {
@@ -291,13 +330,16 @@ final class AppModel: ObservableObject {
         var t = Trashed()
         let hadWAV = t.trash(wavFolder.appendingPathComponent(name).appendingPathExtension("wav"))
         t.trash(mp3Folder.appendingPathComponent(name).appendingPathExtension("mp3"))
+        let hadVideo = t.trash(videoURL(name))
         let record = exports[name]
         let assignment = session.assignments.first { $0.value.name == name }
         exports[name] = nil
         session.unassign(slot: name)
         refreshDisk()
         let label = drafts.clips.first { $0.name == name }?.label ?? name
-        toasts.show("\(label) unassigned · " + (hadWAV ? "MP3 and WAV" : "MP3") + " moved to Trash") { [weak self] in
+        let files = ["MP3", hadWAV ? "WAV" : nil, hadVideo ? "video" : nil].compactMap { $0 }
+        let list = files.count > 1 ? files.dropLast().joined(separator: ", ") + " and " + files.last! : files[0]
+        toasts.show("\(label) unassigned · \(list) moved to Trash") { [weak self] in
             guard let self else { return nil }
             if let e = t.restore() { return e }
             self.exports[name] = record
