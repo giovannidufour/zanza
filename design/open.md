@@ -95,6 +95,7 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 
 ## Figma to fix
 
+- **0173 Scanner waveform (2446:26014)**: 480 bars instead of 240, bar width 50% of the step, heights as (peak / clip peak)²; the code draws it since 2026-11-24.
 - `action bar` (BACKEND): no `status` slot above the buttons; code shows the error or "Unsaved changes" there on mobile (0118). Add a text slot + boolean.
 - Save draft and new (0155): not in the mobile `action bar` (three buttons in one row do not fit). If Gio wants it on the phone: a second row in the bar, or a menu.
 - Create / Edit (0118): the mobile `listing line` still overlaps fields with 2 lines (Artist 2, Artist name on label) in the viewport frame; old frames "(old, before 0113)" to delete when Gio agrees.
