@@ -128,6 +128,87 @@
     });
     return lameLoading;
   }
+  // ── a square video of a sample (Gio 2026-11-24, decision 0180): the chosen photo, still, full frame, with the sample,
+  // 1080 × 1080 H.264 30 fps + AAC, rendered here with WebCodecs and packed by mp4-muxer (MIT, loaded only when needed).
+  // For Instagram feed and Reels; works for any listing (draft, live, sold), from the files already on R2.
+  var MUXER_SRC = 'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.js';
+  var MUXER_SRI = 'sha384-wr0AQH9RBAKio/g7bHM5245MBCU5B/b0Y9u42cTxRYQQJXKEijZvWEJKL9JG26hs';
+  var VIDEO_SIDE = 1080, VIDEO_FPS = 30, VIDEO_RATE = 48000;
+  var muxerLoading = null;
+  function loadMuxer() {
+    if (window.Mp4Muxer) return Promise.resolve(window.Mp4Muxer);
+    if (!muxerLoading) muxerLoading = new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = MUXER_SRC; s.integrity = MUXER_SRI; s.crossOrigin = 'anonymous';
+      s.onload = function () { window.Mp4Muxer ? resolve(window.Mp4Muxer) : reject(new Error('video packer missing')); };
+      s.onerror = function () { muxerLoading = null; reject(new Error('Could not load the video packer')); };
+      document.head.appendChild(s);
+    });
+    return muxerLoading;
+  }
+  async function makeVideo(audioUrl, imageUrl, onProgress) {
+    if (typeof VideoEncoder === 'undefined' || typeof AudioEncoder === 'undefined') throw new Error('this browser cannot make videos: use Chrome');
+    var videoConfig = { codec: 'avc1.640028', width: VIDEO_SIDE, height: VIDEO_SIDE, bitrate: 4e6, framerate: VIDEO_FPS, avc: { format: 'avc' } };
+    var Mux = await loadMuxer();
+    var res = await Promise.all([fetch(audioUrl), fetch(imageUrl)]);
+    if (!res[0].ok || !res[1].ok) throw new Error('could not read the sample or the photo');
+    var ctx = new AudioContext({ sampleRate: VIDEO_RATE });
+    var audio;
+    try { audio = await ctx.decodeAudioData(await res[0].arrayBuffer()); } finally { ctx.close(); }
+    var channels = Math.min(2, audio.numberOfChannels);
+    var audioConfig = { codec: 'mp4a.40.2', sampleRate: VIDEO_RATE, numberOfChannels: channels, bitrate: 192000 };
+    var vs = await VideoEncoder.isConfigSupported(videoConfig), as = await AudioEncoder.isConfigSupported(audioConfig);
+    if (!vs.supported || !as.supported) throw new Error('this browser cannot encode MP4 (H.264 + AAC): use Chrome');
+    // the photo, centre square, full frame
+    var bitmap = await createImageBitmap(await res[1].blob());
+    var canvas = document.createElement('canvas'); canvas.width = canvas.height = VIDEO_SIDE;
+    var c2 = canvas.getContext('2d'), side = Math.min(bitmap.width, bitmap.height);
+    c2.imageSmoothingQuality = 'high';
+    c2.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, VIDEO_SIDE, VIDEO_SIDE);
+    bitmap.close();
+
+    var muxer = new Mux.Muxer({ target: new Mux.ArrayBufferTarget(), fastStart: 'in-memory',
+      video: { codec: 'avc', width: VIDEO_SIDE, height: VIDEO_SIDE, frameRate: VIDEO_FPS },
+      audio: { codec: 'aac', sampleRate: VIDEO_RATE, numberOfChannels: channels } });
+    var failed = null;
+    var venc = new VideoEncoder({ output: function (chunk, meta) { muxer.addVideoChunk(chunk, meta); }, error: function (e) { failed = e; } });
+    var aenc = new AudioEncoder({ output: function (chunk, meta) { muxer.addAudioChunk(chunk, meta); }, error: function (e) { failed = e; } });
+    venc.configure(videoConfig); aenc.configure(audioConfig);
+
+    var frames = Math.max(1, Math.ceil(audio.duration * VIDEO_FPS)), STEP = 1024, total = frames + Math.ceil(audio.length / STEP);
+    for (var i = 0; i < frames; i++) {
+      if (failed) throw failed;
+      var frame = new VideoFrame(canvas, { timestamp: Math.round(i * 1e6 / VIDEO_FPS), duration: Math.round(1e6 / VIDEO_FPS) });
+      venc.encode(frame, { keyFrame: i % (VIDEO_FPS * 2) === 0 });
+      frame.close();
+      if (venc.encodeQueueSize > 20) await new Promise(function (r) { setTimeout(r, 5); });
+      if (i % 30 === 0) onProgress(Math.round(i / total * 90));
+    }
+    var planes = [];
+    for (var ch = 0; ch < channels; ch++) planes.push(audio.getChannelData(ch));
+    for (var at = 0, n = 0; at < audio.length; at += STEP, n++) {
+      if (failed) throw failed;
+      var len = Math.min(STEP, audio.length - at), data = new Float32Array(len * channels);
+      for (var k = 0; k < channels; k++) data.set(planes[k].subarray(at, at + len), k * len);
+      var ad = new AudioData({ format: 'f32-planar', sampleRate: VIDEO_RATE, numberOfFrames: len, numberOfChannels: channels,
+        timestamp: Math.round(at * 1e6 / VIDEO_RATE), data: data });
+      aenc.encode(ad); ad.close();
+      if (aenc.encodeQueueSize > 50) await new Promise(function (r) { setTimeout(r, 5); });
+      if (n % 100 === 0) onProgress(Math.round((frames + n) / total * 90));
+    }
+    await venc.flush(); await aenc.flush();
+    venc.close(); aenc.close();
+    if (failed) throw failed;
+    muxer.finalize();
+    onProgress(100);
+    return new Blob([muxer.target.buffer], { type: 'video/mp4' });
+  }
+  function saveFile(blob, name) {
+    var a = document.createElement('a'), url = URL.createObjectURL(blob);
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+  }
+
   function toInt16(f32) {
     var out = new Int16Array(f32.length);
     for (var i = 0; i < f32.length; i++) { var v = Math.max(-1, Math.min(1, f32[i])); out[i] = v < 0 ? v * 0x8000 : v * 0x7fff; }
@@ -387,7 +468,7 @@
   /* decision 0118: what the form would save, to tell "Unsaved changes". Leaves out what the database sets (status, SKU,
      dates) and what only the page needs (local ids, preview URLs, upload progress). */
   var META_KEYS = { listingId: 1, sku: 1, status: 1, slug: 1, checkoutUntil: 1, soldAt: 1, publishedAt: 1, createdAt: 1 };
-  var VOLATILE_KEYS = { id: 1, url: 1, uploading: 1, progress: 1, phase: 1, duration: 1 };
+  var VOLATILE_KEYS = { id: 1, url: 1, uploading: 1, progress: 1, phase: 1, duration: 1, videoImage: 1, videoProgress: 1 };   // video of a sample (0180): never saved
   function formSnapshot(f) {
     var o = {};
     Object.keys(f).forEach(function (k) { if (!META_KEYS[k]) o[k] = f[k]; });
@@ -699,6 +780,43 @@
       var full = x.full;
       patchItem('samples', x.id, full ? { key: full.key, url: full.url, duration: full.duration, length: 'full', clippedTo: null } : { length: 'full' });
     }
+    // ── video of a sample (0180): the photo of the sample's side (file names of 0136: a… → Label A = <sku>_1_…, b… → Label B
+    // = <sku>_2_…; else line 2 → photo 2), changeable in "Video image"; rendered and downloaded here, nothing is saved
+    function defaultVideoImage(s) {
+      var imgs = f.images.filter(function (x) { return x.url && !x.uploading; });
+      if (!imgs.length) return null;
+      var role = (String(s.name || '').split('_')[1] || '').toLowerCase();
+      var side = role.charAt(0) === 'b' ? 2 : role.charAt(0) === 'a' ? 1 : s.line === 2 ? 2 : 1;
+      var named = imgs.filter(function (x) { return String(x.name).split('_')[1] === String(side); })[0];
+      return (named || imgs[Math.min(side, imgs.length) - 1]).id;
+    }
+    function videoImageOf(s) {
+      var ok = s.videoImage && f.images.some(function (x) { return x.id === s.videoImage; });
+      return ok ? s.videoImage : defaultVideoImage(s);
+    }
+    function downloadVideo(s) {
+      var img = f.images.filter(function (x) { return x.id === videoImageOf(s); })[0];
+      if (!img || !s.url) return;
+      var name = String(s.name || 'sample').replace(/\.[a-z0-9]+$/i, '') + '.mp4';
+      patchItem('samples', s.id, { videoProgress: 0 });
+      makeVideo(s.url, img.url, function (v) { patchItem('samples', s.id, { videoProgress: v }); })
+        .then(function (blob) { saveFile(blob, name); toast('Video downloaded: ' + name); },
+              function (err) { setMessage({ error: true, text: s.name + ': no video (' + err.message + ').' }); })
+        .then(function () { patchItem('samples', s.id, { videoProgress: null }); });
+    }
+    function videoRow(s) {
+      var imgs = f.images.filter(function (x) { return x.url && !x.uploading; }), busy = s.videoProgress != null;
+      return h('div', { className: 'admin-sample-video' },
+        h(Z.Input, { variant: 'select', id: 'sample-video-image-' + s.id, label: 'Video image', value: videoImageOf(s) || '',
+          disabled: !imgs.length || busy, supportText: imgs.length ? null : 'Add a photo of the label first.',
+          onChange: function (e) { patchItem('samples', s.id, { videoImage: e.target.value }); } },
+          imgs.length ? imgs.map(function (x, i) {
+            var r = String(x.name).split('_')[1], tag = r === '1' ? 'Label A' : r === '2' ? 'Label B' : 'Photo ' + (i + 1);
+            return h('option', { key: x.id, value: x.id }, tag + (tag.indexOf('Photo') ? ' (photo ' + (i + 1) + ')' : ''));
+          }) : [h('option', { key: 'none', value: '' }, 'No photos')]),
+        h(Z.Button, { hierarchy: 'secondary', disabled: !imgs.length || !s.url || s.uploading || busy, onClick: function () { downloadVideo(s); } },
+          busy ? 'Making video… ' + s.videoProgress + '%' : 'Download video'));
+    }
     function overviewSampleItem(s) {
       var clip = s.length === 'clip', long = (s.full && s.full.duration) || s.duration;
       return fileItem('samples', Object.assign({}, s, { name: s.duration ? s.name + ' · ' + mmss(s.duration) : s.name }),
@@ -713,7 +831,8 @@
               [h('option', { key: 'full', value: 'full' }, 'Full')].concat(CLIP_LENGTHS.map(function (n) {
                 // a clip as long as the file (or longer) would cut nothing
                 return h('option', { key: n, value: String(n), disabled: long ? n >= long : undefined }, 'Clip ' + n + 's');
-              }))))));
+              })))),
+          videoRow(s)));
     }
     // samples of a line keep the overview order; reorder happens in the overview
     function lineSamples(i) { return f.samples.filter(function (s) { return s.line === i + 1; }); }
