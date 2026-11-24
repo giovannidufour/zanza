@@ -73,6 +73,7 @@ const Plp = require('./pages/plp.js');
 const Bag = require('./pages/bag.js');
 const Checkout = require('./pages/checkout.js');
 const Trade = require('./pages/trade.js');
+const Offer = require('./pages/offer.js');
 const Legal = require('./pages/legal.js');
 const ContactPage = require('./pages/contact.js');
 const Newsletter = require('./pages/newsletter.js');
@@ -200,6 +201,7 @@ const shippingData = require('./data/shipping.js');
 const sourceArg = (process.argv.find(a => a.startsWith('--source=')) || '').split('=')[1];
 const tradeArg = (process.argv.find(a => a.startsWith('--trade=')) || '').split('=')[1];   // on | off: try the shop either way
 const identityArg = (process.argv.find(a => a.startsWith('--identity=')) || '').split('=')[1];   // on | off: the same for Who I am
+const wantlistArg = (process.argv.find(a => a.startsWith('--wantlist=')) || '').split('=')[1];   // on | off: Check your wantlist
 const Content = require('../../packages/content/content.js');
 
 async function main() {
@@ -208,9 +210,11 @@ const source = loaded.source;
 // the trade switch (admin → Settings, migration 0023, decision 0102): off = no trade anywhere. The pages read
 // site.tradeEnabled; the trade copies leave the build here (Supabase already hides them while trade is off: RLS)
 // Who I am (migration 0025, decision 0106): off = the Store profile and no trace of Gio; trade is off with it
-const settings = await loadSettings({ source, trade: tradeArg, identity: identityArg });
+const settings = await loadSettings({ source, trade: tradeArg, identity: identityArg, wantlist: wantlistArg });
 site.tradeEnabled = settings.tradeEnabled;
 site.identityEnabled = settings.identityEnabled;
+// Check your wantlist (migration 0033, decision 0152): off = no /wantlist/ page, no link, no Privacy line
+site.wantlistEnabled = settings.wantlistEnabled && !!(site.wantlist && site.wantlist.endpoint);
 // the texts Gio edits in the admin (page Content, decision 0106): saved rows over today's texts (the defaults: site.json →
 // owner, content/legal/*.md, packages/content). The pages read site.texts; `owner` keeps its old shape (Profile, or
 // while Who I am is off only the Store profile's about + links: no name, no profiles).
@@ -223,7 +227,7 @@ site.owner = site.identityEnabled ? Content.ownerFromProfile(site.texts.profile)
 if (resolved.updated['page.privacy']) site.legal = Object.assign({}, site.legal, { updated: String(resolved.updated['page.privacy']).slice(0, 10) });
 console.log(`texts: ${Object.keys(resolved.updated).length} saved in the admin · who I am ${site.identityEnabled ? 'on' : 'off'}`);
 const products = site.tradeEnabled ? loaded.products : loaded.products.filter(p => p.listing.section !== 'trade');
-console.log(`products: ${products.length} from ${source} · trade ${site.tradeEnabled ? 'on' : 'off'}`);
+console.log(`products: ${products.length} from ${source} · trade ${site.tradeEnabled ? 'on' : 'off'} · wantlist ${site.wantlistEnabled ? 'on' : 'off'}`);
 if (source === 'supabase') {
   const env = readEnv();
   liveMeta = `<meta name="zz-supabase-url" content="${escape(env.SUPABASE_URL.replace(/\/$/, ''))}">\n<meta name="zz-supabase-key" content="${escape(env.SUPABASE_PUBLISHABLE_KEY)}">\n`;
@@ -293,6 +297,14 @@ write('catalog/index.html', page({ template: 'plp', title: Plp.title('catalog'),
 for (const product of forTrade.filter(p => p.listing.status === 'available')) {
   write(`products/${product.listing.slug}/offer/index.html`, page({ template: 'trade_offer', title: `Make an offer · ${title(product)}`, body: renderToStaticMarkup(React.createElement(Trade.Offer, { product, site, url })) }));
 }
+// Best offer (Figma page `Offers`, decision 0158): one offer page per available best-offer copy (the same URL as a trade
+// offer: a copy is either), the email's confirmation page and the payment page of an accepted offer
+const offerCountries = shippingData.countries(shipping);
+for (const product of forSale.filter(p => p.listing.price_mode === 'offers' && p.listing.status === 'available')) {
+  write(`products/${product.listing.slug}/offer/index.html`, page({ template: 'price_offer', title: `Make an offer · ${title(product)}`, body: renderToStaticMarkup(React.createElement(Offer.PriceOffer, { product, site, url, countries: offerCountries })) }));
+}
+write('offer/confirm/index.html', page({ template: 'offer_confirm', title: 'Confirm your offer', body: renderToStaticMarkup(React.createElement(Offer.OfferConfirm, { site, url })) }));
+write('offer/pay/index.html', page({ template: 'offer_pay', title: 'Your offer was accepted', body: renderToStaticMarkup(React.createElement(Offer.OfferPay, { site, url, shipping: shipping && (shipping.rates || []).length ? shipping : null, countries: offerCountries })) }));
 // trade off: no /trade/, no offer pages (forTrade is empty), no How trading works. A Pages deploy replaces the whole
 // site, so the pages of the previous build are gone too.
 if (site.tradeEnabled) write('how-trading-works/index.html', page({ template: 'trade_info', title: 'How trading works', body: renderToStaticMarkup(React.createElement(Trade.HowTrading, { site, url })) }));
@@ -303,9 +315,15 @@ write('about/index.html', page({ template: 'about', title: 'About', body: render
 // (_context/stack.md: a search service only past ~2k).
 write('search/index.html', page({ template: 'search', title: 'Search', body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, allProducts: products, site, url, search: true })) }));
 
+// Check your wantlist (Figma page `Wantlist`, decision 0152): the visitor connects Discogs, their browser reads the
+// wantlist from Discogs and matches it here against each card's data-release / data-master (scripts/site.js →
+// initWantlist). Every record of the shop with a page, sold ones too (Gio 2026-11-23), as on /catalog/.
+// Also the Discogs OAuth callback (oauth_callback = this page).
+if (site.wantlistEnabled) write('wantlist/index.html', page({ template: 'wantlist', title: 'Check your wantlist', body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'catalog', products: catalog, allProducts: products, site, url, wantlist: true })) }));
+
 // Bag (decision 0044): one hidden line per listing of the sale section, whatever its status (a copy sold after it was
 // added still shows, as unavailable); scripts/site.js shows the visitor's own lines from localStorage
-const bagProducts = products.filter(p => p.listing.section === 'sale');
+const bagProducts = products.filter(p => p.listing.section === 'sale' && p.listing.price_mode !== 'offers');   // best offer never goes in the Bag (0158)
 write('bag/index.html', page({ template: 'bag', title: Bag.title, body: renderToStaticMarkup(React.createElement(Bag.Bag, { products: bagProducts, site, url, shipping, countries: shippingData.countries(shipping) })) }));
 // after a paid Stripe Checkout (migration 0021, Figma page `Checkout`): site.js takes the paid records out of the bag
 write('checkout/thanks/index.html', page({ template: 'checkout_thanks', title: Checkout.title, body: renderToStaticMarkup(React.createElement(Checkout.Thanks, { site, url })) }));

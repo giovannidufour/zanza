@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"OrderItem"},{"name":"OrderRow"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"ProductReturnCard"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"TradeStep"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"},{"name":"FormSectionHead"},{"name":"Marker"},{"name":"PriceFields"},{"name":"ListingStatus"},{"name":"SectionHead"},{"name":"GenreLinks"},{"name":"HomeIntro"},{"name":"HomeNewsletter"},{"name":"ProductTile"},{"name":"GalleryCounter"},{"name":"ViewToggle"},{"name":"NewsletterDialog"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"OrderItem"},{"name":"OrderRow"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"ProductReturnCard"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"Step"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"},{"name":"DiscogsLink"},{"name":"FormSectionHead"},{"name":"Marker"},{"name":"PriceFields"},{"name":"ListingStatus"},{"name":"SectionHead"},{"name":"GenreLinks"},{"name":"HomeIntro"},{"name":"HomeNewsletter"},{"name":"ProductTile"},{"name":"GalleryCounter"},{"name":"ViewToggle"},{"name":"NewsletterDialog"}]} */
 /* packages/ui/components.js — the ONE implementation of the rythem-works components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Zanza) for the design-system artifact.
@@ -968,7 +968,7 @@
      TradeNote: `trade note` — title label/small, body body/medium, signature body/small text/moderate; gap 8 (small).
      DiscogsCard: `discogs card` — 1px border-divider/strong, padding 8 (small), gap 4: label body/small text/moderate,
        handle body/large, stats body/medium, link body/medium underlined (boolean `link`).
-     TradeStep: `trade step` — number label/large (24 wide) + title label/medium + body body/medium; gap 16 (medium-small), text gap 4. */
+     Step: `step` (was `trade step`, decision 0152) — number label/large (24 wide) + title label/medium + body body/medium; gap 16 (medium-small), text gap 4. */
   function TradeNote(props) {
     return h('div', Object.assign({}, omit(props, ['title', 'signature', 'className', 'children', 'headingLevel']), { className: cx('zz-trade-note', props.className) }),
       h('h' + (props.headingLevel || 2), { className: 'zz-trade-note__title label-small' }, props.title || 'Why it’s not for sale'),
@@ -1019,32 +1019,6 @@
           props.linkLabel || 'On Discogs', h('span', { 'aria-hidden': 'true' }, ' ↗'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')) : null),
       h('button', { type: 'button', className: 'zz-chosen-release__change body-small', onClick: props.onChange }, props.changeLabel || 'Change'));
   }
-  /* ── Memo item (Figma BACKEND → Memo › `memo item`, decision 0087) ──
-     One record on the admin Memo list. Text column: title body/medium text/strong, meta body/small text/moderate,
-     note body/small, "On Discogs ↗" body/small underlined; actions = two secondary small Buttons (Create listing, Remove).
-     Row: padding 16 top/bottom, gap 8, 1px border-divider/strong at the bottom. device=mobile stacks the actions under
-     the text; desktop puts them on the right, centred (CSS @media, one markup). */
-  function MemoItem(props) {
-    var name = typeof props.title === 'string' ? props.title : 'record';
-    return h('li', Object.assign({}, omit(props, ['title', 'meta', 'note', 'href', 'select', 'onCreateDraft', 'onCreate', 'onRemove', 'createDraftLabel', 'createDraftBusy', 'createLabel', 'removeLabel', 'className']),
-      { className: cx('zz-memo-item', props.className) }),
-      // Figma boolean `select` (decision 0140): the row's checkbox, first
-      props.select ? h('div', { className: 'zz-memo-item__select' }, props.select) : null,
-      h('div', { className: 'zz-memo-item__text' },
-        h('p', { className: 'zz-memo-item__title body-medium' }, props.title),
-        props.meta ? h('p', { className: 'zz-memo-item__meta body-small' }, props.meta) : null,
-        props.note ? h('p', { className: 'zz-memo-item__note body-small' }, props.note) : null,
-        props.href ? h('a', { className: 'zz-memo-item__link body-small', href: props.href, target: '_blank', rel: 'noopener' },
-          'On Discogs', h('span', { 'aria-hidden': 'true' }, ' ↗'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')) : null),
-      h('div', { className: 'zz-memo-item__actions' },
-        // Figma boolean `create draft` (decision 0135): a draft in one tap, no form; busy = "Creating…", disabled
-        props.onCreateDraft ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.createDraftBusy ? undefined : props.onCreateDraft,
-          'aria-busy': props.createDraftBusy || undefined, 'aria-disabled': props.createDraftBusy || undefined,
-          'aria-label': (props.createDraftBusy ? 'Creating draft' : props.createDraftLabel || 'Create draft') + ': ' + name },
-          props.createDraftBusy ? 'Creating…' : props.createDraftLabel || 'Create draft') : null,
-        props.onCreate ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onCreate, 'aria-label': (props.createLabel || 'Create listing') + ': ' + name }, props.createLabel || 'Create listing') : null,
-        props.onRemove ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onRemove, 'aria-label': (props.removeLabel || 'Remove') + ': ' + name }, props.removeLabel || 'Remove') : null));
-  }
   /* BackLink (Figma `admin` → `back link`): a text link back to a list, above a detail/edit page title. An <a>,
      body/small text/moderate, "← " + label; hover underlines. Used by Edit listing (→ the matching Listings tab). */
   function BackLink(props) {
@@ -1052,9 +1026,17 @@
       { className: cx('zz-back-link body-small', props.className), href: props.href }),
       '\u2190 ', props.label);
   }
+  /* DiscogsLink (Figma BACKEND → Create › `discogs link`, decision 0150): the Discogs release a listing is matched to,
+     opening in a new tab. Same grammar as the "On Discogs ↗" link of ChosenRelease: body/small, underlined,
+     text colour inherited (text/strong). Screen readers also hear "(opens in a new tab)". */
+  function DiscogsLink(props) {
+    return h('a', Object.assign({}, omit(props, ['href', 'label', 'className']),
+      { className: cx('zz-discogs-link body-small', props.className), href: props.href, target: '_blank', rel: 'noopener' }),
+      props.label || 'On Discogs', h('span', { 'aria-hidden': 'true' }, ' \u2197'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)'));
+  }
   /* ── Bulk create (Figma BACKEND → Bulk, decision 0107) ──
      BulkRecord (`bulk record`, device mobile | desktop, state reading | matched | choose | not found | confirmed | skipped,
-     boolean `warning`): one record found in the dropped files, MemoItem grammar. Text column: title body/medium
+     boolean `warning`): one record found in the dropped files, admin row grammar. Text column: title body/medium
      text/strong, meta body/small text/moderate, files body/small, then (reading) a ProgressBar, the status line
      (support text, body/small text/strong) and the warning (support text, emphasis alert); actions = Review, Remove
      (secondary small). Row padding 16 / 0, gap 8, bottom border divider/strong; desktop: actions on the right, top.
@@ -1086,7 +1068,7 @@
   }
   /* ── Admin Content (Figma BACKEND → Content, decision 0106) ──
      ContentGroupHead (`content group head`): heading label/medium + help body/small text/moderate, gap 4.
-     ContentRow (`content row`, device desktop | mobile, one responsive markup): an <li>, MemoItem grammar: text (title
+     ContentRow (`content row`, device desktop | mobile, one responsive markup): an <li>, admin row grammar: text (title
      body/medium · where body/small text/moderate · edited body/small · condition body/small, booleans `has edited`,
      `has condition`) + Edit (Button secondary small, a link). Padding 16 / 0, gap 16, bottom border divider/strong;
      mobile: stacked, gap 8.
@@ -1131,7 +1113,7 @@
       props.heading, props.text,
       props.onRemove ? h('div', null, h(Button, { hierarchy: 'secondary', size: 'small', type: 'button', onClick: props.onRemove }, props.removeLabel || 'Remove')) : null);
   }
-  /* ── ProgressBar (Figma BACKEND → Memo → `progress bar`, decision 0091) ──
+  /* ── ProgressBar (Figma COMPONENTS → admin → `progress bar`, decision 0091) ──
      Determinate bar: track surface/subtle, value action/primary/background/default, 4px high, square ends.
      value 0–100. role=progressbar + aria-valuenow; the visible status text stays next to it. */
   function ProgressBar(props) {
@@ -1175,6 +1157,17 @@
         props.bulkHref ? h(Button, { hierarchy: 'secondary', href: props.bulkHref }, props.bulkLabel || 'Bulk create') : null,
         props.createHref ? h(Button, { hierarchy: 'primary', href: props.createHref }, props.createLabel || 'Create listing') : null));
   }
+  /* ── Stat (Figma BACKEND → Dashboard → `stat`, decision 0169) ──────────────
+     One figure of the admin Dashboard: 1px divider on top, padding-top 12, gap 4; label (body/small, moderate),
+     value (label/extra-large), optional note (body/small, moderate) and optional link (body/small, underlined).
+     Figma booleans `note` / `link` = the props being set. */
+  function Stat(props) {
+    return h('div', Object.assign({}, omit(props, ['label', 'value', 'note', 'href', 'linkLabel', 'className']), { className: cx('zz-stat', props.className) }),
+      h('p', { className: 'zz-stat__label body-small' }, props.label),
+      h('p', { className: 'zz-stat__value label-extra-large' }, props.value),
+      props.note ? h('p', { className: 'zz-stat__note body-small' }, props.note) : null,
+      props.href ? h('a', { className: 'zz-stat__link body-small', href: props.href }, props.linkLabel || 'View') : null);
+  }
   /* ── ListingsFilter (Figma BACKEND → Listings → `listings filter`, device=desktop | mobile, decision 0128) ──
      The status tabs of the Listings page (Live · Drafts · Sold · Archived, a <Tabs>) + the search field that filters
      the rows (an <Input variant="search">). Desktop: one row, tabs left, search 280 right, centred, gap 16.
@@ -1193,11 +1186,11 @@
         width: 40, height: 40, loading: 'lazy', decoding: 'async' }) : null);
   }
   /* ── ListingRow (Figma page `admin` → `listing row`, decision 0089) ──
-     One row of an admin list on mobile (Listings, Attributes), in place of the table row. Same grammar as MemoItem:
+     One row of an admin list on mobile (Listings, Attributes), in place of the table row. Same admin row grammar:
      select (a Checkbox, label hidden) · text (title link body/small underlined, meta body/small text/moderate, gap 4)
      · price (body/small, right). Padding 16 top/bottom, gap 16, bottom border divider/strong. */
   function ListingRow(props) {
-    return h('li', Object.assign({}, omit(props, ['handle', 'select', 'image', 'title', 'href', 'meta', 'price', 'className']), { className: cx('zz-listing-row', props.className) }),
+    return h(props.as || 'li', Object.assign({}, omit(props, ['as', 'handle', 'select', 'image', 'title', 'href', 'meta', 'price', 'className']), { className: cx('zz-listing-row', props.className) }),
       props.handle || null,   // Figma boolean `handle` (decision 0129): a DragHandle, first
       props.select ? h('div', { className: 'zz-listing-row__select' }, props.select) : null,
       // Figma boolean `show thumbnail` (decision 0123): an `image` object, even without src (= the empty square)
@@ -1206,6 +1199,22 @@
         h('a', { className: 'zz-listing-row__title body-small', href: props.href }, props.title),
         props.meta ? h('p', { className: 'zz-listing-row__meta body-small' }, props.meta) : null),
       props.price ? h('p', { className: 'zz-listing-row__price body-small' }, props.price) : null);
+  }
+  /* ── OfferRow (Figma BACKEND → Offers → `offer row`, device=desktop | mobile, state=new | decided; decision 0158) ──
+     One offer in admin → Offers. record = a ListingRow (price = the offer) without its own padding and border ·
+     buyer (body/small: who and where, the note, the date in text/moderate, gap 4) · new: `actions` (Accept / Decline
+     Buttons, gap 8) · decided: `status` (body/small, 195 wide). Padding 16 top/bottom, gap 16, bottom border
+     divider/strong. desktop: in a row, record 400; mobile: stacked. Booleans: `show note` (on). */
+  function OfferRow(props) {
+    var r = props.record || {};
+    return h('li', Object.assign({}, omit(props, ['record', 'buyer', 'note', 'date', 'actions', 'status', 'className']), { className: cx('zz-offer-row', props.className) }),
+      h(ListingRow, { as: 'div', className: 'zz-offer-row__record', image: r.image, title: r.title, href: r.href, meta: r.meta, price: r.price }),
+      h('div', { className: 'zz-offer-row__buyer body-small' },
+        h('p', null, props.buyer),
+        props.note ? h('p', { className: 'zz-offer-row__note' }, props.note) : null,
+        props.date ? h('p', { className: 'zz-offer-row__date' }, props.date) : null),
+      props.actions ? h('div', { className: 'zz-offer-row__actions' }, props.actions)
+        : props.status ? h('p', { className: 'zz-offer-row__status body-small' }, props.status) : null);
   }
   /* ── ActionBar (Figma page `admin` → `action bar`, decision 0089) ──
      The ActionPanel buttons of a form on mobile, in a bar that stays at the bottom of the viewport (position: sticky,
@@ -1226,12 +1235,12 @@
       h('p', { className: 'zz-order-block__body body-small' }, props.children),
       props.action ? h('div', { className: 'zz-order-block__action' }, props.action) : null);
   }
-  function TradeStep(props) {
-    return h('li', Object.assign({}, omit(props, ['number', 'title', 'className', 'children']), { className: cx('zz-trade-step', props.className) }),
-      h('span', { className: 'zz-trade-step__number label-large', 'aria-hidden': 'true' }, props.number),
-      h('div', { className: 'zz-trade-step__text' },
-        h('h3', { className: 'zz-trade-step__title label-medium' }, props.title),
-        h('p', { className: 'zz-trade-step__body body-medium' }, props.children)));
+  function Step(props) {
+    return h('li', Object.assign({}, omit(props, ['number', 'title', 'className', 'children']), { className: cx('zz-step', props.className) }),
+      h('span', { className: 'zz-step__number label-large', 'aria-hidden': 'true' }, props.number),
+      h('div', { className: 'zz-step__text' },
+        h('h3', { className: 'zz-step__title label-medium' }, props.title),
+        h('p', { className: 'zz-step__body body-medium' }, props.children)));
   }
 
   /* ── ActionPanel ────────────────────────────────────────────────────────
@@ -1289,13 +1298,15 @@
     return h('span', Object.assign({ 'aria-hidden': 'true' }, omit(props, ['className', 'children']), { className: cx('zz-marker body-extra-large', props.className) }), props.children);
   }
   /* ── PriceFields (Figma page `Create` → `price fields`, device=desktop | mobile, Gio 2026-11-17) ──
-     Marker ("€€") + Sale type + Price. desktop: an 8-column grid gap 16, each field 2 columns; mobile: stacked, gap 16. */
+     Marker ("€€") + Sale type + Price. desktop: an 8-column grid gap 16, each field 2 columns; mobile: stacked, gap 16.
+     price=offers (decision 0158): a note (body-small, text/strong) instead of Price, 6 columns, centred on the select. */
   function PriceFields(props) {
-    return h('div', Object.assign({}, omit(props, ['marker', 'saleType', 'price', 'className']), { className: cx('zz-price-fields', props.className) }),
+    return h('div', Object.assign({}, omit(props, ['marker', 'saleType', 'price', 'note', 'className']), { className: cx('zz-price-fields', props.className) }),
       h(Marker, null, props.marker === undefined ? '€€' : props.marker),
       h('div', { className: 'zz-price-fields__row' },
         props.saleType ? h('div', { className: 'zz-price-fields__field' }, props.saleType) : null,
-        props.price ? h('div', { className: 'zz-price-fields__field' }, props.price) : null));
+        props.note ? h('p', { className: 'zz-price-fields__note body-small' }, props.note)
+          : props.price ? h('div', { className: 'zz-price-fields__field' }, props.price) : null));
   }
 
   /* ── Checkbox ───────────────────────────────────────────────────────────
@@ -2013,7 +2024,7 @@
            Radio: Radio, RadioGroup: RadioGroup, RadioEmptyIcon: RadioEmptyIcon, RadioDotIcon: RadioDotIcon,
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
-           TradeNote: TradeNote, DiscogsCard: DiscogsCard, TradeStep: TradeStep,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, BackLink: BackLink, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, useDragOrder: useDragOrder, DragHandle: DragHandle, AdminBar: AdminBar, ListingsHead: ListingsHead, ListingsFilter: ListingsFilter, Thumbnail: Thumbnail, ListingRow: ListingRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
+           TradeNote: TradeNote, DiscogsCard: DiscogsCard, Step: Step,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, BackLink: BackLink, DiscogsLink: DiscogsLink, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, useDragOrder: useDragOrder, DragHandle: DragHandle, AdminBar: AdminBar, ListingsHead: ListingsHead, ListingsFilter: ListingsFilter, Thumbnail: Thumbnail, ListingRow: ListingRow, OfferRow: OfferRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
            NewsletterDialog: NewsletterDialog, SectionHead: SectionHead, GenreLinks: GenreLinks, HomeIntro: HomeIntro, HomeNewsletter: HomeNewsletter, ProductTile: ProductTile, GalleryCounter: GalleryCounter, ViewToggle: ViewToggle };
 });

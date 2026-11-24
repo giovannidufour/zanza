@@ -52,6 +52,7 @@
       customTitle: '', discogs: '', catNo: '',
       lines: [newLine()],
       label: [], labelCredit: '', labelSpelled: false, preRelease: false, country: '', year: '', format: '', section: 'sale', price: '',
+      priceMode: 'fixed',   // 'offers' = Best offer (decision 0158): a sale listing without a price, buyers send offers
       macroGenre: '', genres: [], tags: [],   // macro genre = a Discogs genre (Reggae), not shown in the shop; genres = Discogs styles (0048); tags = the shop's own (Rare, Killer version...)
       condition: '', conditionB: '', conditionNotes: '', sleeveType: 'generic', sleeveCondition: '',
       notes: '',
@@ -143,7 +144,10 @@
 
   function yearText(year, precision) { return year ? String(year) + (precision === 'decade' ? 's' : '') : ''; }
 
+  function priceModeOf(f) { return f.section === 'sale' && f.priceMode === 'offers' ? 'offers' : 'fixed'; }
+
   function payloadOf(f, status) {
+    var mode = priceModeOf(f);
     return {
       listing_id: f.listingId,
       release: {
@@ -160,7 +164,7 @@
                  artists: l.artists.map(function (a) { return { id: a.id, name: a.name, discogs_id: a.discogsId || null }; }) };
       }),
       listing: {
-        section: f.section, status: status, price_cents: textToCents(f.price),
+        section: f.section, status: status, price_mode: mode, price_cents: mode === 'offers' ? null : textToCents(f.price),
         condition_media: f.condition, condition_media_b: f.conditionB, condition_notes: f.conditionNotes,
         sleeve_type: f.sleeveType, condition_sleeve: f.sleeveType === 'none' ? '' : f.sleeveCondition,
         notes: f.notes, custom_title: f.customTitle,
@@ -184,7 +188,7 @@
     FORMATS: FORMATS, MACRO_GENRES: MACRO_GENRES, COUNTRIES: COUNTRIES,
     textToCents: textToCents, discogsId: discogsId, newLine: newLine, namesOf: namesOf, findEntity: findEntity, differs: differs,
     emptyForm: emptyForm, formatOf: formatOf, positionsOf: positionsOf, patchFromDiscogs: patchFromDiscogs,
-    parseYear: parseYear, yearText: yearText, payloadOf: payloadOf, draftPayload: draftPayload,
+    parseYear: parseYear, yearText: yearText, priceModeOf: priceModeOf, payloadOf: payloadOf, draftPayload: draftPayload,
     creditsOf: creditsOf, saveCredits: saveCredits
   };
 });

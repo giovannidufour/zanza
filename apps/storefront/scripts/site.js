@@ -166,7 +166,8 @@
       image: btn.getAttribute('data-product-image') || '',
       href: btn.getAttribute('data-product-href') || '',
       listing: btn.getAttribute('data-listing-id') || '',
-      section: btn.getAttribute('data-listing-section') || 'sale'
+      section: btn.getAttribute('data-listing-section') || 'sale',
+      offers: btn.getAttribute('data-price-mode') === 'offers'   // best offer (0158): no Add to bag, as trade
     };
   }
   // the queue of a sample button = the playable sample buttons of the same group (ProductInfo samples)
@@ -210,7 +211,9 @@
       if (view && cur.href) view.setAttribute('href', cur.href);
       var add = q('.site-player__add');
       // trade listings (decision 0068): no "Add to bag" in the player, the offer is made on the record's page
-      if (add) { add.hidden = cur.section === 'trade'; add.disabled = !cur.listing; if (cur.section !== 'trade') syncAddButton(add, cur.listing); }
+      // best offer (decision 0158): no "Add to bag" either, the offer is made on the record's page
+      var noBag = cur.section === 'trade' || cur.offers;
+      if (add) { add.hidden = noBag; add.disabled = !cur.listing; if (!noBag) syncAddButton(add, cur.listing); }
       q('.zz-player__previous').disabled = index <= 0;
       q('.zz-player__next').disabled = index >= queue.length - 1;
     }
@@ -581,6 +584,9 @@
     var query = searchPage ? (params.get('q') || '').trim() : '';
     var matcher = searchMatcher(query);
     var baseTitle = document.title;   // as built: "Search · <store name>"
+    // Check your wantlist (decision 0152): the page shows only the cards initWantlist marked data-want="exact|other",
+    // grouped (exact first) under the two group headings; the match is read from the card at each apply
+    var wantPage = document.querySelector('[data-wantlist-page]');
     var values = items.map(function (el) {
       var v = {}; keys.forEach(function (k) { try { v[k] = JSON.parse(el.getAttribute('data-' + k) || '[]'); } catch (e) { v[k] = []; } });
       v.__q = !searchPage || (!!matcher && matcher(el.getAttribute('data-search') || ''));
@@ -589,6 +595,7 @@
     // sold: read from the card at each apply (site.js updates data-listing-status live)
     function soldNow() {
       items.forEach(function (el, i) {
+        if (wantPage) values[i].__want = el.getAttribute('data-want') || '';
         var card = el.querySelector('[data-listing-status]');
         var st = card ? card.getAttribute('data-listing-status') : 'available';
         values[i].__sold = st === 'sold' || st === 'traded';
@@ -628,6 +635,7 @@
     var lastSel = null;   // the selection of the last apply(), for analytics
     function matches(v, s, skip) {
       if (!v.__q) return false;
+      if (wantPage && !v.__want) return false;
       if (v.__sold && !s.__showSold) return false;
       return keys.every(function (k) {
         if (k === skip || !s[k].length) return true;
@@ -699,7 +707,9 @@
     }
     function applySort() {
       if (!list) return;
+      var group = function (el) { return el.getAttribute('data-want') === 'other' ? 1 : 0; };
       var sorted = items.slice().sort(function (a, b) {
+        if (wantPage && group(a) !== group(b)) return group(a) - group(b);
         var pa = +a.getAttribute('data-price'), pb = +b.getAttribute('data-price');
         var oa = +a.getAttribute('data-order'), ob = +b.getAttribute('data-order');
         if (sort === 'price-asc') return (pa - pb) || (oa - ob);
@@ -721,6 +731,18 @@
       refreshOptions(boxes, s, root);
       var empty = document.querySelector('[data-plp-empty]'); if (empty) empty.hidden = shown > 0;
       if (searchPage) renderSearch(shown);
+      if (wantPage) {
+        // each group heading right before the first card of its group still shown; none = hidden
+        ['exact', 'other'].forEach(function (g) {
+          var heading = list && list.querySelector('[data-wantlist-group="' + g + '"]');
+          if (!heading) return;
+          var first = items.filter(function (el) { return !el.hidden && (el.getAttribute('data-want') || '') === g; })
+            .sort(function (a, b) { return a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1; })[0];
+          heading.hidden = !first;
+          if (first) list.insertBefore(heading, first);
+        });
+        if (wantPage.__onApply) wantPage.__onApply(shown);
+      }
       var status = root.querySelector('[data-plp-status]');
       if (status && announce) status.textContent = shown + (shown === 1 ? ' record' : ' records');
       // mobile trigger: "Filter" + the number of applied filters as suffix (Figma `PLP header`, 0029)
@@ -904,11 +926,162 @@
     root.addEventListener('change', function () { apply(true); });
     applySort();
     apply(false);
+    // the wantlist check marks the cards later: it calls this to sort and show them
+    if (wantPage) wantPage.__reapply = function () { applySort(); apply(false); };
     // analytics: one search per results page; 0 results = what people look for and the shop doesn't have
     if (searchPage && query && window.ZanzaAnalytics) {
       var term = window.ZanzaAnalytics.safeTerm(query);
       var results = items.filter(function (el) { return !el.hidden; }).length;
       track('search', { term: term || '[redacted]', results: results, no_results: results === 0 });
+    }
+  }
+
+  /* ------------------------------------------------------- 5b. check your wantlist */
+  /* /wantlist/ (pages/plp.js → WantlistTop, Figma page `Wantlist`, decision 0152). Discogs OAuth 1.0a through the
+     function discogs-oauth, which only does what needs the app's secret: the request token, the access token, and
+     signing read URLs. This browser then reads the wantlist straight from api.discogs.com and compares it with the
+     cards of the page: the wantlist never reaches the shop's server and is never saved, only kept in memory while the
+     check runs. The visitor's Discogs permission lives in sessionStorage (this tab only, no cookie) until the tab is
+     closed or Disconnect is pressed. Matches: release id = "Exact matches" (data-want="exact"), else master id =
+     "Other pressings" (data-want="other"). */
+  var WANT_REQ = 'zanza-wantlist-request', WANT_ACCESS = 'zanza-wantlist-access';
+  var wantRun = 0;   // the running check; a new one (or Disconnect, or leaving the page) makes the old one stop
+  function sessionGet(k) { try { return JSON.parse(sessionStorage.getItem(k) || 'null'); } catch (e) { return null; } }
+  function sessionSet(k, v) { try { if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* no storage: the check still runs once */ } }
+  function initWantlist() {
+    wantRun++;
+    var page = document.querySelector('[data-wantlist-page]');
+    var top = page && page.querySelector('[data-wantlist]');
+    if (!top) return;
+    var endpoint = top.getAttribute('data-endpoint');
+    var connect = top.querySelector('[data-wantlist-connect]');
+    var heading = top.querySelector('[data-wantlist-heading]');
+    var title = top.querySelector('[data-wantlist-title]');
+    var errorBox = top.querySelector('[data-wantlist-error]');
+    var start = top.querySelector('[data-wantlist-start]');
+    var results = [page.querySelector('.plp-content'), page.querySelector('.plp-header'), page.querySelector('[data-plp-active]')];
+    var items = Array.prototype.slice.call(page.querySelectorAll('.plp-item'));
+    var callback = location.origin + location.pathname;
+    var state = { checking: false, total: 0 };
+    var count = function (n) { return n.toLocaleString('en-GB'); };
+
+    function call(body) {
+      return fetch(endpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); });
+    }
+    function show(view, message) {
+      connect.hidden = view !== 'connect';
+      heading.hidden = view === 'connect';
+      results.forEach(function (el) { if (el) el.hidden = view !== 'results'; });
+      errorBox.hidden = !message; errorBox.textContent = message || '';
+      if (start) start.removeAttribute('aria-busy');
+    }
+    function forget() { sessionSet(WANT_ACCESS, null); sessionSet(WANT_REQ, null); }
+    function unmark() { items.forEach(function (el) { el.removeAttribute('data-want'); }); if (page.__reapply) page.__reapply(); }
+    // the heading follows the filters ("N records from your wantlist"); before the check ends it shows the progress
+    page.__onApply = function (shown) {
+      if (state.checking || heading.hidden) return;
+      title.textContent = shown ? count(shown) + (shown === 1 ? ' record from your wantlist' : ' records from your wantlist')
+        : 'None of the ' + count(state.total) + ' records on your wantlist are here right now';
+    };
+
+    // Connect: a request token, then Discogs' "Authorize" page; Discogs sends the visitor back here
+    if (start) start.addEventListener('click', function () {
+      start.setAttribute('aria-busy', 'true');
+      call({ action: 'start', callback: callback }).then(function (j) {
+        sessionSet(WANT_REQ, { token: j.token, secret: j.secret });
+        track('wantlist_connect', {});
+        location.href = j.authorizeUrl;
+      }, function () { show('connect', 'Discogs can’t be reached right now. Try again in a minute.'); });
+    });
+    top.querySelector('[data-wantlist-disconnect]').addEventListener('click', function () {
+      wantRun++; forget(); unmark(); state.checking = false;
+      show('connect');
+      track('wantlist_disconnect', {});
+      if (start) start.focus();
+    });
+
+    // back from Discogs: ?oauth_token=…&oauth_verifier=… (or ?denied=… when the visitor said no)
+    var params = new URLSearchParams(location.search);
+    var verifier = params.get('oauth_verifier'), req = sessionGet(WANT_REQ);
+    if (params.has('oauth_token') || params.has('denied')) history.replaceState(history.state, '', location.pathname);
+    if (params.has('denied')) { forget(); show('connect', 'You said no on Discogs, so nothing was checked.'); return; }
+    if (verifier && req && req.token === params.get('oauth_token')) {
+      sessionSet(WANT_REQ, null);
+      show('checking'); title.textContent = 'Connecting to Discogs…';
+      call({ action: 'finish', token: req.token, secret: req.secret, verifier: verifier }).then(function (acc) {
+        sessionSet(WANT_ACCESS, { token: acc.token, secret: acc.secret });
+        check(acc);
+      }, function () { show('connect', 'Discogs didn’t confirm the connection. Try again.'); });
+      return;
+    }
+    var acc = sessionGet(WANT_ACCESS);
+    if (acc) check(acc); else show('connect');
+
+    function check(acc) {
+      var run = ++wantRun;
+      var alive = function () { return run === wantRun && document.body.contains(page); };
+      var releases = {}, masters = {};   // the wantlist, in memory only, gone when the check ends
+      state.checking = true;
+      show('checking'); title.textContent = 'Checking your wantlist…';
+      var sign = function (requests) { return call({ action: 'sign', token: acc.token, secret: acc.secret, requests: requests }).then(function (j) { return j.urls; }); };
+      // one page of Discogs; 429 = too fast (60 requests a minute): wait and ask again for a freshly signed URL
+      var get = function (request, tries) {
+        return sign([request]).then(function (urls) { return fetch(urls[0]); }).then(function (r) {
+          if (r.status === 429 && (tries || 0) < 6) return new Promise(function (ok) { setTimeout(ok, 10000); }).then(function () { return get(request, (tries || 0) + 1); });
+          if (r.status === 401 || r.status === 403) { var e = new Error('denied'); e.denied = true; throw e; }
+          if (!r.ok) throw new Error(String(r.status));
+          return r.json();
+        });
+      };
+      var progress = function (done) {
+        title.textContent = 'Checking your wantlist… ' + count(Math.min(done, state.total)) + ' of ' + count(state.total) + ' records';
+      };
+      get({ path: '/oauth/identity' }).then(function (me) {
+        var path = '/users/' + encodeURIComponent(me.username) + '/wants';
+        var pageOf = function (n) { return get({ path: path, query: { page: String(n), per_page: '100' } }); };
+        var take = function (data) {
+          (data.wants || []).forEach(function (w) {
+            var b = w.basic_information || {};
+            if (w.id || b.id) releases[String(w.id || b.id)] = true;
+            if (b.master_id) masters[String(b.master_id)] = true;
+          });
+        };
+        return pageOf(1).then(function (first) {
+          if (!alive()) return null;
+          var pages = (first.pagination && first.pagination.pages) || 1;
+          state.total = (first.pagination && first.pagination.items) || (first.wants || []).length;
+          take(first); progress(100);
+          var n = 2;
+          var next = function () {
+            if (!alive()) return null;
+            if (n > pages) return true;
+            return pageOf(n).then(function (data) { take(data); progress(n * 100); n++; return next(); });
+          };
+          return next();
+        });
+      }).then(function (done) {
+        if (!done || !alive()) return;
+        var exact = 0, other = 0;
+        items.forEach(function (el) {
+          var r = el.getAttribute('data-release'), m = el.getAttribute('data-master');
+          var want = r && releases[r] ? 'exact' : m && masters[m] ? 'other' : '';
+          if (want) el.setAttribute('data-want', want); else el.removeAttribute('data-want');
+          if (want === 'exact') exact++; else if (want === 'other') other++;
+        });
+        releases = masters = null;
+        state.checking = false;
+        show('results');
+        if (page.__reapply) page.__reapply();
+        track('wantlist_checked', { wants: state.total, exact: exact, other: other });
+      }, function (e) {
+        releases = masters = null;
+        state.checking = false;
+        if (!alive()) return;
+        unmark();
+        if (e && e.denied) { forget(); show('connect', 'Discogs no longer lets this shop read your wantlist. Connect again.'); }
+        else show('connect', 'The check stopped: Discogs can’t be reached right now. Try again in a minute.');
+      });
     }
   }
 
@@ -1311,7 +1484,7 @@
   function syncAddButtons(ids) {
     Array.prototype.forEach.call(document.querySelectorAll('[data-listing-id] .zz-product-card__add'), function (b) {
       var holder = b.closest('[data-listing-id]');
-      if (holder.getAttribute('data-listing-section') === 'trade') return;   // a link to the offer page, not a bag button (0068)
+      if (holder.getAttribute('data-listing-section') === 'trade' || holder.getAttribute('data-price-mode') === 'offers') return;   // a link to the offer page, not a bag button (0068, 0158)
       syncAddButton(b, holder.getAttribute('data-listing-id'), ids);
     });
     Array.prototype.forEach.call(document.querySelectorAll('[data-add-to-bag]'), function (b) {
@@ -1319,7 +1492,7 @@
     });
     var add = player && player.querySelector('.site-player__add');
     var cur = typeof current === 'function' ? current() : null;
-    if (add && cur && cur.section !== 'trade') syncAddButton(add, cur.listing, ids);
+    if (add && cur && cur.section !== 'trade' && !cur.offers) syncAddButton(add, cur.listing, ids);
   }
   // the Add buttons: Add to bag, or open the bag when the copy is already in it (decision 0058). The header Bag link
   // does the opening, so the soft navigation keeps the player; no toast (decision 0050)
@@ -1543,14 +1716,14 @@
     var card = t.closest('.zz-product-card__add');
     if (card) {
       var holder = card.closest('[data-listing-id]');
-      if (holder && holder.getAttribute('data-listing-section') === 'trade') return;   // offer link, or a reserved/traded state (0068)
+      if (holder && (holder.getAttribute('data-listing-section') === 'trade' || holder.getAttribute('data-price-mode') === 'offers')) return;   // offer link, or a reserved/traded state (0068, 0158)
       if (holder) addOrOpen(holder.getAttribute('data-listing-id'));
       return;
     }
     var cta = t.closest('[data-add-to-bag]');
     if (cta) { addOrOpen(cta.getAttribute('data-add-to-bag')); return; }
     var padd = t.closest('.site-player__add');
-    if (padd) { var cur = typeof current === 'function' ? current() : null; if (cur && cur.section !== 'trade') addOrOpen(cur.listing); return; }
+    if (padd) { var cur = typeof current === 'function' ? current() : null; if (cur && cur.section !== 'trade' && !cur.offers) addOrOpen(cur.listing); return; }
     var checkoutBtn = t.closest('[data-bag-checkout]');
     if (checkoutBtn) { if (!checkoutBtn.disabled) startCheckout(checkoutBtn); return; }
     var remove = t.closest('.zz-bag-item__remove');
@@ -1959,6 +2132,173 @@
     });
   }
 
+  /* ---------------------------------------------------------------- best offer (migration 0034, decision 0158) */
+  // the Supabase function `offer` (site.json → offers.endpoint, on each page's root as data-endpoint)
+  function offerPost(endpoint, body) {
+    return fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (res) { return res.json().catch(function () { return {}; }).then(function (data) { return { ok: res.ok, status: res.status, data: data }; }); });
+  }
+  function offerToken() { var m = /[?&]t=([0-9a-f]{64})(?:&|$)/.exec(location.search); return m ? m[1] : ''; }
+  function showOfferState(root, state) {
+    Array.prototype.forEach.call(root.querySelectorAll('[data-offer-state]'), function (el) { el.hidden = el.getAttribute('data-offer-state') !== state; });
+  }
+  // the record on the confirm / pay pages, from the function's answer (Figma `offer target`)
+  function fillOfferTarget(root, info, label) {
+    var t = root.querySelector('[data-offer-target]');
+    if (!t || !info || !info.name) return;
+    t.hidden = false;
+    t.querySelector('[data-offer-target-name]').textContent = info.name;
+    if (label) t.querySelector('[data-offer-target-label]').textContent = label;
+    var link = t.querySelector('[data-offer-target-link]');
+    link.setAttribute('href', (root.getAttribute('data-products-base') || '/products/') + info.slug + '/');
+    var back = root.querySelector('[data-offer-back]');
+    if (back) back.setAttribute('href', link.getAttribute('href'));
+    var img = t.querySelector('[data-offer-target-image]');
+    if (img && info.image) { img.src = info.image; img.hidden = false; }
+  }
+
+  // /products/<slug>/offer/ of a best-offer copy: checks the fields, posts with the puzzle (0132), then "Check your email"
+  function initPriceOffer() {
+    var form = document.querySelector('[data-price-offer-form]');
+    if (!form || form.hasAttribute('data-ready')) return;
+    form.setAttribute('data-ready', '');
+    var errorEl = form.querySelector('[data-offer-error]');
+    var sendBtn = form.querySelector('[data-offer-send]');
+    var endpoint = form.getAttribute('data-endpoint');
+    var puzzle = endpoint ? solvePuzzle(endpoint) : null;
+    function field(name) { return form.querySelector('[name="' + name + '"]'); }
+    function val(name) { var el = field(name); return el ? String(el.value || '').trim() : ''; }
+    function mark(el, bad) {
+      el.setAttribute('aria-invalid', bad ? 'true' : 'false');
+      var box = el.closest('.zz-input');
+      if (box) box.setAttribute('data-invalid', bad ? 'true' : 'false');
+    }
+    function fail(text, el) { errorEl.textContent = text; errorEl.hidden = false; if (el) el.focus(); }
+    function cents(text) {
+      var t = text.replace(/\s|€/g, '').replace(',', '.');
+      return /^\d+(\.\d{1,2})?$/.test(t) ? Math.round(Number(t) * 100) : NaN;
+    }
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      errorEl.hidden = true;
+      var amount = field('amount'), email = field('email'), country = field('country');
+      var c = cents(val('amount'));
+      var badAmount = !(c > 0) || c > 1000000, badEmail = !val('email') || !email.checkValidity(), badCountry = !/^[A-Za-z]{2}$/.test(val('country'));
+      mark(amount, badAmount); mark(email, badEmail); mark(country, badCountry);
+      if (badAmount) { fail('Enter your offer in euros, for example 25.', amount); return; }
+      if (badCountry) { fail('Choose where the record ships to.', country); return; }
+      if (badEmail) { fail('Enter your email: the confirmation link goes there.', email); return; }
+      if (!endpoint) { fail('Offers aren’t switched on yet.'); return; }
+      var label = sendBtn.querySelector('.zz-button__label');
+      var idle = label ? label.textContent : '';
+      sendBtn.disabled = true;
+      if (label) label.textContent = 'Sending…';
+      var answer = puzzle || solvePuzzle(endpoint);
+      puzzle = null;   // one puzzle per send: after an error the next send solves a new one
+      answer.then(function (pow) {
+        return offerPost(endpoint, { action: 'submit', listing: form.getAttribute('data-listing-id'), amount: val('amount'),
+          country: val('country'), email: val('email'), note: val('note'), website: val('website'), pow: pow });
+      }).then(function (r) {
+        if (!r.ok) throw r;
+        track('price_offer_sent', { listing: form.getAttribute('data-listing-id') });
+        form.hidden = true;
+        var sent = document.querySelector('[data-price-offer-sent]');
+        if (sent) {
+          sent.querySelector('[data-offer-sent-email]').textContent = val('email');
+          sent.querySelector('[data-offer-sent-amount]').textContent = formatPrice(c);
+          sent.hidden = false;
+        }
+        var title = document.querySelector('[data-offer-title]');
+        if (title) { title.textContent = 'Offer sent'; title.setAttribute('tabindex', '-1'); title.focus(); }
+      }).catch(function (r) {
+        sendBtn.disabled = false;
+        if (label) label.textContent = idle;
+        var err = r && r.data && r.data.error;
+        fail(err === 'unavailable' ? 'This record isn’t taking offers right now: it may have been sold or reserved.'
+          : err === 'too_many' ? 'You’ve sent a few offers already today. Try again tomorrow, or write to me.'
+          : err === 'amount' ? 'Enter your offer in euros, for example 25.'
+          : 'Your offer didn’t go through. Try again in a moment.');
+      });
+    });
+  }
+
+  // /offer/confirm/?t=… (the link of the email): confirms the offer as the page opens
+  function initOfferConfirm() {
+    var root = document.querySelector('[data-offer-confirm-page]');
+    if (!root || root.hasAttribute('data-ready')) return;
+    root.setAttribute('data-ready', '');
+    var endpoint = root.getAttribute('data-endpoint'), token = offerToken();
+    if (!endpoint || !token) { showOfferState(root, 'invalid'); return; }
+    offerPost(endpoint, { action: 'confirm', token: token }).then(function (r) {
+      var d = r.data || {};
+      if (d.result === 'confirmed') {
+        fillOfferTarget(root, d);
+        root.querySelector('[data-offer-state="confirmed"] [data-offer-amount]').textContent = formatPrice(d.amount_cents);
+        root.querySelector('[data-offer-state="confirmed"] [data-offer-name]').textContent = d.name;
+        showOfferState(root, 'confirmed');
+        track('price_offer_confirmed');
+      } else showOfferState(root, d.result === 'expired' ? 'expired' : 'invalid');
+    }).catch(function () { showOfferState(root, 'invalid'); });
+  }
+
+  // /offer/pay/?t=… (the acceptance email): the accepted amount + shipping to the chosen country → Stripe Checkout
+  function initOfferPay() {
+    var root = document.querySelector('[data-offer-pay-page]');
+    if (!root || root.hasAttribute('data-ready')) return;
+    root.setAttribute('data-ready', '');
+    var endpoint = root.getAttribute('data-endpoint'), token = offerToken();
+    if (!endpoint || !token) { showOfferState(root, 'invalid'); return; }
+    var info = null, busy = false;
+    var select = root.querySelector('[data-offer-ship-to]');
+    var btn = root.querySelector('[data-offer-checkout]');
+    function render() {
+      var amount = info.amount_cents, shipEl = root.querySelector('[data-offer-shipping]'), totalEl = root.querySelector('[data-offer-total]');
+      var note = root.querySelector('[data-offer-note]');
+      root.querySelector('[data-offer-amount]').textContent = formatPrice(amount);
+      var configEl = root.querySelector('[data-shipping-config]'), config = null;
+      try { config = configEl ? JSON.parse(configEl.textContent) : null; } catch (e) { config = null; }
+      var served = true;
+      if (select && config && window.ZanzaShipping) {
+        var est = window.ZanzaShipping.estimate(config, [{ format: info.format, weight_g: info.weight_g }], select.value);
+        served = est.status === 'ok';
+        shipEl.textContent = served ? formatPrice(est.price_cents) : 'Not available';
+        totalEl.textContent = served ? formatPrice(amount + est.price_cents) : '—';
+      } else totalEl.textContent = formatPrice(amount) + ' + shipping';
+      var until = info.expires_at ? new Date(info.expires_at) : null;
+      var when = until ? until.toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+      note.textContent = served
+        ? (when ? 'Valid until ' + when + '. Then the record is back open to offers. ' : '') + 'You enter the address and pay on Stripe.'
+        : 'I don’t ship to ' + select.options[select.selectedIndex].text + ' yet. Reply to my email and we’ll find a way.';
+      btn.disabled = !served;
+    }
+    offerPost(endpoint, { action: 'pay-info', token: token }).then(function (r) {
+      var d = r.data || {};
+      if (!d.state) { showOfferState(root, 'invalid'); return; }
+      info = d;
+      fillOfferTarget(root, d, 'Yours for ' + formatPrice(d.amount_cents));
+      if (d.state !== 'ready') { showOfferState(root, d.state); return; }
+      if (select && d.country && select.querySelector('option[value="' + d.country + '"]')) select.value = d.country;
+      render();
+      showOfferState(root, 'ready');
+    }).catch(function () { showOfferState(root, 'invalid'); });
+    if (select) select.addEventListener('change', function () { if (info) render(); });
+    btn.addEventListener('click', function () {
+      if (busy || !info || btn.disabled) return;
+      busy = true;
+      btn.setAttribute('aria-disabled', 'true');
+      offerPost(endpoint, { action: 'pay', token: token, country: select ? select.value : info.country }).then(function (r) {
+        var d = r.data || {};
+        if (r.ok && d.url) { track('price_offer_checkout'); location.href = d.url; return; }
+        busy = false; btn.removeAttribute('aria-disabled');
+        if (d.state && d.state !== 'ready') { showOfferState(root, d.state); return; }
+        checkoutMessage(d.error === 'shipping' ? 'I can’t ship there yet: reply to my email and we’ll find a way.' : 'The checkout didn’t open. Try again in a moment.');
+      }).catch(function () {
+        busy = false; btn.removeAttribute('aria-disabled');
+        checkoutMessage('The checkout didn’t open. Try again in a moment.');
+      });
+    });
+  }
+
   var navToken = 0;
   function navigate(href, push) {
     var token = ++navToken;
@@ -1983,10 +2323,14 @@
       initGallery();
       initRecordStack();
       initSearch();
+      initWantlist();   // before initFilters: it reads Discogs' ?oauth_… before the filters rewrite the URL
       initFilters();
       initStatus();
       initBag();
       initOffer();
+      initPriceOffer();
+      initOfferConfirm();
+      initOfferPay();
       initContact();
       initHome();
       if (window.ZanzaAccount) window.ZanzaAccount.init();   // customer account (scripts/account.js, decision 0101)
@@ -2111,10 +2455,14 @@
   initGallery();
   initRecordStack();
   initSearch();
+  initWantlist();
   initFilters();
   initStatus();
   initBag();
   initOffer();
+  initPriceOffer();
+  initOfferConfirm();
+  initOfferPay();
   initContact();
   initHome();
   if (window.ZanzaAccount) window.ZanzaAccount.init();

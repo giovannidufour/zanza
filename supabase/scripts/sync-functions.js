@@ -8,6 +8,7 @@ const path = require('path');
 const root = path.join(__dirname, '..', '..');
 const COPIES = [
   ['packages/shipping/shipping.js', 'supabase/functions/create-checkout/shipping.js'],
+  ['packages/shipping/shipping.js', 'supabase/functions/offer/shipping.js'],   // decision 0158
   ['packages/images/images.js', 'supabase/functions/sign-upload/images.js'],   // decision 0108
   ['packages/images/images.js', 'supabase/functions/purge-media/images.js'],
   ['packages/file-names/file-names.js', 'supabase/functions/scan-targets/file-names.js'],   // decision 0138

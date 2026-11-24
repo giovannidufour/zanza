@@ -1436,10 +1436,10 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-discogs-card p { margin: 0; }
 .zz-discogs-card__label { color: var(--text-moderate); }
 .zz-discogs-card__link { color: inherit; text-decoration: underline; align-self: flex-start; }
-.zz-trade-step { display: flex; gap: var(--medium-small); color: var(--text-strong); }
-.zz-trade-step__number { flex: none; width: 24px; }
-.zz-trade-step__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.zz-trade-step__title, .zz-trade-step__body { margin: 0; }
+.zz-step { display: flex; gap: var(--medium-small); color: var(--text-strong); }
+.zz-step__number { flex: none; width: 24px; }
+.zz-step__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.zz-step__title, .zz-step__body { margin: 0; }
 
 /* Discogs release picker (Figma page Trade: release option, release list, chosen release) */
 .zz-release-list { background: var(--surface-base); border: 1px solid var(--border-divider-strong); color: var(--text-strong); }
@@ -1455,9 +1455,8 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-chosen-release { border: 1px solid var(--border-divider-strong); }
 .zz-chosen-release__link { color: inherit; text-decoration: underline; align-self: flex-start; }
 .zz-chosen-release__change { flex: none; background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
-/* Memo item (Figma BACKEND → Memo › `memo item`, decision 0088) */
 /* ProgressBar (Figma `progress bar`, 0091): 4px track, value grows with a short ease */
-/* Bulk create (Figma BACKEND → Bulk, decision 0107): BulkRecord = MemoItem grammar, actions on top on desktop */
+/* Bulk create (Figma BACKEND → Bulk, decision 0107): BulkRecord = admin row grammar, actions on top on desktop */
 .zz-bulk-record { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
 .zz-bulk-record__text { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
 .zz-bulk-record__text > p { margin: 0; overflow-wrap: anywhere; }
@@ -1473,23 +1472,14 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-progress-bar { position: relative; height: 4px; background: var(--surface-subtle); overflow: hidden; }
 .zz-progress-bar__value { height: 100%; background: var(--action-primary-background-default); transition: width 0.3s ease-out; }
 @media (prefers-reduced-motion: reduce) { .zz-progress-bar__value { transition: none; } }
-.zz-memo-item { display: flex; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
-.zz-memo-item__text { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
-.zz-memo-item__text > p { margin: 0; overflow-wrap: anywhere; }
-.zz-memo-item__meta { color: var(--text-moderate); }
 /* BackLink (Figma `admin` → `back link`) */
+/* DiscogsLink (Figma BACKEND → Create › `discogs link`, 0150): same as the ChosenRelease Discogs link */
+.zz-discogs-link { color: inherit; text-decoration: underline; align-self: flex-start; }
 .zz-back-link { display: inline-block; color: var(--text-moderate); text-decoration: none; }
 .zz-back-link:hover { text-decoration: underline; }
-.zz-memo-item__link { color: inherit; text-decoration: underline; align-self: flex-start; }
-.zz-memo-item__actions { flex: none; display: flex; flex-wrap: wrap; gap: 8px; }
-@media (--mobile) { .zz-memo-item { flex-direction: column; align-items: stretch; gap: 8px; } }
-/* boolean `select` (decision 0140): the checkbox first; mobile = checkbox beside the stacked text and actions (gap 16 / 8) */
-.zz-memo-item__select { flex: none; display: flex; }
+@media (--mobile) { /* boolean `select` (decision 0140): the checkbox first; mobile = checkbox beside the stacked text and actions (gap 16 / 8) */
 @media (--mobile) {
-  .zz-memo-item:has(> .zz-memo-item__select) { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 16px; row-gap: 8px; align-items: start; }
-  .zz-memo-item:has(> .zz-memo-item__select) > .zz-memo-item__select { grid-row: 1 / span 2; }
-  .zz-memo-item:has(> .zz-memo-item__select) > .zz-memo-item__text, .zz-memo-item:has(> .zz-memo-item__select) > .zz-memo-item__actions { grid-column: 2; }
-}
+      }
 
 /* ── AdminBar (Figma page `admin` → `admin bar`, decision 0089): desktop = section buttons + account, mobile = menu · title (no Create since 0125) ── */
 .zz-admin-bar__desktop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
@@ -1506,6 +1496,11 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
   .zz-admin-bar__title { flex: 1 1 auto; min-width: 0; margin: 0; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 /* ── ListingsHead (Figma BACKEND → Listings → `listings head`, decision 0125): title + Bulk create · Create listing; mobile = actions under the title ── */
+/* Stat (Figma BACKEND → Dashboard → `stat`, decision 0169) */
+.zz-stat { display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border-divider-strong); color: var(--text-strong); min-width: 0; }
+.zz-stat > p { margin: 0; overflow-wrap: anywhere; }
+.zz-stat__label, .zz-stat__note { color: var(--text-moderate); }
+.zz-stat__link { color: var(--text-strong); text-decoration: underline; align-self: flex-start; }
 .zz-listings-head { display: flex; align-items: center; gap: 16px; color: var(--text-strong); }
 .zz-listings-head__title { flex: 1 1 auto; min-width: 0; margin: 0; overflow-wrap: anywhere; }
 .zz-listings-head__actions { flex: none; display: flex; flex-wrap: wrap; gap: 16px; }
@@ -1564,6 +1559,21 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-listing-row__meta, .zz-listing-row__price { margin: 0; }
 .zz-listing-row__meta { color: var(--text-moderate); }
 .zz-listing-row__price { flex: none; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ── OfferRow (Figma BACKEND → Offers → `offer row`, decision 0158) ── */
+.zz-offer-row { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
+.zz-offer-row .zz-offer-row__record { flex: 0 0 400px; padding: 0; border-bottom: 0; }
+.zz-offer-row__buyer { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
+.zz-offer-row__buyer p, .zz-offer-row__status { margin: 0; }
+.zz-offer-row__date { color: var(--text-moderate); }
+.zz-offer-row__actions { flex: none; display: flex; gap: 8px; }
+.zz-offer-row__status { flex: 0 0 195px; }
+@media (--mobile) {
+  .zz-offer-row { flex-direction: column; }
+  .zz-offer-row .zz-offer-row__record { flex: none; align-self: stretch; }
+  .zz-offer-row__buyer { align-self: stretch; }
+  .zz-offer-row__status { flex: none; }
+}
 
 /* ── ActionBar (Figma page `admin` → `action bar`, decision 0089): form actions stuck to the bottom of the viewport ──
    surface/base, not the ActionPanel's surface/subtle: that one is translucent in the backend mode and the form
@@ -1708,9 +1718,11 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-price-fields { display: flex; align-items: flex-start; }
 .zz-price-fields__row { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 16px; align-items: start; }
 .zz-price-fields__field { grid-column: span 2; display: flex; flex-direction: column; min-width: 0; }
+.zz-price-fields__note { grid-column: span 6; align-self: center; margin: 0; color: var(--text-strong); }
 @media (--mobile) {
   .zz-price-fields__row { grid-template-columns: minmax(0, 1fr); }
-  .zz-price-fields__field { grid-column: auto; }
+  .zz-price-fields__field,
+  .zz-price-fields__note { grid-column: auto; }
 }
 
 /* ── LinkedInput (Figma BACKEND → Create → `custom title`, `title link bar`, `title link menu`; decision 0147) ── */

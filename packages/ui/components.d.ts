@@ -989,13 +989,13 @@ export interface DiscogsCardProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function DiscogsCard(props: DiscogsCardProps): JSX.Element;
 
-/** Figma `trade step` (page Trade): one numbered step of How trading works. An <li>: put it in an <ol>. */
-export interface TradeStepProps extends HTMLAttributes<HTMLLIElement> {
+/** Figma `step` (page Trade; was `trade step`, decision 0152): one numbered step (How trading works, Check your wantlist). An <li>: put it in an <ol>. */
+export interface StepProps extends HTMLAttributes<HTMLLIElement> {
   number: ReactNode;
   title: ReactNode;
   children?: ReactNode;
 }
-export declare function TradeStep(props: TradeStepProps): JSX.Element;
+export declare function Step(props: StepProps): JSX.Element;
 
 /** Figma `release option` (page Trade): one Discogs release in the "Which record" suggestions. An <li role="option">. */
 export interface ReleaseOptionProps extends HTMLAttributes<HTMLLIElement> {
@@ -1039,35 +1039,6 @@ export interface ChosenReleaseProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function ChosenRelease(props: ChosenReleaseProps): JSX.Element;
 
-/** Figma `memo item` (page Memo, BACKEND, decision 0087): one record on the admin Memo list. An <li>: wrap in a <ul>. */
-export interface MemoItemProps extends HTMLAttributes<HTMLLIElement> {
-  /** free text, or "Artist – Title" of the picked Discogs release */
-  title: ReactNode;
-  /** Figma boolean `discogs release`: label · cat no · year · country · format. Omit → no meta */
-  meta?: ReactNode;
-  /** Figma boolean `has note`: Gio's own note. Omit → no note */
-  note?: ReactNode;
-  /** the release on discogs.com (Figma: shown with `discogs release`). Omit → no link */
-  href?: string;
-  /** Figma boolean `select` (decision 0140): the row's checkbox (a Checkbox with hideLabel). Omit → none */
-  select?: ReactNode;
-  /** Figma boolean `create draft` (decision 0135): saves a draft from the memo, no form. Omit → no button */
-  onCreateDraft?: () => void;
-  /** true while the draft is being saved: the button reads "Creating…" and does nothing */
-  createDraftBusy?: boolean;
-  /** Default "Create draft" */
-  createDraftLabel?: string;
-  /** Figma boolean `create listing`: opens the listing form from the memo. Omit → no button */
-  onCreate?: () => void;
-  /** Remove. Omit → no button */
-  onRemove?: () => void;
-  /** Default "Create listing" */
-  createLabel?: string;
-  /** Default "Remove" */
-  removeLabel?: string;
-}
-export declare function MemoItem(props: MemoItemProps): JSX.Element;
-
 /** Figma `file name` (Create, decision 0136): a name to give a scan or a clip of a listing, with Copy. An <li>: wrap in a <ul>. */
 export interface BackLinkProps extends HTMLAttributes<HTMLAnchorElement> {
   href: string;
@@ -1075,6 +1046,15 @@ export interface BackLinkProps extends HTMLAttributes<HTMLAnchorElement> {
   label: ReactNode;
 }
 export declare function BackLink(props: BackLinkProps): JSX.Element;
+
+/** Figma `discogs link` (BACKEND → Create, decision 0150): the Discogs release a listing is matched to, "On Discogs ↗", new tab. An <a>. */
+export interface DiscogsLinkProps extends HTMLAttributes<HTMLAnchorElement> {
+  /** the release on discogs.com: https://www.discogs.com/release/<id> */
+  href: string;
+  /** Default "On Discogs" (the ↗ is added) */
+  label?: ReactNode;
+}
+export declare function DiscogsLink(props: DiscogsLinkProps): JSX.Element;
 
 /** Figma `bulk record` (BACKEND → Bulk, decision 0107): one record found in the files dropped on Bulk create. An <li>: wrap in a <ul>. */
 export interface BulkRecordProps extends HTMLAttributes<HTMLLIElement> {
@@ -1187,7 +1167,7 @@ export interface SectionRowProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function SectionRow(props: SectionRowProps): JSX.Element;
 
-/** Mirrors the Figma component `progress bar` (BACKEND → Memo): a determinate bar, 4px, track surface/subtle,
+/** Mirrors the Figma component `progress bar` (COMPONENTS → admin): a determinate bar, 4px, track surface/subtle,
  *  value action/primary/background/default. role="progressbar"; pass aria-label (or aria-labelledby). Decision 0091. */
 export interface ProgressBarProps extends HTMLAttributes<HTMLDivElement> {
   /** Percent done, 0–100 (clamped, rounded). Figma: width of the `value` layer. */
@@ -1236,6 +1216,22 @@ export interface ListingsHeadProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function ListingsHead(props: ListingsHeadProps): JSX.Element;
 
+/** Mirrors the Figma component `stat` (page BACKEND → Dashboard, decision 0169): one figure of the admin Dashboard.
+ *  Divider on top, label, value, optional note and link (Figma booleans `note` and `link`). */
+export interface StatProps extends HTMLAttributes<HTMLDivElement> {
+  /** What is counted (body/small, text-moderate). */
+  label: ReactNode;
+  /** The figure (label/extra-large), already formatted: "12", "1,240 €". */
+  value: ReactNode;
+  /** How it is counted, or a split ("8 online · 4 off the site"). Omit → no note. */
+  note?: ReactNode;
+  /** Where the figure comes from (the list behind it). Omit → no link. */
+  href?: string;
+  /** @default "View" */
+  linkLabel?: ReactNode;
+}
+export declare function Stat(props: StatProps): JSX.Element;
+
 /** Mirrors the Figma component `listings filter` (page BACKEND → Listings, device=desktop | mobile, one responsive markup,
  *  decision 0128): the status tabs of the Listings page + the search that filters its rows. Desktop = one row, search
  *  280 on the right; mobile = tabs, then the search full width. */
@@ -1262,6 +1258,8 @@ export declare function Thumbnail(props: ThumbnailProps): JSX.Element;
 
 /** Mirrors the Figma component `listing row` (page `admin`, decision 0089): a row of an admin list on mobile, in a <ul>. */
 export interface ListingRowProps extends HTMLAttributes<HTMLLIElement> {
+  /** The element: 'li' in a list (default), 'div' inside another row (OfferRow). @default "li" */
+  as?: 'li' | 'div';
   /** Figma boolean `handle` (decision 0129): a DragHandle, before the select. Omit → fixed order. */
   handle?: ReactNode;
   /** A Checkbox with hideLabel (accessible name "Select <record>"). Omit → no select column. */
@@ -1278,6 +1276,23 @@ export interface ListingRowProps extends HTMLAttributes<HTMLLIElement> {
   price?: ReactNode;
 }
 export declare function ListingRow(props: ListingRowProps): JSX.Element;
+
+/** Mirrors the Figma component `offer row` (BACKEND → Offers, device=desktop | mobile, state=new | decided; decision 0158). */
+export interface OfferRowProps extends Omit<HTMLAttributes<HTMLLIElement>, 'title'> {
+  /** The record, as a ListingRow without select / handle: price = the offer. */
+  record: { image?: ThumbnailProps; title: ReactNode; href?: string; meta?: ReactNode; price?: ReactNode };
+  /** Who and where, e.g. "buyer@example.com · ships to Germany". */
+  buyer: ReactNode;
+  /** The buyer's note (Figma boolean `show note`). */
+  note?: ReactNode;
+  /** When the offer arrived (text/moderate). */
+  date?: ReactNode;
+  /** state=new: the Accept / Decline Buttons. */
+  actions?: ReactNode;
+  /** state=decided: the status line (used when there are no actions). */
+  status?: ReactNode;
+}
+export declare function OfferRow(props: OfferRowProps): JSX.Element;
 
 /** Figma `drag handle` (icon bars-three 24, in `file item`, `listing row`, `listings table row`; decision 0129): the
  *  chromeless button of a reorderable row. ↑ ↓ move the row by one; pointer drags start on the whole row (useDragOrder). */
@@ -1465,5 +1480,7 @@ export interface PriceFieldsProps extends HTMLAttributes<HTMLDivElement> {
   saleType?: ReactNode;
   /** Price Input. Desktop: 2 of 8 columns. */
   price?: ReactNode;
+  /** price=offers (decision 0158): a note in place of Price (Best offer has no price). Desktop: 6 of 8 columns. */
+  note?: ReactNode;
 }
 export declare function PriceFields(props: PriceFieldsProps): JSX.Element;

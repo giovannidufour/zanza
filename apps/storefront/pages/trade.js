@@ -149,7 +149,7 @@ function HowTrading({ site, url }) {
       h('h1', { className: 'trade-content__title body-large' }, 'How trading works'),
       h('div', { className: 'trade-col trade-col--steps' }, h(Z.Divider),
         h('ol', { className: 'trade-steps' }, (textOf(site, 'page.how_trading', 'steps') || []).map((s, i) =>
-          h(Z.TradeStep, { key: i, number: i + 1, title: s.title }, s.text)))),
+          h(Z.Step, { key: i, number: i + 1, title: s.title }, s.text)))),
       h('div', { className: 'trade-col trade-col--3' }, h(Z.Divider),
         h(OwnerDiscogs, { site, label: 'Who you’re trading with' }),
         h(Z.Button, { hierarchy: 'secondary', href: url('/about/') }, 'About me'),
@@ -173,4 +173,4 @@ function About({ site, url }) {
       identityOn(site) ? h('div', { className: 'trade-col trade-col--2' }, h(Z.Divider), h(OwnerDiscogs, { site })) : null));
 }
 
-module.exports = { TradeActions, Offer, HowTrading, About, offerHref };
+module.exports = { TradeActions, Offer, OfferTarget, HowTrading, About, offerHref };
