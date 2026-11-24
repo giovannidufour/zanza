@@ -185,4 +185,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0163](0163-listings-full-width-overview-columns.md) | Admin Listings full width; columns Format, Grading, Genre, Photos, Samples; missing = "—" in text/moderate | accepted |
 | [0166](0166-listings-year-column.md) | Admin Listings: Year column after Format (1983 or 1990s), every tab | accepted |
 | [0167](0167-home-more-records-view-all.md) | Home: Recent shows 12 records, then a full-width "View all for sale" → /sale/ | proposed |
-| [0169](0169-admin-dashboard.md) | Admin Dashboard = landing page, first in the nav: Now (online, inventory value without best-offer copies, to ship, offers, drafts, memo) + Sales by period (sold online / off the site, money taken gross, average, days to sell); DS `Stat`; no migration | accepted |
+| [0169](0169-admin-dashboard.md) | Admin Dashboard = landing page, first in the nav: Now (online, inventory value without best-offer copies, to ship, offers, drafts) + Sales by period (sold online / off the site, money taken gross, average, days to sell); DS `Stat`; no migration | accepted |

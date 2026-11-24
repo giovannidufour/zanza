@@ -3244,7 +3244,7 @@
 
   // ── Dashboard ─────────────────────────────────────────────────────────────
   /* Figma BACKEND → Dashboard (decision 0169): the admin landing page. Read-only figures computed here from what the
-     admin can already read (orders, listings, admin_offers, memos): no migration. "Now" = current state; "Sales" =
+     admin can already read (orders, listings, admin_offers): no migration. "Now" = current state; "Sales" =
      the period in the tabs (calendar month / year in the browser's time, or all time). Euro only. Route: # or #dashboard */
   var PERIODS = [['month', 'This month'], ['year', 'This year'], ['all', 'All time']];
   function periodStart(p) {
@@ -3289,7 +3289,7 @@
       toShip: data.orders.filter(function (o) { return o.status === 'paid'; }).length,
       pending: offers.filter(function (o) { return o.state === 'pending'; }).length,
       accepted: offers.filter(function (o) { return o.state === 'accepted'; }).length,
-      drafts: drafts.length, incomplete: drafts.filter(incomplete).length, memos: data.memos,
+      drafts: drafts.length, incomplete: drafts.filter(incomplete).length,
       sold: sold.length, online: sold.length - offSite.length, offSite: offSite.length, traded: traded,
       taken: taken, shipping: shipping, offSiteNoPrice: offSiteNoPrice, average: priced > 0 ? Math.round(taken / priced) : null,
       days: med === null ? null : Math.round(med), listed: listed
@@ -3303,12 +3303,11 @@
       Promise.all([
         sb.from('listings').select('id,status,reserved_until,section,price_mode,price_cents,published_at,sold_at,condition_media,release:releases(format,lines:release_lines(position,artist))'),
         sb.from('orders').select('id,status,created_at,shipping_cents,items:order_items(listing_id,price_cents)'),
-        sb.from('admin_offers').select('id,state'),
-        sb.from('memos').select('id', { count: 'exact', head: true })
+        sb.from('admin_offers').select('id,state')
       ]).then(function (r) {
         var bad = r.filter(function (x) { return x.error; })[0];
         if (bad) { setError(bad.error.message); return; }
-        setData({ listings: r[0].data, orders: r[1].data, offers: r[2].data, memos: r[3].count || 0 });
+        setData({ listings: r[0].data, orders: r[1].data, offers: r[2].data });
       }, function (e) { setError(e.message); });
     }, []);
     if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not load the dashboard: ' + error);
@@ -3331,8 +3330,7 @@
         h(Z.Stat, { key: 'value', label: 'Inventory value', value: statMoney(f.value), note: valueNote }),
         h(Z.Stat, { key: 'ship', label: 'To ship', value: statCount(f.toShip), note: 'Paid, not shipped yet', href: '#orders', linkLabel: 'View orders' }),
         h(Z.Stat, { key: 'offers', label: 'Offers waiting', value: statCount(f.pending), note: statCount(f.accepted) + ' accepted, waiting for payment', href: '#offers', linkLabel: 'View offers' }),
-        h(Z.Stat, { key: 'drafts', label: 'Drafts', value: statCount(f.drafts), note: statCount(f.drafts - f.incomplete) + ' ready to publish · ' + statCount(f.incomplete) + ' incomplete', href: '#listings/draft', linkLabel: 'View drafts' }),
-        h(Z.Stat, { key: 'memo', label: 'Memo', value: statCount(f.memos), note: 'Records to sell later', href: '#memo', linkLabel: 'View memo' })
+        h(Z.Stat, { key: 'drafts', label: 'Drafts', value: statCount(f.drafts), note: statCount(f.drafts - f.incomplete) + ' ready to publish · ' + statCount(f.incomplete) + ' incomplete', href: '#listings/draft', linkLabel: 'View drafts' })
       ]),
       section('dashboard-sales', 'Sales',
         h(Z.Tabs, { value: period, onValueChange: setPeriod, 'aria-label': 'Period' },
