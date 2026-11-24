@@ -2357,7 +2357,9 @@
       var a = e.target.closest && e.target.closest('a[href]');
       if (!shouldIntercept(e, a)) return;
       e.preventDefault();
-      if (a.href === location.href) return;
+      // a link to the page you are on reloads it, as a plain link would (e.g. logo / store name on the home, decision
+      // 0175), but softly: fresh content, back to the top, the player keeps playing; no new history entry
+      if (a.href === location.href) { navigate(a.href, false); return; }
       navigate(a.href, true);
     });
     history.replaceState({ soft: true }, '', location.href);
