@@ -1519,8 +1519,9 @@
       h(Z.Tabs, { value: tab, onValueChange: setTab, 'aria-label': 'Filter by status' },
         ORDER_TABS.map(function (t) { return h(Z.Tab, { key: t[0], value: t[0], suffix: String(counts[t[0]]), 'aria-controls': 'orders-table' }, t[1]); })),
       mobile ? h('ul', { id: 'orders-table', className: 'admin-rows' }, visible.length ? visible.map(function (o) {
-        return h(Z.ListingRow, { key: o.id, href: '#orders/' + o.id, title: buyerOf(o),
-          meta: [orderRef(o), shortDate(o.created_at), orderStatus(o)].join(' · '), price: euro(o.total_cents) });
+        // the order ref is the link (Gio 2026-11-24): title = ref, the buyer goes into the meta
+        return h(Z.ListingRow, { key: o.id, href: '#orders/' + o.id, title: orderRef(o),
+          meta: [buyerOf(o), shortDate(o.created_at), orderStatus(o)].join(' · '), price: euro(o.total_cents) });
       }) : h('li', { className: 'body-small admin-rows__empty' }, empty))
       : h('div', { className: 'admin-table-wrap' },
           h('table', { id: 'orders-table', className: 'admin-table body-small' },
@@ -1528,8 +1529,8 @@
               ['Order', 'Buyer', 'Status', 'Date', 'Total'].map(function (t) { return h('th', { key: t, className: t === 'Order' ? 'num' : t === 'Total' ? 'num price' : '' }, t); }))),
             h('tbody', null, visible.length ? visible.map(function (o) {
               return h('tr', { key: o.id },
-                h('td', { className: 'num' }, orderRef(o)),
-                h('td', null, h('a', { href: '#orders/' + o.id }, buyerOf(o))),
+                h('td', { className: 'num' }, h('a', { href: '#orders/' + o.id }, orderRef(o))),
+                h('td', null, buyerOf(o)),
                 h('td', null, orderStatus(o)),
                 h('td', null, shortDate(o.created_at)),
                 h('td', { className: 'num price' }, euro(o.total_cents)));
