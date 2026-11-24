@@ -19,7 +19,8 @@ struct ScannerTabs: View {
 func timeText(_ t: Double) -> String { String(format: "%d:%02d", Int(t) / 60, Int(t) % 60) }
 
 /// `waveform` (Figma 2446:26014): played bars text/strong, unplayed waveform-unplayed; the start silence (before
-/// `cut`) and end silence (after `cutEnd`) in waveform-silence (red), at 32% once the silence is removed
+/// `cut`) and end silence (after `cutEnd`) in waveform-silence (red), at 32% once the silence is removed.
+/// 0173: one tone, 480 thin bars, height = (bar peak / clip peak)² so the peak differences show
 struct Waveform: View {
     let peaks: [Float]
     var cut: Double = 0
@@ -35,7 +36,7 @@ struct Waveform: View {
                 let n = peaks.count, w = size.width / CGFloat(n)
                 for (i, p) in peaks.enumerated() {
                     let x = CGFloat(i) * w, h = max(1, CGFloat(p) * size.height)
-                    let r = CGRect(x: x, y: (size.height - h) / 2, width: max(1, w * 0.6), height: h)
+                    let r = CGRect(x: x, y: (size.height - h) / 2, width: max(1, w * 0.5), height: h)
                     let f = (Double(i) + 0.5) / Double(n)
                     let color: Color = f < cut || f > cutEnd
                         ? Theme.waveformSilence.opacity(removed ? 0.32 : 1)
@@ -255,7 +256,7 @@ struct ClipSlotRow: View {
     }
 }
 
-/// Right column of the Samples tab: folders and Export (WAV + MP3 320, tags, label cover). No normalize (Gio).
+/// Right column of the Samples tab: folders and Export (WAV + MP3 320, tags, label cover). +8 dB boost, peak ≤ −2 dBFS (0157); no normalize.
 struct ExportPanel: View {
     @EnvironmentObject var model: AppModel
     @ObservedObject var session: SessionModel

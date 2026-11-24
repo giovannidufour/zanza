@@ -1456,19 +1456,6 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-chosen-release__link { color: inherit; text-decoration: underline; align-self: flex-start; }
 .zz-chosen-release__change { flex: none; background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
 /* ProgressBar (Figma `progress bar`, 0091): 4px track, value grows with a short ease */
-/* Bulk create (Figma BACKEND → Bulk, decision 0107): BulkRecord = admin row grammar, actions on top on desktop */
-.zz-bulk-record { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
-.zz-bulk-record__text { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
-.zz-bulk-record__text > p { margin: 0; overflow-wrap: anywhere; }
-.zz-bulk-record__meta { color: var(--text-moderate); }
-.zz-bulk-record__progress { margin-top: 8px; max-width: 480px; }
-.zz-bulk-record__text > .zz-bulk-record__status { margin-top: 8px; }
-.zz-bulk-record__warning { color: var(--text-alert); }
-.zz-bulk-record__actions { flex: none; display: flex; flex-wrap: wrap; gap: 8px; }
-@media (--mobile) { .zz-bulk-record { flex-direction: column; align-items: stretch; gap: 8px; } .zz-bulk-record__progress { max-width: none; } }
-.zz-bulk-help { display: flex; flex-direction: column; gap: 4px; color: var(--text-strong); }
-.zz-bulk-help > p { margin: 0; }
-.zz-bulk-help__example { color: var(--text-moderate); overflow-wrap: anywhere; }
 .zz-progress-bar { position: relative; height: 4px; background: var(--surface-subtle); overflow: hidden; }
 .zz-progress-bar__value { height: 100%; background: var(--action-primary-background-default); transition: width 0.3s ease-out; }
 @media (prefers-reduced-motion: reduce) { .zz-progress-bar__value { transition: none; } }
@@ -1477,9 +1464,6 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-discogs-link { color: inherit; text-decoration: underline; align-self: flex-start; }
 .zz-back-link { display: inline-block; color: var(--text-moderate); text-decoration: none; }
 .zz-back-link:hover { text-decoration: underline; }
-@media (--mobile) { /* boolean `select` (decision 0140): the checkbox first; mobile = checkbox beside the stacked text and actions (gap 16 / 8) */
-@media (--mobile) {
-      }
 
 /* ── AdminBar (Figma page `admin` → `admin bar`, decision 0089): desktop = section buttons + account, mobile = menu · title (no Create since 0125) ── */
 .zz-admin-bar__desktop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }

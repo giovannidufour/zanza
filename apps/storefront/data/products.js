@@ -113,6 +113,12 @@ function toProduct(row, mediaUrl, artists = []) {
       genres: r.genres,             // genres (Discogs styles), in order
       tags: (r.tag_rows || []).slice().sort((a, b) => a.position - b.position).map((t) => t.tag.name),   // the shop's own tags
       tracklist: r.tracklist,
+      // Discogs credits (decision 0148): every role, in Discogs order; not shown, the search uses the producers
+      // (pages/plp.js searchTextOf). aliases = the person's other spellings ("C.S. Dodd", "Coxsone").
+      credits: (r.credits || []).slice().sort((a, b) => a.position - b.position).filter((c) => c.artist).map((c) => ({
+        role: c.role, credit: c.credit || null, tracks: c.tracks || null,
+        artist: { slug: c.artist.slug, name: c.artist.name, aliases: (c.artist.aliases || []).map((a) => a.name) }
+      })),
       cover: photos[0] || null
     },
     copy: {
@@ -147,12 +153,16 @@ function byListingOrder(a, b) {
 }
 
 async function fromSupabase(env, site, fetchImpl = fetch) {
-  const select = '*,release:releases(*,label_entity:labels(slug,name),' +
+  const selectOf = (credits) => '*,release:releases(*,label_entity:labels(slug,name),' +
     'lines:release_lines(*,line_artists:release_line_artists(position,join_text,artist:artists(slug,name))),' +
+    (credits ? 'credits:release_credits(position,role,credit,tracks,artist:artists(slug,name,aliases:artist_aliases(name))),' : '') +
     'samples(*),tag_rows:release_tags(position,tag:tags(name)))';
-  const res = await fetchImpl(`${env.SUPABASE_URL.replace(/\/$/, '')}/rest/v1/listings?select=${encodeURIComponent(select)}`, {
+  const get = (select) => fetchImpl(`${env.SUPABASE_URL.replace(/\/$/, '')}/rest/v1/listings?select=${encodeURIComponent(select)}`, {
     headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, Accept: 'application/json' }
   });
+  let res = await get(selectOf(true));
+  // a database before migration 0032 has no release_credits (PostgREST answers 400): build without credits, as before
+  if (res.status === 400) res = await get(selectOf(false));
   if (!res.ok) throw new Error(`Supabase: ${res.status} ${await res.text()}`);
   const rows = await res.json();
   const mediaUrl = mediaUrlFor(site);

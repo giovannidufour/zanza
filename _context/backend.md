@@ -21,6 +21,7 @@ Stack: `stack.md`. Questa è la **bozza** dello schema e dei flussi, da rivedere
 | `genres`, `release_genres` (0011, rinominati in 0014) | generi (= styles Discogs: Roots, Dancehall…) come entità con `slug`, in ordine per release; filtro Genre della PLP | `releases.genres` resta = i loro nomi in ordine. Fino alla 0014 si chiamavano `subgenres` |
 | `tags`, `release_tags` (0007, 0011) | tag di Gio (Rare, Killer version…), mai da Discogs, in ordine per release | filtro Tags della PLP |
 | `artists`, `labels` (0006) | entità con nome **ufficiale**, `slug` (pagina futura), id Discogs | `artist_aliases` / `label_aliases` = altre grafie. Le righe le collegano con `release_line_artists` (più artisti per riga, in ordine, con "&"/"feat."); la release con `label_id`. `release_lines.artist` e `releases.label` restano = il **credito come stampato** su quel disco (lo mostra il negozio) |
+| `release_credits` (0032, decisione 0148) | i credits Discogs della release (Producer, Mixed By, Backing Band…: tutti i ruoli), in ordine | `artist_id` = la stessa entità `artists` degli interpreti; `role` come scritto su Discogs; `credit` = nome stampato (ANV) se diverso; `tracks` = posizioni Discogs (null = tutta la release). Non mostrati nel negozio: la ricerca usa solo i produttori. `releases.credits_fetched_at` = quando sono stati letti |
 | `listings` | la copia pubblicata (copy + listing del brief) | `section`, `status`, `price_cents`, `condition_media` (lato A) + `condition_media_b` (lato B, facoltativo, 0013) → `grades`, `sleeve_type` (`original`/`generic`/`none`) + `condition_sleeve` → `grades`, `photo_keys[]` (la **prima è la featured/cover**), `sku` (5 cifre casuali, mai riusate: registro `used_skus` + trigger, migrazione 0020), `custom_title`, `custom_title_links` (link del titolo a mano: range di caratteri → artista, `null` = derivati come in 0111; migrazione 0031, decisione 0147), `condition_notes`, `reserved_until`, `sort_order` (ordine del negozio deciso da Gio col drag in admin: numerico, più basso = prima; nuovi e appena pubblicati in cima; `admin_move_listing`, migrazione 0029, decisione 0129), `import_source` (solo test) |
 | `samples` | clip della release | `audio_key`, `line_id` (sample del lato; vuoto = "additional"), `sort` = ordine nel player |
 | `orders`, `order_items` | ordini Stripe | li scrivono solo le Edge Functions; prezzo copiato al momento dell'acquisto. L'admin può eliminarli con `admin_delete_order` (0036, decisione 0170: ordini di test o errori; i dischi ancora sold tornano available se scelto; Stripe non viene toccato) |
@@ -72,6 +73,13 @@ Chiavi casuali e immutabili (2026-11-10): l'upload avviene prima che il listing 
 - Generi e tag (0007, 0011, 0014): stesso collegamento per nome (senza alias né id Discogs); il salvataggio riscrive `releases.genres` con i nomi dei generi in ordine.
 - Dati esistenti: un'entità per nome distinto (i 21 dischi di prova hanno nomi combinati tipo "A & B" in maiuscolo: da sistemare a mano se servono).
 
+### Credits e produttori (0032, Gio 2026-11-23, decisione 0148)
+- `discogs-lookup { releaseId }` restituisce anche `credits` (extraartists della release e delle tracce). Per i produttori nuovi legge anche le varianti del nome e il nome reale da Discogs (una richiesta in più, solo la prima volta): diventano alias dell'artista, così "Coxsone" trova un disco accreditato "C.S. Dodd".
+- Dopo `admin_save_listing`, `admin_set_release_credits(release, credits)` sostituisce i credits della release (Create/Edit dopo Fetch Discogs, memo rimasti convertiti in draft, Scanner). Un Edit senza Fetch Discogs non li tocca. Un errore sui credits non annulla il salvataggio.
+- Dischi già presenti: Edge Function `release-credits` (solo admin, Verify JWT ON): `POST { limit? }` legge fino a 20 release senza `credits_fetched_at`, 1,5 s l'una dall'altra; si richiama finché `remaining` = 0. Contiene una copia di `packages/listing-draft` (`npm run sync:functions`).
+- Negozio: `data/products.js` legge `release.credits` (con gli alias dell'artista); `pages/plp.js` mette nel testo di ricerca i ruoli `SEARCH_ROLES` (oggi `/produc/i`). Senza la migrazione 0032 il build va avanti senza credits.
+- Attributes: i credits contano come collegamenti dell'artista (un artista ancora accreditato non si cancella; Replace sposta i credits sulla prima entità scelta).
+
 ### Attributes (0012, Gio 2026-11-10, decisione di design 0034)
 - Pagina admin per artisti, label, generi e tag: lista con conteggio dei record, modifica (nome, alias, ID Discogs, slug), creazione a mano.
 - **Replace with** (`admin_replace_entity`): sposta i record su una o più entità e cancella la vecchia. Una = merge (nome e alias diventano alias), più di una = split. Il merge dalla lista (`admin_merge_entities`) tiene quella scelta.
@@ -80,7 +88,7 @@ Chiavi casuali e immutabili (2026-11-10): l'upload avviene prima che il listing 
 ### Stati di vendita (0004)
 ```
 draft ──► available ──► reserved ──► sold (sale) / traded (trade)
-(una bozza può essere incompleta: senza grading, formato, prezzo, artista della riga 1 — Bulk create, 0107, migrazione 0026; il trigger `listings_publish_check` li pretende appena esce da draft)
+(una bozza può essere incompleta: senza grading, formato, prezzo, artista della riga 1 — nata da Bulk create 0107, rimosso con 0172; oggi le bozze dello Scanner, migrazione 0026; il trigger `listings_publish_check` li pretende appena esce da draft)
   ▲          │  ▲           │                │
   └──────────┘  └───────────┴────────────────┘   unpublish · release · annulla vendita
 available ──► sold / traded diretto (venduto fuori dal sito: fiera, Discogs, di persona)

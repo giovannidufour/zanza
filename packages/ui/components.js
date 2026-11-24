@@ -1034,38 +1034,6 @@
       { className: cx('zz-discogs-link body-small', props.className), href: props.href, target: '_blank', rel: 'noopener' }),
       props.label || 'On Discogs', h('span', { 'aria-hidden': 'true' }, ' \u2197'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)'));
   }
-  /* ── Bulk create (Figma BACKEND → Bulk, decision 0107) ──
-     BulkRecord (`bulk record`, device mobile | desktop, state reading | matched | choose | not found | confirmed | skipped,
-     boolean `warning`): one record found in the dropped files, admin row grammar. Text column: title body/medium
-     text/strong, meta body/small text/moderate, files body/small, then (reading) a ProgressBar, the status line
-     (support text, body/small text/strong) and the warning (support text, emphasis alert); actions = Review, Remove
-     (secondary small). Row padding 16 / 0, gap 8, bottom border divider/strong; desktop: actions on the right, top.
-     BulkHelp (`bulk naming help`): heading body/medium + lines body/small, example body/small text/moderate; gap 4. */
-  function BulkRecord(props) {
-    var name = typeof props.title === 'string' ? props.title : 'record';
-    var reading = props.state === 'reading';
-    var uploading = !reading && props.uploadProgress != null;
-    return h('li', Object.assign({}, omit(props, ['title', 'meta', 'files', 'status', 'warning', 'progress', 'uploadProgress', 'state', 'onReview', 'onRemove', 'reviewLabel', 'removeLabel', 'className']),
-      { className: cx('zz-bulk-record', props.className), 'data-state': props.state || undefined }),
-      h('div', { className: 'zz-bulk-record__text' },
-        h('p', { className: 'zz-bulk-record__title body-medium' }, props.title),
-        props.meta ? h('p', { className: 'zz-bulk-record__meta body-small' }, props.meta) : null,
-        props.files ? h('p', { className: 'zz-bulk-record__files body-small' }, props.files) : null,
-        reading ? h(ProgressBar, { className: 'zz-bulk-record__progress', value: props.progress || 0, 'aria-label': 'Reading ' + name }) : null,
-        // files still converting / uploading (decision 0108): the same bar, under the files line
-        uploading ? h(ProgressBar, { className: 'zz-bulk-record__progress', value: props.uploadProgress, 'aria-label': 'Uploading the files of ' + name }) : null,
-        props.status ? h('p', { className: 'zz-bulk-record__status body-small' }, props.status) : null,
-        props.warning ? h('p', { className: 'zz-bulk-record__warning body-small' }, props.warning) : null),
-      reading ? null : h('div', { className: 'zz-bulk-record__actions' },
-        props.onReview ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onReview, 'aria-label': (props.reviewLabel || 'Review') + ': ' + name }, props.reviewLabel || 'Review') : null,
-        props.onRemove ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onRemove, 'aria-label': (props.removeLabel || 'Remove') + ': ' + name }, props.removeLabel || 'Remove') : null));
-  }
-  function BulkHelp(props) {
-    return h('div', Object.assign({}, omit(props, ['heading', 'lines', 'example', 'className']), { className: cx('zz-bulk-help', props.className) }),
-      h('p', { className: 'zz-bulk-help__heading body-medium' }, props.heading),
-      (props.lines || []).map(function (l, i) { return h('p', { key: i, className: 'zz-bulk-help__line body-small' }, l); }),
-      props.example ? h('p', { className: 'zz-bulk-help__example body-small' }, props.example) : null);
-  }
   /* ── Admin Content (Figma BACKEND → Content, decision 0106) ──
      ContentGroupHead (`content group head`): heading label/medium + help body/small text/moderate, gap 4.
      ContentRow (`content row`, device desktop | mobile, one responsive markup): an <li>, admin row grammar: text (title
@@ -1127,7 +1095,7 @@
      · the signed-in email (body/small text/moderate) + Sign out.
      mobile (--mobile): Menu Button (secondary, bars icon, like the shop header) · title (label/medium),
      padding page-margin/mobile, bottom border divider/strong; the sections and Sign out live in the page's menu dialog
-     (MenuLayer), opened by onMenuClick. No Create here since decision 0125: Create listing and Bulk create are actions
+     (MenuLayer), opened by onMenuClick. No Create here since decision 0125: Create listing is an action
      of the Listings page (ListingsHead). */
   function AdminBar(props) {
     var items = props.items || [];
@@ -1147,14 +1115,13 @@
         h('p', { className: 'zz-admin-bar__title label-medium' }, props.title || 'Store admin')));
   }
   /* ── ListingsHead (Figma BACKEND → Listings → `listings head`, device=desktop | mobile, decision 0125) ──
-     The Listings page title (h1 label-extra-large, the `admin page title`) + the ways to add records: Bulk create
-     (secondary) and Create listing (primary), gap 16, links. Desktop: one row, actions on the right, centred.
+     The Listings page title (h1 label-extra-large, the `admin page title`) + Create listing (primary, a link);
+     Bulk create removed (decision 0172). Desktop: one row, actions on the right, centred.
      Mobile (--mobile): the actions go under the title, gap 16 (the uppercase labels do not fit beside it at 343). */
   function ListingsHead(props) {
-    return h('div', Object.assign({}, omit(props, ['title', 'createHref', 'createLabel', 'bulkHref', 'bulkLabel', 'className']), { className: cx('zz-listings-head', props.className) }),
+    return h('div', Object.assign({}, omit(props, ['title', 'createHref', 'createLabel', 'className']), { className: cx('zz-listings-head', props.className) }),
       h('h1', { className: 'zz-listings-head__title label-extra-large' }, props.title || 'Listings'),
       h('div', { className: 'zz-listings-head__actions' },
-        props.bulkHref ? h(Button, { hierarchy: 'secondary', href: props.bulkHref }, props.bulkLabel || 'Bulk create') : null,
         props.createHref ? h(Button, { hierarchy: 'primary', href: props.createHref }, props.createLabel || 'Create listing') : null));
   }
   /* ── Stat (Figma BACKEND → Dashboard → `stat`, decision 0169) ──────────────
@@ -2025,6 +1992,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, Step: Step,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, BackLink: BackLink, DiscogsLink: DiscogsLink, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, useDragOrder: useDragOrder, DragHandle: DragHandle, AdminBar: AdminBar, ListingsHead: ListingsHead, ListingsFilter: ListingsFilter, Thumbnail: Thumbnail, ListingRow: ListingRow, OfferRow: OfferRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, BackLink: BackLink, DiscogsLink: DiscogsLink, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, useDragOrder: useDragOrder, DragHandle: DragHandle, AdminBar: AdminBar, ListingsHead: ListingsHead, ListingsFilter: ListingsFilter, Stat: Stat, Thumbnail: Thumbnail, ListingRow: ListingRow, OfferRow: OfferRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
            NewsletterDialog: NewsletterDialog, SectionHead: SectionHead, GenreLinks: GenreLinks, HomeIntro: HomeIntro, HomeNewsletter: HomeNewsletter, ProductTile: ProductTile, GalleryCounter: GalleryCounter, ViewToggle: ViewToggle };
 });
