@@ -1477,9 +1477,6 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-discogs-link { color: inherit; text-decoration: underline; align-self: flex-start; }
 .zz-back-link { display: inline-block; color: var(--text-moderate); text-decoration: none; }
 .zz-back-link:hover { text-decoration: underline; }
-@media (--mobile) { /* boolean `select` (decision 0140): the checkbox first; mobile = checkbox beside the stacked text and actions (gap 16 / 8) */
-@media (--mobile) {
-      }
 
 /* ── AdminBar (Figma page `admin` → `admin bar`, decision 0089): desktop = section buttons + account, mobile = menu · title (no Create since 0125) ── */
 .zz-admin-bar__desktop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
