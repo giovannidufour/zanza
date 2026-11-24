@@ -1,7 +1,6 @@
 /* apps/admin/admin.js — the admin single-page app (React via createElement, no build step).
    Screens: sign-in (email link) · listings (Figma BACKEND → Listings: bulk actions, archive, delete) · create / edit listing (Figma BACKEND → Create)
    · attributes: artists, labels, genres, tags (Figma BACKEND → Attributes) · shipping (Figma BACKEND → Shipping)
-   · memo: Gio's reminder list of records to sell later (Figma BACKEND → Memo, decision 0087).
    · bulk: many records at once from named photos and samples, as incomplete drafts (Figma BACKEND → Bulk, decision 0107).
    Data: Supabase with the signed-in user's session (RLS: only public.admins can write).
    Save = one call to public.admin_save_listing (one transaction). Files go straight to R2 through
@@ -450,18 +449,6 @@
     useEffect(function () {
       loadEntities().then(setEntities).catch(function (err) { setMessage({ error: true, text: 'Suggestions not loaded: ' + err.message }); });
     }, []);
-    // opened from the Memo list (0087): the release is fetched once the suggestions are in (chips bind to entities);
-    // a free-text item only names the record in the status line. The first save takes the item off the list.
-    var fromMemo = props.fromMemo || null;
-    var tookOff = useRef(false), autoFetched = useRef(false);
-    useEffect(function () {
-      if (!fromMemo) return;
-      if (!fromMemo.discogs) { setMessage({ error: false, text: 'From Memo: ' + fromMemo.title + (fromMemo.note ? ' (' + fromMemo.note + ')' : '') + '. No Discogs release: fill in the record.' }); return; }
-      if (autoFetched.current || entities === null) return;
-      autoFetched.current = true;
-      fetchDiscogs();
-    }, [entities]);
-
     function set(patch) { setF(function (cur) { return Object.assign({}, cur, typeof patch === 'function' ? patch(cur) : patch); }); }
     function bind(name) {
       return { value: f[name], onChange: function (e) { var p = {}; p[name] = e.target.value; set(p); }, error: errors[name] };
@@ -571,12 +558,6 @@
         publishedAt: x.publishedAt || (d.status === 'available' ? new Date(now).toISOString() : null),
         createdAt: x.createdAt || new Date(now).toISOString() }; });
       if (d.status !== 'draft' || wasPublic) setShopAt(now);
-      if (fromMemo && !tookOff.current) {
-        tookOff.current = true;
-        sb.from('memos').delete().eq('id', fromMemo.id).then(function (r) {
-          toast(r.error ? 'Still on Memo: ' + r.error.message : 'Taken off Memo.');
-        });
-      }
       // decision 0118: the result in a toast; the status block at the top of the side column says the new state
       toast(d.status === 'available' ? (wasPublic ? 'Updated' : 'Published') + ' · SKU ' + d.sku + '. The shop updates in about 2 minutes.'
         : d.status === 'draft' ? 'Draft saved · SKU ' + d.sku + '.' + (andNew ? ' Next one: a new listing.' : '') : 'Saved · SKU ' + d.sku + '.');
@@ -585,6 +566,13 @@
       if (andNew) { location.hash = '#new'; window.scrollTo(0, 0); }
     }
 
+    /* decision 0171 (Memo removed, a draft is the reminder): when the photo finds no pressing, the words read become
+       the title of line 1 if it is empty, as a free-text memo did, so Save draft works right away */
+    function onPhotoFound(found) {
+      var titled = !found.results.length && !!found.query && !fRef.current.lines[0].title.trim();
+      if (titled) setLine(0, 'title', found.query);
+      setPhotoFound({ results: found.results, titled: titled });
+    }
     // a pressing picked from the Discogs match search (0156): its link in the field, then Fetch Discogs
     function pickRelease(r) { set({ discogs: 'https://www.discogs.com/release/' + r.id }); fetchDiscogs(r.id); }
     // Fetch Discogs: reads the release in "Discogs match" and fills the release fields
@@ -778,10 +766,12 @@
         mobile ? discogsLink : null,
         // Figma Create → `discogs actions` (0092): Fetch Discogs + Photo of the label + Fetch from label (only with
         // images, Gio 2026-11-17); picking a release found from a photo puts its link in Discogs match and fetches it
-        h(PhotoField, { disabled: locked, images: f.images.filter(function (x) { return x.url; }).map(function (x) { return x.url; }), pickHint: 'Pick the pressing to fetch it.', onFound: setPhotoFound,
+        h(PhotoField, { disabled: locked, images: f.images.filter(function (x) { return x.url; }).map(function (x) { return x.url; }), pickHint: 'Pick the pressing to fetch it.', onFound: onPhotoFound,
           actions: h(Z.Button, { hierarchy: 'secondary', disabled: locked, 'aria-busy': fetching || undefined, onClick: function () { fetchDiscogs(); } }, 'Fetch Discogs') }),
         photoFound ? h(Z.ReleaseList, { listId: 'photo-releases', label: 'Releases on Discogs',
-            message: photoFound.results.length ? undefined : 'No match on Discogs for what the photo shows. Paste the release link instead.' },
+            message: photoFound.results.length ? undefined : photoFound.titled
+              ? 'No match on Discogs for what the photo shows. The words read are now the title of line 1: save the draft and find the pressing later.'
+              : 'No match on Discogs for what the photo shows. Paste the release link instead.' },
           photoFound.results.map(function (r, i) {
             function pick() { setPhotoFound(null); set({ discogs: 'https://www.discogs.com/release/' + r.id }); fetchDiscogs(r.id); }
             return h(Z.ReleaseOption, { key: r.id, id: 'photo-release-' + i, title: r.title, meta: r.meta, thumb: r.thumb, tabIndex: 0,
@@ -904,7 +894,7 @@
     // decision 0155 (Figma `action panel` → secondary 2 on Create and drafts): save, then a blank Create listing
     var nextBtn = locked || published ? null : h(Z.Button, { key: 'next', hierarchy: 'secondary', disabled: saving, onClick: function () { save('draft', true); } }, 'Save draft and new');
     var shopBtn = shopUrl ? h(Z.Button, { key: 'shop', hierarchy: 'secondary', href: shopUrl, target: '_blank', rel: 'noopener' }, 'View in store') : null;
-    // errors stay in an Alert under the buttons until the next save; other notes (Discogs, Memo) in a line of text
+    // errors stay in an Alert under the buttons until the next save; other notes (Discogs) in a line of text
     var note = message ? (message.error ? h(Z.Alert, { role: 'alert' }, message.text) : h('p', { className: 'admin-status body-small', role: 'status' }, message.text)) : null;
     var panelButtons = [publishBtn, draftBtn, nextBtn, shopBtn].filter(Boolean);
     // mobile (decision 0089): Publish / Save draft in the ActionBar at the bottom of the viewport, with the note above
@@ -1116,6 +1106,7 @@
       load();
       // files of deleted copies leave R2 after 7 days (Edge Function purge-media, 0009); once per visit, best effort
       if (!purgeAsked) { purgeAsked = true; sb.functions.invoke('purge-media').catch(function () {}); }
+      draftsFromLeftoverMemos().then(function (n) { if (n) load(); }).catch(function () {});   // decision 0171
     }, []);
     // after a delete, focus the row that took the place of the first deleted one (never lost to <body>)
     useEffect(function () {
@@ -2607,11 +2598,7 @@
           h('p', { className: 'body-medium admin-shipping__result', role: 'status' }, result))));
   }
 
-  // ── Memo ──────────────────────────────────────────────────────────────────
-  /* Figma BACKEND → Memo (2296:9962, decision 0087): Gio's list of records to sell later, made for the phone.
-     Add = Record (free text, or a Discogs release picked while typing) + optional Note. The list is public.memos
-     (migration 0019, admin only), newest first. Create listing opens #new/memo/<id> (release fetched; the first
-     save takes the item off the list). Create draft saves a draft at once, no form (0135). Remove deletes at once, toast with Undo (0049). */
+  // ── Discogs search and Photo of the label (Create listing, Bulk review) ──────────
   // a release as the picker shows it, from the discogs-lookup release answer (a pasted link)
   function releaseFromLookup(d) {
     var fmt = d.format || {}, desc = (fmt.descriptions || []).slice(0, 2).join(', ') || fmt.name || '';
@@ -2622,10 +2609,10 @@
   /* Record: the offer form's "Which record" (Figma `which record`, 0069) for the admin. ARIA 1.2 combobox: focus stays
      in the input, arrows move aria-activedescendant, Enter picks (or submits when nothing is highlighted), Escape
      closes. 3+ letters ask discogs-lookup { query } (debounced; a newer request wins); a pasted release link resolves. */
-  /* Search Discogs while typing (shared by Memo Record and Create listing → Discogs match, decision 0156). ARIA 1.2
+  /* Search Discogs while typing (shared by Bulk → Which record and Create listing → Discogs match, decision 0156). ARIA 1.2
      combobox: focus stays in the input, arrows move aria-activedescendant, Enter picks, Escape closes. 3+ letters ask
      discogs-lookup { query } (debounced; a newer request wins). opts.resolveLinks: a pasted release link is looked up
-     and offered as the one result (Memo); without it a link or a number closes the list (Discogs match fetches it). */
+     and offered as the one result (Which record); without it a link or a number closes the list (Discogs match fetches it). */
   function useDiscogsSearch(id, opts) {
     opts = opts || {};
     var rs = useState(null), box = rs[0], setBox = rs[1];          // null | { results: [] } | { message: '' }
@@ -2688,7 +2675,7 @@
   }
   /* Record: the offer form's "Which record" (Figma `which record`, 0069) for the admin; the search is useDiscogsSearch. */
   function RecordField(props) {
-    var id = props.id || 'memo-record', label = props.label || 'Record';
+    var id = props.id || 'record', label = props.label || 'Record';
     var ds = useDiscogsSearch(id, { resolveLinks: true, emptyMessage: 'No match on Discogs. Keep it as you wrote it.', failHint: 'Keep it as you wrote it.' });
     // releases found from a photo of the label (0090): shown as if typed; a newer photo or keystroke wins
     useEffect(function () {
@@ -2709,10 +2696,11 @@
       h(Z.Input, Object.assign({ id: id, label: label, value: props.value, error: props.error, placeholder: 'Artist – title, or search Discogs',
         onChange: onText }, ds.inputProps(onPick)))].concat(ds.list(onPick)));
   }
-  /* Photo of the label (Figma BACKEND → Memo → `memo photo`, state default | reading | read | not read; decision 0090).
+  /* Photo of the label (Figma BACKEND → Create → `photo of the label`, state default | reading | read | not read; decisions 0090, 0171).
      Opens the phone's back camera (a file picker on desktop). The photo is shrunk here (longest side 1280 px, JPEG),
      read by read-label (free vision model on Cloudflare Workers AI, nothing stored), then the fields go to
-     discogs-lookup { fields }: barcode, then catalogue number, then artist + title. The words read land in Record. */
+     discogs-lookup { fields }: barcode, then catalogue number, then artist + title. No pressing found: the words read
+     become the title of line 1 when it is empty (0171). */
   var PHOTO_SIDE = 1280;
   function shrinkPhoto(file) {
     return new Promise(function (resolve, reject) {
@@ -2785,7 +2773,7 @@
           creep(97, 3);
           var found = await invoke('discogs-lookup', { fields: r });
           if (n !== seq.current) return;
-          lastRead = { said: said, results: found.results || [] };
+          lastRead = { said: said, query: got.query, results: found.results || [] };
           if (lastRead.results.length) break;
         } catch (err) {
           if (n !== seq.current) return;
@@ -2800,199 +2788,57 @@
         return;
       }
       stopAt(100);
-      props.onFound({ results: lastRead.results });
-      setSt({ state: 'read', text: 'Read from the photo: ' + lastRead.said + '. ' + (props.pickHint || 'Pick your pressing in the list, or fix the text.') });
+      props.onFound({ results: lastRead.results, query: lastRead.query });
+      // no pressing found: the release list under it says what happens next (0171)
+      setSt({ state: 'read', text: 'Read from the photo: ' + lastRead.said + '.' + (lastRead.results.length ? ' ' + (props.pickHint || 'Pick your pressing in the list.') : '') });
     }
     var reading = st.state === 'reading';
-    // full: one full-width button (Memo); otherwise the button sits in a row after props.actions (Create, 0092)
-    var button = h(Z.Button, { type: 'button', hierarchy: 'secondary', disabled: props.disabled, className: props.full ? 'admin-memo__photo-button' : undefined,
+    // the button sits in a row after props.actions (Create, 0092)
+    var button = h(Z.Button, { type: 'button', hierarchy: 'secondary', disabled: props.disabled,
         'aria-busy': reading || undefined, onClick: function () { if (!reading) input.current.click(); } },
         st.state === 'read' || st.state === 'not read' ? 'Another photo' : 'Photo of the label');
-    return h('div', { className: 'admin-memo__photo' },
+    return h('div', { className: 'admin-photo' },
       h('input', { ref: input, type: 'file', accept: 'image/*', capture: 'environment', className: 'zz-visually-hidden',
         tabIndex: -1, 'aria-hidden': 'true', onChange: onFile }),
-      props.full ? button : h('div', { className: 'admin-photo-actions' }, props.actions, button,
+      h('div', { className: 'admin-photo-actions' }, props.actions, button,
         props.images && props.images.length ? h(Z.Button, { type: 'button', hierarchy: 'secondary', disabled: props.disabled,
           'aria-busy': reading || undefined, onClick: function () { if (!reading) fromImages(); } }, 'Fetch from label') : null),
       reading ? h(Z.ProgressBar, { value: progress, 'aria-label': 'Reading the photo' }) : null,
-      h('p', { className: 'body-small admin-memo__photo-status', role: 'status' }, st.text));
+      h('p', { className: 'body-small admin-photo__status', role: 'status' }, st.text));
   }
-  function Memo() {
-    var mobile = useIsMobile();
-    var ls = useState(null), rows = ls[0], setRows = ls[1];
-    var es = useState(null), loadError = es[0], setLoadError = es[1];
-    var ts = useState(''), text = ts[0], setText = ts[1];
-    var rl = useState(null), release = rl[0], setRelease = rl[1];
-    var ns = useState(''), note = ns[0], setNote = ns[1];
-    var er = useState(null), error = er[0], setError = er[1];
-    var sv = useState(false), saving = sv[0], setSaving = sv[1];
-    var ms = useState(null), message = ms[0], setMessage = ms[1];
-    var fs = useState(null), found = fs[0], setFound = fs[1];       // releases from the last photo (0090)
-    var pk = useState(0), photoKey = pk[0], setPhotoKey = pk[1];   // a new PhotoField after each add
-    function load() {
-      return sb.from('memos').select('*').order('created_at', { ascending: false }).then(function (res) {
-        if (res.error) setLoadError(res.error.message); else { setLoadError(null); setRows(res.data); }
-      });
-    }
-    useEffect(function () { load(); }, []);
-    async function add(e) {
-      e.preventDefault();
-      if (saving) return;
-      var title = release ? release.title : text.trim();
-      if (!title) { setError('Write the record, or pick it on Discogs.'); return; }
-      setError(null); setSaving(true); setMessage(null);
-      var row = { title: title.slice(0, 300), note: note.trim() ? note.trim().slice(0, 1000) : null,
-                  discogs_release_id: release ? release.id : null, discogs_meta: release && release.meta ? release.meta.slice(0, 300) : null };
-      var res = await sb.from('memos').insert(row).select().single();
-      setSaving(false);
-      if (res.error) { setMessage({ error: true, text: 'Not added: ' + res.error.message }); return; }
-      setRows(function (cur) { return [res.data].concat(cur || []); });
-      setText(''); setRelease(null); setNote(''); setFound(null); setPhotoKey(photoKey + 1);
-      setMessage({ error: false, text: 'Added: ' + res.data.title + '.' });
-      var el = document.getElementById('memo-record'); if (el) el.focus();
-    }
-    async function remove(row) {
-      setMessage(null);   // the last "Added:" line would outlive its row
-      setRows(function (cur) { return cur.filter(function (r) { return r.id !== row.id; }); });
-      setSelected(function (cur) { return cur.filter(function (x) { return x !== row.id; }); });
-      var res = await sb.from('memos').delete().eq('id', row.id);
-      if (res.error) { setMessage({ error: true, text: 'Not removed: ' + res.error.message }); load(); return; }
-      toast('Removed: ' + row.title + '.', function () {
-        sb.from('memos').insert(row).then(function (r) { if (r.error) setMessage({ error: true, text: 'Not restored: ' + r.error.message }); load(); });
-      });
-    }
-    /* Create draft (decision 0135): one tap, no form. A release is fetched as Fetch Discogs does; free text = line 1
-       titled with the memo (as a skipped record of Bulk, 0107). The draft may be incomplete; the memo leaves the list. */
-    var cd = useState(null), drafting = cd[0], setDrafting = cd[1];   // id of the memo being turned into a draft
-    // one memo → one draft (saved listing { listing_id, sku }); the memo is deleted after the save
-    async function draftFromMemo(row, entities) {
-      var payload;
-      if (row.discogs_release_id) {
-        payload = LD.draftPayload(await invoke('discogs-lookup', { releaseId: row.discogs_release_id }), entities);   // same as the Scanner (0145)
-      } else {
-        var f = emptyForm();
-        f.lines = [newLine({ title: row.title })];
-        payload = payloadOf(f, 'draft');
-      }
-      var res = await sb.rpc('admin_save_listing', { payload: payload });
-      if (res.error) throw new Error(res.error.message);
-      var del = await sb.from('memos').delete().eq('id', row.id);
-      return { saved: res.data, memoKept: del.error ? del.error.message : null };
-    }
-    async function entitiesOrNull() { try { return await loadEntities(); } catch (e) { return null; } }   // bound by name on save
-    async function createDraft(row) {
-      if (drafting) return;
-      setDrafting(row.id); setMessage(null);
+  /* Memo was removed (decision 0171): a draft is the reminder now. Records still in public.memos (the table stays until
+     Gio drops it) become drafts the first time Listings opens, as Memo's Create draft did (0135): a release is fetched
+     with the same mapping as the Scanner (packages/listing-draft, 0145), free text = line 1. Each memo is deleted only
+     after its draft is saved, so a failure leaves it for the next visit. Once per visit; no table or no rows = nothing. */
+  var memosChecked = false;
+  async function draftsFromLeftoverMemos() {
+    if (memosChecked) return 0;
+    memosChecked = true;
+    var res = await sb.from('memos').select('*').order('created_at', { ascending: true });
+    if (res.error || !res.data || !res.data.length) return 0;
+    var entities = null;
+    if (res.data.some(function (r) { return r.discogs_release_id; })) { try { entities = await loadEntities(); } catch (e) { entities = null; } }
+    var made = [], failed = 0;
+    for (var i = 0; i < res.data.length; i++) {
+      var row = res.data[i];
       try {
-        var r = await draftFromMemo(row, row.discogs_release_id ? await entitiesOrNull() : null);
-        setRows(function (cur) { return cur.filter(function (x) { return x.id !== row.id; }); });
-        setSelected(function (cur) { return cur.filter(function (x) { return x !== row.id; }); });
-        if (r.memoKept) { setMessage({ error: true, text: 'Draft created (SKU ' + r.saved.sku + '), but the memo was not removed: ' + r.memoKept }); load(); }
-        if (window.ZanzaToast) window.ZanzaToast.show({ message: 'Draft created · SKU ' + r.saved.sku + '.', actionLabel: 'Open',
-          onAction: function () { location.hash = '#edit-' + r.saved.listing_id; } });
-      } catch (err) {
-        setMessage({ error: true, text: 'Draft not created: ' + err.message });
-      }
-      setDrafting(null);
+        var payload;
+        if (row.discogs_release_id) payload = LD.draftPayload(await invoke('discogs-lookup', { releaseId: row.discogs_release_id }), entities);
+        else { var f = emptyForm(); f.lines = [newLine({ title: row.title })]; payload = payloadOf(f, 'draft'); }
+        var saved = await sb.rpc('admin_save_listing', { payload: payload });
+        if (saved.error) throw new Error(saved.error.message);
+        made.push(saved.data.sku);
+        await sb.from('memos').delete().eq('id', row.id);
+      } catch (err) { failed++; }
     }
-
-    /* Bulk (decision 0140, the grammar of Listings 0025 / 0089): a checkbox per row, Select all on the count line,
-       the bulk bar (desktop: always rendered; mobile: fixed at the bottom while something is selected). Create drafts
-       and Remove ask first; drafts are created one at a time; the failed memos stay selected with the reason. */
-    var se = useState([]), selected = se[0], setSelected = se[1];
-    var bk = useState(null), bulk = bk[0], setBulk = bk[1];          // null | { action, busy }
-    var picked = (rows || []).filter(function (r) { return selected.indexOf(r.id) >= 0; });
-    function toggle(id, on) { setSelected(function (cur) { return on ? cur.concat([id]) : cur.filter(function (x) { return x !== id; }); }); }
-    async function bulkCreate() {
-      var list = picked.slice();
-      setBulk({ action: 'drafts', busy: true }); setMessage(null);
-      var entities = list.some(function (r) { return r.discogs_release_id; }) ? await entitiesOrNull() : null;
-      var done = [], failed = [], kept = [];
-      for (var i = 0; i < list.length; i++) {
-        setMessage({ error: false, text: 'Creating draft ' + (i + 1) + ' of ' + list.length + '…' });
-        try {
-          var r = await draftFromMemo(list[i], entities);
-          done.push(list[i].id);
-          if (r.memoKept) kept.push(r.saved.sku);
-        } catch (err) { failed.push(list[i].title + ': ' + err.message); }
-      }
-      setRows(function (cur) { return cur.filter(function (x) { return done.indexOf(x.id) < 0; }); });
-      setSelected(function (cur) { return cur.filter(function (x) { return done.indexOf(x) < 0; }); });
-      setBulk(null);
-      if (kept.length) load();
-      setMessage(failed.length || kept.length ? { error: true, text: [
-        done.length ? plural(done.length, 'draft') + ' created.' : null,
-        failed.length ? 'Not created (still selected): ' + failed.join('; ') + '.' : null,
-        kept.length ? 'Memos not removed for SKU ' + kept.join(', ') + ': remove them by hand.' : null].filter(Boolean).join(' ') } : null);
-      if (done.length && !failed.length && !kept.length) toast(plural(done.length, 'draft') + ' created. Find them in Listings → Drafts.');
-    }
-    async function bulkRemove() {
-      var list = picked.slice(), ids = list.map(function (r) { return r.id; });
-      setBulk({ action: 'remove', busy: true }); setMessage(null);
-      var res = await sb.from('memos').delete().in('id', ids);
-      setBulk(null);
-      if (res.error) { setMessage({ error: true, text: 'Not removed: ' + res.error.message }); return; }
-      setRows(function (cur) { return cur.filter(function (x) { return ids.indexOf(x.id) < 0; }); });
-      setSelected([]);
-      toast('Removed ' + plural(list.length, 'memo') + '.', function () {
-        sb.from('memos').insert(list).then(function (r) { if (r.error) setMessage({ error: true, text: 'Not restored: ' + r.error.message }); load(); });
-      });
-    }
-    var count = rows ? rows.length : 0;
-    var allOn = count > 0 && picked.length === count, someOn = picked.length > 0 && !allOn;
-    var busy = !!(bulk && bulk.busy);
-    var bar = h('div', { className: 'admin-bulk' },
-      h('p', { className: 'admin-bulk__count body-medium', 'aria-live': 'polite' }, picked.length + ' selected'),
-      picked.length ? h('div', { className: 'admin-bulk__actions' },
-        h(Z.Button, { hierarchy: 'secondary', 'aria-busy': busy || undefined, onClick: busy ? undefined : function () { setBulk({ action: 'drafts' }); } }, 'Create drafts'),
-        h(Z.Button, { hierarchy: 'secondary', 'aria-busy': busy || undefined, onClick: busy ? undefined : function () { setBulk({ action: 'remove' }); } }, 'Remove')) : null);
-    var n = picked.length, names = picked.slice(0, 3).map(function (r) { return r.title; }).join(', ') + (n > 3 ? ' and ' + (n - 3) + ' more' : '');
-    var dialog = bulk && bulk.action === 'drafts'
-      ? h(Z.Dialog, { open: true, busy: busy, title: 'Create ' + plural(n, 'draft') + '?', confirmLabel: 'Create ' + plural(n, 'draft'),
-          onCancel: function () { if (!busy) setBulk(null); }, onConfirm: bulkCreate },
-          h('p', null, names + ': ' + (n === 1 ? 'becomes a draft (from its Discogs release, if it has one) and leaves the Memo list.'
-            : 'become drafts (from their Discogs releases, where they have one) and leave the Memo list.') + ' Grading and price come later, before publishing.'))
-      : bulk && bulk.action === 'remove'
-      ? h(Z.Dialog, { open: true, busy: busy, title: 'Remove ' + plural(n, 'memo') + '?', confirmLabel: 'Remove ' + plural(n, 'memo'),
-          onCancel: function () { if (!busy) setBulk(null); }, onConfirm: bulkRemove },
-          h('p', null, names + (n === 1 ? ' leaves' : ' leave') + ' the Memo list. You can undo it from the message that follows.'))
-      : h(Z.Dialog, { open: false, title: '', confirmLabel: '', onCancel: function () {}, onConfirm: function () {} }, '');
-    return h('div', { className: 'admin-memo' },
-      h('h1', { className: 'label-extra-large' }, 'Memo'),
-      h('form', { className: 'admin-memo__add', onSubmit: add, noValidate: true },
-        h(RecordField, { value: text, release: release, error: error,
-          found: found, onText: function (v) { setText(v); if (error) setError(null); }, onRelease: function (r) { setRelease(r); if (r) setError(null); } }),
-        h(PhotoField, { key: 'photo-' + photoKey, full: true,
-          onText: function (v) { setRelease(null); setText(v); if (error) setError(null); }, onFound: setFound }),
-        h(Z.Input, { id: 'memo-note', label: 'Note', optional: true, placeholder: 'Sleeve, condition, where it is…',
-          value: note, onChange: function (e) { setNote(e.target.value); } }),
-        h(Z.Button, { type: 'submit', className: 'admin-memo__submit', 'aria-busy': saving || undefined }, 'Add to list'),
-        h('p', { className: 'body-small admin-status' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '')),
-      loadError ? h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'List not loaded: ' + loadError)
-        : !rows ? h('p', { className: 'body-small' }, 'Loading…')
-        : h('div', { className: 'admin-memo__list' },
-            // Figma `memo status`, boolean `select all` (0140)
-            h('div', { className: 'admin-memo__count' },
-              count ? h(Z.Checkbox, { id: 'memo-select-all', hideLabel: true, label: 'Select all', checked: allOn, indeterminate: someOn,
-                onChange: function () { setSelected(allOn ? [] : rows.map(function (r) { return r.id; })); } }) : null,
-              h('p', { className: 'body-small' }, count ? count + (count === 1 ? ' record' : ' records') : 'Nothing here yet. Add the records you want to sell later.')),
-            count && !mobile ? bar : null,   // desktop: always above the list; mobile: after it, sticky while selecting (0089)
-            count ? h('ul', { className: 'admin-memo__items', 'aria-label': 'Memo list' }, rows.map(function (r) {
-              return h(Z.MemoItem, { key: r.id, title: r.title, meta: r.discogs_meta || undefined, note: r.note || undefined,
-                href: r.discogs_release_id ? 'https://www.discogs.com/release/' + r.discogs_release_id : undefined,
-                select: h(Z.Checkbox, { id: 'memo-select-' + r.id, hideLabel: true, label: 'Select ' + r.title,
-                  checked: selected.indexOf(r.id) >= 0, onChange: function (e) { toggle(r.id, e.target.checked); } }),
-                onCreateDraft: function () { createDraft(r); }, createDraftBusy: drafting === r.id,
-                onCreate: function () { location.hash = '#new/memo/' + r.id; },
-                onRemove: function () { remove(r); } });
-            })) : null,
-            count && mobile ? bar : null),
-      dialog);
+    if (made.length || failed) toast([made.length ? plural(made.length, 'memo') + ' from the old Memo list became ' + (made.length === 1 ? 'a draft' : 'drafts') + ' (SKU ' + made.join(', ') + ').' : '',
+      failed ? plural(failed, 'memo') + ' not converted: tried again next time.' : ''].filter(Boolean).join(' '));
+    return made.length;
   }
 
   /* ── Bulk create (#bulk, Figma BACKEND → Bulk, decision 0107) ─────────────
      Gio drops many photos and samples named <record>_<role>: the page groups them per record, uploads them as Create
-     does, reads each record's label photo with the AI of Memo (read-label → discogs-lookup { fields }), then shows an
+     does, reads each record's label photo with the AI of Create (read-label → discogs-lookup { fields }), then shows an
      overview (BulkRecord rows) and a one-by-one review (Which record, Next / Skip). "Create N drafts" saves one draft per
      record through admin_save_listing; drafts may lack grading, format and price (migration 0026).
      Roles: photos _1 _2 … (gallery order; photo 1 is the one the AI reads, Gio 2026-11-17), any
@@ -3290,7 +3136,7 @@
       var skipBtn = h(Z.Button, { key: 'skip', hierarchy: 'secondary', onClick: skip }, 'Skip');
       return h('div', { className: 'admin-bulk-page admin-bulk-page--review' },
         h('div', { className: 'admin-bulk-page__head' },
-          h('p', { className: 'body-small admin-memo__count' }, 'Record ' + (at + 1) + ' of ' + records.length + ' · ' + r.prefix),
+          h('p', { className: 'body-small admin-count' }, 'Record ' + (at + 1) + ' of ' + records.length + ' · ' + r.prefix),
           h(Z.Button, { hierarchy: 'secondary', size: 'small', onClick: function () { setMessage(null); setView({ name: 'overview' }); } }, 'Back to overview')),
         photo ? h('img', { className: 'admin-bulk-page__photo', src: photo.url, alt: 'Photo ' + photo.name }) : null,
         h('p', { className: 'body-small' }, filesText(r)),
@@ -3315,7 +3161,7 @@
       h('h1', { className: 'label-extra-large' }, 'Bulk create'),
       records.length ? null : help,
       drop,
-      summary ? h('p', { className: 'body-small admin-memo__count', 'aria-live': 'polite' }, summary) : null,
+      summary ? h('p', { className: 'body-small admin-count', 'aria-live': 'polite' }, summary) : null,
       unsorted.length ? h('div', { className: 'admin-bulk-page__unsorted' }, unsorted.map(function (u) {
         return h('div', { key: u.id, className: 'admin-bulk-page__file' },
           h(Z.FileItem, { name: u.name, position: '', image: u.kind === 'photo' ? { src: u.url, alt: '' } : undefined,
@@ -3325,7 +3171,7 @@
             disabled: busy || !records.length, placeholder: 'Leave out',
             onChange: function (e) { if (e.target.value) assign(u, e.target.value, 'picked'); } }, opts(options)));
       })) : null,
-      records.length ? h('ul', { className: 'admin-memo__items', 'aria-label': 'Records found' }, records.map(function (x, i) {
+      records.length ? h('ul', { className: 'admin-rows', 'aria-label': 'Records found' }, records.map(function (x, i) {
         var warn = [bulkWarnings(x), x.saveError ? 'Not saved: ' + x.saveError : ''].filter(Boolean).join(' ');
         return h(Z.BulkRecord, { key: x.id, state: x.state, progress: x.progress, uploadProgress: uploadProgressOf(x),
           title: x.release && x.state !== 'skipped' ? x.release.title : x.prefix,
@@ -3344,123 +3190,6 @@
         onCancel: function () { setConfirmOver(false); }, onConfirm: startOver },
         h('p', null, 'The ' + plural(records.length, 'record') + ' of this batch are left out: no draft is created (the files already uploaded stay in storage, unused).')));
   }
-  // #new/memo/<id>: the listing form, started from a memo
-  function FromMemoLoader(props) {
-    var st = useState(null), item = st[0], setItem = st[1];
-    var er = useState(null), error = er[0], setError = er[1];
-    useEffect(function () {
-      sb.from('memos').select('*').eq('id', props.id).single()
-        .then(function (res) { if (res.error) setError(res.error.message); else setItem(res.data); });
-    }, [props.id]);
-    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not open this memo: ' + error);
-    if (!item) return h('p', { className: 'body-medium' }, 'Loading…');
-    var initial = emptyForm();
-    if (item.discogs_release_id) initial.discogs = String(item.discogs_release_id);
-    return h(ListingForm, { initial: initial, fromMemo: { id: item.id, title: item.title, note: item.note, discogs: item.discogs_release_id } });
-  }
-
-  // ── Dashboard ─────────────────────────────────────────────────────────────
-  /* Figma BACKEND → Dashboard (decision 0170): the admin landing page. Read-only figures computed here from what the
-     admin can already read (orders, listings, admin_offers): no migration. "Now" = current state; "Sales" =
-     the period in the tabs (calendar month / year in the browser's time, or all time). Euro only. Route: # or #dashboard */
-  var PERIODS = [['month', 'This month'], ['year', 'This year'], ['all', 'All time']];
-  function periodStart(p) {
-    var d = new Date();
-    if (p === 'month') return new Date(d.getFullYear(), d.getMonth(), 1);
-    if (p === 'year') return new Date(d.getFullYear(), 0, 1);
-    return null;
-  }
-  function statCount(n) { return n.toLocaleString('en-GB'); }
-  function statMoney(c) { return (c / 100).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
-  function median(list) {
-    if (!list.length) return null;
-    var a = list.slice().sort(function (x, y) { return x - y; }), m = Math.floor(a.length / 2);
-    return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
-  }
-  function dashboardFigures(data, period) {
-    var start = periodStart(period);
-    function inPeriod(t) { return !!t && (!start || new Date(t) >= start); }
-    var L = data.listings.map(function (r) { return Object.assign({}, r, { eff: effectiveStatus(r) }); });
-    var live = L.filter(function (r) { return r.eff === 'available' || r.eff === 'reserved'; });
-    var liveSale = live.filter(function (r) { return r.section === 'sale'; });
-    var fixed = liveSale.filter(function (r) { return r.price_mode !== 'offers' && r.price_cents !== null && r.price_cents !== undefined; });
-    var drafts = L.filter(function (r) { return r.status === 'draft'; });
-    var paidOrders = data.orders.filter(function (o) { return o.status === 'paid' || o.status === 'shipped'; });
-    var inOrder = {};   // listing id → sold through the shop
-    paidOrders.forEach(function (o) { (o.items || []).forEach(function (i) { inOrder[i.listing_id] = true; }); });
-    var sold = L.filter(function (r) { return r.section === 'sale' && r.status === 'sold' && inPeriod(r.sold_at); });
-    var offSite = sold.filter(function (r) { return !inOrder[r.id]; });
-    var traded = L.filter(function (r) { return r.status === 'traded' && inPeriod(r.sold_at); }).length;
-    var periodOrders = paidOrders.filter(function (o) { return inPeriod(o.created_at); });
-    var records = 0, shipping = 0, offSiteCents = 0, offSiteNoPrice = 0;
-    periodOrders.forEach(function (o) { shipping += o.shipping_cents || 0; (o.items || []).forEach(function (i) { records += i.price_cents || 0; }); });
-    offSite.forEach(function (r) { if (r.price_cents === null || r.price_cents === undefined) offSiteNoPrice++; else offSiteCents += r.price_cents; });
-    var taken = records + offSiteCents, priced = sold.length - offSiteNoPrice;
-    var days = sold.filter(function (r) { return r.published_at; }).map(function (r) { return (new Date(r.sold_at) - new Date(r.published_at)) / 864e5; });
-    var med = median(days);
-    var listed = L.filter(function (r) { return inPeriod(r.published_at); }).length;
-    var offers = data.offers;
-    return {
-      live: live.length, liveSale: liveSale.length, liveTrade: live.length - liveSale.length,
-      value: fixed.reduce(function (n, r) { return n + r.price_cents; }, 0), fixed: fixed.length, bestOffer: liveSale.length - fixed.length,
-      toShip: data.orders.filter(function (o) { return o.status === 'paid'; }).length,
-      pending: offers.filter(function (o) { return o.state === 'pending'; }).length,
-      accepted: offers.filter(function (o) { return o.state === 'accepted'; }).length,
-      drafts: drafts.length, incomplete: drafts.filter(incomplete).length,
-      sold: sold.length, online: sold.length - offSite.length, offSite: offSite.length, traded: traded,
-      taken: taken, shipping: shipping, offSiteNoPrice: offSiteNoPrice, average: priced > 0 ? Math.round(taken / priced) : null,
-      days: med === null ? null : Math.round(med), listed: listed
-    };
-  }
-  function Dashboard() {
-    var st = useState(null), data = st[0], setData = st[1];
-    var er = useState(null), error = er[0], setError = er[1];
-    var pd = useState('month'), period = pd[0], setPeriod = pd[1];
-    useEffect(function () {
-      Promise.all([
-        sb.from('listings').select('id,status,reserved_until,section,price_mode,price_cents,published_at,sold_at,condition_media,release:releases(format,lines:release_lines(position,artist))'),
-        sb.from('orders').select('id,status,created_at,shipping_cents,items:order_items(listing_id,price_cents)'),
-        sb.from('admin_offers').select('id,state')
-      ]).then(function (r) {
-        var bad = r.filter(function (x) { return x.error; })[0];
-        if (bad) { setError(bad.error.message); return; }
-        setData({ listings: r[0].data, orders: r[1].data, offers: r[2].data });
-      }, function (e) { setError(e.message); });
-    }, []);
-    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not load the dashboard: ' + error);
-    if (!data) return h('p', { className: 'body-medium' }, 'Loading…');
-    var f = dashboardFigures(data, period);
-    var periodText = { month: 'this month', year: 'this year', all: 'so far' }[period];
-    var valueNote = plural(f.fixed, 'record') + ' at a fixed price.' + (f.bestOffer ? ' ' + plural(f.bestOffer, 'record') + ' on best offer ' + (f.bestOffer === 1 ? 'has' : 'have') + ' no price and ' + (f.bestOffer === 1 ? 'is' : 'are') + ' not counted.' : '');
-    var soldNote = [statCount(f.online) + ' online', statCount(f.offSite) + ' off the site'].concat(f.traded ? [statCount(f.traded) + ' traded'] : []).join(' · ');
-    var takenNote = 'Records only, before Stripe fees. Shipping ' + statMoney(f.shipping) + ' on top. Off-site sales at list price.' +
-      (f.offSiteNoPrice ? ' ' + plural(f.offSiteNoPrice, 'off-site sale') + ' without a price not counted.' : '');
-    function section(id, title, extra, stats) {
-      return h('section', { className: 'admin-dashboard__section', 'aria-labelledby': id },
-        h('div', { className: 'admin-dashboard__head' }, h('h2', { id: id, className: 'label-medium' }, title), extra),
-        h('div', { className: 'admin-dashboard__stats' }, stats));
-    }
-    return h('div', { className: 'admin-dashboard' },
-      h('h1', { className: 'label-extra-large' }, 'Dashboard'),
-      section('dashboard-now', 'Now', null, [
-        h(Z.Stat, { key: 'live', label: 'Online now', value: statCount(f.live), note: statCount(f.liveSale) + ' for sale · ' + statCount(f.liveTrade) + ' for trade' }),
-        h(Z.Stat, { key: 'value', label: 'Inventory value', value: statMoney(f.value), note: valueNote }),
-        h(Z.Stat, { key: 'ship', label: 'To ship', value: statCount(f.toShip), note: 'Paid, not shipped yet', href: '#orders', linkLabel: 'View orders' }),
-        h(Z.Stat, { key: 'offers', label: 'Offers waiting', value: statCount(f.pending), note: statCount(f.accepted) + ' accepted, waiting for payment', href: '#offers', linkLabel: 'View offers' }),
-        h(Z.Stat, { key: 'drafts', label: 'Drafts', value: statCount(f.drafts), note: statCount(f.drafts - f.incomplete) + ' ready to publish · ' + statCount(f.incomplete) + ' incomplete', href: '#listings/draft', linkLabel: 'View drafts' })
-      ]),
-      section('dashboard-sales', 'Sales',
-        h(Z.Tabs, { value: period, onValueChange: setPeriod, 'aria-label': 'Period' },
-          PERIODS.map(function (p) { return h(Z.Tab, { key: p[0], value: p[0], 'aria-controls': 'dashboard-sales-stats' }, p[1]); })),
-        [
-          h(Z.Stat, { key: 'sold', label: 'Sold', value: statCount(f.sold), note: soldNote, href: '#listings/sold', linkLabel: 'View sold' }),
-          h(Z.Stat, { key: 'taken', label: 'Money taken', value: statMoney(f.taken), note: takenNote }),
-          h(Z.Stat, { key: 'avg', label: 'Average price', value: f.average === null ? '—' : statMoney(f.average), note: 'Per record sold' }),
-          h(Z.Stat, { key: 'days', label: 'Days to sell', value: f.days === null ? '—' : statCount(f.days),
-            note: 'Median, from online to sold. ' + plural(f.listed, 'record') + ' put online ' + periodText + '.' })
-        ]));
-  }
-
   // ── App ───────────────────────────────────────────────────────────────────
   // [hash, visit]: visit changes on every navigation, so "Create listing" always opens an empty form
   function useHash() {
@@ -3503,9 +3232,7 @@
     else if (hash === '#orders') body = h(Orders, { key: 'orders-' + route.visit });
     else if (hash === '#offers') body = h(Offers, { key: 'offers-' + route.visit });
     else if (/^#orders\/[^/]+$/.test(hash)) body = h(OrderDetail, { key: hash + route.visit, id: hash.split('/')[1] });
-    else if (hash === '#memo') body = h(Memo, { key: 'memo-' + route.visit });
     else if (hash === '#bulk') body = h(Bulk, { key: 'bulk' });
-    else if (/^#new\/memo\/[^/]+$/.test(hash)) body = h(FromMemoLoader, { key: hash + route.visit, id: hash.split('/')[2] });
     else if (/^#listings(\/(live|draft|sold|archived))?$/.test(hash)) body = h(Listings, { key: hash + route.visit, tab: hash.split('/')[1] || 'live' });
     else body = h(Dashboard, { key: 'dashboard-' + route.visit });   // '', '#', #dashboard: the landing page (decision 0170)
 
@@ -3517,12 +3244,11 @@
   /* Admin navigation (Figma page `admin`, decision 0089): AdminBar (desktop buttons / mobile Menu · title)
      + the mobile menu, a full-screen native modal <dialog> with a MenuLayer, like the shop's (0060): Esc, × or
      following a link closes it, focus goes back to the Menu button. */
-  var SECTIONS = [['dashboard', 'Dashboard', '#dashboard'], ['listings', 'Listings', '#listings'], ['orders', 'Orders', '#orders'], ['offers', 'Offers', '#offers'], ['memo', 'Memo', '#memo'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings'], ['content', 'Content', '#content']];
+  var SECTIONS = [['dashboard', 'Dashboard', '#dashboard'], ['listings', 'Listings', '#listings'], ['orders', 'Orders', '#orders'], ['offers', 'Offers', '#offers'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings'], ['content', 'Content', '#content']];
   function sectionOf(hash) {
     if (!hash || hash === '#' || hash === '#dashboard') return 'dashboard';
     if (/^#orders/.test(hash)) return 'orders';
     if (hash === '#offers') return 'offers';
-    if (/^#(new\/)?memo/.test(hash)) return 'memo';   // a listing created from a memo starts in Memo
     if (/^#attributes/.test(hash)) return 'attributes';
     if (hash === '#shipping') return 'shipping';
     if (hash === '#settings') return 'settings';

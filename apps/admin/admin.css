@@ -196,26 +196,18 @@ h1, h2, p { margin: 0; }
 .admin-shipping p.admin-shipping__result { margin-top: 16px; white-space: pre-line; }
 #shipping-zones td { vertical-align: top; }   /* Figma zones rows: top left (Gio 2026-11-12), the countries cell grows with its names */
 
-/* Figma BACKEND → Memo (2296:9962, decision 0087): Gio's list of records to sell later, mobile first. Frame on
-   surface-page like every admin page (0099); stack gap 24; add form 480 wide on desktop (fill on mobile), fields gap 16;
-   list = MemoItem rows (packages/ui). Record = the offer form's release picker: the suggestions overlay what follows. */
-.admin-memo { display: flex; flex-direction: column; gap: 24px; }
-.admin-memo__add { display: flex; flex-direction: column; gap: 16px; width: 480px; max-width: 100%; }
-.admin-memo__add .admin-status:empty { display: none; }
-.admin-memo__submit { width: 100%; }
-.admin-memo__photo { display: flex; flex-direction: column; gap: 8px; }
-.admin-memo__photo-button { width: 100%; }
+/* Photo of the label (Create, decisions 0090 / 0092), the Discogs pickers (Create, Bulk review) and the Bulk rows /
+   count line. The pickers' suggestions overlay what follows. */
+.admin-photo { display: flex; flex-direction: column; gap: 8px; }
 .admin-photo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.admin-memo__photo-status { margin: 0; color: var(--text-moderate); }
-.admin-memo__photo-status:empty { display: none; }
-.admin-memo__list { display: flex; flex-direction: column; gap: 24px; }
-.admin-memo__count { display: flex; align-items: center; gap: 8px; color: var(--text-moderate); }
-.admin-memo__count > p { margin: 0; }
-.admin-memo__items { list-style: none; margin: 0; padding: 0; }
+.admin-photo__status { margin: 0; color: var(--text-moderate); }
+.admin-photo__status:empty { display: none; }
+.admin-count { display: flex; align-items: center; gap: 8px; color: var(--text-moderate); }
+.admin-count > p { margin: 0; }
+.admin-rows { list-style: none; margin: 0; padding: 0; }
 .admin-picker { position: relative; display: flex; flex-direction: column; gap: 4px; }
 .admin-picker > p { margin: 0; }
 .admin-picker__list { position: absolute; top: 100%; left: 0; right: 0; z-index: 5; max-height: 360px; overflow-y: auto; }
-@media (--mobile) { .admin-memo__add { width: auto; } }
 
 /* Shipping on mobile (decision 0089): the tables stack, one row = a block of fields, each with its column name
    above it (data-label, set in admin.js); the fixed desktop column widths are dropped. */

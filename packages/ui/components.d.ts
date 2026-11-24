@@ -1039,35 +1039,6 @@ export interface ChosenReleaseProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function ChosenRelease(props: ChosenReleaseProps): JSX.Element;
 
-/** Figma `memo item` (page Memo, BACKEND, decision 0087): one record on the admin Memo list. An <li>: wrap in a <ul>. */
-export interface MemoItemProps extends HTMLAttributes<HTMLLIElement> {
-  /** free text, or "Artist – Title" of the picked Discogs release */
-  title: ReactNode;
-  /** Figma boolean `discogs release`: label · cat no · year · country · format. Omit → no meta */
-  meta?: ReactNode;
-  /** Figma boolean `has note`: Gio's own note. Omit → no note */
-  note?: ReactNode;
-  /** the release on discogs.com (Figma: shown with `discogs release`). Omit → no link */
-  href?: string;
-  /** Figma boolean `select` (decision 0140): the row's checkbox (a Checkbox with hideLabel). Omit → none */
-  select?: ReactNode;
-  /** Figma boolean `create draft` (decision 0135): saves a draft from the memo, no form. Omit → no button */
-  onCreateDraft?: () => void;
-  /** true while the draft is being saved: the button reads "Creating…" and does nothing */
-  createDraftBusy?: boolean;
-  /** Default "Create draft" */
-  createDraftLabel?: string;
-  /** Figma boolean `create listing`: opens the listing form from the memo. Omit → no button */
-  onCreate?: () => void;
-  /** Remove. Omit → no button */
-  onRemove?: () => void;
-  /** Default "Create listing" */
-  createLabel?: string;
-  /** Default "Remove" */
-  removeLabel?: string;
-}
-export declare function MemoItem(props: MemoItemProps): JSX.Element;
-
 /** Figma `file name` (Create, decision 0136): a name to give a scan or a clip of a listing, with Copy. An <li>: wrap in a <ul>. */
 export interface BackLinkProps extends HTMLAttributes<HTMLAnchorElement> {
   href: string;
@@ -1196,7 +1167,7 @@ export interface SectionRowProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function SectionRow(props: SectionRowProps): JSX.Element;
 
-/** Mirrors the Figma component `progress bar` (BACKEND → Memo): a determinate bar, 4px, track surface/subtle,
+/** Mirrors the Figma component `progress bar` (COMPONENTS → admin): a determinate bar, 4px, track surface/subtle,
  *  value action/primary/background/default. role="progressbar"; pass aria-label (or aria-labelledby). Decision 0091. */
 export interface ProgressBarProps extends HTMLAttributes<HTMLDivElement> {
   /** Percent done, 0–100 (clamped, rounded). Figma: width of the `value` layer. */
