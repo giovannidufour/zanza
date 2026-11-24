@@ -7,7 +7,7 @@ struct SessionClip: Identifiable, Equatable {
     let file: String
     let url: URL
     var duration: Double = 0
-    var peaks: [Float] = []          // 0…1, for the waveform
+    var peaks: [Float] = []          // 0…1, for the waveform: (bar peak / clip peak)², 480 bars (0173)
     var trimStart: Double = 0        // seconds cut at the start (Remove silence), 0 = none
     var trimEnd: Double = 0          // where the clip ends after Remove silence (seconds), 0 = the real end
     /// detected silence (−45 dBFS, 50 ms kept): sound starts at `soundStart`, ends at `soundEnd`; nil = not analysed
@@ -176,7 +176,7 @@ final class SessionModel: ObservableObject {
         DispatchQueue.global(qos: .utility).async {
             guard let file = try? AVAudioFile(forReading: clip.url) else { return }
             let frames = file.length, rate = file.processingFormat.sampleRate
-            let buckets = 240, per = max(1, Int(frames) / buckets)
+            let buckets = 480, per = max(1, Int(frames) / buckets)
             var peaks = [Float](repeating: 0, count: buckets)
             guard let buf = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(per)) else { return }
             for b in 0..<buckets {
@@ -188,6 +188,10 @@ final class SessionModel: ObservableObject {
                 }
                 peaks[b] = m
             }
+            // 0173: relative to the clip's own peak and squared (energy), so the differences between peaks show:
+            // −1 dB ≈ 80% of the height, −3 dB ≈ 50%, −10 dB ≈ 10%; linear, a dense record is a flat block
+            let top = peaks.max() ?? 0
+            if top > 0 { peaks = peaks.map { ($0 / top) * ($0 / top) } }
             let edges = Self.soundEdges(in: clip.url)
             DispatchQueue.main.async {
                 if let i = self.clips.firstIndex(where: { $0.file == clip.file }) {
