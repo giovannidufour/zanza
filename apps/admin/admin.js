@@ -1987,9 +1987,8 @@
           h(Z.Input, { className: 'span-4', id: 'slug', label: 'Slug', value: f.slug, error: errors.slug,
             onChange: function (e) { slugTouched.current = true; set({ slug: e.target.value }); },
             supportText: f.slug ? 'Page address: /' + kind.list + '/' + f.slug : 'Made from the name on save.' }))),
-      isNew ? null : h(Z.Divider),
-      isNew ? null : kind.links ? h(RecordChecklist, { kind: kind, id: props.id, name: f.name, onCount: setCount }) :
-      h('section', { className: 'admin-section', 'aria-labelledby': 'records-title' },
+      isNew || kind.links ? null : h(Z.Divider),
+      isNew || kind.links ? null : h('section', { className: 'admin-section', 'aria-labelledby': 'records-title' },
         h('h2', { id: 'records-title', className: 'label-medium' }, 'Records ' + n),   // Figma: one text "Records 2"
         n ? h('ul', { className: 'admin-links body-small' }, records.map(function (r) {
           return h('li', { key: r.id }, h('a', { href: '#edit-' + r.id }, [String(r.sku), nameOf(r), STATUS_LABEL[effectiveStatus(r)] || r.status].join(' · ')));
@@ -2034,7 +2033,10 @@
           (kind.key === 'artist' || kind.key === 'label' ? ' The credit printed on the record does not change.' : ' The shop updates in about 2 minutes.')));
     } else dialog = h(Z.Dialog, { open: false, title: '', confirmLabel: '', onCancel: function () {}, onConfirm: function () {} }, '');
 
-    return h('div', { className: 'admin-page admin-page--attribute' }, main, side,
+    // genres and tags (0168, amended): the checklist is a column of its own on the right (Figma 2523:1736)
+    var checklist = !isNew && kind.links ? h('div', { className: 'admin-records' },
+      h(RecordChecklist, { kind: kind, id: props.id, name: f.name, onCount: setCount })) : null;
+    return h('div', { className: 'admin-page admin-page--attribute' + (checklist ? ' admin-page--records' : '') }, main, side, checklist,
       mobile ? h(Z.ActionBar, { status: statusLine }, saveBtn, otherBtn) : null, dialog);
   }
 
