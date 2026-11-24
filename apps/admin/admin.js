@@ -566,7 +566,7 @@
       if (andNew) { location.hash = '#new'; window.scrollTo(0, 0); }
     }
 
-    /* decision 0170 (Memo removed, a draft is the reminder): when the photo finds no pressing, the words read become
+    /* decision 0171 (Memo removed, a draft is the reminder): when the photo finds no pressing, the words read become
        the title of line 1 if it is empty, as a free-text memo did, so Save draft works right away */
     function onPhotoFound(found) {
       var titled = !found.results.length && !!found.query && !fRef.current.lines[0].title.trim();
@@ -742,7 +742,7 @@
     var backTab = isNew ? null : f.status === 'draft' ? ['draft', 'Drafts']
       : f.status === 'sold' || f.status === 'traded' ? ['sold', 'Sold']
       : f.status === 'archived' ? ['archived', 'Archived'] : ['live', 'Live'];
-    var back = h(Z.BackLink, { href: backTab && backTab[0] !== 'live' ? '#listings/' + backTab[0] : '#', label: backTab ? backTab[1] : 'Listings' });
+    var back = h(Z.BackLink, { href: backTab && backTab[0] !== 'live' ? '#listings/' + backTab[0] : '#listings', label: backTab ? backTab[1] : 'Listings' });
     var main = h('div', { className: 'admin-main' },
       back,
       h('h1', { className: 'label-extra-large' }, isNew ? 'Create listing' : 'Edit listing'),
@@ -1106,7 +1106,7 @@
       load();
       // files of deleted copies leave R2 after 7 days (Edge Function purge-media, 0009); once per visit, best effort
       if (!purgeAsked) { purgeAsked = true; sb.functions.invoke('purge-media').catch(function () {}); }
-      draftsFromLeftoverMemos().then(function (n) { if (n) load(); }).catch(function () {});   // decision 0170
+      draftsFromLeftoverMemos().then(function (n) { if (n) load(); }).catch(function () {});   // decision 0171
     }, []);
     // after a delete, focus the row that took the place of the first deleted one (never lost to <body>)
     useEffect(function () {
@@ -1534,6 +1534,7 @@
     var tr = useState(''), tracking = tr[0], setTracking = tr[1];
     var sv = useState(false), saving = sv[0], setSaving = sv[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
+    var cf = useState(null), confirm = cf[0], setConfirm = cf[1];   // Delete order dialog: { restock: 'yes' | 'no' }
     useEffect(function () {
       sb.from('orders').select('*,items:order_items(price_cents,listing:listings(id,sku,slug,status,custom_title,photo_keys,release:releases(format,lines:release_lines(position,artist,title))))')
         .eq('id', props.id).single()
@@ -1572,13 +1573,42 @@
         .then(function () { toast('Address copied.'); }, function () { setMessage({ error: true, text: 'Could not copy: select the address and copy it.' }); });
     }
 
+    /* Delete order (decision 0170, migration 0036): the dialog asks what happens to the records still sold by this order.
+       Default: back on sale, except on a shipped order (the record left). Stripe is not touched. */
+    var soldItems = (o.items || []).filter(function (it) { return it.listing && it.listing.status === 'sold'; });
+    function askDelete() { setMessage(null); setConfirm({ restock: o.status === 'shipped' ? 'no' : 'yes' }); }
+    async function doDelete() {
+      if (saving) return;
+      setSaving(true);
+      var res = await sb.rpc('admin_delete_order', { p_order: o.id, p_restock: soldItems.length > 0 && confirm.restock === 'yes' });
+      setSaving(false);
+      if (res.error) { setConfirm(null); setMessage({ error: true, text: 'Not deleted: ' + res.error.message }); return; }
+      var back = res.data && res.data.restocked;
+      toast('Order ' + ref + ' deleted.' + (back ? ' ' + plural(back, 'record') + ' back on sale.' : ''));
+      location.hash = '#orders';
+    }
+
     var shipped = o.status === 'shipped', open = o.status === 'paid';
     var primary = shipped
       ? h(Z.Button, { key: 'ship', hierarchy: 'primary', 'aria-busy': saving || undefined, onClick: saveTracking }, 'Save tracking')
       : h(Z.Button, { key: 'ship', hierarchy: 'primary', disabled: !open, 'aria-busy': saving || undefined, onClick: function () { setShipped(true); } }, 'Mark as shipped');
     var secondary = stripeUrl ? h(Z.Button, { key: 'stripe', hierarchy: 'secondary', href: stripeUrl, target: '_blank', rel: 'noopener' }, 'Open in Stripe') : null;
     var undo = shipped ? h(Z.Button, { key: 'undo', hierarchy: 'secondary', 'aria-busy': saving || undefined, onClick: function () { setShipped(false); } }, 'Mark as not shipped') : null;
+    var del = h(Z.Button, { key: 'delete', hierarchy: 'secondary', disabled: saving, onClick: askDelete }, 'Delete order');
     var statusLine = h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '');
+
+    var dialog;
+    if (confirm) {
+      var n = soldItems.length;
+      dialog = h(Z.Dialog, { open: true, busy: saving, title: 'Delete order ' + ref + '?', confirmLabel: 'Delete order',
+        onCancel: function () { setConfirm(null); }, onConfirm: doDelete,
+        choices: n ? h(Z.RadioGroup, { legend: 'What happens to the records', hideLegend: true, value: confirm.restock,
+          onValueChange: function (v) { setConfirm({ restock: v }); } },
+          h(Z.Radio, { value: 'yes', label: 'Put ' + plural(n, 'record') + ' back on sale' }),
+          h(Z.Radio, { value: 'no', label: 'Keep ' + plural(n, 'record') + ' sold' })) : null },
+        h('p', null, 'It goes from Orders and from the buyer’s account. ' + (stripeUrl ? 'Stripe keeps the payment: refund it there if needed. ' : '') +
+          (n ? '' : 'Its records are not sold any more and stay as they are. ') + 'It cannot be undone.'));
+    } else dialog = h(Z.Dialog, { open: false, title: '', confirmLabel: '', onCancel: function () {}, onConfirm: function () {} }, '');
 
     var main = h('div', { className: 'admin-main' },
       h('h1', { className: 'label-extra-large' }, 'Order ' + ref),
@@ -1602,10 +1632,11 @@
       supportText: 'Saved with the order.', onChange: function (e) { setTracking(e.target.value); } });
     var side = h('aside', { className: 'admin-side' },
       trackingField,
-      mobile ? null : h(Z.ActionPanel, null, primary, undo, secondary),
+      // Figma Orders → Order: Delete order is the last button of the panel; on mobile it sits under the tracking field
+      mobile ? del : h(Z.ActionPanel, null, primary, undo, secondary, del),
       mobile ? null : statusLine);
     return h('div', { className: 'admin-page admin-page--edit' }, main, side,
-      mobile ? h(Z.ActionBar, { status: statusLine }, primary, undo || secondary) : null);
+      mobile ? h(Z.ActionBar, { status: statusLine }, primary, undo || secondary) : null, dialog);
   }
 
   // ── Sell again ────────────────────────────────────────────────────────────
@@ -2664,11 +2695,11 @@
       h(Z.Input, Object.assign({ id: id, label: label, value: props.value, error: props.error, placeholder: 'Artist – title, or search Discogs',
         onChange: onText }, ds.inputProps(onPick)))].concat(ds.list(onPick)));
   }
-  /* Photo of the label (Figma BACKEND → Create → `photo of the label`, state default | reading | read | not read; decisions 0090, 0170).
+  /* Photo of the label (Figma BACKEND → Create → `photo of the label`, state default | reading | read | not read; decisions 0090, 0171).
      Opens the phone's back camera (a file picker on desktop). The photo is shrunk here (longest side 1280 px, JPEG),
      read by read-label (free vision model on Cloudflare Workers AI, nothing stored), then the fields go to
      discogs-lookup { fields }: barcode, then catalogue number, then artist + title. No pressing found: the words read
-     become the title of line 1 when it is empty (0170). */
+     become the title of line 1 when it is empty (0171). */
   var PHOTO_SIDE = 1280;
   function shrinkPhoto(file) {
     return new Promise(function (resolve, reject) {
@@ -2757,7 +2788,7 @@
       }
       stopAt(100);
       props.onFound({ results: lastRead.results, query: lastRead.query });
-      // no pressing found: the release list under it says what happens next (0170)
+      // no pressing found: the release list under it says what happens next (0171)
       setSt({ state: 'read', text: 'Read from the photo: ' + lastRead.said + '.' + (lastRead.results.length ? ' ' + (props.pickHint || 'Pick your pressing in the list.') : '') });
     }
     var reading = st.state === 'reading';
@@ -2774,7 +2805,7 @@
       reading ? h(Z.ProgressBar, { value: progress, 'aria-label': 'Reading the photo' }) : null,
       h('p', { className: 'body-small admin-photo__status', role: 'status' }, st.text));
   }
-  /* Memo was removed (decision 0170): a draft is the reminder now. Records still in public.memos (the table stays until
+  /* Memo was removed (decision 0171): a draft is the reminder now. Records still in public.memos (the table stays until
      Gio drops it) become drafts the first time Listings opens, as Memo's Create draft did (0135): a release is fetched
      with the same mapping as the Scanner (packages/listing-draft, 0145), free text = line 1. Each memo is deleted only
      after its draft is saved, so a failure leaves it for the next visit. Once per visit; no table or no rows = nothing. */
@@ -3076,7 +3107,7 @@
         setUnsorted([]);
         setMessage(null);
         toast(plural(done, 'draft') + ' created. Fill in grading and price to publish.');
-        location.hash = '#';
+        location.hash = '#listings';
         return;
       }
       setMessage({ error: true, text: plural(done, 'draft') + ' created; ' + plural(failed.length, 'record') + ' not saved: see below.' });
@@ -3202,7 +3233,7 @@
     else if (/^#orders\/[^/]+$/.test(hash)) body = h(OrderDetail, { key: hash + route.visit, id: hash.split('/')[1] });
     else if (hash === '#bulk') body = h(Bulk, { key: 'bulk' });
     else if (/^#listings(\/(live|draft|sold|archived))?$/.test(hash)) body = h(Listings, { key: hash + route.visit, tab: hash.split('/')[1] || 'live' });
-    else body = h(Listings, { key: 'list-' + route.visit });
+    else body = h(Dashboard, { key: 'dashboard-' + route.visit });   // '', '#', #dashboard: the landing page (decision 0170)
 
     return h('div', { className: 'admin' },
       session ? h(Nav, { hash: hash, email: session.user.email }) : null,
@@ -3212,8 +3243,9 @@
   /* Admin navigation (Figma page `admin`, decision 0089): AdminBar (desktop buttons / mobile Menu · title)
      + the mobile menu, a full-screen native modal <dialog> with a MenuLayer, like the shop's (0060): Esc, × or
      following a link closes it, focus goes back to the Menu button. */
-  var SECTIONS = [['listings', 'Listings', '#'], ['orders', 'Orders', '#orders'], ['offers', 'Offers', '#offers'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings'], ['content', 'Content', '#content']];
+  var SECTIONS = [['dashboard', 'Dashboard', '#dashboard'], ['listings', 'Listings', '#listings'], ['orders', 'Orders', '#orders'], ['offers', 'Offers', '#offers'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings'], ['content', 'Content', '#content']];
   function sectionOf(hash) {
+    if (!hash || hash === '#' || hash === '#dashboard') return 'dashboard';
     if (/^#orders/.test(hash)) return 'orders';
     if (hash === '#offers') return 'offers';
     if (/^#attributes/.test(hash)) return 'attributes';

@@ -1216,6 +1216,22 @@ export interface ListingsHeadProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function ListingsHead(props: ListingsHeadProps): JSX.Element;
 
+/** Mirrors the Figma component `stat` (page BACKEND → Dashboard, decision 0169): one figure of the admin Dashboard.
+ *  Divider on top, label, value, optional note and link (Figma booleans `note` and `link`). */
+export interface StatProps extends HTMLAttributes<HTMLDivElement> {
+  /** What is counted (body/small, text-moderate). */
+  label: ReactNode;
+  /** The figure (label/extra-large), already formatted: "12", "1,240 €". */
+  value: ReactNode;
+  /** How it is counted, or a split ("8 online · 4 off the site"). Omit → no note. */
+  note?: ReactNode;
+  /** Where the figure comes from (the list behind it). Omit → no link. */
+  href?: string;
+  /** @default "View" */
+  linkLabel?: ReactNode;
+}
+export declare function Stat(props: StatProps): JSX.Element;
+
 /** Mirrors the Figma component `listings filter` (page BACKEND → Listings, device=desktop | mobile, one responsive markup,
  *  decision 0128): the status tabs of the Listings page + the search that filters its rows. Desktop = one row, search
  *  280 on the right; mobile = tabs, then the search full width. */

@@ -1496,6 +1496,11 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
   .zz-admin-bar__title { flex: 1 1 auto; min-width: 0; margin: 0; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 /* ── ListingsHead (Figma BACKEND → Listings → `listings head`, decision 0125): title + Bulk create · Create listing; mobile = actions under the title ── */
+/* Stat (Figma BACKEND → Dashboard → `stat`, decision 0169) */
+.zz-stat { display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border-divider-strong); color: var(--text-strong); min-width: 0; }
+.zz-stat > p { margin: 0; overflow-wrap: anywhere; }
+.zz-stat__label, .zz-stat__note { color: var(--text-moderate); }
+.zz-stat__link { color: var(--text-strong); text-decoration: underline; align-self: flex-start; }
 .zz-listings-head { display: flex; align-items: center; gap: 16px; color: var(--text-strong); }
 .zz-listings-head__title { flex: 1 1 auto; min-width: 0; margin: 0; overflow-wrap: anywhere; }
 .zz-listings-head__actions { flex: none; display: flex; flex-wrap: wrap; gap: 16px; }

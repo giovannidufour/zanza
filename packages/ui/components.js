@@ -1157,6 +1157,17 @@
         props.bulkHref ? h(Button, { hierarchy: 'secondary', href: props.bulkHref }, props.bulkLabel || 'Bulk create') : null,
         props.createHref ? h(Button, { hierarchy: 'primary', href: props.createHref }, props.createLabel || 'Create listing') : null));
   }
+  /* ── Stat (Figma BACKEND → Dashboard → `stat`, decision 0169) ──────────────
+     One figure of the admin Dashboard: 1px divider on top, padding-top 12, gap 4; label (body/small, moderate),
+     value (label/extra-large), optional note (body/small, moderate) and optional link (body/small, underlined).
+     Figma booleans `note` / `link` = the props being set. */
+  function Stat(props) {
+    return h('div', Object.assign({}, omit(props, ['label', 'value', 'note', 'href', 'linkLabel', 'className']), { className: cx('zz-stat', props.className) }),
+      h('p', { className: 'zz-stat__label body-small' }, props.label),
+      h('p', { className: 'zz-stat__value label-extra-large' }, props.value),
+      props.note ? h('p', { className: 'zz-stat__note body-small' }, props.note) : null,
+      props.href ? h('a', { className: 'zz-stat__link body-small', href: props.href }, props.linkLabel || 'View') : null);
+  }
   /* ── ListingsFilter (Figma BACKEND → Listings → `listings filter`, device=desktop | mobile, decision 0128) ──
      The status tabs of the Listings page (Live · Drafts · Sold · Archived, a <Tabs>) + the search field that filters
      the rows (an <Input variant="search">). Desktop: one row, tabs left, search 280 right, centred, gap 16.

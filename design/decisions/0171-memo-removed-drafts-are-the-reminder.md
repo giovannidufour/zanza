@@ -1,4 +1,4 @@
-# 0170 — Memo removed: a draft is the reminder
+# 0171 — Memo removed: a draft is the reminder
 
 `2026-11-24` · accepted (Gio: "la sezione Memo non ha senso, perché se voglio ricordarmi di qualcosa è più semplice creare un draft") · supersedes 0087, 0135, 0140 · Figma: page BACKEND → `Memo` deleted; `admin bar` / `admin menu` without Memo; `admin page title`, `count line` (was `memo status`), `progress bar`, `photo of the label` (was `memo photo`) moved to COMPONENTS → `admin`; BACKEND → Create → `discogs actions` new variant `state=no match` (2528:40177)
 
