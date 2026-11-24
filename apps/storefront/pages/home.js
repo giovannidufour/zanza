@@ -3,7 +3,8 @@
    - intro: the welcome line (admin → Content → Home) + "Subscribe to newsletter" → the newsletter box below
    - side (desktop, 3 of 12 columns): the genres one per line + All (→ /sale/)
    - main (9 columns): shelf "This week (n)" = sale records published in the last 7 days (max 6), the newsletter box,
-     shelf "Recent" = the next 6 newest sale records. No This week (nothing new) → only Recent.
+     shelf "Recent" = the next 12 newest sale records (decision 0167). No This week (nothing new) → only Recent.
+   - under the last shelf: "View all for sale", full width → /sale/ (decision 0167)
    - each shelf head: Play all, the view toggle (grid | list, desktop only; decision 0126), See all
    - mobile: one column; genres in rows, no view toggle, one full-width tile per row with its photos in a swipe gallery.
    Each shelf renders both views: tiles (grid) and the PDP product cards (list); home.css shows the one in
@@ -15,7 +16,8 @@ const h = React.createElement;
 const { SiteHeader, ProductCardFor, plpHref, textOf, imageOf, IMAGE_SIZES, productNameLinked, releaseInfoLinked,
   productHref, productName, formatPrice, sampleAttrs, isOffers, priceText } = require('./shell.js');
 
-const SHELF_COUNT = 6;   // Figma: 2 rows of 3 tiles on desktop
+const SHELF_COUNT = 6;    // This week, Figma: 2 rows of 3 tiles on desktop
+const RECENT_COUNT = 12;  // Recent, Figma `home shelf` more records: 4 rows of 3 (decision 0167)
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 // the genres of the available sale listings, A–Z, each linking to the sale PLP filtered by it
@@ -54,7 +56,7 @@ function TileFor({ product, url }) {
   });
 }
 
-function Shelf({ id, title, meta, items, url, divider }) {
+function Shelf({ id, title, meta, items, url, divider, viewAll }) {
   const hasSamples = items.some((p) => (p.samples || []).some((s) => s.audio_url));
   const btn = (label, props) => h(Z.Button, Object.assign({ hierarchy: 'secondary' }, props), label);
   return h('section', { className: 'home-shelf', 'aria-labelledby': id, 'data-play-scope': '' },
@@ -68,7 +70,10 @@ function Shelf({ id, title, meta, items, url, divider }) {
     h('div', { className: 'home-shelf__grid', 'data-home-view': 'grid' },
       items.map((product) => h(TileFor, { key: product.listing.slug, product, url }))),
     h('div', { className: 'home-shelf__list', 'data-home-view': 'list' },
-      items.map((product) => h(ProductCardFor, { key: product.listing.slug, product, url, headingLevel: 3 }))));
+      items.map((product) => h(ProductCardFor, { key: product.listing.slug, product, url, headingLevel: 3 }))),
+    // Figma `home shelf` → view all (decision 0167): the PDP's "View all for sale", full width under both views
+    viewAll ? h('div', { className: 'home-shelf__action' },
+      h(Z.Button, { hierarchy: 'secondary', size: 'large', href: url('/sale/') }, 'View all for sale')) : null);
 }
 
 function Home({ products, site, url, now = Date.now() }) {
@@ -78,7 +83,7 @@ function Home({ products, site, url, now = Date.now() }) {
   const onSale = sale.filter((p) => ['available', 'reserved'].includes(p.listing.status)).sort(newest);
   const fresh = onSale.filter((p) => p.listing.published_at && now - Date.parse(p.listing.published_at) < WEEK_MS);
   const thisWeek = fresh.slice(0, SHELF_COUNT);
-  const recent = onSale.filter((p) => !thisWeek.includes(p)).slice(0, SHELF_COUNT);
+  const recent = onSale.filter((p) => !thisWeek.includes(p)).slice(0, RECENT_COUNT);
   const genres = genresOf(sale.filter((p) => p.listing.status === 'available'), url);
   const nl = site.newsletter || {};
   const intro = textOf(site, 'short.home', 'intro');
@@ -96,11 +101,11 @@ function Home({ products, site, url, now = Date.now() }) {
       h('div', { className: 'home-side' },
         genres.length ? h(Z.GenreLinks, { genres, allHref: url('/sale/'), className: 'home-genres' }) : null),
       h('div', { className: 'home-main', id: 'home-main' },
-        thisWeek.length ? h(Shelf, { id: 'home-this-week', title: 'This week', meta: `(${fresh.length})`, items: thisWeek, url }) : null,
+        thisWeek.length ? h(Shelf, { id: 'home-this-week', title: 'This week', meta: `(${fresh.length})`, items: thisWeek, url, viewAll: !recent.length }) : null,
         thisWeek.length ? newsletter : null,
-        recent.length ? h(Shelf, { id: 'home-recent', title: 'Recent', items: recent, url }) : null,
+        recent.length ? h(Shelf, { id: 'home-recent', title: 'Recent', items: recent, url, viewAll: true }) : null,
         thisWeek.length ? null : newsletter,
         !thisWeek.length && !recent.length ? h('p', { className: 'body-medium home-empty' }, 'No records right now.') : null)));
 }
 
-module.exports = { Home, title: 'Reggae and dancehall records', SHELF_COUNT };
+module.exports = { Home, title: 'Reggae and dancehall records', SHELF_COUNT, RECENT_COUNT };
