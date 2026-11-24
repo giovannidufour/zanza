@@ -313,7 +313,7 @@ a.zz-tab {
 .zz-header__trailing { align-items: center; }
 .zz-header__tabs { display: flex; }
 
-/* logo + store name: one home link (decision 0175), laid out like the leading row (gap 8, top-aligned) */
+/* logo + store name: one home link (decision 0176), laid out like the leading row (gap 8, top-aligned) */
 .zz-header__home { display: flex; align-items: flex-start; gap: 8px; color: inherit; text-decoration: none; }
 a.zz-header__home:focus-visible { outline: auto; }   /* browser ring: no focus token yet (open.md) */
 .zz-header__logo { display: block; flex: none; width: 64px; height: 64px; overflow: hidden; }
@@ -1604,21 +1604,27 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 
 /* collection card + home collections (decision 0174, Figma `collection card` / `home collections`): a box with the
    label centered, min height 96, 1px border divider/strong inside; hover = surface/hover (as the product card, 0088).
-   The row: wrapping grid, gap gutter/small; 4 per row on desktop (= the 3-of-12 side column), 2 on mobile. */
+   The row (decision 0176): the cards share the full width, as many per row as fit at their minimum width (2 cards =
+   halves, 3 = thirds…); a card that wraps keeps the column width, so the rows stay aligned. Minimum width: desktop
+   200 (about 2:1 against the 96 height, a banner), mobile 144 (always 2 per row from a 320 screen, 3 from 448). */
 .zz-collection-card {
   display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 96px;
   padding: var(--medium-small); border: 1px solid var(--border-divider-strong);
-  color: var(--text-strong); text-align: center; text-decoration: none; overflow-wrap: anywhere;
+  color: var(--text-strong); text-align: center; text-decoration: none; overflow-wrap: break-word; hyphens: auto;   /* a long word breaks with a hyphen, never mid-word without one */
 }
 .zz-collection-card[data-state="hover"] { background: var(--surface-hover); }
 @media (hover: hover) { .zz-collection-card:hover { background: var(--surface-hover); } }
 .zz-collection-card:focus-visible { outline: auto; }   /* browser ring: no focus token yet (open.md) */
-.zz-home-collections__list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gutter-small); margin: 0; padding: 0; list-style: none; }
-.zz-home-collections__list > li { display: flex; }
-.zz-home-collections__list .zz-collection-card { flex: 1 1 auto; }
-.zz-home-collections[data-device="mobile"] .zz-home-collections__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.zz-home-collections { --zz-collection-min: 200px; }
+.zz-home-collections[data-device="mobile"] { --zz-collection-min: 144px; }
+.zz-home-collections__list {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--zz-collection-min)), 1fr));
+  gap: var(--gutter-small); margin: 0; padding: 0; list-style: none;
+}
+.zz-home-collections__list > li { display: flex; min-width: 0; }
+.zz-home-collections__list .zz-collection-card { flex: 1 1 auto; min-width: 0; }
 @media (--mobile) {
-  .zz-home-collections[data-device="responsive"] .zz-home-collections__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .zz-home-collections[data-device="responsive"] { --zz-collection-min: 144px; }
 }
 
 .zz-home-intro { margin: 0; color: var(--text-strong); }
