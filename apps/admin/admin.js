@@ -754,7 +754,7 @@
     var backTab = isNew ? null : f.status === 'draft' ? ['draft', 'Drafts']
       : f.status === 'sold' || f.status === 'traded' ? ['sold', 'Sold']
       : f.status === 'archived' ? ['archived', 'Archived'] : ['live', 'Live'];
-    var back = h(Z.BackLink, { href: backTab && backTab[0] !== 'live' ? '#listings/' + backTab[0] : '#', label: backTab ? backTab[1] : 'Listings' });
+    var back = h(Z.BackLink, { href: backTab && backTab[0] !== 'live' ? '#listings/' + backTab[0] : '#listings', label: backTab ? backTab[1] : 'Listings' });
     var main = h('div', { className: 'admin-main' },
       back,
       h('h1', { className: 'label-extra-large' }, isNew ? 'Create listing' : 'Edit listing'),
@@ -3230,7 +3230,7 @@
         setUnsorted([]);
         setMessage(null);
         toast(plural(done, 'draft') + ' created. Fill in grading and price to publish.');
-        location.hash = '#';
+        location.hash = '#listings';
         return;
       }
       setMessage({ error: true, text: plural(done, 'draft') + ' created; ' + plural(failed.length, 'record') + ' not saved: see below.' });
@@ -3327,6 +3327,108 @@
     return h(ListingForm, { initial: initial, fromMemo: { id: item.id, title: item.title, note: item.note, discogs: item.discogs_release_id } });
   }
 
+  // ── Dashboard ─────────────────────────────────────────────────────────────
+  /* Figma BACKEND → Dashboard (decision 0169): the admin landing page. Read-only figures computed here from what the
+     admin can already read (orders, listings, admin_offers): no migration. "Now" = current state; "Sales" =
+     the period in the tabs (calendar month / year in the browser's time, or all time). Euro only. Route: # or #dashboard */
+  var PERIODS = [['month', 'This month'], ['year', 'This year'], ['all', 'All time']];
+  function periodStart(p) {
+    var d = new Date();
+    if (p === 'month') return new Date(d.getFullYear(), d.getMonth(), 1);
+    if (p === 'year') return new Date(d.getFullYear(), 0, 1);
+    return null;
+  }
+  function statCount(n) { return n.toLocaleString('en-GB'); }
+  function statMoney(c) { return (c / 100).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
+  function median(list) {
+    if (!list.length) return null;
+    var a = list.slice().sort(function (x, y) { return x - y; }), m = Math.floor(a.length / 2);
+    return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+  }
+  function dashboardFigures(data, period) {
+    var start = periodStart(period);
+    function inPeriod(t) { return !!t && (!start || new Date(t) >= start); }
+    var L = data.listings.map(function (r) { return Object.assign({}, r, { eff: effectiveStatus(r) }); });
+    var live = L.filter(function (r) { return r.eff === 'available' || r.eff === 'reserved'; });
+    var liveSale = live.filter(function (r) { return r.section === 'sale'; });
+    var fixed = liveSale.filter(function (r) { return r.price_mode !== 'offers' && r.price_cents !== null && r.price_cents !== undefined; });
+    var drafts = L.filter(function (r) { return r.status === 'draft'; });
+    var paidOrders = data.orders.filter(function (o) { return o.status === 'paid' || o.status === 'shipped'; });
+    var inOrder = {};   // listing id → sold through the shop
+    paidOrders.forEach(function (o) { (o.items || []).forEach(function (i) { inOrder[i.listing_id] = true; }); });
+    var sold = L.filter(function (r) { return r.section === 'sale' && r.status === 'sold' && inPeriod(r.sold_at); });
+    var offSite = sold.filter(function (r) { return !inOrder[r.id]; });
+    var traded = L.filter(function (r) { return r.status === 'traded' && inPeriod(r.sold_at); }).length;
+    var periodOrders = paidOrders.filter(function (o) { return inPeriod(o.created_at); });
+    var records = 0, shipping = 0, offSiteCents = 0, offSiteNoPrice = 0;
+    periodOrders.forEach(function (o) { shipping += o.shipping_cents || 0; (o.items || []).forEach(function (i) { records += i.price_cents || 0; }); });
+    offSite.forEach(function (r) { if (r.price_cents === null || r.price_cents === undefined) offSiteNoPrice++; else offSiteCents += r.price_cents; });
+    var taken = records + offSiteCents, priced = sold.length - offSiteNoPrice;
+    var days = sold.filter(function (r) { return r.published_at; }).map(function (r) { return (new Date(r.sold_at) - new Date(r.published_at)) / 864e5; });
+    var med = median(days);
+    var listed = L.filter(function (r) { return inPeriod(r.published_at); }).length;
+    var offers = data.offers;
+    return {
+      live: live.length, liveSale: liveSale.length, liveTrade: live.length - liveSale.length,
+      value: fixed.reduce(function (n, r) { return n + r.price_cents; }, 0), fixed: fixed.length, bestOffer: liveSale.length - fixed.length,
+      toShip: data.orders.filter(function (o) { return o.status === 'paid'; }).length,
+      pending: offers.filter(function (o) { return o.state === 'pending'; }).length,
+      accepted: offers.filter(function (o) { return o.state === 'accepted'; }).length,
+      drafts: drafts.length, incomplete: drafts.filter(incomplete).length,
+      sold: sold.length, online: sold.length - offSite.length, offSite: offSite.length, traded: traded,
+      taken: taken, shipping: shipping, offSiteNoPrice: offSiteNoPrice, average: priced > 0 ? Math.round(taken / priced) : null,
+      days: med === null ? null : Math.round(med), listed: listed
+    };
+  }
+  function Dashboard() {
+    var st = useState(null), data = st[0], setData = st[1];
+    var er = useState(null), error = er[0], setError = er[1];
+    var pd = useState('month'), period = pd[0], setPeriod = pd[1];
+    useEffect(function () {
+      Promise.all([
+        sb.from('listings').select('id,status,reserved_until,section,price_mode,price_cents,published_at,sold_at,condition_media,release:releases(format,lines:release_lines(position,artist))'),
+        sb.from('orders').select('id,status,created_at,shipping_cents,items:order_items(listing_id,price_cents)'),
+        sb.from('admin_offers').select('id,state')
+      ]).then(function (r) {
+        var bad = r.filter(function (x) { return x.error; })[0];
+        if (bad) { setError(bad.error.message); return; }
+        setData({ listings: r[0].data, orders: r[1].data, offers: r[2].data });
+      }, function (e) { setError(e.message); });
+    }, []);
+    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not load the dashboard: ' + error);
+    if (!data) return h('p', { className: 'body-medium' }, 'Loading…');
+    var f = dashboardFigures(data, period);
+    var periodText = { month: 'this month', year: 'this year', all: 'so far' }[period];
+    var valueNote = plural(f.fixed, 'record') + ' at a fixed price.' + (f.bestOffer ? ' ' + plural(f.bestOffer, 'record') + ' on best offer ' + (f.bestOffer === 1 ? 'has' : 'have') + ' no price and ' + (f.bestOffer === 1 ? 'is' : 'are') + ' not counted.' : '');
+    var soldNote = [statCount(f.online) + ' online', statCount(f.offSite) + ' off the site'].concat(f.traded ? [statCount(f.traded) + ' traded'] : []).join(' · ');
+    var takenNote = 'Records only, before Stripe fees. Shipping ' + statMoney(f.shipping) + ' on top. Off-site sales at list price.' +
+      (f.offSiteNoPrice ? ' ' + plural(f.offSiteNoPrice, 'off-site sale') + ' without a price not counted.' : '');
+    function section(id, title, extra, stats) {
+      return h('section', { className: 'admin-dashboard__section', 'aria-labelledby': id },
+        h('div', { className: 'admin-dashboard__head' }, h('h2', { id: id, className: 'label-medium' }, title), extra),
+        h('div', { className: 'admin-dashboard__stats' }, stats));
+    }
+    return h('div', { className: 'admin-dashboard' },
+      h('h1', { className: 'label-extra-large' }, 'Dashboard'),
+      section('dashboard-now', 'Now', null, [
+        h(Z.Stat, { key: 'live', label: 'Online now', value: statCount(f.live), note: statCount(f.liveSale) + ' for sale · ' + statCount(f.liveTrade) + ' for trade' }),
+        h(Z.Stat, { key: 'value', label: 'Inventory value', value: statMoney(f.value), note: valueNote }),
+        h(Z.Stat, { key: 'ship', label: 'To ship', value: statCount(f.toShip), note: 'Paid, not shipped yet', href: '#orders', linkLabel: 'View orders' }),
+        h(Z.Stat, { key: 'offers', label: 'Offers waiting', value: statCount(f.pending), note: statCount(f.accepted) + ' accepted, waiting for payment', href: '#offers', linkLabel: 'View offers' }),
+        h(Z.Stat, { key: 'drafts', label: 'Drafts', value: statCount(f.drafts), note: statCount(f.drafts - f.incomplete) + ' ready to publish · ' + statCount(f.incomplete) + ' incomplete', href: '#listings/draft', linkLabel: 'View drafts' })
+      ]),
+      section('dashboard-sales', 'Sales',
+        h(Z.Tabs, { value: period, onValueChange: setPeriod, 'aria-label': 'Period' },
+          PERIODS.map(function (p) { return h(Z.Tab, { key: p[0], value: p[0], 'aria-controls': 'dashboard-sales-stats' }, p[1]); })),
+        [
+          h(Z.Stat, { key: 'sold', label: 'Sold', value: statCount(f.sold), note: soldNote, href: '#listings/sold', linkLabel: 'View sold' }),
+          h(Z.Stat, { key: 'taken', label: 'Money taken', value: statMoney(f.taken), note: takenNote }),
+          h(Z.Stat, { key: 'avg', label: 'Average price', value: f.average === null ? '—' : statMoney(f.average), note: 'Per record sold' }),
+          h(Z.Stat, { key: 'days', label: 'Days to sell', value: f.days === null ? '—' : statCount(f.days),
+            note: 'Median, from online to sold. ' + plural(f.listed, 'record') + ' put online ' + periodText + '.' })
+        ]));
+  }
+
   // ── App ───────────────────────────────────────────────────────────────────
   // [hash, visit]: visit changes on every navigation, so "Create listing" always opens an empty form
   function useHash() {
@@ -3373,7 +3475,7 @@
     else if (hash === '#bulk') body = h(Bulk, { key: 'bulk' });
     else if (/^#new\/memo\/[^/]+$/.test(hash)) body = h(FromMemoLoader, { key: hash + route.visit, id: hash.split('/')[2] });
     else if (/^#listings(\/(live|draft|sold|archived))?$/.test(hash)) body = h(Listings, { key: hash + route.visit, tab: hash.split('/')[1] || 'live' });
-    else body = h(Listings, { key: 'list-' + route.visit });
+    else body = h(Dashboard, { key: 'dashboard-' + route.visit });   // '', '#', #dashboard: the landing page (decision 0169)
 
     return h('div', { className: 'admin' },
       session ? h(Nav, { hash: hash, email: session.user.email }) : null,
@@ -3383,8 +3485,9 @@
   /* Admin navigation (Figma page `admin`, decision 0089): AdminBar (desktop buttons / mobile Menu · title)
      + the mobile menu, a full-screen native modal <dialog> with a MenuLayer, like the shop's (0060): Esc, × or
      following a link closes it, focus goes back to the Menu button. */
-  var SECTIONS = [['listings', 'Listings', '#'], ['orders', 'Orders', '#orders'], ['offers', 'Offers', '#offers'], ['memo', 'Memo', '#memo'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings'], ['content', 'Content', '#content']];
+  var SECTIONS = [['dashboard', 'Dashboard', '#dashboard'], ['listings', 'Listings', '#listings'], ['orders', 'Orders', '#orders'], ['offers', 'Offers', '#offers'], ['memo', 'Memo', '#memo'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings'], ['content', 'Content', '#content']];
   function sectionOf(hash) {
+    if (!hash || hash === '#' || hash === '#dashboard') return 'dashboard';
     if (/^#orders/.test(hash)) return 'orders';
     if (hash === '#offers') return 'offers';
     if (/^#(new\/)?memo/.test(hash)) return 'memo';   // a listing created from a memo starts in Memo
