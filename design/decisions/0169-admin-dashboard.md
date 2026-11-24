@@ -9,3 +9,5 @@
 Not shown, because the data does not exist: margin (no purchase cost), Stripe fees, visits (PostHog).
 **Rule.** A figure on the Dashboard says in its note how it is counted whenever a reader could count it differently (what is left out, gross or net, estimates); a missing value is never counted as zero.
 **Where.** `packages/ui` (`Stat`: components.js/css/d.ts), `apps/admin/admin.js` (`Dashboard`, `dashboardFigures`, routes, `SECTIONS`, `sectionOf`; back link and Bulk create go to `#listings`), `apps/admin/admin.css` (`.admin-dashboard*`).
+
+**Update 2026-11-24 (Gio: "se elimino un ordine, il money taken dovrebbe aggiornarsi").** Sales count only copies sold through an existing paid/shipped order (online) or marked Sold by hand in the admin (off the site: the last change to Sold in `listing_status_log` has `changed_by`; checkout writes it with no user). A copy still Sold whose order was deleted with "Keep sold" (0170) or refunded leaves Sold, Money taken, Average and Days to sell, and the Sold note says how many.
