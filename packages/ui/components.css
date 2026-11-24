@@ -1760,3 +1760,28 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .zz-linked-input__search::placeholder { color: var(--text-moderate); opacity: 1; }
 .zz-linked-input__options { margin: 0; padding: 0; list-style: none; max-height: 288px; overflow-y: auto; }
 .zz-linked-input__options .zz-entity-option[data-current="true"] .zz-entity-option__label { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ── Pagination (Figma page `pagination` → `pagination`, `_pagination gap`; decision 0179) ──────────────────────────
+   Buttons in a row, gap small (Figma itemSpacing → small). Desktop is fluid (Gio 2026-11-24): pages and gaps share
+   the width, Previous / Next hug their label. Mobile: every item a square as tall as the button (Figma 38 × 38),
+   Previous / Next without label (the link keeps aria-label). Each item shows on its devices (data-device, from
+   packages/pagination → items). Focus: the browser's ring (no focus token yet, design/open.md → Focus state). */
+.zz-pagination[hidden] { display: none; }
+.zz-pagination__list { display: flex; gap: var(--small); margin: 0; padding: 0; list-style: none; }
+.zz-pagination__item { display: flex; flex: 1 1 0; min-width: 0; }
+.zz-pagination__item[data-kind="previous"],
+.zz-pagination__item[data-kind="next"] { flex: none; }
+.zz-pagination__item .zz-button { flex: 1 1 auto; justify-content: center; }
+.zz-pagination__gap {
+  display: flex; flex: 1 1 auto; align-items: center; justify-content: center;
+  color: var(--text-strong);
+}
+.zz-pagination__item[data-device="mobile"] { display: none; }
+@media (--mobile) {
+  .zz-pagination__item { flex: none; min-width: 38px; }   /* Figma: 38 × 38 = the medium button's height (0014) */
+  .zz-pagination__item .zz-button { padding-inline: 0; }
+  .zz-pagination__item[data-kind="previous"] .zz-button__label,
+  .zz-pagination__item[data-kind="next"] .zz-button__label { display: none; }
+  .zz-pagination__item[data-device="mobile"] { display: flex; }
+  .zz-pagination__item[data-device="desktop"] { display: none; }
+}

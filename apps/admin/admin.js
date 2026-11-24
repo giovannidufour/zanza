@@ -128,7 +128,7 @@
     });
     return lameLoading;
   }
-  // ── a square video of a sample (Gio 2026-11-24, decision 0179): the chosen photo, still, full frame, with the sample,
+  // ── a square video of a sample (Gio 2026-11-24, decision 0180): the chosen photo, still, full frame, with the sample,
   // 1080 × 1080 H.264 30 fps + AAC, rendered here with WebCodecs and packed by mp4-muxer (MIT, loaded only when needed).
   // For Instagram feed and Reels; works for any listing (draft, live, sold), from the files already on R2.
   var MUXER_SRC = 'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.js';
@@ -468,7 +468,7 @@
   /* decision 0118: what the form would save, to tell "Unsaved changes". Leaves out what the database sets (status, SKU,
      dates) and what only the page needs (local ids, preview URLs, upload progress). */
   var META_KEYS = { listingId: 1, sku: 1, status: 1, slug: 1, checkoutUntil: 1, soldAt: 1, publishedAt: 1, createdAt: 1 };
-  var VOLATILE_KEYS = { id: 1, url: 1, uploading: 1, progress: 1, phase: 1, duration: 1, videoImage: 1, videoProgress: 1 };   // video of a sample (0179): never saved
+  var VOLATILE_KEYS = { id: 1, url: 1, uploading: 1, progress: 1, phase: 1, duration: 1, videoImage: 1, videoProgress: 1 };   // video of a sample (0180): never saved
   function formSnapshot(f) {
     var o = {};
     Object.keys(f).forEach(function (k) { if (!META_KEYS[k]) o[k] = f[k]; });
@@ -780,7 +780,7 @@
       var full = x.full;
       patchItem('samples', x.id, full ? { key: full.key, url: full.url, duration: full.duration, length: 'full', clippedTo: null } : { length: 'full' });
     }
-    // ── video of a sample (0179): the photo of the sample's side (file names of 0136: a… → Label A = <sku>_1_…, b… → Label B
+    // ── video of a sample (0180): the photo of the sample's side (file names of 0136: a… → Label A = <sku>_1_…, b… → Label B
     // = <sku>_2_…; else line 2 → photo 2), changeable in "Video image"; rendered and downloaded here, nothing is saved
     function defaultVideoImage(s) {
       var imgs = f.images.filter(function (x) { return x.url && !x.uploading; });
@@ -2586,7 +2586,8 @@
       var d = res.data || {};
       return { trade: d.trade_enabled !== false, tradeWanted: d.trade_wanted !== undefined ? d.trade_wanted !== false : d.trade_enabled !== false,
                identity: d.identity_enabled !== false, hasIdentity: d.identity_enabled !== undefined,
-               wantlist: d.wantlist_enabled !== false, hasWantlist: d.wantlist_enabled !== undefined };   // decision 0152
+               wantlist: d.wantlist_enabled !== false, hasWantlist: d.wantlist_enabled !== undefined,   // decision 0152
+               perPage: d.records_per_page || 20, hasPerPage: d.records_per_page !== undefined };   // decision 0179
     });
   }
   function loadTradeEnabled(force) {
@@ -2608,12 +2609,13 @@
     var ts = useState(null), trade = ts[0], setTrade = ts[1];     // the Trade tick
     var is = useState(null), identity = is[0], setIdentity = is[1];   // the Who I am tick (decision 0106)
     var ws = useState(null), wantlist = ws[0], setWantlist = ws[1];   // the Wantlist check tick (decision 0152)
+    var pp = useState(''), perPage = pp[0], setPerPage = pp[1];         // Records per page, as typed (decision 0179)
     var er = useState(null), error = er[0], setError = er[1];
     var ps = useState(null), problem = ps[0], setProblem = ps[1];
     var bs = useState(false), busy = bs[0], setBusy = bs[1];
 
     useEffect(function () {
-      loadShopSettings().then(function (st) { setSaved(st); setTrade(st.tradeWanted); setIdentity(st.identity); setWantlist(st.wantlist); }, function (e) { setError(e.message || String(e)); });
+      loadShopSettings().then(function (st) { setSaved(st); setTrade(st.tradeWanted); setIdentity(st.identity); setWantlist(st.wantlist); setPerPage(String(st.perPage)); }, function (e) { setError(e.message || String(e)); });
     }, []);
     if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' },
       'Could not load the settings: ' + error + '. Is migration 0023 (trade switch) applied?');
@@ -2622,18 +2624,26 @@
     async function save() {
       var identityChanged = identity !== saved.identity, tradeChanged = trade !== saved.tradeWanted;
       var wantlistChanged = saved.hasWantlist && wantlist !== saved.wantlist;
-      if (!identityChanged && !tradeChanged && !wantlistChanged) { toast('Nothing to save.'); return; }
+      var perPageValue = Number(perPage);
+      var perPageChanged = saved.hasPerPage && perPageValue !== saved.perPage;
+      if (perPageChanged && !(Number.isInteger(perPageValue) && perPageValue >= 1 && perPageValue <= 100)) {
+        setProblem('Records per page: a whole number from 1 to 100.'); return;
+      }
+      if (!identityChanged && !tradeChanged && !wantlistChanged && !perPageChanged) { toast('Nothing to save.'); return; }
       setBusy(true);
       var res = identityChanged ? await sb.rpc('admin_set_identity_enabled', { p_enabled: identity }) : { error: null };
       if (!res.error && tradeChanged) res = await sb.rpc('admin_set_trade_enabled', { p_enabled: trade });
       if (!res.error && wantlistChanged) res = await sb.rpc('admin_set_wantlist_enabled', { p_enabled: wantlist });
+      if (!res.error && perPageChanged) res = await sb.rpc('admin_set_records_per_page', { p_value: perPageValue });
       setBusy(false);
       if (res.error) { setProblem('Not saved: ' + res.error.message); loadShopSettings().then(setSaved, function () {}); return; }
-      var next = { tradeWanted: trade, identity: identity, hasIdentity: saved.hasIdentity, wantlist: wantlist, hasWantlist: saved.hasWantlist };
+      var next = { tradeWanted: trade, identity: identity, hasIdentity: saved.hasIdentity, wantlist: wantlist, hasWantlist: saved.hasWantlist,
+                   perPage: perPageChanged ? perPageValue : saved.perPage, hasPerPage: saved.hasPerPage };
       setProblem(null); setSaved(next); tradeSetting = Promise.resolve(trade && identity);
       toast((identityChanged ? (identity ? 'The shop shows who you are.' : 'The shop no longer shows who you are, nor trade.')
         : tradeChanged ? (trade ? 'Trade is on.' : 'Trade is off.')
-        : (wantlist ? 'The wantlist check is on.' : 'The wantlist check is off.')) + ' It updates in about 2 minutes.');
+        : wantlistChanged ? (wantlist ? 'The wantlist check is on.' : 'The wantlist check is off.')
+        : 'The shop shows ' + perPageValue + ' records a page.') + ' It updates in about 2 minutes.');
     }
 
     return h('div', { className: 'admin-section admin-shipping admin-settings' },
@@ -2661,6 +2671,13 @@
         h('p', { className: 'body-small', id: 'settings-wantlist-help' }, 'Off: the shop shows no trace of the wantlist check. On: visitors can connect their Discogs account and see which records here are on their wantlist. Their wantlist is compared in their browser and never reaches the shop. Saving rebuilds the shop, live in about 2 minutes.'),
         h('div', null, h(Z.Checkbox, { label: 'Show the wantlist check on the shop', checked: wantlist, 'aria-describedby': 'settings-wantlist-help',
           onChange: function (e) { setWantlist(e.target.checked); setProblem(null); } }))) : null,
+      // Figma BACKEND → Settings → `number setting` "Records per page" (decision 0179). Hidden until migration 0039 is applied.
+      saved.hasPerPage ? h('section', { className: 'admin-shipping__section', 'aria-labelledby': 'settings-per-page' },
+        h('h2', { id: 'settings-per-page', className: 'label-medium' }, 'Records per page'),
+        h('p', { className: 'body-small', id: 'settings-per-page-help' }, 'How many records each list of the shop shows before it moves on to the next page (For sale, search, collections, wantlist). Saving rebuilds the shop, live in about 2 minutes.'),
+        h('div', { className: 'admin-settings__number' }, h(Z.Input, { id: 'settings-per-page-input', type: 'number', inputMode: 'numeric', min: 1, max: 100, step: 1,
+          'aria-labelledby': 'settings-per-page', 'aria-describedby': 'settings-per-page-help', value: perPage,
+          onChange: function (e) { setPerPage(e.target.value); setProblem(null); } }))) : null,
       h(PhotoSizes));
   }
 

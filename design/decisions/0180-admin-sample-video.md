@@ -1,4 +1,4 @@
-# 0179 — Admin: Download video on every sample (photo + sample, square MP4 made in the browser)
+# 0180 — Admin: Download video on every sample (photo + sample, square MP4 made in the browser)
 
 `2026-11-24` · accepted · Figma: COMPONENTS → `uploads` → `file item` (type=audio, state=default): new `video` row (boolean `video`, ON in the main, OFF in the line samples) with `video image select` + `video button`; BACKEND → Create, Samples overview
 

@@ -55,6 +55,9 @@ const toastJsHref = url(`/js/toast.js?v=${hashOf(toastJs)}`);
 // shipping estimate (decision 0057): the same file as the admin and create-checkout, straight from packages/shipping
 const shippingJs = fs.readFileSync(path.join(ROOT, 'packages/shipping/shipping.js'));
 const shippingJsHref = url(`/js/shipping.js?v=${hashOf(shippingJs)}`);
+// which page numbers the PLP pagination shows (decision 0179): the same file as pages/plp.js, re-drawn by site.js
+const paginationJs = fs.readFileSync(path.join(ROOT, 'packages/pagination/pagination.js'));
+const paginationJsHref = url(`/js/pagination.js?v=${hashOf(paginationJs)}`);
 // newsletter signup + confirm page (decision 0103): the same file as the coming-soon page
 const newsletterJs = fs.readFileSync(path.join(APP, 'scripts/newsletter.js'));
 const newsletterJsHref = url(`/js/newsletter.js?v=${hashOf(newsletterJs)}`);
@@ -171,6 +174,7 @@ ${faviconLinks}
 <link rel="stylesheet" href="${cssHref('account')}">
 <script src="${toastJsHref}" defer></script>
 <script src="${shippingJsHref}" defer></script>
+<script src="${paginationJsHref}" defer></script>
 <script src="${accountJsHref}" defer></script>
 ${analyticsTags}<script src="${siteJsHref}" defer></script>
 <script src="${newsletterJsHref}" defer></script>
@@ -216,6 +220,10 @@ site.tradeEnabled = settings.tradeEnabled;
 site.identityEnabled = settings.identityEnabled;
 // Check your wantlist (migration 0033, decision 0152): off = no /wantlist/ page, no link, no Privacy line
 site.wantlistEnabled = settings.wantlistEnabled && !!(site.wantlist && site.wantlist.endpoint);
+// Records per page of every PLP (admin → Settings, migration 0039, decision 0179)
+// `--per-page=5` overrides it for a local check
+const perPageArg = parseInt((process.argv.find(a => a.startsWith('--per-page=')) || '').split('=')[1], 10);
+site.perPage = perPageArg > 0 ? perPageArg : settings.perPage;
 // the texts Gio edits in the admin (page Content, decision 0106): saved rows over today's texts (the defaults: site.json →
 // owner, content/legal/*.md, packages/content). The pages read site.texts; `owner` keeps its old shape (Profile, or
 // while Who I am is off only the Store profile's about + links: no name, no profiles).
@@ -261,6 +269,7 @@ write('js/site.js', siteJs);
 write('js/account.js', accountJs);
 write('js/toast.js', toastJs);
 write('js/shipping.js', shippingJs);
+write('js/pagination.js', paginationJs);
 write('js/newsletter.js', newsletterJs);
 if (analytics) { write('js/posthog.js', posthogJs); write('js/analytics.js', analyticsJs); }
 for (const f of fs.readdirSync(path.join(APP, 'public'))) write('assets/' + f, fs.readFileSync(path.join(APP, 'public', f)));

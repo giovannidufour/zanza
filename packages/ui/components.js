@@ -92,6 +92,37 @@
       props.trailingIcon ? h('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, props.trailingIcon) : null);
   }
 
+  /* ── Pagination ─────────────────────────────────────────────────────────
+     Figma: page `pagination` → `pagination` (device desktop | mobile × position first | middle | last) + `_pagination gap`
+     (decision 0179). Built from Buttons: a page = secondary, the current page = secondary state="active" (0045: a link
+     with aria-current="page", never disabled). Previous / Next only when there is a page to go to (disabled = sold out
+     in this system). `items` comes from packages/pagination (pagination.js → items): one list for both devices, each
+     item tagged with the devices it shows on (components.css hides the others). Desktop is fluid: pages and gaps share
+     the width, Previous / Next hug their label (Gio 2026-11-24). Mobile: 38 × 38 squares, arrows without label.
+     The gap "…" is not interactive and hidden from screen readers. */
+  function Pagination(props) {
+    var href = props.href || function (n) { return '?page=' + n; };
+    var devicesOf = function (it) { return it.devices && it.devices.length === 1 ? it.devices[0] : undefined; };
+    var li = function (it, i, child) {
+      return h('li', { key: i, className: 'zz-pagination__item', 'data-kind': it.kind, 'data-device': devicesOf(it),
+        'aria-hidden': it.kind === 'gap' ? 'true' : undefined }, child);
+    };
+    return h('nav', Object.assign({ 'aria-label': 'Pages' }, omit(props, ['items', 'href', 'className']), {
+      className: cx('zz-pagination', props.className) }),
+      h('ul', { className: 'zz-pagination__list' }, (props.items || []).map(function (it, i) {
+        if (it.kind === 'gap') return li(it, i, h('span', { className: 'zz-pagination__gap label-medium' }, '\u2026'));
+        if (it.kind === 'previous' || it.kind === 'next') {
+          var prev = it.kind === 'previous';
+          return li(it, i, h(Button, { hierarchy: 'secondary', href: href(it.page), rel: prev ? 'prev' : 'next',
+            'aria-label': prev ? 'Previous page' : 'Next page',
+            leadingIcon: prev ? icon('icon-chevron-left-small-thin') : undefined,
+            trailingIcon: prev ? undefined : icon('icon-chevron-right-small-thin') }, prev ? 'Previous' : 'Next'));
+        }
+        return li(it, i, h(Button, { hierarchy: 'secondary', href: href(it.page), 'aria-label': 'Page ' + it.page,
+          state: it.kind === 'current' ? 'active' : undefined }, String(it.page)));
+      })));
+  }
+
   /* ── Tabs / Tab ─────────────────────────────────────────────────────────
      Figma: `tab group` (slot of `tab`) and `tab` (states default/hover/pressed/active).
      Selection lives in Tabs (controlled). WAI-ARIA tabs pattern. */
@@ -2009,7 +2040,7 @@
     }), view === 'grid' ? 'List view' : 'Grid view');
   }
 
-  return { Button: Button, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, ActiveFilter: ActiveFilter, Tag: Tag, TagGroup: TagGroup,
+  return { Button: Button, Pagination: Pagination, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, ActiveFilter: ActiveFilter, Tag: Tag, TagGroup: TagGroup,
            PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, BagItem: BagItem, OrderItem: OrderItem, OrderRow: OrderRow, BagSummary: BagSummary, RelatedProducts: RelatedProducts, ProductReturnCard: ProductReturnCard, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
            Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, ChevronDownLargeIcon: ChevronDownLargeIcon, DragHandleIcon: DragHandleIcon,
            Checkbox: Checkbox, Alert: Alert, Divider: Divider, ActionPanel: ActionPanel, ListingStatus: ListingStatus, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog, Toast: Toast, ToastRegion: ToastRegion,
