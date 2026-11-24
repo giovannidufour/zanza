@@ -1,4 +1,5 @@
 // supabase/functions/discogs-lookup — reads one Discogs release for the admin's "Fetch Discogs" button,
+// with its credits (Producer, Mixed By …, decision 0148),
 // and searches Discogs releases for the admin's Memo list (decision 0087): POST { query } → { results }, or, after a
 // photo of the label (decision 0090), POST { fields: { barcode, catno, label, artist, title } } → { results }.
 // Admin only: the caller's Supabase session must belong to a row of public.admins.
@@ -44,6 +45,22 @@ function credit(list: DiscogsArtist[] | undefined) {
     artists: (list ?? []).map((a) => ({ name: clean(a.name), credit: clean(a.anv || a.name), discogsId: a.id ?? null })),
   };
 }
+
+// credits (decision 0148): every Discogs credit of the release ("extraartists" of the release and of each track), with its
+// role as written ("Producer", "Mixed By"). The admin stores them all after saving (admin_set_release_credits); the shop
+// searches the producers only.
+type DiscogsCredit = DiscogsArtist & { role?: string; tracks?: string };
+// deno-lint-ignore no-explicit-any
+function creditsOf(d: any) {
+  const one = (a: DiscogsCredit, tracks: string) => ({
+    name: clean(a.name ?? ""), credit: clean(a.anv || a.name || ""), discogsId: a.id ?? null,
+    role: (a.role ?? "").trim(), tracks: tracks.trim(), variations: [] as string[],
+  });
+  const list = (d.extraartists ?? []).map((a: DiscogsCredit) => one(a, a.tracks ?? ""));
+  for (const t of d.tracklist ?? []) for (const a of t.extraartists ?? []) list.push(one(a, t.position ?? ""));
+  return list.filter((c: { name: string; role: string }) => c.name && c.role);
+}
+const isProducer = (role: string) => /produc/i.test(role);
 
 // one search result as { id, title: "Artist – Title", meta: "label · catno · year · country · format", thumb, uri }
 const cleanAll = (s: string) => String(s ?? "").replace(/\s+\(\d+\)(?=$|\s*[-–,])/g, "").trim();
@@ -136,6 +153,27 @@ Deno.serve(async (req) => {
   // deno-lint-ignore no-explicit-any
   const d: any = await res.json();
 
+  // the name variations of a producer Discogs knows ("C.S. Dodd", "Coxsone"), so the shop search finds every spelling.
+  // One more request per producer, only the first time: a producer already credited in our database is skipped.
+  const credits = creditsOf(d);
+  const producerIds = [...new Set(credits.filter((c) => isProducer(c.role) && c.discogsId).map((c) => c.discogsId as number))];
+  if (producerIds.length) {
+    const { data: known } = await supabase.from("release_credits").select("role,artist:artists!inner(discogs_artist_id)")
+      .in("artist.discogs_artist_id", producerIds);
+    const done = new Set((known ?? []).filter((k) => isProducer(k.role))
+      // deno-lint-ignore no-explicit-any
+      .map((k: any) => k.artist?.discogs_artist_id));
+    for (const pid of producerIds.filter((x) => !done.has(x)).slice(0, 4)) {
+      const r = await fetch(`https://api.discogs.com/artists/${pid}`, {
+        headers: { "User-Agent": USER_AGENT, "Accept": "application/vnd.discogs.v2.discogs+json", ...(token ? { Authorization: `Discogs token=${token}` } : {}) },
+      });
+      if (!r.ok) continue;   // the credits still go through, only without the variations
+      const a = await r.json();
+      const names = [...new Set([a.realname, ...(a.namevariations ?? [])].map((n) => clean(String(n ?? ""))).filter(Boolean))];
+      for (const c of credits) if (c.discogsId === pid) c.variations = names;
+    }
+  }
+
   const releaseCredit = credit(d.artists);
   const tracks = (d.tracklist ?? [])
     .filter((t: { type_?: string }) => (t.type_ ?? "track") === "track")
@@ -162,5 +200,6 @@ Deno.serve(async (req) => {
     genres: d.genres ?? [],
     styles: d.styles ?? [],
     tracks,
+    credits,
   }, 200, headers);
 });

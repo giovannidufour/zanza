@@ -544,7 +544,13 @@
         return;
       }
       setSaving(true); setMessage(null);
-      var res = await sb.rpc('admin_save_listing', { payload: payloadOf(cur, status) });
+      var payload = payloadOf(cur, status);
+      var res = await sb.rpc('admin_save_listing', { payload: payload });
+      if (!res.error) {
+        // 0148: the Discogs credits read with Fetch Discogs go with the release; a failure does not undo the save
+        var creditsError = await LD.saveCredits(sb.rpc.bind(sb), res.data, payload);
+        if (creditsError) console.warn('Credits not saved: ' + creditsError);
+      }
       setSaving(false);
       if (res.error) { setMessage({ error: true, text: (status === 'available' ? 'Not published: ' : 'Not saved: ') + res.error.message }); return; }
       var d = res.data, now = Date.now(), wasPublic = cur.status !== 'draft';
@@ -2803,6 +2809,7 @@
         else { var f = emptyForm(); f.lines = [newLine({ title: row.title })]; payload = payloadOf(f, 'draft'); }
         var saved = await sb.rpc('admin_save_listing', { payload: payload });
         if (saved.error) throw new Error(saved.error.message);
+        await LD.saveCredits(sb.rpc.bind(sb), saved.data, payload);   // 0148; the backfill catches a failure
         made.push(saved.data.sku);
         await sb.from('memos').delete().eq('id', row.id);
       } catch (err) { failed++; }

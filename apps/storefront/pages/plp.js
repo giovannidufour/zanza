@@ -55,15 +55,20 @@ const optionLabel = (key, v) => (key === 'format' ? v.replace(/"$/, '”') : v);
 
 // Search (Figma page `Search`, 2026-11-12): what a query is matched against, normalised the same way as the query in
 // scripts/site.js (searchWords): no accents, lower case, punctuation = space. Artist (entities too: an alias credit
-// still finds the artist), title and track titles, label, catalogue number, genres, the shop's tags.
+// still finds the artist), title and track titles, label, catalogue number, genres, the shop's tags, and the producers
+// from the Discogs credits with every spelling of their name (decision 0148; not shown on the page, only searched).
+// Which credit roles are searchable: SEARCH_ROLES (Gio 2026-11-23: producers only; all roles are stored).
 const searchWords = (s) => String(s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
   .replace(/[^a-z0-9]+/g, ' ').trim();
+const SEARCH_ROLES = /produc/i;   // Producer, Co-producer, Executive Producer, "Producer [Dub]"
 function searchTextOf(p) {
   const r = p.release;
+  const credits = (r.credits || []).filter((c) => SEARCH_ROLES.test(c.role))
+    .flatMap((c) => [c.credit, c.artist.name, ...(c.artist.aliases || [])]);
   const tracks = (r.tracklist || []).map((t) => (typeof t === 'string' ? t : (t && t.title) || ''));
   const lines = (r.lines || []).flatMap((l) => [l.artist, l.title]);
   const parts = [r.name, r.artist, r.title, ...lines, ...artistRefs(r).map((a) => a.name), r.label,
-    (labelRef(r) || {}).name, r.cat_no, ...(r.genres || []), ...(r.tags || []), ...tracks];
+    (labelRef(r) || {}).name, r.cat_no, ...(r.genres || []), ...(r.tags || []), ...tracks, ...credits];
   return [...new Set(parts.map(searchWords).filter(Boolean))].join(' ');
 }
 // sold copies stay on the list (Gio 2026-11-12) behind "Show sold out", ticked by default
