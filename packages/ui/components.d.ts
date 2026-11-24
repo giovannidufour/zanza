@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, CSSProperties, HTMLAttributes, InputHTMLAttributes, ReactNode, Ref } from "react";
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, CSSProperties, HTMLAttributes, InputHTMLAttributes, ReactNode, Ref } from "react";
 
 /** Mirrors the Figma component `button` — variants hierarchy × size, states via pseudo-classes. */
 export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
@@ -1357,6 +1357,24 @@ export interface HomeIntroProps extends HTMLAttributes<HTMLParagraphElement> {
   children?: ReactNode;
 }
 export declare function HomeIntro(props: HomeIntroProps): JSX.Element;
+
+/** Figma `collection card` (page Home, state default | hover, decision 0174): a link to a collection page, label centered. An <a>. */
+export interface CollectionCardProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
+  /** The collection name (label/large, uppercase by the type style). */
+  label: ReactNode;
+  /** Figma `state`, for docs only; the page uses :hover. */
+  state?: 'default' | 'hover';
+}
+export declare function CollectionCard(props: CollectionCardProps): JSX.Element;
+
+/** Figma `home collections` (page Home, device desktop | mobile, decision 0174): the collection cards under the home intro. A <nav> with a list. */
+export interface HomeCollectionsProps extends HTMLAttributes<HTMLElement> {
+  /** The cards, in Gio's order (admin → Collections). */
+  collections: { label: ReactNode; href: string }[];
+  /** desktop = 4 per row, mobile = 2 per row, responsive = by breakpoint. @default "responsive" */
+  device?: 'desktop' | 'mobile' | 'responsive';
+}
+export declare function HomeCollections(props: HomeCollectionsProps): JSX.Element;
 
 /** Figma `home newsletter` (page Home): the signup between two shelves, in a dashed box (the store name's dash). A <section>. */
 export interface HomeNewsletterProps extends HTMLAttributes<HTMLElement> {

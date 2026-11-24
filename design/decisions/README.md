@@ -193,3 +193,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0171](0171-memo-removed-drafts-are-the-reminder.md) | Memo removed: a draft is the reminder; photo with no Discogs match titles line 1; leftover memos become drafts on Listings | accepted |
 | [0172](0172-bulk-create-removed.md) | Admin Bulk create removed (the Scanner makes drafts and pushes files, 0142/0145): no #bulk, BulkRecord / BulkHelp dropped, ListingsHead without Bulk create | accepted |
 | [0173](0173-scanner-waveform-peak-differences.md) | Scanner waveform: one tone, 480 thin bars, height = (bar peak / clip peak)² so differences between peaks show; display only | accepted |
+| [0174](0174-curated-collections.md) | Curated collections: cards under the home intro → /collections/<slug>/ (rules Years / Genres / Tags, AND between, OR inside), admin → Collections with drag order; every PLP lists sold records last | accepted |

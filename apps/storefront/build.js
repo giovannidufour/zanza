@@ -1,6 +1,6 @@
 /* apps/storefront/build.js — static build.
    products (Supabase, or content/products/*.json: see data/products.js) → dist/products/<slug>/index.html,
-   dist/index.html (home), dist/sale/index.html (PLP), dist/search/index.html (search results), dist/bag/index.html (bag), dist/checkout/thanks/index.html (after Stripe Checkout), dist/account/{,order/,details/}index.html (customer account), dist/<legal page>/index.html (content/legal/*.md) (+ css, fonts, assets). `--source=json` forces the local JSON.
+   dist/index.html (home), dist/sale/index.html (PLP), dist/collections/<slug>/index.html (collection PLPs, 0174), dist/search/index.html (search results), dist/bag/index.html (bag), dist/checkout/thanks/index.html (after Stripe Checkout), dist/account/{,order/,details/}index.html (customer account), dist/<legal page>/index.html (content/legal/*.md) (+ css, fonts, assets). `--source=json` forces the local JSON.
    Upload the whole `dist/` folder to the web root. Run: npm run build
    Cloudflare Pages: `npm run build:pages` (= --target=pages --source=supabase: root basePath, never the local JSON). */
 'use strict';
@@ -196,7 +196,8 @@ function write(rel, content) {
 }
 
 // products, in listing order
-const { loadProducts, loadSettings, loadTexts, readEnv } = require('./data/products.js');
+const { loadProducts, loadSettings, loadTexts, loadCollections, readEnv } = require('./data/products.js');
+const CollectionRules = require('../../packages/collections/collections.js');
 const shippingData = require('./data/shipping.js');
 const sourceArg = (process.argv.find(a => a.startsWith('--source=')) || '').split('=')[1];
 const tradeArg = (process.argv.find(a => a.startsWith('--trade=')) || '').split('=')[1];   // on | off: try the shop either way
@@ -235,6 +236,10 @@ if (source === 'supabase') {
 // shipping config from the same source as the products (null = not set up: the bag says "Calculated at checkout")
 const shipping = source === 'supabase' ? await shippingData.fromSupabase(readEnv()) : shippingData.fromJson();
 console.log(`shipping: ${shipping && (shipping.rates || []).length ? shipping.rates.length + ' rate(s)' : 'not set up'}`);
+
+// collections (migration 0038, decision 0174): the cards under the home intro and /collections/<slug>/
+const collections = await loadCollections({ source });
+console.log(`collections: ${collections.length} (${collections.filter(c => c.on_home).length} on the home)`);
 
 // only now that the data is here: a failed fetch must not leave an empty dist/
 fs.rmSync(path.join(APP, 'dist'), { recursive: true, force: true });
@@ -283,16 +288,17 @@ for (const product of products) {
 // PLP: the listing of the "For sale" section (Figma: PLP - desktop); "For trade" has no products yet.
 // A reserved copy stays in the list with its "Reserved" button: it is paused, not gone (Gio 2026-11-12)
 // Sold copies stay too, behind the "Show sold out" filter, ticked by default (Gio 2026-11-12, Figma page `Search`)
-const forSale = products.filter(p => p.listing.section === 'sale' && ['available', 'reserved', 'sold'].includes(p.listing.status));
+// Every PLP: for sale first, sold at the end (Gio 2026-11-24, decision 0174: Plp.soldLast)
+const forSale = Plp.soldLast(products.filter(p => p.listing.section === 'sale' && ['available', 'reserved', 'sold'].includes(p.listing.status)));
 write('sale/index.html', page({ template: 'plp', title: Plp.title('sale'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, allProducts: products, site, url })) }));
 
 // For trade (Figma page `Trade`, decision 0068): the trade PLP, one offer page per trade listing, How trading works, About.
 // Traded copies stay on the list like sold ones (behind "Show sold out").
-const forTrade = products.filter(p => p.listing.section === 'trade' && ['available', 'reserved', 'traded'].includes(p.listing.status));
+const forTrade = Plp.soldLast(products.filter(p => p.listing.section === 'trade' && ['available', 'reserved', 'traded'].includes(p.listing.status)));
 if (site.tradeEnabled) write('trade/index.html', page({ template: 'plp', title: Plp.title('trade'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'trade', products: forTrade, allProducts: products, site, url })) }));
 // Catalog (decision 0085, Gio 2026-11-15): every record of both sections mixed, newest first, with the PLP filters.
 // Linked only from the home's "See all" under Just in (no tab, no menu item).
-const catalog = products.filter(p => forSale.includes(p) || forTrade.includes(p));
+const catalog = Plp.soldLast(products.filter(p => forSale.includes(p) || forTrade.includes(p)));
 write('catalog/index.html', page({ template: 'plp', title: Plp.title('catalog'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'catalog', products: catalog, allProducts: products, site, url })) }));
 for (const product of forTrade.filter(p => p.listing.status === 'available')) {
   write(`products/${product.listing.slug}/offer/index.html`, page({ template: 'trade_offer', title: `Make an offer · ${title(product)}`, body: renderToStaticMarkup(React.createElement(Trade.Offer, { product, site, url })) }));
@@ -347,9 +353,19 @@ write('contact/index.html', page({ template: 'contact', title: 'Contact', body: 
 // the link in the newsletter confirmation email lands here (decision 0103)
 write('newsletter/confirm/index.html', page({ template: 'newsletter_confirm', title: Newsletter.title, body: renderToStaticMarkup(React.createElement(Newsletter.ShopConfirm, { site, url })) }));
 
+// Collections (Figma page `Collections` + PLP - desktop / collection, decision 0174): one PLP per collection with the
+// sale records that match its rules (packages/collections), sold at the end like every PLP. A collection with no
+// record still gets its page (zero results) and its card (Gio 2026-11-24). Sale only, as the home.
+const collectionPages = collections.map(c => ({ c, products: forSale.filter(p => CollectionRules.matches(c, {
+  year: p.release.year, year_precision: p.release.year_precision, genres: p.release.genres, tags: p.release.tags })) }));
+for (const { c, products: inIt } of collectionPages) {
+  write(`collections/${c.slug}/index.html`, page({ template: 'collection', title: c.name, body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: inIt, allProducts: products, site, url, collection: c })) }));
+}
+const homeCollections = collections.filter(c => c.on_home).map(c => ({ label: c.name, href: url(`/collections/${c.slug}/`) }));
+
 // Home (Figma page `Home`, decision 0120): intro, genres, This week, newsletter, Recent. Its newsletter box replaces the
 // footer's signup there (Figma Home v2: footer `newsletter` off)
-write('index.html', page({ template: 'home', title: Home.title, body: renderToStaticMarkup(React.createElement(Home.Home, { products, site, url })), footerNewsletter: false }));
+write('index.html', page({ template: 'home', title: Home.title, body: renderToStaticMarkup(React.createElement(Home.Home, { products, site, url, collections: homeCollections })), footerNewsletter: false }));
 // Cloudflare Pages response headers (target pages only). Until launch the shop lives on staging.rythem-works.com
 // (behind Cloudflare Access) and store-front-6fx.pages.dev: neither may be indexed (site.json → noindex).
 if (targetArg === 'pages' && site.noindex) write('_headers', '/*\n  X-Robots-Tag: noindex\n');

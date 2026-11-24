@@ -13,6 +13,8 @@
   align-items: start;
 }
 .home-intro { grid-column: 1 / -1; }
+/* collections (decision 0174, Figma frame `collections`): full width under the intro, 16 below */
+.home-collections { grid-column: 1 / -1; padding-bottom: var(--medium-small); }
 .home-side  { grid-column: 1 / span 3; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--medium-small); padding-top: var(--small); }
 .home-main  { grid-column: 4 / span 9; min-width: 0; display: flex; flex-direction: column; gap: var(--medium-small); padding-top: var(--small); }
 .home-view-toggle { display: flex; }   /* one of its two buttons shows, see below */
@@ -41,7 +43,7 @@
 @media (--mobile) {
   /* intro: 16 above and below as on desktop (Gio 2026-11-18: +8 below on mobile) */
   .home-content { grid-template-columns: minmax(0, 1fr); }
-  .home-intro, .home-side, .home-main { grid-column: 1; }
+  .home-intro, .home-collections, .home-side, .home-main { grid-column: 1; }
   .home-side { padding-top: 0; padding-bottom: var(--medium-small); }
   .home-main { padding-top: 0; }
   .home-view-toggle { display: none; }

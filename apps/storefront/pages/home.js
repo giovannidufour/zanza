@@ -1,6 +1,8 @@
 /* apps/storefront/pages/home.js — the home page "/" (Figma page `Home`, Home v2, decision 0120; replaces 0085).
    A pure function: products in, React tree out. Sale only for now (Gio 2026-11-18: trade and personal info left out).
    - intro: the welcome line (admin → Content → Home) + "Subscribe to newsletter" → the newsletter box below
+   - collections (decision 0174): the cards of admin → Collections set to "Show on the home", in Gio's order, full
+     width under the intro; none → no row
    - side (desktop, 3 of 12 columns): the genres one per line + All (→ /sale/)
    - main (9 columns): shelf "This week (n)" = sale records published in the last 7 days (max 6), the newsletter box,
      shelf "Recent" = the next 12 newest sale records (decision 0167). No This week (nothing new) → only Recent.
@@ -76,7 +78,7 @@ function Shelf({ id, title, meta, items, url, divider, viewAll }) {
       h(Z.Button, { hierarchy: 'secondary', size: 'large', href: url('/sale/') }, 'View all for sale')) : null);
 }
 
-function Home({ products, site, url, now = Date.now() }) {
+function Home({ products, site, url, collections = [], now = Date.now() }) {
   const sale = products.filter((p) => p.listing.section === 'sale');
   // the shelves are about what is new (decision 0129): newest published first, not Gio's order of the shop lists
   const newest = (x, y) => String(y.listing.published_at || '').localeCompare(String(x.listing.published_at || ''));
@@ -98,6 +100,7 @@ function Home({ products, site, url, now = Date.now() }) {
       h('h1', { className: 'zz-visually-hidden' }, site.storeName),
       h('div', { className: 'home-intro' },
         h(Z.HomeIntro, null, intro, nl.action ? h(React.Fragment, null, ' ', h('a', { href: '#newsletter' }, 'Subscribe to newsletter')) : null)),
+      collections.length ? h(Z.HomeCollections, { className: 'home-collections', collections }) : null,
       h('div', { className: 'home-side' },
         genres.length ? h(Z.GenreLinks, { genres, allHref: url('/sale/'), className: 'home-genres' }) : null),
       h('div', { className: 'home-main', id: 'home-main' },

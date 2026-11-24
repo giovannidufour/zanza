@@ -1907,7 +1907,12 @@
        the bottom-left corner). responsive (default) = desktop above the breakpoint, mobile below (one markup).
      GalleryCounter: `gallery counter` — "1/3", tag anatomy (padding 4/8), body/extra-small text/strong on surface/accent.
      ViewToggle: `view toggle` (view grid | list): a secondary Button that switches a shelf between tiles and cards.
-       view=grid reads "List view" (icon bars-three); view=list reads "Grid view" (icon TODO in Figma, open.md). */
+       view=grid reads "List view" (icon bars-three); view=list reads "Grid view" (icon TODO in Figma, open.md).
+     CollectionCard: `collection card` (state default | hover, decision 0174): a link box, label centered (label/large,
+       text/strong), 1px border divider/strong inside, padding medium-small, min height 96; hover = surface/hover on the
+       whole card (as the product card, 0088). Focus: the browser ring (no focus token yet, open.md).
+     HomeCollections: `home collections` (device desktop | mobile): the cards under the home intro, wrapping rows, gap
+       gutter/small; desktop 4 per row (a card = the 3-of-12 side column), mobile 2 per row. A <nav> named "Collections". */
   function SectionHead(props) {
     var HeadingTag = 'h' + (props.headingLevel || 2);
     var hasMeta = props.meta !== undefined && props.meta !== null && props.meta !== false;
@@ -1939,6 +1944,18 @@
       h('div', { className: 'zz-home-newsletter__box' },
         h(SectionHead, { title: props.title || 'Get new records first', headingLevel: props.headingLevel, divider: false, titleId: titleId }),
         props.children));
+  }
+  function CollectionCard(props) {
+    return h('a', Object.assign({}, omit(props, ['label', 'state', 'className', 'children']),
+      { className: cx('zz-collection-card label-large', props.className), 'data-state': props.state }), props.label || props.children);
+  }
+  function HomeCollections(props) {
+    var items = props.collections || [];
+    return h('nav', Object.assign({}, omit(props, ['collections', 'device', 'className', 'aria-label']),
+      { className: cx('zz-home-collections', props.className), 'data-device': props.device || 'responsive', 'aria-label': props['aria-label'] || 'Collections' }),
+      h('ul', { className: 'zz-home-collections__list' }, items.map(function (c) {
+        return h('li', { key: c.href }, h(CollectionCard, { href: c.href, label: c.label }));
+      })));
   }
   function GalleryCounter(props) {
     return h('span', Object.assign({}, omit(props, ['className', 'children']), { className: cx('zz-gallery-counter body-extra-small', props.className) }), props.children);
@@ -1993,5 +2010,5 @@
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, Step: Step,
            ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, BackLink: BackLink, DiscogsLink: DiscogsLink, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, useDragOrder: useDragOrder, DragHandle: DragHandle, AdminBar: AdminBar, ListingsHead: ListingsHead, ListingsFilter: ListingsFilter, Stat: Stat, Thumbnail: Thumbnail, ListingRow: ListingRow, OfferRow: OfferRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
-           NewsletterDialog: NewsletterDialog, SectionHead: SectionHead, GenreLinks: GenreLinks, HomeIntro: HomeIntro, HomeNewsletter: HomeNewsletter, ProductTile: ProductTile, GalleryCounter: GalleryCounter, ViewToggle: ViewToggle };
+           NewsletterDialog: NewsletterDialog, SectionHead: SectionHead, GenreLinks: GenreLinks, HomeIntro: HomeIntro, HomeNewsletter: HomeNewsletter, CollectionCard: CollectionCard, HomeCollections: HomeCollections, ProductTile: ProductTile, GalleryCounter: GalleryCounter, ViewToggle: ViewToggle };
 });

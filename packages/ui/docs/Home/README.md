@@ -1,4 +1,4 @@
-# SectionHead · GenreLinks · HomeIntro · HomeNewsletter · ProductTile · GalleryCounter · ViewToggle
+# SectionHead · GenreLinks · HomeIntro · HomeNewsletter · ProductTile · GalleryCounter · ViewToggle · CollectionCard · HomeCollections
 
 The blocks of the home page, Home v2 (decision 0120, replaces 0085). Figma: page `Home` → section `components` (`section head`, `genre links`, `view toggle`, `home shelf`, `home intro`, `home newsletter`) and page `product card` (`product tile`, `gallery counter`). The storefront fills them in `apps/storefront/pages/home.js`.
 
@@ -8,11 +8,13 @@ The blocks of the home page, Home v2 (decision 0120, replaces 0085). Figma: page
 - HomeNewsletter: 16 above and below, a dashed box (1px divider/strong, 8 on / 8 off, as the header store name), padding medium-small, gap small: SectionHead + FooterNewsletter with the label hidden (kept as aria-label). Desktop width = 2 of the 3 tile columns (set by the page).
 - ProductTile: media, title block, price row (price + samples), Button fill; gap small. Desktop shows the cover; mobile every photo in a horizontal scroll-snap gallery with a GalleryCounter 8px from the bottom-left corner (the page script updates it). Hover = surface/hover on the whole tile, pointer devices only.
 - ViewToggle: a secondary Button whose label names the other view ("List view" with icon bars-three, "Grid view": its icon is still a placeholder in Figma, design/open.md).
+- CollectionCard (decision 0174): a link box, label centered (label/large), 1px border divider/strong, padding medium-small, min height 96; hover = surface/hover. Focus = the browser ring (no focus token yet).
+- HomeCollections (decision 0174): the cards under the intro, a `<nav aria-label="Collections">` with a list; wrapping grid, gap gutter/small, 4 per row on desktop (a card = the side column), 2 on mobile.
 - Accessibility: shelves are `<section>`s named by their title; tiles are `<article>`s named by the product name (h3); the swipe gallery is part of the tile link; the counter is decorative (aria-hidden), the photos' alt is on the first one only.
 
 ## API
 
-<!-- api: SectionHeadProps GenreLinksProps HomeIntroProps HomeNewsletterProps ProductTileProps GalleryCounterProps ViewToggleProps -->
+<!-- api: SectionHeadProps GenreLinksProps HomeIntroProps HomeNewsletterProps ProductTileProps GalleryCounterProps ViewToggleProps CollectionCardProps HomeCollectionsProps -->
 <!-- generated from components.d.ts by build-docs.js: edit the .d.ts, not this table -->
 ### SectionHead
 
@@ -77,6 +79,20 @@ The blocks of the home page, Home v2 (decision 0120, replaces 0085). Figma: page
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `view` | `'grid' \| 'list'` | `grid` | The view shown now: grid → "List view" (icon bars-three); list → "Grid view" (icon: TODO in Figma). |
+
+### CollectionCard
+
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `label` * | `ReactNode` |  | The collection name (label/large, uppercase by the type style). |
+| `state` | `'default' \| 'hover'` |  | Figma `state`, for docs only; the page uses :hover. |
+
+### HomeCollections
+
+| Prop | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `collections` * | `{ label: ReactNode; href: string }[]` |  | The cards, in Gio's order (admin → Collections). |
+| `device` | `'desktop' \| 'mobile' \| 'responsive'` | `responsive` | desktop = 4 per row, mobile = 2 per row, responsive = by breakpoint. |
 
 `*` required.
 <!-- /api -->

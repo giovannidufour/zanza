@@ -705,11 +705,20 @@
       });
       return frag;
     }
+    // sold now: the card's live state (site.js updates data-listing-status), else the build's data-sold
+    function soldEl(el) {
+      var card = el.querySelector('[data-listing-status]');
+      var st = card ? card.getAttribute('data-listing-status') : null;
+      return st ? (st === 'sold' || st === 'traded' ? 1 : 0) : (el.hasAttribute('data-sold') ? 1 : 0);
+    }
     function applySort() {
       if (!list) return;
       var group = function (el) { return el.getAttribute('data-want') === 'other' ? 1 : 0; };
       var sorted = items.slice().sort(function (a, b) {
         if (wantPage && group(a) !== group(b)) return group(a) - group(b);
+        // every sort: for sale first, sold at the end (Gio 2026-11-24, decision 0174)
+        var sa = soldEl(a), sb = soldEl(b);
+        if (sa !== sb) return sa - sb;
         var pa = +a.getAttribute('data-price'), pb = +b.getAttribute('data-price');
         var oa = +a.getAttribute('data-order'), ob = +b.getAttribute('data-order');
         if (sort === 'price-asc') return (pa - pb) || (oa - ob);
