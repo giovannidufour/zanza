@@ -160,8 +160,9 @@ const groupHeading = (group, title) => h(Z.SectionHead, { className: 'wantlist-g
 // each group is the one given.
 const soldLast = (list) => list.filter((p) => !isSold(p)).concat(list.filter(isSold));
 
-// collection (decision 0174, Figma PLP - desktop / collection): /collections/<slug>/, the records that match its rules.
-// Heading = the `search heading` "Oldies (23)"; with no record, the zero-results message (Gio: the card stays on the home).
+// collection (decisions 0174, 0178; Figma PLP - desktop / collection): /collections/<slug>/, the records that match its
+// rules. The collection shows as a removable chip in the active filter row (→ /sale/); with no record, the zero-results
+// message (Gio: the card stays on the home).
 function Plp({ section, products, allProducts = products, site, url, search = false, wantlist = false, collection = null }) {
   const facets = facetsOf(products);
   const showSold = products.some(isSold);
@@ -173,10 +174,16 @@ function Plp({ section, products, allProducts = products, site, url, search = fa
       h(SearchForm, { url, id: 'site-search-page', className: 'search-field' }),
       h('h1', { className: 'search-heading body-large', 'data-search-title': '' }, 'Search'),
       h('div', { className: 'search-message', 'data-search-hint': '' }, h('p', { className: 'body-medium' }, hint))) : null,
-    collection ? h('h1', { className: 'search-heading body-large' }, `${collection.name} (${products.length})`) : null,
+    // a collection is an active filter (Gio 2026-11-24, decision 0178): its name as a chip in the row below, the
+    // heading only for screen readers. Removing the chip = every record for sale (/sale/, site.js keeps the query).
+    collection ? h('h1', { className: 'zz-visually-hidden' }, `${collection.name} (${products.length})`) : null,
     // Figma `active filter` (0041): in place of the breadcrumbs, the filter reached from a link (artist, label, genre,
     // tag) as a removable EntityChip, medium on desktop, large on mobile (plp.css shows one). Hidden until site.js fills it.
-    h(Z.ActiveFilter, { hidden: true, 'data-plp-active': '' }),
+    h(Z.ActiveFilter, { hidden: !collection, 'data-plp-active': '' },
+      collection ? [['medium', 'plp-chip--desktop'], ['large', 'plp-chip--mobile']].map(([size, cls]) =>
+        h(Z.EntityChip, { key: size, label: collection.name, size: size === 'large' ? 'large' : undefined,
+          className: `plp-chip ${cls}`, 'data-plp-fixed': '', removeHref: url('/sale/'),
+          removeLabel: `Remove collection ${collection.name}, show all records` })) : null),
     h('template', { 'data-plp-chip': '' },
       h(Z.EntityChip, { label: '', className: 'plp-chip plp-chip--desktop' }),
       h(Z.EntityChip, { label: '', size: 'large', className: 'plp-chip plp-chip--mobile' })),

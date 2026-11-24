@@ -736,6 +736,8 @@ export interface EntityChipProps extends HTMLAttributes<HTMLSpanElement> {
   size?: "medium" | "large";
   /** Remove button handler; its accessible name is `removeLabel` or "Remove <label>". */
   onRemove?: () => void;
+  /** Makes the remove control a link to this URL instead of a button (removing leaves the page, e.g. the collection chip, decision 0178). */
+  removeHref?: string;
   removeLabel?: string;
   /** Documentation only: pins the Figma state. Do not use in product code. */
   state?: "default" | "hover" | "focus";

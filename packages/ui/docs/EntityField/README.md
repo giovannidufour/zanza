@@ -35,6 +35,7 @@ A field whose value is one or more entities (artists, labels, tags): each chosen
 | `label` | `ReactNode` |  |  |
 | `size` | `"medium" \| "large"` | `medium` | medium = 24px, body/small, 24×24 remove; large = 44px, body/medium, 44×44 remove with a 24px icon (mobile filters). Figma: `size`. |
 | `onRemove` | `() => void` |  | Remove button handler; its accessible name is `removeLabel` or "Remove &lt;label>". |
+| `removeHref` | `string` |  | Makes the remove control a link to this URL instead of a button (removing leaves the page, e.g. the collection chip, decision 0178). |
 | `removeLabel` | `string` |  |  |
 | `state` | `"default" \| "hover" \| "focus"` |  | Documentation only: pins the Figma state. Do not use in product code. |
 
