@@ -25,9 +25,11 @@ struct Assignment: Codable, Equatable {
     let label: String                // A1, B1…
     let name: String                 // <sku>_<role>_<slug>
     var wav: Bool? = false           // also a WAV for this clip (Gio: per clip, off by default)
+    var video: Bool? = false         // also a square video, label of that side + this clip (0177, off by default)
     var artist: String? = nil        // the line it is assigned to, shown under the clip in the session (Gio)
     var title: String? = nil
     var wantsWAV: Bool { wav ?? false }
+    var wantsVideo: Bool { video ?? false }
 }
 
 /// The Samples session: local copies of the Zoom files, assignments, trims; kept across restarts until cleared.
@@ -249,6 +251,13 @@ final class SessionModel: ObservableObject {
         save()
     }
     func wantsWAV(slot name: String) -> Bool { assignments.values.first { $0.name == name }?.wantsWAV ?? false }
+    /// The Video tick of a filled slot (0177), stored with its assignment like WAV
+    func setVideo(_ on: Bool, slot name: String) {
+        guard let k = assignments.first(where: { $0.value.name == name })?.key else { return }
+        assignments[k]?.video = on
+        save()
+    }
+    func wantsVideo(slot name: String) -> Bool { assignments.values.first { $0.name == name }?.wantsVideo ?? false }
 
     func undo() {
         // the last action was a removal: bring the clip back first

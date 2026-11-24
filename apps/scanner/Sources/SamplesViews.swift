@@ -226,11 +226,18 @@ struct ClipSlotRow: View {
                 Text(slot.name).bodyStyle(13, color: clip == nil ? Theme.textModerate : Theme.textStrong).fixedSize(horizontal: false, vertical: true)
                 Text(clip.map { "From \(($0.file as NSString).deletingPathExtension) · \(timeText($0.duration))" } ?? "Drop to assign")
                     .bodyStyle(12, color: Theme.textModerate)
-                if clip != nil {   // per clip: also a WAV (archive / DJ), off by default
-                    Toggle(isOn: Binding(get: { session.wantsWAV(slot: slot.name) }, set: { session.setWAV($0, slot: slot.name) })) {
-                        Text("WAV").bodyStyle(12)
+                if clip != nil {   // per clip, off by default: also a WAV (archive / DJ) and a square video (0177)
+                    HStack(spacing: 8) {
+                        Toggle(isOn: Binding(get: { session.wantsWAV(slot: slot.name) }, set: { session.setWAV($0, slot: slot.name) })) {
+                            Text("WAV").bodyStyle(12)
+                        }
+                        .toggleStyle(.checkbox)
+                        Toggle(isOn: Binding(get: { session.wantsVideo(slot: slot.name) }, set: { session.setVideo($0, slot: slot.name) })) {
+                            Text("Video").bodyStyle(12)
+                        }
+                        .toggleStyle(.checkbox)
+                        .help("Square 1080 video: the label of this side, still, with this clip (Instagram feed and Reels)")
                     }
-                    .toggleStyle(.checkbox)
                 }
             }
             Spacer(minLength: 0)
@@ -265,9 +272,10 @@ struct ExportPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Export · automatic").labelStyle(12)
-            FolderField(title: "MP3 320 kbps to", url: model.mp3Folder) { model.chooseExportFolder(mp3: true) }
-            FolderField(title: "WAV to (clips with WAV ticked)", url: model.wavFolder) { model.chooseExportFolder(mp3: false) }
-            Text("Assigned clips are written by themselves and kept up to date (trim, WAV, label scan as cover, tags). Unassigning moves their files to the Trash.")
+            FolderField(title: "MP3 320 kbps to", url: model.mp3Folder) { model.chooseExportFolder(.mp3) }
+            FolderField(title: "WAV to (clips with WAV ticked)", url: model.wavFolder) { model.chooseExportFolder(.wav) }
+            FolderField(title: "Videos to (clips with Video ticked)", url: model.videoFolder) { model.chooseExportFolder(.video) }
+            Text("Assigned clips are written by themselves and kept up to date (trim, WAV, label scan as cover, tags). Video ticked: also <name>.mp4, square 1080, the label of that side with the clip. Unassigning moves their files to the Trash.")
                 .bodyStyle(12, color: Theme.textModerate).fixedSize(horizontal: false, vertical: true)
             if AudioExport.lame == nil {
                 Text("LAME is not installed, so no MP3: install it with Homebrew (brew install lame).").bodyStyle(12, color: Theme.alert)
