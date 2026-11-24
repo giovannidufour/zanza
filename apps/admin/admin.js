@@ -1107,7 +1107,7 @@
     var focusAfter = useRef(null);
 
     function load() {
-      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_mode,price_cents,condition_media,sleeve_type,condition_sleeve,custom_title,photo_keys,created_at,sort_order,orders:order_items(count),release:releases(format,genres,tag_rows:release_tags(tag:tags(name)),samples(count),label_entity:labels(name),lines:release_lines(position,artist,title))')
+      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_mode,price_cents,condition_media,sleeve_type,condition_sleeve,custom_title,photo_keys,created_at,sort_order,orders:order_items(count),release:releases(format,year,year_precision,genres,tag_rows:release_tags(tag:tags(name)),samples(count),label_entity:labels(name),lines:release_lines(position,artist,title))')
         // decision 0129: one global order, Gio's (sort_order, lower = first); each tab shows it filtered
         .order('sort_order', { ascending: true }).order('created_at', { ascending: false })
         .then(function (res) { if (res.error) setError(res.error.message); else setRows(res.data); });
@@ -1322,7 +1322,7 @@
   /* the rows of Listings (table body on desktop, ListingRow list on mobile) in Gio's order, reorderable by drag & drop
      with the admin's one drag logic (useDragOrder, the same as photos and samples; decision 0129) */
   /* decision 0163: the overview columns between Section and Price, what is already filled in for each copy
-     [key, head, numeric, value of the row or null when missing] (Figma `listings table row`, Format … Samples) */
+     [key, head, numeric, value of the row or null when missing] (Figma `listings table row`, Format … Samples; Year since 0166) */
   function gradingOf(r) {
     if (!r.condition_media) return null;
     var sleeve = r.sleeve_type === 'generic' ? 'generic' : r.sleeve_type === 'none' ? 'no sleeve' : r.condition_sleeve;
@@ -1330,6 +1330,8 @@
   }
   var INFO_COLUMNS = [
     ['format', 'Format', false, function (r) { return (r.release || {}).format || null; }],
+    // decision 0166: the year as entered, exact (1983) or a decade (1990s, releases.year_precision, decision 0082)
+    ['year', 'Year', true, function (r) { var rl = r.release || {}; return yearText(rl.year, rl.year_precision) || null; }],
     ['grading', 'Grading', false, gradingOf],
     ['genre', 'Genre', false, function (r) { var g = (r.release || {}).genres || []; return g.length ? g.join(', ') : null; }],
     ['photos', 'Photos', true, function (r) { var n = (r.photo_keys || []).length; return n ? String(n) : null; }],
@@ -1373,7 +1375,7 @@
         h('td', { className: 'section' }, r.section),
         INFO_COLUMNS.map(function (c) { var v = c[3](r); return h('td', { key: c[0], className: c[0] + (c[2] ? ' num' : '') }, v || missingMark()); }),
         h('td', { className: 'num price' }, listPrice(r) || (missingOf(r).indexOf('price') >= 0 ? missingMark() : '')));
-    }) : h('tr', null, h('td', { colSpan: 14 }, props.empty))))), status);
+    }) : h('tr', null, h('td', { colSpan: 15 }, props.empty))))), status);
   }
 
   function EditLoader(props) {

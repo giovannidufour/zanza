@@ -80,7 +80,7 @@ h1, h2, p { margin: 0; }
 .admin-table .handle .zz-drag-handle { display: flex; }
 /* columns (Figma `listings table row`, decision 0163): fixed widths as in Figma, Record takes the rest; genre on one line */
 .admin-table .status { width: 112px; } .admin-table .section { width: 72px; } .admin-table .price { width: 72px; }
-.admin-table .format { width: 48px; } .admin-table .grading { width: 96px; } .admin-table .photos { width: 56px; } .admin-table .samples { width: 64px; }
+.admin-table .format { width: 48px; } .admin-table .year { width: 48px; } .admin-table .grading { width: 96px; } .admin-table .photos { width: 56px; } .admin-table .samples { width: 64px; }
 .admin-table .genre { width: 160px; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .admin-table .photos, .admin-table .samples { text-align: right; }
 .admin-table__missing { color: var(--text-moderate); }
