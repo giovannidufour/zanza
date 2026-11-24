@@ -83,6 +83,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | ProgressBar | page `Memo` (BACKEND) → `progress bar` | ported (0091): value 0–100, role=progressbar |
 | AdminBar | page `admin` → `admin bar` | ported (0089, 0125): device desktop / mobile (responsive); mobile opens a MenuLayer dialog; no Create (0125) |
 | ListingsHead | page `Listings` (BACKEND) → `listings head` | ported (0125): device desktop / mobile (responsive), Listings title + Bulk create / Create listing |
+| Stat | page `Dashboard` (BACKEND) → `stat` | ported (0169): label, value, optional note and link (booleans `note`, `link`) |
 | ListingsFilter | page `Listings` (BACKEND) → `listings filter` | ported (0128): device desktop / mobile (responsive), status tabs + search |
 | ListingRow | page `admin` → `listing row` | ported (0089, 0123): admin list row on mobile (Listings, Attributes, order records), select, thumbnail, meta, price |
 | Thumbnail | page `media` → `product image` at 40 × 40 | ported (0123): the record's photo in admin lists, empty square without a photo |

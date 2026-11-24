@@ -265,3 +265,17 @@ body[data-player-open] .zz-action-bar { bottom: var(--admin-player-height, 0px);
 
 /* Back to the list, above the title on Edit listing */
 .admin-main > .zz-back-link { margin-bottom: 8px; }
+
+/* Figma BACKEND → Dashboard (decision 0169): sections 40 apart; a section = head (title, period tabs) + stats, gap 16.
+   Stats: 4 columns, gap 24 (desktop frame 976 = 4 × 226 + 3 × 24); one column, gap 16, on mobile. */
+.admin-dashboard { display: flex; flex-direction: column; gap: 40px; }
+.admin-dashboard > h1 { margin: 0; }
+.admin-dashboard__section { display: flex; flex-direction: column; gap: 16px; }
+.admin-dashboard__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.admin-dashboard__head > h2 { margin: 0; }
+.admin-dashboard__stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; align-items: start; }
+@media (--mobile) {
+  .admin-dashboard__head { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; }
+  .admin-dashboard__head > .zz-tabs { align-self: stretch; }   /* the tabs scroll sideways, as on the other admin pages */
+  .admin-dashboard__stats { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+}
