@@ -158,6 +158,16 @@ h1, h2, p { margin: 0; }
 .admin-toolbar { display: flex; gap: 16px; align-items: flex-start; }
 .admin-toolbar__search { flex: 1 1 auto; min-width: 0; }
 .admin:has(.admin-page--attribute) { max-width: 1024px; }
+/* genre / tag page (0168): form 5 · actions 3 · the records checklist 4 on the right, full width (Figma 2523:1736);
+   the column stays in view and its list scrolls inside it */
+.admin:has(.admin-page--records) { max-width: none; }
+.admin-page--records > .admin-main { grid-column: span 5; }
+.admin-page--records > .admin-side { grid-column: span 3; }
+.admin-records { grid-column: span 4; min-width: 0; position: sticky; top: 24px; max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px); overflow-y: auto; margin: -4px; padding: 4px; }
+@media (--mobile) {
+  .admin-page--records > .admin-main, .admin-page--records > .admin-side, .admin-records { grid-column: auto; }
+  .admin-records { position: static; max-height: none; overflow: visible; margin: 0; padding: 0; }
+}
 .admin-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }   /* Figma `record list`, gap 8 */
 .admin-links a { color: inherit; }
 
