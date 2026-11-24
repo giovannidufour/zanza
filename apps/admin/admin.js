@@ -1111,7 +1111,6 @@
       load();
       // files of deleted copies leave R2 after 7 days (Edge Function purge-media, 0009); once per visit, best effort
       if (!purgeAsked) { purgeAsked = true; sb.functions.invoke('purge-media').catch(function () {}); }
-      draftsFromLeftoverMemos().then(function (n) { if (n) load(); }).catch(function () {});   // decision 0171
     }, []);
     // after a delete, focus the row that took the place of the first deleted one (never lost to <body>)
     useEffect(function () {
@@ -2788,37 +2787,6 @@
       reading ? h(Z.ProgressBar, { value: progress, 'aria-label': 'Reading the photo' }) : null,
       h('p', { className: 'body-small admin-photo__status', role: 'status' }, st.text));
   }
-  /* Memo was removed (decision 0171): a draft is the reminder now. Records still in public.memos (the table stays until
-     Gio drops it) become drafts the first time Listings opens, as Memo's Create draft did (0135): a release is fetched
-     with the same mapping as the Scanner (packages/listing-draft, 0145), free text = line 1. Each memo is deleted only
-     after its draft is saved, so a failure leaves it for the next visit. Once per visit; no table or no rows = nothing. */
-  var memosChecked = false;
-  async function draftsFromLeftoverMemos() {
-    if (memosChecked) return 0;
-    memosChecked = true;
-    var res = await sb.from('memos').select('*').order('created_at', { ascending: true });
-    if (res.error || !res.data || !res.data.length) return 0;
-    var entities = null;
-    if (res.data.some(function (r) { return r.discogs_release_id; })) { try { entities = await loadEntities(); } catch (e) { entities = null; } }
-    var made = [], failed = 0;
-    for (var i = 0; i < res.data.length; i++) {
-      var row = res.data[i];
-      try {
-        var payload;
-        if (row.discogs_release_id) payload = LD.draftPayload(await invoke('discogs-lookup', { releaseId: row.discogs_release_id }), entities);
-        else { var f = emptyForm(); f.lines = [newLine({ title: row.title })]; payload = payloadOf(f, 'draft'); }
-        var saved = await sb.rpc('admin_save_listing', { payload: payload });
-        if (saved.error) throw new Error(saved.error.message);
-        await LD.saveCredits(sb.rpc.bind(sb), saved.data, payload);   // 0148; the backfill catches a failure
-        made.push(saved.data.sku);
-        await sb.from('memos').delete().eq('id', row.id);
-      } catch (err) { failed++; }
-    }
-    if (made.length || failed) toast([made.length ? plural(made.length, 'memo') + ' from the old Memo list became ' + (made.length === 1 ? 'a draft' : 'drafts') + ' (SKU ' + made.join(', ') + ').' : '',
-      failed ? plural(failed, 'memo') + ' not converted: tried again next time.' : ''].filter(Boolean).join(' '));
-    return made.length;
-  }
-
   // ── Dashboard ─────────────────────────────────────────────────────────────
   /* Figma BACKEND → Dashboard (decision 0169): the admin landing page. Read-only figures computed here from what the
      admin can already read (orders, listings, listing_status_log, admin_offers): no migration. "Now" = current state; "Sales" =
