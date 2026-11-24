@@ -1543,6 +1543,7 @@
     var tr = useState(''), tracking = tr[0], setTracking = tr[1];
     var sv = useState(false), saving = sv[0], setSaving = sv[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
+    var cf = useState(null), confirm = cf[0], setConfirm = cf[1];   // Delete order dialog: { restock: 'yes' | 'no' }
     useEffect(function () {
       sb.from('orders').select('*,items:order_items(price_cents,listing:listings(id,sku,slug,status,custom_title,photo_keys,release:releases(format,lines:release_lines(position,artist,title))))')
         .eq('id', props.id).single()
@@ -1581,13 +1582,42 @@
         .then(function () { toast('Address copied.'); }, function () { setMessage({ error: true, text: 'Could not copy: select the address and copy it.' }); });
     }
 
+    /* Delete order (decision 0170, migration 0036): the dialog asks what happens to the records still sold by this order.
+       Default: back on sale, except on a shipped order (the record left). Stripe is not touched. */
+    var soldItems = (o.items || []).filter(function (it) { return it.listing && it.listing.status === 'sold'; });
+    function askDelete() { setMessage(null); setConfirm({ restock: o.status === 'shipped' ? 'no' : 'yes' }); }
+    async function doDelete() {
+      if (saving) return;
+      setSaving(true);
+      var res = await sb.rpc('admin_delete_order', { p_order: o.id, p_restock: soldItems.length > 0 && confirm.restock === 'yes' });
+      setSaving(false);
+      if (res.error) { setConfirm(null); setMessage({ error: true, text: 'Not deleted: ' + res.error.message }); return; }
+      var back = res.data && res.data.restocked;
+      toast('Order ' + ref + ' deleted.' + (back ? ' ' + plural(back, 'record') + ' back on sale.' : ''));
+      location.hash = '#orders';
+    }
+
     var shipped = o.status === 'shipped', open = o.status === 'paid';
     var primary = shipped
       ? h(Z.Button, { key: 'ship', hierarchy: 'primary', 'aria-busy': saving || undefined, onClick: saveTracking }, 'Save tracking')
       : h(Z.Button, { key: 'ship', hierarchy: 'primary', disabled: !open, 'aria-busy': saving || undefined, onClick: function () { setShipped(true); } }, 'Mark as shipped');
     var secondary = stripeUrl ? h(Z.Button, { key: 'stripe', hierarchy: 'secondary', href: stripeUrl, target: '_blank', rel: 'noopener' }, 'Open in Stripe') : null;
     var undo = shipped ? h(Z.Button, { key: 'undo', hierarchy: 'secondary', 'aria-busy': saving || undefined, onClick: function () { setShipped(false); } }, 'Mark as not shipped') : null;
+    var del = h(Z.Button, { key: 'delete', hierarchy: 'secondary', disabled: saving, onClick: askDelete }, 'Delete order');
     var statusLine = h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '');
+
+    var dialog;
+    if (confirm) {
+      var n = soldItems.length;
+      dialog = h(Z.Dialog, { open: true, busy: saving, title: 'Delete order ' + ref + '?', confirmLabel: 'Delete order',
+        onCancel: function () { setConfirm(null); }, onConfirm: doDelete,
+        choices: n ? h(Z.RadioGroup, { legend: 'What happens to the records', hideLegend: true, value: confirm.restock,
+          onValueChange: function (v) { setConfirm({ restock: v }); } },
+          h(Z.Radio, { value: 'yes', label: 'Put ' + plural(n, 'record') + ' back on sale' }),
+          h(Z.Radio, { value: 'no', label: 'Keep ' + plural(n, 'record') + ' sold' })) : null },
+        h('p', null, 'It goes from Orders and from the buyer’s account. ' + (stripeUrl ? 'Stripe keeps the payment: refund it there if needed. ' : '') +
+          (n ? '' : 'Its records are not sold any more and stay as they are. ') + 'It cannot be undone.'));
+    } else dialog = h(Z.Dialog, { open: false, title: '', confirmLabel: '', onCancel: function () {}, onConfirm: function () {} }, '');
 
     var main = h('div', { className: 'admin-main' },
       h('h1', { className: 'label-extra-large' }, 'Order ' + ref),
@@ -1611,10 +1641,11 @@
       supportText: 'Saved with the order.', onChange: function (e) { setTracking(e.target.value); } });
     var side = h('aside', { className: 'admin-side' },
       trackingField,
-      mobile ? null : h(Z.ActionPanel, null, primary, undo, secondary),
+      // Figma Orders → Order: Delete order is the last button of the panel; on mobile it sits under the tracking field
+      mobile ? del : h(Z.ActionPanel, null, primary, undo, secondary, del),
       mobile ? null : statusLine);
     return h('div', { className: 'admin-page admin-page--edit' }, main, side,
-      mobile ? h(Z.ActionBar, { status: statusLine }, primary, undo || secondary) : null);
+      mobile ? h(Z.ActionBar, { status: statusLine }, primary, undo || secondary) : null, dialog);
   }
 
   // ── Sell again ────────────────────────────────────────────────────────────
@@ -3328,7 +3359,7 @@
   }
 
   // ── Dashboard ─────────────────────────────────────────────────────────────
-  /* Figma BACKEND → Dashboard (decision 0169): the admin landing page. Read-only figures computed here from what the
+  /* Figma BACKEND → Dashboard (decision 0170): the admin landing page. Read-only figures computed here from what the
      admin can already read (orders, listings, admin_offers): no migration. "Now" = current state; "Sales" =
      the period in the tabs (calendar month / year in the browser's time, or all time). Euro only. Route: # or #dashboard */
   var PERIODS = [['month', 'This month'], ['year', 'This year'], ['all', 'All time']];
@@ -3475,7 +3506,7 @@
     else if (hash === '#bulk') body = h(Bulk, { key: 'bulk' });
     else if (/^#new\/memo\/[^/]+$/.test(hash)) body = h(FromMemoLoader, { key: hash + route.visit, id: hash.split('/')[2] });
     else if (/^#listings(\/(live|draft|sold|archived))?$/.test(hash)) body = h(Listings, { key: hash + route.visit, tab: hash.split('/')[1] || 'live' });
-    else body = h(Dashboard, { key: 'dashboard-' + route.visit });   // '', '#', #dashboard: the landing page (decision 0169)
+    else body = h(Dashboard, { key: 'dashboard-' + route.visit });   // '', '#', #dashboard: the landing page (decision 0170)
 
     return h('div', { className: 'admin' },
       session ? h(Nav, { hash: hash, email: session.user.email }) : null,
