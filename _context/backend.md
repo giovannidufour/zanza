@@ -76,7 +76,7 @@ Chiavi casuali e immutabili (2026-11-10): l'upload avviene prima che il listing 
 
 ### Credits e produttori (0032, Gio 2026-11-23, decisione 0148)
 - `discogs-lookup { releaseId }` restituisce anche `credits` (extraartists della release e delle tracce). Per i produttori nuovi legge anche le varianti del nome e il nome reale da Discogs (una richiesta in più, solo la prima volta): diventano alias dell'artista, così "Coxsone" trova un disco accreditato "C.S. Dodd".
-- Dopo `admin_save_listing`, `admin_set_release_credits(release, credits)` sostituisce i credits della release (Create/Edit dopo Fetch Discogs, Memo → Create draft, Bulk create, Scanner). Un Edit senza Fetch Discogs non li tocca. Un errore sui credits non annulla il salvataggio.
+- Dopo `admin_save_listing`, `admin_set_release_credits(release, credits)` sostituisce i credits della release (Create/Edit dopo Fetch Discogs, memo rimasti convertiti in draft, Scanner). Un Edit senza Fetch Discogs non li tocca. Un errore sui credits non annulla il salvataggio.
 - Dischi già presenti: Edge Function `release-credits` (solo admin, Verify JWT ON): `POST { limit? }` legge fino a 20 release senza `credits_fetched_at`, 1,5 s l'una dall'altra; si richiama finché `remaining` = 0. Contiene una copia di `packages/listing-draft` (`npm run sync:functions`).
 - Negozio: `data/products.js` legge `release.credits` (con gli alias dell'artista); `pages/plp.js` mette nel testo di ricerca i ruoli `SEARCH_ROLES` (oggi `/produc/i`). Senza la migrazione 0032 il build va avanti senza credits.
 - Attributes: i credits contano come collegamenti dell'artista (un artista ancora accreditato non si cancella; Replace sposta i credits sulla prima entità scelta).
@@ -89,7 +89,7 @@ Chiavi casuali e immutabili (2026-11-10): l'upload avviene prima che il listing 
 ### Stati di vendita (0004)
 ```
 draft ──► available ──► reserved ──► sold (sale) / traded (trade)
-(una bozza può essere incompleta: senza grading, formato, prezzo, artista della riga 1 — Bulk create, 0107, migrazione 0026; il trigger `listings_publish_check` li pretende appena esce da draft)
+(una bozza può essere incompleta: senza grading, formato, prezzo, artista della riga 1 — nata da Bulk create 0107, rimosso con 0172; oggi le bozze dello Scanner, migrazione 0026; il trigger `listings_publish_check` li pretende appena esce da draft)
   ▲          │  ▲           │                │
   └──────────┘  └───────────┴────────────────┘   unpublish · release · annulla vendita
 available ──► sold / traded diretto (venduto fuori dal sito: fiera, Discogs, di persona)

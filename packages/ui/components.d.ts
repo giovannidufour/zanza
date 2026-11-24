@@ -1056,45 +1056,6 @@ export interface DiscogsLinkProps extends HTMLAttributes<HTMLAnchorElement> {
 }
 export declare function DiscogsLink(props: DiscogsLinkProps): JSX.Element;
 
-/** Figma `bulk record` (BACKEND → Bulk, decision 0107): one record found in the files dropped on Bulk create. An <li>: wrap in a <ul>. */
-export interface BulkRecordProps extends HTMLAttributes<HTMLLIElement> {
-  /** "Artist – Title" of the Discogs release, or the file-name prefix */
-  title: ReactNode;
-  /** label · cat no · year · country · format of the release. Omit → none */
-  meta?: ReactNode;
-  /** what was grouped: "3 photos · samples A, B · nooks-hero" */
-  files?: ReactNode;
-  /** Figma `state`. reading shows a ProgressBar and no actions */
-  state?: 'reading' | 'matched' | 'choose' | 'not found' | 'confirmed' | 'skipped';
-  /** 0–100, while reading */
-  progress?: number;
-  /** Files of the record still converting or uploading, 0–100 (decision 0108): a ProgressBar under the files line, any state but reading. Omitted / null = none. */
-  uploadProgress?: number | null;
-  /** the status line (support text, neutral) */
-  status?: ReactNode;
-  /** Figma boolean `warning`: a non-blocking problem (support text, alert). Omit → none */
-  warning?: ReactNode;
-  /** Review (opens the one-by-one review at this record). Omit → no button */
-  onReview?: () => void;
-  /** Remove. Omit → no button */
-  onRemove?: () => void;
-  /** Default "Review" */
-  reviewLabel?: string;
-  /** Default "Remove" */
-  removeLabel?: string;
-}
-export declare function BulkRecord(props: BulkRecordProps): JSX.Element;
-
-/** Figma `bulk naming help` (BACKEND → Bulk, decision 0107): the file-naming rule above the drop zone. */
-export interface BulkHelpProps extends HTMLAttributes<HTMLDivElement> {
-  heading: ReactNode;
-  /** one paragraph each (photos, samples) */
-  lines?: ReactNode[];
-  /** Figma boolean `show example`. Omit → none */
-  example?: ReactNode;
-}
-export declare function BulkHelp(props: BulkHelpProps): JSX.Element;
-
 /** Figma `content group head` (BACKEND → Content, decision 0106): heading of a group of texts in the admin Content list. */
 export interface ContentGroupHeadProps extends HTMLAttributes<HTMLDivElement> {
   heading: ReactNode;
@@ -1176,7 +1137,7 @@ export interface ProgressBarProps extends HTMLAttributes<HTMLDivElement> {
 export declare function ProgressBar(props: ProgressBarProps): JSX.Element;
 
 /** Mirrors the Figma component `admin bar` (page `admin`, device=desktop | mobile, one responsive markup, decision 0089).
- *  No Create button since decision 0125: Create listing and Bulk create are on the Listings page (`ListingsHead`). */
+ *  No Create button since decision 0125: Create listing is on the Listings page (`ListingsHead`). */
 export interface AdminBarProps extends HTMLAttributes<HTMLElement> {
   /** Desktop section buttons, in order. `current` = the section you are on (Button state=active, aria-current). */
   items?: { href: string; label: ReactNode; current?: boolean }[];
@@ -1205,10 +1166,6 @@ export declare function AdminBar(props: AdminBarProps): JSX.Element;
 export interface ListingsHeadProps extends HTMLAttributes<HTMLDivElement> {
   /** The page heading (h1, label/extra-large). @default "Listings" */
   title?: ReactNode;
-  /** Bulk create link (Button secondary). Omit → no button. */
-  bulkHref?: string;
-  /** @default "Bulk create" */
-  bulkLabel?: ReactNode;
   /** Create listing link (Button primary). Omit → no button. */
   createHref?: string;
   /** @default "Create listing" */

@@ -1,7 +1,6 @@
 /* apps/admin/admin.js — the admin single-page app (React via createElement, no build step).
    Screens: sign-in (email link) · listings (Figma BACKEND → Listings: bulk actions, archive, delete) · create / edit listing (Figma BACKEND → Create)
    · attributes: artists, labels, genres, tags (Figma BACKEND → Attributes) · shipping (Figma BACKEND → Shipping)
-   · bulk: many records at once from named photos and samples, as incomplete drafts (Figma BACKEND → Bulk, decision 0107).
    Data: Supabase with the signed-in user's session (RLS: only public.admins can write).
    Save = one call to public.admin_save_listing (one transaction). Files go straight to R2 through
    short-lived upload URLs from the Edge Function sign-upload; the database keeps only the keys. */
@@ -190,7 +189,7 @@
     var key = await upload('sample', blob, null, function (f) { report({ phase: 'uploading', value: Math.round(60 + f * 40) }); });
     return { key: key, blob: blob, duration: Math.min(seconds, audio.duration) };
   }
-  // one file of the form or of Bulk → its storage key. onState({ phase: 'converting' | 'uploading', value: 0–100 })
+  // one file of the form → its storage key. onState({ phase: 'converting' | 'uploading', value: 0–100 })
   // drives the file's ProgressBar: a sample that is converted counts 0–60 converting, 60–100 uploading; anything else
   // 0–100 uploading. onNote(text) when a high-bitrate sample goes up as it is.
   function uploadFile(kind, file, onState, onNote) {
@@ -1293,7 +1292,7 @@
 
     return h('div', { className: 'admin-section admin-listings' },
       // the ways to add records live here, not in the admin bar (decision 0125)
-      h(Z.ListingsHead, { title: 'Listings', bulkHref: '#bulk', createHref: '#new' }),
+      h(Z.ListingsHead, { title: 'Listings', createHref: '#new' }),
       // Figma BACKEND → Listings → `listings filter` (decision 0128): status tabs + search
       h(Z.ListingsFilter, {
         tabs: h(Z.Tabs, { value: tab, onValueChange: pickTab, 'aria-label': 'Filter by status' },
@@ -2604,7 +2603,7 @@
           h('p', { className: 'body-medium admin-shipping__result', role: 'status' }, result))));
   }
 
-  // ── Discogs search and Photo of the label (Create listing, Bulk review) ──────────
+  // ── Discogs search and Photo of the label (Create listing) ──────────
   // a release as the picker shows it, from the discogs-lookup release answer (a pasted link)
   function releaseFromLookup(d) {
     var fmt = d.format || {}, desc = (fmt.descriptions || []).slice(0, 2).join(', ') || fmt.name || '';
@@ -2615,7 +2614,7 @@
   /* Record: the offer form's "Which record" (Figma `which record`, 0069) for the admin. ARIA 1.2 combobox: focus stays
      in the input, arrows move aria-activedescendant, Enter picks (or submits when nothing is highlighted), Escape
      closes. 3+ letters ask discogs-lookup { query } (debounced; a newer request wins); a pasted release link resolves. */
-  /* Search Discogs while typing (shared by Bulk → Which record and Create listing → Discogs match, decision 0156). ARIA 1.2
+  /* Search Discogs while typing (Create listing → Discogs match, decision 0156). ARIA 1.2
      combobox: focus stays in the input, arrows move aria-activedescendant, Enter picks, Escape closes. 3+ letters ask
      discogs-lookup { query } (debounced; a newer request wins). opts.resolveLinks: a pasted release link is looked up
      and offered as the one result (Which record); without it a link or a number closes the list (Discogs match fetches it). */
@@ -2678,29 +2677,6 @@
         ];
       }
     };
-  }
-  /* Record: the offer form's "Which record" (Figma `which record`, 0069) for the admin; the search is useDiscogsSearch. */
-  function RecordField(props) {
-    var id = props.id || 'record', label = props.label || 'Record';
-    var ds = useDiscogsSearch(id, { resolveLinks: true, emptyMessage: 'No match on Discogs. Keep it as you wrote it.', failHint: 'Keep it as you wrote it.' });
-    // releases found from a photo of the label (0090): shown as if typed; a newer photo or keystroke wins
-    useEffect(function () {
-      var f = props.found;
-      if (!f) return;
-      ds.show(f.results.length ? { results: f.results } : { message: 'No match on Discogs for what the photo shows. Fix the text, or keep it as it is.' });
-    }, [props.found]);
-    function onText(e) { props.onText(e.target.value); ds.search(e.target.value); }
-    function onPick(r) { props.onRelease(r); }
-    if (props.release) {
-      var r = props.release;
-      return h('div', { className: 'admin-picker' },
-        h('p', { className: 'body-small' }, label),
-        h(Z.ChosenRelease, { title: r.title, meta: r.meta, thumb: r.thumb, href: r.uri, 'aria-live': 'polite',
-          changeLabel: 'Change', onChange: function () { props.onRelease(null); setTimeout(function () { var el = document.getElementById(id); if (el) el.focus(); }, 0); } }));
-    }
-    return h.apply(null, ['div', { className: 'admin-picker' },
-      h(Z.Input, Object.assign({ id: id, label: label, value: props.value, error: props.error, placeholder: 'Artist – title, or search Discogs',
-        onChange: onText }, ds.inputProps(onPick)))].concat(ds.list(onPick)));
   }
   /* Photo of the label (Figma BACKEND → Create → `photo of the label`, state default | reading | read | not read; decisions 0090, 0171).
      Opens the phone's back camera (a file picker on desktop). The photo is shrunk here (longest side 1280 px, JPEG),
@@ -2843,362 +2819,6 @@
     return made.length;
   }
 
-  /* ── Bulk create (#bulk, Figma BACKEND → Bulk, decision 0107) ─────────────
-     Gio drops many photos and samples named <record>_<role>: the page groups them per record, uploads them as Create
-     does, reads each record's label photo with the AI of Create (read-label → discogs-lookup { fields }), then shows an
-     overview (BulkRecord rows) and a one-by-one review (Which record, Next / Skip). "Create N drafts" saves one draft per
-     record through admin_save_listing; drafts may lack grading, format and price (migration 0026).
-     Roles: photos _1 _2 … (gallery order; photo 1 is the one the AI reads, Gio 2026-11-17), any
-     other word = a photo at the end; samples _a _b (sides) or _a1 _b2 (tracks) = the line with that Discogs position,
-     anything else = an additional sample. A file without <record>_ is "not recognised": an image is read by the AI and
-     joins the record with the same release; the rest waits for Gio to pick its record (or stays out).
-     The batch lives in this page only: leaving it asks first. */
-  var BULK_NAME = /^(.+)_([^_.]+?)(?:[ _-]?(?:copy|\(\d+\)))?\.([a-z0-9]+)$/i;
-  var IMAGE_EXT = /^(jpe?g|png|webp|heic|heif|gif)$/i;
-  function bulkKind(file) {
-    var ext = (file.name.split('.').pop() || '').toLowerCase();
-    if (/^image\//.test(file.type) || IMAGE_EXT.test(ext)) return 'photo';
-    if (file.type === 'audio/mpeg' || ext === 'mp3') return 'sample';
-    return null;
-  }
-  // { prefix, role } or null; the prefix is the record (case and spaces ignored), the role says where the file goes
-  function bulkParse(name) {
-    var m = BULK_NAME.exec(String(name || '').trim());
-    // a role is 1–2 digits, a word (label, cover) or a side with a track (a, b2): IMG_4471.jpg is a camera name, not ours
-    if (!m || !/^(\d{1,2}|[a-z]+|[a-z]\d{1,2})$/i.test(m[2])) return null;
-    return { prefix: m[1].trim(), key: m[1].trim().toLowerCase().replace(/\s+/g, '-'), role: m[2].toLowerCase() };
-  }
-  // at most n promises at a time (uploads, AI reads): the free tiers prefer a queue to a burst
-  function limiter(n) {
-    var running = 0, queue = [];
-    function next() {
-      if (running >= n || !queue.length) return;
-      var job = queue.shift(); running++;
-      job.fn().then(job.resolve, job.reject).then(function () { running--; next(); });
-    }
-    return function (fn) { return new Promise(function (resolve, reject) { queue.push({ fn: fn, resolve: resolve, reject: reject }); next(); }); };
-  }
-  var bulkUploads = limiter(3), bulkReads = limiter(1);
-  // a record's files still going up, as one number for its ProgressBar (files waiting their turn count as 0); null = none
-  function uploadProgressOf(r) {
-    var up = r.photos.concat(r.samples).filter(function (x) { return x.uploading; });
-    if (!up.length) return null;
-    return Math.round(up.reduce(function (a, x) { return a + (x.progress || 0); }, 0) / up.length);
-  }
-  function photoSort(a, b) {
-    function rank(p) { var n = parseInt(p.role, 10); return isNaN(n) ? 2e6 : n; }
-    return rank(a) - rank(b) || a.name.localeCompare(b.name);
-  }
-  function filesText(r) {
-    var photos = r.photos.length, sides = r.samples.map(function (x) { return /^[ab]\d*$/.test(x.role) ? x.role.toUpperCase() : 'extra'; });
-    var up = r.photos.concat(r.samples).filter(function (x) { return x.uploading; }).length;
-    var converting = r.samples.filter(function (x) { return x.uploading && x.phase === 'converting'; }).length;
-    var failed = r.photos.concat(r.samples).filter(function (x) { return x.error; }).length;
-    return [photos ? photos + (photos === 1 ? ' photo' : ' photos') : 'no photos',
-            sides.length ? (sides.length === 1 ? 'sample ' : 'samples ') + sides.join(', ') : 'no samples',
-            r.prefix, converting ? 'converting ' + converting + ' to 128 kbps' : null, up - converting ? 'uploading ' + (up - converting) : null, failed ? failed + ' not uploaded' : null].filter(Boolean).join(' · ');
-  }
-  function bulkWarnings(r) {
-    var w = [], seen = {};
-    r.samples.forEach(function (x) {
-      if (!/^[ab]\d*$/.test(x.role)) return;
-      if (seen[x.role]) w.push('Two samples for ' + x.role.toUpperCase() + ': ' + seen[x.role] + ' is used, ' + x.name + ' becomes an additional sample.');
-      else seen[x.role] = x.name;
-    });
-    if (!r.photos.length) w.push('No photos: the draft has none.');
-    r.photos.concat(r.samples).forEach(function (x) { if (x.error) w.push(x.name + ': ' + x.error); if (x.note) w.push(x.note); });
-    return w.join(' ');
-  }
-  var BULK_STATUS = {
-    matched: function (r) { return 'Found on Discogs from ' + r.readFrom + '. Confirm in review.'; },
-    choose: function (r) { return r.found.results.length + ' pressings found on Discogs: pick yours in review.'; },
-    'not found': function (r) { return (r.readText ? 'Read: ' + r.readText + '. Not found on Discogs' : 'Couldn’t read the label' + (r.readError ? ' (' + r.readError + ')' : '')) + ': search it in review, or skip.'; },
-    confirmed: function () { return 'Confirmed.'; },
-    skipped: function () { return 'Skipped: the draft is created without a Discogs release.'; }
-  };
-  // a sample's line once the release is known: exact Discogs position (A1), else the first track of that side (A)
-  function sampleLine(role, positions) {
-    if (!/^[ab]\d*$/.test(role)) return null;
-    var R = role.toUpperCase(), i = positions.indexOf(R);
-    if (i < 0 && R.length === 1) i = positions.findIndex(function (p) { return p.charAt(0) === R; });
-    if (i < 0 && !positions.length) i = R === 'A' ? 0 : -1;     // no release: side A = line 1, the rest are additional
-    return i >= 0 ? i + 1 : null;
-  }
-
-  function Bulk() {
-    var mobile = useIsMobile();
-    var rs = useState([]), records = rs[0], setRecords = rs[1];
-    var us = useState([]), unsorted = us[0], setUnsorted = us[1];
-    var vs = useState({ name: 'overview' }), view = vs[0], setView = vs[1];   // overview | review (at) | creating
-    var ms = useState(null), message = ms[0], setMessage = ms[1];
-    var recRef = useRef(records); recRef.current = records;
-    var unsRef = useRef(unsorted); unsRef.current = unsorted;
-    var busy = view.name === 'creating';
-
-    // leaving with a batch not yet created asks first (the files are uploaded, the drafts are not)
-    useEffect(function () {
-      function warn(e) { if (recRef.current.length) { e.preventDefault(); e.returnValue = ''; } }
-      window.addEventListener('beforeunload', warn);
-      return function () { window.removeEventListener('beforeunload', warn); };
-    }, []);
-
-    function patchRecord(id, patch) {
-      setRecords(function (cur) { return cur.map(function (r) { return r.id === id ? Object.assign({}, r, typeof patch === 'function' ? patch(r) : patch) : r; }); });
-    }
-    function patchFile(recId, fileId, patch) {
-      patchRecord(recId, function (r) {
-        function one(x) { return x.id === fileId ? Object.assign({}, x, patch) : x; }
-        return { photos: r.photos.map(one), samples: r.samples.map(one) };
-      });
-    }
-    function startUpload(recId, item) {
-      bulkUploads(function () {
-        return uploadFile(item.kind, item.file, function (st) { patchFile(recId, item.id, { phase: st.phase, progress: st.value }); },
-          function (note) { patchFile(recId, item.id, { note: note }); });
-      }).then(function (key) { patchFile(recId, item.id, { key: key, uploading: false }); })
-        .catch(function (err) { patchFile(recId, item.id, { uploading: false, error: err.message }); });
-    }
-    function fileItem(file, kind, role) {
-      return { id: nextId(), file: file, name: file.name, kind: kind, role: role, key: null, uploading: true, error: null,
-               url: kind === 'photo' ? URL.createObjectURL(file) : null };
-    }
-    // the AI read of one photo: { read, query, results } (read null = not read)
-    async function readPhoto(file) {
-      var image = await shrinkPhoto(file);
-      var got = await invoke('read-label', { image: image });
-      if (!got.read) return { read: null, results: [] };
-      var found = await invoke('discogs-lookup', { fields: got.read });
-      return { read: got.read, query: got.query, results: found.results || [] };
-    }
-    function readRecord(id) {
-      var r = recRef.current.filter(function (x) { return x.id === id; })[0];
-      if (!r) return Promise.resolve();
-      var photo = r.photos.slice().sort(photoSort)[0];   // photo 1 (Gio: the AI reads image 1, nothing else)
-      if (!photo) { patchRecord(id, { state: 'not found', found: { results: [] } }); return Promise.resolve(); }
-      patchRecord(id, { progress: 10 });
-      return bulkReads(function () { patchRecord(id, { progress: 40 }); return readPhoto(photo.file); }).then(function (res) {
-        var read = res.read, text = read ? [read.artist, read.title, [read.label, read.catno].filter(Boolean).join(' ')].filter(Boolean).join(' · ') : '';
-        var n = res.results.length;
-        patchRecord(id, { progress: 100, readFrom: photo.name, readText: text, query: res.query || '', found: { results: res.results },
-          release: n === 1 ? res.results[0] : null, state: n === 1 ? 'matched' : n > 1 ? 'choose' : 'not found' });
-      }).catch(function (err) {
-        patchRecord(id, { progress: 100, readError: err.message, found: { results: [] }, state: 'not found' });
-      });
-    }
-    // an image without <record>_ in its name: read it, and if its release is one of the batch's, it joins that record
-    function readUnsorted(item) {
-      return bulkReads(function () { return readPhoto(item.file); }).then(function (res) {
-        var ids = res.results.map(function (x) { return x.id; });
-        var home = recRef.current.filter(function (r) {
-          return (r.release && ids.indexOf(r.release.id) >= 0) || (r.found && r.found.results.some(function (x) { return ids.indexOf(x.id) >= 0; }));
-        })[0];
-        if (home) assign(item, home.id, 'read');
-        else setUnsorted(function (cur) { return cur.map(function (u) { return u.id === item.id ? Object.assign({}, u, { reading: false }) : u; }); });
-      }).catch(function () {
-        setUnsorted(function (cur) { return cur.map(function (u) { return u.id === item.id ? Object.assign({}, u, { reading: false }) : u; }); });
-      });
-    }
-    // an unsorted file goes to a record (Gio's pick, or the AI's): a photo at the end of its gallery, a sample as additional
-    function assign(item, recId, how) {
-      setUnsorted(function (cur) { return cur.filter(function (u) { return u.id !== item.id; }); });
-      var f = fileItem(item.file, item.kind, item.kind === 'photo' ? 'z' : 'x');
-      f.assigned = how;
-      patchRecord(recId, function (r) { return item.kind === 'photo' ? { photos: r.photos.concat([f]) } : { samples: r.samples.concat([f]) }; });
-      startUpload(recId, f);
-    }
-
-    function onFiles(files) {
-      setMessage(null);
-      var byKey = {}, added = [], extra = [], loose = [], ignored = 0;
-      recRef.current.forEach(function (r) { byKey[r.key] = { rec: r, old: true }; });
-      files.forEach(function (file) {
-        var kind = bulkKind(file);
-        if (!kind) { ignored++; return; }
-        var p = bulkParse(file.name);
-        if (!p) { loose.push({ id: nextId(), file: file, name: file.name, kind: kind, reading: kind === 'photo', url: kind === 'photo' ? URL.createObjectURL(file) : null }); return; }
-        var slot = byKey[p.key];
-        if (!slot) {
-          slot = byKey[p.key] = { old: false, rec: { id: nextId(), key: p.key, prefix: p.prefix, photos: [], samples: [], state: 'reading',
-                                                      progress: 0, found: null, release: null, query: '' } };
-          added.push(slot.rec);
-        }
-        var item = fileItem(file, kind, p.role);
-        if (slot.old) extra.push({ recId: slot.rec.id, item: item });                 // a file for a record already here
-        else (kind === 'photo' ? slot.rec.photos : slot.rec.samples).push(item);
-      });
-      setRecords(function (cur) {
-        return cur.map(function (r) {
-          var mine = extra.filter(function (x) { return x.recId === r.id; }).map(function (x) { return x.item; });
-          if (!mine.length) return r;
-          return Object.assign({}, r, { photos: r.photos.concat(mine.filter(function (x) { return x.kind === 'photo'; })),
-                                        samples: r.samples.concat(mine.filter(function (x) { return x.kind === 'sample'; })) });
-        }).concat(added);
-      });
-      added.forEach(function (r) { r.photos.concat(r.samples).forEach(function (it) { startUpload(r.id, it); }); });
-      extra.forEach(function (x) { startUpload(x.recId, x.item); });
-      setUnsorted(function (cur) { return cur.concat(loose); });
-      if (ignored) setMessage({ error: true, text: ignored + (ignored === 1 ? ' file' : ' files') + ' left out: only photos (jpg, png, webp) and mp3 samples.' });
-      // read the new records first, then the loose photos (they look for a record with the same release)
-      setTimeout(function () {
-        Promise.all(added.map(function (r) { return readRecord(r.id); })).then(function () {
-          loose.filter(function (u) { return u.kind === 'photo'; }).forEach(readUnsorted);
-        });
-      }, 0);
-    }
-
-    function removeRecord(r) {
-      setRecords(function (cur) { return cur.filter(function (x) { return x.id !== r.id; }); });
-      toast('Removed: ' + (r.release ? r.release.title : r.prefix) + '.');
-    }
-    var co = useState(false), confirmOver = co[0], setConfirmOver = co[1];
-    function startOver() { setConfirmOver(false); setRecords([]); setUnsorted([]); setMessage(null); setView({ name: 'overview' }); }
-
-    // ── review one by one ──
-    function reviewIndexFrom(i) {
-      var list = recRef.current;
-      for (var k = i; k < list.length; k++) if (['matched', 'choose', 'not found'].indexOf(list[k].state) >= 0) return k;
-      return -1;
-    }
-    function openReview(at) { setMessage(null); setView({ name: 'review', at: at }); window.scrollTo(0, 0); }
-    // Next / Skip go to the next record still to review; after the last one, back to the overview
-    function advance(at) {
-      var n = reviewIndexFrom(at + 1);
-      setView(n < 0 ? { name: 'overview' } : { name: 'review', at: n }); window.scrollTo(0, 0);
-    }
-
-    // ── create the drafts ──
-    async function createDrafts() {
-      var list = recRef.current;
-      if (!list.length) return;
-      if (list.some(function (r) { return r.state === 'reading'; })) { setMessage({ error: true, text: 'Wait until every label is read.' }); return; }
-      if (list.some(function (r) { return r.photos.concat(r.samples).some(function (x) { return x.uploading; }); })) { setMessage({ error: true, text: 'Wait for the uploads to finish.' }); return; }
-      setView({ name: 'creating' }); setMessage({ error: false, text: 'Creating drafts…' });
-      var entities = null;
-      try { entities = await loadEntities(); } catch (e) { /* the drafts bind entities by name on save */ }
-      var done = 0, failed = [];
-      for (var i = 0; i < list.length; i++) {
-        var r = list[i];
-        setMessage({ error: false, text: 'Creating draft ' + (i + 1) + ' of ' + list.length + '…' });
-        try {
-          var f = emptyForm(), positions = [];
-          var release = r.state === 'skipped' ? null : r.release;
-          if (release) {
-            var d = await invoke('discogs-lookup', { releaseId: release.id });
-            Object.assign(f, patchFromDiscogs(f, d, entities).patch);
-            positions = (d.tracks || []).filter(function (t) { return t.title; }).map(function (t) { return String(t.position || '').toUpperCase(); });
-          } else {
-            f.lines = [newLine({ title: r.prefix })];
-          }
-          f.images = r.photos.filter(function (x) { return x.key; }).slice().sort(photoSort).map(function (x) { return { id: x.id, key: x.key, name: x.name }; });
-          var used = {};
-          f.samples = r.samples.filter(function (x) { return x.key; }).map(function (x) {
-            var line = sampleLine(x.role, positions);
-            if (line && (used[line] || line > f.lines.length)) line = null;   // a second sample of a side: additional
-            if (line) used[line] = true;
-            return { id: x.id, key: x.key, name: x.name, line: line };
-          });
-          var payload = payloadOf(f, 'draft');
-          var res = await sb.rpc('admin_save_listing', { payload: payload });
-          if (res.error) throw new Error(res.error.message);
-          await LD.saveCredits(sb.rpc.bind(sb), res.data, payload);   // 0148; the backfill catches a failure
-          done++;
-          patchRecord(r.id, { created: true });
-        } catch (err) {
-          failed.push({ id: r.id, text: err.message });
-        }
-      }
-      // the created ones leave the batch; the failed ones stay with the reason
-      setRecords(function (cur) {
-        var why = {}; failed.forEach(function (f) { why[f.id] = f.text; });
-        return cur.filter(function (x) { return why[x.id]; }).map(function (x) { return Object.assign({}, x, { saveError: why[x.id] }); });
-      });
-      setView({ name: 'overview' });
-      if (!failed.length) {
-        setUnsorted([]);
-        setMessage(null);
-        toast(plural(done, 'draft') + ' created. Fill in grading and price to publish.');
-        location.hash = '#listings';
-        return;
-      }
-      setMessage({ error: true, text: plural(done, 'draft') + ' created; ' + plural(failed.length, 'record') + ' not saved: see below.' });
-    }
-
-    // ── render ──
-    var statusLine = h('p', { className: 'body-small admin-status' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '');
-    var help = h(Z.BulkHelp, { heading: 'Name the files record_role, one prefix per record:',
-      lines: ['Photos: _1, _2, _3… in gallery order. Photo _1 is read to find the record on Discogs: make it the label.',
-              'Samples: _a and _b for the A and B side. On an LP _a1, _a2, _b1… Anything else becomes an additional sample.'],
-      example: 'e.g. nooks-hero_1.jpg · nooks-hero_2.jpg · nooks-hero_a.mp3 · nooks-hero_b.mp3' });
-    var drop = h(Z.DropZone, { label: records.length ? 'Add more files' : 'Browse photos and samples', multiple: true,
-      accept: 'image/jpeg,image/png,image/webp,image/heic,audio/mpeg,.mp3', disabled: busy, onFiles: onFiles });
-
-    if (view.name === 'review' && records[view.at]) {
-      var r = records[view.at], at = view.at;
-      var photo = r.photos.slice().sort(photoSort)[0];   // photo 1 (Gio: the AI reads image 1, nothing else)
-      function next() {
-        var cur = recRef.current[at];
-        if (!cur.release) { setMessage({ error: true, text: 'Pick a release, or Skip.' }); return; }
-        setMessage(null); patchRecord(cur.id, { state: 'confirmed' }); advance(at);
-      }
-      function skip() { setMessage(null); patchRecord(r.id, { state: 'skipped', release: null }); advance(at); }
-      var nextBtn = h(Z.Button, { key: 'next', hierarchy: 'primary', onClick: next }, 'Next');
-      var skipBtn = h(Z.Button, { key: 'skip', hierarchy: 'secondary', onClick: skip }, 'Skip');
-      return h('div', { className: 'admin-bulk-page admin-bulk-page--review' },
-        h('div', { className: 'admin-bulk-page__head' },
-          h('p', { className: 'body-small admin-count' }, 'Record ' + (at + 1) + ' of ' + records.length + ' · ' + r.prefix),
-          h(Z.Button, { hierarchy: 'secondary', size: 'small', onClick: function () { setMessage(null); setView({ name: 'overview' }); } }, 'Back to overview')),
-        photo ? h('img', { className: 'admin-bulk-page__photo', src: photo.url, alt: 'Photo ' + photo.name }) : null,
-        h('p', { className: 'body-small' }, filesText(r)),
-        h(RecordField, { key: r.id, id: 'bulk-record', label: 'Which record', value: r.query || '', release: r.release, found: r.found,
-          onText: function (v) { patchRecord(r.id, { query: v }); },
-          onRelease: function (rel) { patchRecord(r.id, { release: rel }); if (rel) setMessage(null); } }),
-        mobile ? h(Z.ActionBar, { status: statusLine }, nextBtn, skipBtn)
-          : h('div', { className: 'admin-bulk-page__actions' }, nextBtn, skipBtn, statusLine));
-    }
-
-    var reading = records.filter(function (x) { return x.state === 'reading'; }).length;
-    var toReview = records.filter(function (x) { return ['matched', 'choose', 'not found'].indexOf(x.state) >= 0; }).length;
-    var nFiles = records.reduce(function (n, x) { return n + x.photos.length + x.samples.length; }, 0) + unsorted.length;
-    var summary = records.length ? [plural(records.length, 'record'), plural(nFiles, 'file'), reading ? reading + ' reading' : null,
-      toReview ? toReview + ' to review' : null, unsorted.length ? plural(unsorted.length, 'file') + ' not recognised' : null].filter(Boolean).join(' · ') : '';
-    var createBtn = h(Z.Button, { key: 'create', hierarchy: toReview ? 'secondary' : 'primary', 'aria-busy': busy || undefined, disabled: !records.length || reading > 0,
-      onClick: busy ? undefined : createDrafts }, mobile && toReview ? 'Create drafts' : 'Create ' + plural(records.length, 'draft'));   // the count is in the summary line
-    var reviewBtn = toReview ? h(Z.Button, { key: 'review', hierarchy: 'primary', disabled: busy || reading > 0, onClick: function () { openReview(reviewIndexFrom(0)); } }, 'Review') : null;
-    var options = records.map(function (x) { return [x.id, x.release ? x.release.title : x.prefix]; });
-
-    return h('div', { className: 'admin-bulk-page' },
-      h('h1', { className: 'label-extra-large' }, 'Bulk create'),
-      records.length ? null : help,
-      drop,
-      summary ? h('p', { className: 'body-small admin-count', 'aria-live': 'polite' }, summary) : null,
-      unsorted.length ? h('div', { className: 'admin-bulk-page__unsorted' }, unsorted.map(function (u) {
-        return h('div', { key: u.id, className: 'admin-bulk-page__file' },
-          h(Z.FileItem, { name: u.name, position: '', image: u.kind === 'photo' ? { src: u.url, alt: '' } : undefined,
-            onRemove: function () { setUnsorted(function (cur) { return cur.filter(function (x) { return x.id !== u.id; }); }); }, removeLabel: 'Leave out ' + u.name }),
-          h(Z.Input, { variant: 'select', id: 'unsorted-' + u.id, label: 'Record', value: '',
-            supportText: u.reading ? 'Reading the photo…' : 'Name not recognised. Pick the record it belongs to.',
-            disabled: busy || !records.length, placeholder: 'Leave out',
-            onChange: function (e) { if (e.target.value) assign(u, e.target.value, 'picked'); } }, opts(options)));
-      })) : null,
-      records.length ? h('ul', { className: 'admin-rows', 'aria-label': 'Records found' }, records.map(function (x, i) {
-        var warn = [bulkWarnings(x), x.saveError ? 'Not saved: ' + x.saveError : ''].filter(Boolean).join(' ');
-        return h(Z.BulkRecord, { key: x.id, state: x.state, progress: x.progress, uploadProgress: uploadProgressOf(x),
-          title: x.release && x.state !== 'skipped' ? x.release.title : x.prefix,
-          meta: x.release && x.state !== 'skipped' ? x.release.meta : undefined,
-          files: filesText(x),
-          status: x.state === 'reading' ? (x.progress < 40 ? 'Waiting to read the label…' : 'Reading the label…') : BULK_STATUS[x.state](x),
-          warning: warn || undefined,
-          onReview: busy ? undefined : function () { openReview(i); },
-          onRemove: busy ? undefined : function () { removeRecord(x); } });
-      })) : null,
-      records.length ? (mobile ? h(Z.ActionBar, { status: statusLine }, reviewBtn || createBtn, reviewBtn ? createBtn : null)
-        : h('div', { className: 'admin-bulk-page__actions' }, reviewBtn, createBtn,
-            h(Z.Button, { key: 'over', hierarchy: 'secondary', disabled: busy, onClick: function () { setConfirmOver(true); } }, 'Start over'), statusLine))
-        : statusLine,
-      h(Z.Dialog, { open: confirmOver, title: 'Start over?', confirmLabel: 'Start over',
-        onCancel: function () { setConfirmOver(false); }, onConfirm: startOver },
-        h('p', null, 'The ' + plural(records.length, 'record') + ' of this batch are left out: no draft is created (the files already uploaded stay in storage, unused).')));
-  }
   // ── App ───────────────────────────────────────────────────────────────────
   // [hash, visit]: visit changes on every navigation, so "Create listing" always opens an empty form
   function useHash() {
@@ -3241,7 +2861,6 @@
     else if (hash === '#orders') body = h(Orders, { key: 'orders-' + route.visit });
     else if (hash === '#offers') body = h(Offers, { key: 'offers-' + route.visit });
     else if (/^#orders\/[^/]+$/.test(hash)) body = h(OrderDetail, { key: hash + route.visit, id: hash.split('/')[1] });
-    else if (hash === '#bulk') body = h(Bulk, { key: 'bulk' });
     else if (/^#listings(\/(live|draft|sold|archived))?$/.test(hash)) body = h(Listings, { key: hash + route.visit, tab: hash.split('/')[1] || 'live' });
     else body = h(Dashboard, { key: 'dashboard-' + route.visit });   // '', '#', #dashboard: the landing page (decision 0170)
 
@@ -3262,7 +2881,7 @@
     if (hash === '#shipping') return 'shipping';
     if (hash === '#settings') return 'settings';
     if (/^#content/.test(hash)) return 'content';
-    return 'listings';   // list, #edit-<id>, and Create (#new) / Bulk create (#bulk): actions of Listings (decision 0125)
+    return 'listings';   // list, #edit-<id>, and Create (#new): an action of Listings (decision 0125)
   }
   function Nav(props) {
     var dialogRef = useRef(null), menuBtn = useRef(null);
