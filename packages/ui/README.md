@@ -66,22 +66,21 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | ListingLine | page `listing form` → `listing line` | ported: removable, sample empty / uploaded, artist on label, marker (number, 0114) |
 | TradeNote | page `Trade` → `trade note` | ported (0068): title, body, signature |
 | DiscogsCard | page `Trade` → `discogs card` | ported (0068): label, handle, stats, link |
-| TradeStep | page `Trade` → `trade step` | ported (0068) |
+| Step | page `Trade` → `step` (was `trade step`) | ported (0068, renamed 0152) |
 | ReleaseOption | page `Trade` → `release option` | ported (0069) |
 | ReleaseList | page `Trade` → `release list` | ported (0069) |
 | ChosenRelease | page `Trade` → `chosen release` | ported (0069) |
 | BackLink | page `admin` → `back link` | ported (0146): ← + label, body/small text/moderate, hover underline; admin Edit listing → Listings tab |
-| MemoItem | page `Memo` (BACKEND) → `memo item` | ported (0087): device mobile / desktop (responsive), meta + link, note, select (0140), Create draft (0135) / Create listing / Remove |
-| BulkRecord | page `Bulk` (BACKEND) → `bulk record` | ported (0107): device mobile / desktop (responsive), state reading / matched / choose / not found / confirmed / skipped, warning |
-| BulkHelp | page `Bulk` (BACKEND) → `bulk naming help` | ported (0107) |
+| DiscogsLink | page `Create` (BACKEND) → `discogs link` | ported (0150): "On Discogs ↗", body/small underlined, new tab; admin Create / Edit listing under Discogs match |
 | ContentGroupHead | page `Content` (BACKEND) → `content group head` | ported (0106): heading + help of an admin Content group |
 | ContentRow | page `Content` (BACKEND) → `content row` | ported (0106): device mobile / desktop (responsive), where, edited, condition, Edit link |
 | ContentEditorHead | page `Content` (BACKEND) → `content editor head` | ported (0106): back, title, where, actions (desktop; mobile = ActionBar) |
 | LinkRow | page `Content` (BACKEND) → `link row` | ported (0106): layout inline / stacked, Remove |
 | SectionRow | page `Content` (BACKEND) → `section row` | ported (0106): heading + text + Remove (page sections, trade steps) |
-| ProgressBar | page `Memo` (BACKEND) → `progress bar` | ported (0091): value 0–100, role=progressbar |
+| ProgressBar | page `admin` (COMPONENTS) → `progress bar` | ported (0091): value 0–100, role=progressbar |
 | AdminBar | page `admin` → `admin bar` | ported (0089, 0125): device desktop / mobile (responsive); mobile opens a MenuLayer dialog; no Create (0125) |
 | ListingsHead | page `Listings` (BACKEND) → `listings head` | ported (0125): device desktop / mobile (responsive), Listings title + Bulk create / Create listing |
+| Stat | page `Dashboard` (BACKEND) → `stat` | ported (0169): label, value, optional note and link (booleans `note`, `link`) |
 | ListingsFilter | page `Listings` (BACKEND) → `listings filter` | ported (0128): device desktop / mobile (responsive), status tabs + search |
 | ListingRow | page `admin` → `listing row` | ported (0089, 0123): admin list row on mobile (Listings, Attributes, order records), select, thumbnail, meta, price |
 | Thumbnail | page `media` → `product image` at 40 × 40 | ported (0123): the record's photo in admin lists, empty square without a photo |

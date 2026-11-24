@@ -170,6 +170,15 @@ final class DraftSession: ObservableObject {
 
     func addImage() { load(roles: names.count + 1) }
 
+    /// Update (0160): re-read the open draft (image names, clip slots, tags) and the list from the admin, for a draft
+    /// edited in the admin while the app was open
+    func refresh(silent: Bool = false) {
+        search()
+        guard draft != nil else { return }
+        load(roles: max(3, names.count))
+        if !silent { app?.caption = "Draft updated from the admin" }
+    }
+
     /// Fetch the names of positions 1…roles and read which ones already have files on disk
     private func load(roles: Int) {
         guard let d = draft else { return }

@@ -80,6 +80,8 @@ function toProduct(row, mediaUrl, artists = []) {
       section: row.section,
       status: effectiveStatus(row),
       price: row.price_cents == null ? null : { amount: row.price_cents, currency: row.currency },
+      // 'offers' = no price, buyers make offers (migration 0034, decision 0158); a database before 0034: 'fixed'
+      price_mode: row.price_mode || 'fixed',
       sku: row.sku,
       weight_g: row.weight_g || null,   // shipping: own weight; null = the format's (decision 0057)
       custom_title: row.custom_title,
@@ -175,10 +177,11 @@ async function settingsFromSupabase(env, fetchImpl = fetch) {
   const res = await fetchImpl(`${env.SUPABASE_URL.replace(/\/$/, '')}/rest/v1/shop_settings?select=*`, {
     headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, Accept: 'application/json' }
   });
-  if (res.status === 404) return { tradeEnabled: true, identityEnabled: true };   // PGRST205: no shop_settings table yet
+  if (res.status === 404) return { tradeEnabled: true, identityEnabled: true, wantlistEnabled: true };   // PGRST205: no shop_settings table yet
   if (!res.ok) throw new Error(`Supabase shop_settings: ${res.status} ${await res.text()}`);
   const row = (await res.json())[0];
-  return { tradeEnabled: !row || row.trade_enabled !== false, identityEnabled: !row || row.identity_enabled !== false };
+  return { tradeEnabled: !row || row.trade_enabled !== false, identityEnabled: !row || row.identity_enabled !== false,
+    wantlistEnabled: !row || row.wantlist_enabled !== false };   // Check your wantlist (migration 0033, decision 0152)
 }
 
 // the texts Gio saved in the admin (page Content, migration 0025, decision 0106): [{ key, value, updated_at }].
@@ -192,9 +195,11 @@ async function textsFromSupabase(env, fetchImpl = fetch) {
   return res.json();
 }
 
-async function loadSettings({ source, trade, identity } = {}) {
+async function loadSettings({ source, trade, identity, wantlist } = {}) {
   const env = readEnv();
-  const fromDb = source === 'supabase' ? await settingsFromSupabase(env) : { tradeEnabled: true, identityEnabled: true };
+  const fromDb = source === 'supabase' ? await settingsFromSupabase(env) : { tradeEnabled: true, identityEnabled: true, wantlistEnabled: true };
+  if (wantlist === 'off') fromDb.wantlistEnabled = false;
+  if (wantlist === 'on') fromDb.wantlistEnabled = true;
   if (identity === 'off') fromDb.identityEnabled = false;
   if (identity === 'on') fromDb.identityEnabled = true;
   if (trade === 'off') fromDb.tradeEnabled = false;

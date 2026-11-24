@@ -33,6 +33,10 @@ function smallImageUrl(product, src, px, url) {
 
 // ── data → text (mapping confirmed 2026-11-07) ──
 const formatPrice = (p) => `${p.amount % 100 === 0 ? p.amount / 100 : (p.amount / 100).toFixed(2)}€`;
+// best offer (migration 0034, decision 0158): a sale copy with no price, buyers make an offer on /products/<slug>/offer/
+const isOffers = (listing) => listing.section === 'sale' && listing.price_mode === 'offers';
+// the price slot of a card, tile, PDP: the price or "Trade only"; best offer has none (the "Make an offer" CTA says it, Gio 2026-11-23)
+const priceText = (listing) => listing.section !== 'sale' ? 'Trade only' : isOffers(listing) ? null : formatPrice(listing.price);
 // `name` comes from the database (custom title or the release lines, see data/products.js); JSON test content has none
 const productName = (r) => r.name || `${r.artist} - ${r.title}`;
 // a pre-release ("blank") of the label: "Pre" right after the label name (Gio, 2026-11-10)
@@ -176,13 +180,15 @@ const productHref = (product, url) => url(`/products/${product.listing.slug}/`);
 const tradeOn = (site) => !site || site.tradeEnabled !== false;
 // Who I am (admin → Settings, decision 0106): off = the Store profile, no name, no personal profiles, no trade
 const identityOn = (site) => !site || site.identityEnabled !== false;
+// Check your wantlist (admin → Settings, migration 0033, decision 0152): set by build.js; off or undefined = no link
+const wantlistOn = (site) => !!site && site.wantlistEnabled === true;
 // a text Gio edits in the admin (page Content, decision 0106): site.texts (build.js) or, without it, today's text;
 // {{#trade}}…{{/trade}} already applied
 const DEFAULT_TEXTS = Content.defaults({});
 function textOf(site, key, field) {
   const saved = ((site && site.texts) || {})[key];
   const v = saved && saved[field] !== undefined ? saved[field] : (DEFAULT_TEXTS[key] || {})[field];
-  return typeof v === 'string' ? Content.applyFlags(v, { trade: tradeOn(site) }) : v;
+  return typeof v === 'string' ? Content.applyFlags(v, { trade: tradeOn(site), wantlist: wantlistOn(site) }) : v;
 }
 // a textarea's paragraphs (an empty line = a new paragraph) as <p>s
 const Paragraphs = ({ text, className = 'body-medium' }) => h(React.Fragment, null,
@@ -242,7 +248,8 @@ function SiteMenu({ site, url, current }) {
     h(Z.MenuLayer, { title: 'Menu', closeLabel: 'Close menu', legal },
       // Figma `menu layer`: the search field on top of the body (Gio 2026-11-12: mobile search in the menu, not the header)
       h(SearchForm, { url, id: 'site-search-menu', className: 'site-menu__search' }),
-      h(Z.MenuGroup, null, item('sale', 'For sale', '/sale/'), trade ? item('trade', 'For trade', '/trade/') : null),
+      h(Z.MenuGroup, null, item('sale', 'For sale', '/sale/'), trade ? item('trade', 'For trade', '/trade/') : null,
+        wantlistOn(site) ? item('wantlist', 'Check your wantlist', '/wantlist/') : null),
       // the detail becomes the signed-in email (scripts/account.js, [data-account-email]); decision 0101
       h(Z.MenuGroup, null, item('account', 'Account', '/account/', h('span', { 'data-account-email': '' }, 'Sign in to see your orders'))),
       h(Z.MenuGroup, null, item('about', 'About', '/about/'), trade ? item('how-trading-works', 'How trading works', '/how-trading-works/') : null,
@@ -271,7 +278,8 @@ function SiteFooter({ site, url, newsletter = true }) {
     legal: LEGAL_LINKS.map(([text, href]) => h('a', { key: href, href: url(href) }, text)),
     copyright: `\u00a9 ${new Date().getFullYear()} ${site.storeName}`
   },
-  h(Z.FooterLinks, { label: 'Shop', links: [link('For sale', '/sale/'), tradeOn(site) && link('For trade', '/trade/')].filter(Boolean) }),
+  h(Z.FooterLinks, { label: 'Shop', links: [link('For sale', '/sale/'), tradeOn(site) && link('For trade', '/trade/'),
+    wantlistOn(site) && link('Check your wantlist', '/wantlist/')].filter(Boolean) }),
   h(Z.FooterLinks, { label: 'Info', links: [link('About', '/about/'), tradeOn(site) && link('How trading works', '/how-trading-works/'),
     link('Grading', '/grading/'), link('Shipping', '/shipping/'), link('Contact', '/contact/')].filter(Boolean) }),
   social.length ? h(Z.FooterLinks, { label: 'Follow', links: social }) : null);
@@ -289,6 +297,7 @@ function sampleAttrs(product, s, url) {
     'data-product-href': productHref(product, url),
     'data-listing-id': product.listing.id,   // the player's "Add to bag" adds the playing product
     'data-listing-section': product.listing.section,   // trade listings: no Add to bag in the player
+    'data-price-mode': isOffers(product.listing) ? 'offers' : undefined,   // best offer (0158): no Add to bag either
     'data-listing-status': product.listing.status   // sold / traded: the player's button reads "Sold out", disabled
   };
 }
@@ -310,7 +319,7 @@ function tagLinksOf(release, url) {
   }));
   return out;
 }
-const TRADE_CARD_LABEL = { available: 'Make an offer', reserved: 'Reserved', traded: 'Traded' };
+const TRADE_CARD_LABEL = { available: 'Make an offer', reserved: 'Reserved', traded: 'Traded', sold: 'Sold out' };
 // Figma labels the card samples 1, 2…; the accessible name keeps the product and the sample title.
 function ProductCardFor({ product, url, headingLevel }) {
   const { listing, release, copy, samples } = product;
@@ -323,12 +332,13 @@ function ProductCardFor({ product, url, headingLevel }) {
     title: productNameLinked(product, url, productHref(product, url)),
     headingLevel,
     releaseInfo: releaseInfoLinked(release, url),
-    price: listing.section === 'sale' ? formatPrice(listing.price) : 'Trade only',
-    // trade (Figma page Trade): the card button is a link to the offer page, not a bag button
-    // (only while available: a reserved or traded trade copy shows its state, and site.js ignores its button)
-    addHref: listing.section === 'trade' && listing.status === 'available' ? url(`/products/${listing.slug}/offer/`) : undefined,
-    addLabel: listing.section === 'trade' ? TRADE_CARD_LABEL[listing.status] || TRADE_CARD_LABEL.available : undefined,
-    addLabelShort: listing.section === 'trade' ? (listing.status === 'available' ? 'Offer' : TRADE_CARD_LABEL[listing.status]) : undefined,
+    'data-price-mode': isOffers(listing) ? 'offers' : undefined,   // best offer: site.js leaves its button alone (0158)
+    price: priceText(listing),
+    // trade (Figma page Trade) and best offer (Figma page Offers, 0158): the card button is a link to the offer page,
+    // not a bag button (only while available: a reserved, sold or traded copy shows its state, and site.js ignores its button)
+    addHref: (listing.section === 'trade' || isOffers(listing)) && listing.status === 'available' ? url(`/products/${listing.slug}/offer/`) : undefined,
+    addLabel: listing.section === 'trade' || isOffers(listing) ? TRADE_CARD_LABEL[listing.status] || TRADE_CARD_LABEL.available : undefined,
+    addLabelShort: listing.section === 'trade' || isOffers(listing) ? (listing.status === 'available' ? 'Offer' : TRADE_CARD_LABEL[listing.status]) : undefined,
     tags: tagLinksOf(release, url),
     description: copy.notes,
     ...gradingProps(copy),
@@ -339,4 +349,4 @@ function ProductCardFor({ product, url, headingLevel }) {
   });
 }
 
-module.exports = { IMAGE_SIZES, imageOf, smallImageUrl, tradeOn, identityOn, textOf, Paragraphs, SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor };
+module.exports = { isOffers, priceText, IMAGE_SIZES, imageOf, smallImageUrl, tradeOn, identityOn, wantlistOn, textOf, Paragraphs, SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor };

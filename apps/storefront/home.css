@@ -26,6 +26,8 @@
   row-gap: var(--medium-small);
 }
 .home-shelf__list { display: flex; flex-direction: column; gap: var(--small); }   /* as the PLP list, gap 8 */
+/* "View all for sale" under the last shelf, full width (decision 0167; gap 8 = the shelf gap, as on the PDP) */
+.home-shelf__action > * { width: 100%; }
 
 /* the newsletter box: 2 of the 3 tile columns, left-aligned (Gio 2026-11-18) */
 .home-newsletter .zz-home-newsletter__box { width: calc((100% - 2 * var(--gutter-small)) * 2 / 3 + var(--gutter-small)); }

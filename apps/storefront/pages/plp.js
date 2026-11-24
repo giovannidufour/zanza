@@ -71,15 +71,17 @@ const SOLD_STATUSES = ['sold', 'traded'];
 const isSold = (p) => SOLD_STATUSES.indexOf(p.listing.status) !== -1;
 // Figma `filters` / `filters layer` (main level): the first row, a `filter` (content=label, state=active, no count).
 // Not a facet: unticked = sold copies hidden (?sold=hide); it never counts as an applied filter (scripts/site.js).
+// Hidden while the page has no sold copy (Gio 2026-11-23, decision 0161; Figma boolean `show sold out`): a build-time
+// check, the shop rebuilds when a listing's sale state changes, so the tick comes back with the first sold record.
 const ShowSold = () => h(Z.Filter, { name: 'sold', value: 'show', label: 'Show sold out', defaultChecked: true, 'data-show-sold': '' });
 
-function PlpFilters({ facets, hidden, sorts }) {
+function PlpFilters({ facets, hidden, sorts, showSold }) {
   // Figma: `filters` > sort (Gio 2026-11-10: button hug, prefix "Sort:") + `filter block` per facet > `filter` (content=label, count)
   return h('aside', { className: 'plp-filters', 'aria-label': 'Filters', 'data-plp-filters': '',
     'data-hidden-facets': JSON.stringify(hidden) },
     h(Z.Filters, null,
       h(Z.SelectButton, { prefix: 'Sort:', className: 'plp-filters__sort', 'aria-label': 'Sort', 'data-plp-sort': '', defaultValue: 'newest', options: sorts }),
-      h(ShowSold),
+      showSold ? h(ShowSold) : null,
       facets.map((f) => h(Z.FilterBlock, { key: f.key, label: f.label },
         f.options.map((o) => h(Z.Filter, {
           key: o.value, name: f.key, value: o.value, label: optionLabel(f.key, o.value), count: o.count,
@@ -91,11 +93,11 @@ function PlpFilters({ facets, hidden, sorts }) {
 
 // Mobile filters (Figma `filters layer`, 2026-11-10): the same facets as the column, in a full-screen native dialog.
 // Its checkboxes are a draft: site.js copies the column's state in when it opens and back on Apply.
-function PlpLayer({ facets }) {
+function PlpLayer({ facets, showSold }) {
   return h('dialog', { className: 'plp-layer', 'aria-label': 'Filter', tabIndex: -1, 'data-plp-layer': '' },
     h(Z.FiltersLayer, { level: 'main', title: 'Filter', applied: null, appliedLabel: 'Applied', applyCount: null },
       // level=main: one row per facet (value = its ticked options, written by site.js)
-      h('div', { className: 'plp-layer__sold', 'data-layer-sold': '' }, h(ShowSold)),
+      showSold ? h('div', { className: 'plp-layer__sold', 'data-layer-sold': '' }, h(ShowSold)) : null,
       h('div', { className: 'plp-layer__facets', 'data-layer-facets': '' },
         facets.map((f) => h(Z.FilterFacet, { key: f.key, label: f.label, 'data-facet': f.key, 'data-facet-label': f.label }))),
       // level=facet: the options of one facet; the bar title names it, so the legend is for screen readers only
@@ -121,11 +123,40 @@ const sortsFor = (section) => SORTS.filter((o) => !o.section || o.section === se
 // search (Figma page `Search`, 2026-11-12): the results page /search/?q=… — the same page with no section tab, the
 // heading `search heading` ("N results for “q”", written by site.js), on mobile the `search field` under the header,
 // and `search message` as the empty state (no results: hint + "Browse all records"; no query: the hint only).
-function Plp({ section, products, allProducts = products, site, url, search = false }) {
+// wantlist (Figma page `Wantlist`, decision 0152): /wantlist/ — first the connect view (the four steps that say what
+// happens to the wantlist + "Connect Discogs"), then, once Discogs said yes, the same results page as Search: heading
+// "N records from your wantlist" + "Disconnect Discogs", two groups (your pressing / other pressings). scripts/site.js
+// (initWantlist) runs the check and marks each card's .plp-item with data-want="exact|other".
+const WANTLIST_STEPS = [
+  ['Connect Discogs', 'You\u2019re sent to Discogs and say yes. I can only read, and only during this visit.'],
+  ['Your browser compares', 'Your browser gets your wantlist from Discogs and compares it with the shop, on your device. Your wantlist is never sent to me.'],
+  ['Nothing is kept', 'No account, no cookies, nothing saved. Close the tab and it\u2019s gone. You can also remove access on Discogs anytime.'],
+  ['You see the matches', 'The records here that are on your wantlist: exact matches first, then other pressings of the same record.']
+];
+function WantlistTop({ site }) {
+  return h('div', { className: 'wantlist-top', 'data-wantlist': '', 'data-endpoint': site.wantlist.endpoint },
+    h('div', { className: 'wantlist-connect trade-content', 'data-wantlist-connect': '' },
+      h('h1', { className: 'trade-content__title body-large' }, 'Check your wantlist'),
+      h('div', { className: 'trade-col trade-col--steps' }, h(Z.Divider),
+        h('ol', { className: 'trade-steps' }, WANTLIST_STEPS.map(([title, text], i) => h(Z.Step, { key: i, number: i + 1, title }, text)))),
+      h('div', { className: 'trade-col trade-col--3' }, h(Z.Divider),
+        h(Z.Button, { hierarchy: 'secondary', type: 'button', 'data-wantlist-start': '' }, 'Connect Discogs'),
+        // not in Figma (design/open.md): Discogs refused or could not be reached
+        h('p', { className: 'body-medium', role: 'alert', hidden: true, 'data-wantlist-error': '' }))),
+    h('div', { className: 'wantlist-heading', hidden: true, 'data-wantlist-heading': '' },
+      h('h1', { className: 'search-heading body-large', 'aria-live': 'polite', 'data-wantlist-title': '' }, 'Checking your wantlist\u2026'),
+      h(Z.Button, { hierarchy: 'secondary', type: 'button', className: 'wantlist-heading__disconnect', 'data-wantlist-disconnect': '' }, 'Disconnect Discogs')));
+}
+// group heading = Figma `section head` (divider on top + title body/medium, as "More for sale" on the PDP; Gio 2026-11-23)
+const groupHeading = (group, title) => h(Z.SectionHead, { className: 'wantlist-group', title, hidden: true, 'data-wantlist-group': group });
+
+function Plp({ section, products, allProducts = products, site, url, search = false, wantlist = false }) {
   const facets = facetsOf(products);
+  const showSold = products.some(isSold);
   const hint = 'Search by artist, title, label or catalogue number.';
-  return h('div', { className: 'zz-page', 'data-search-page': search ? '' : undefined },
-    h(SiteHeader, { site, url, section: search ? undefined : section }),
+  return h('div', { className: 'zz-page', 'data-search-page': search ? '' : undefined, 'data-wantlist-page': wantlist ? '' : undefined },
+    h(SiteHeader, { site, url, section: search || wantlist ? undefined : section, current: wantlist ? 'wantlist' : undefined }),
+    wantlist ? h(WantlistTop, { site }) : null,
     search ? h('div', { className: 'search-top' },
       h(SearchForm, { url, id: 'site-search-page', className: 'search-field' }),
       h('h1', { className: 'search-heading body-large', 'data-search-title': '' }, 'Search'),
@@ -144,16 +175,25 @@ function Plp({ section, products, allProducts = products, site, url, search = fa
 
     // Figma: `pdp content` (sic) — 12-col grid, gap gutter-small, padding-y small; filters cols 1–3, list cols 4–12
     h('div', { className: 'plp-content', 'data-search-results': search ? '' : undefined },
-      facets.length ? h(PlpFilters, { facets, hidden: hiddenFacetsOf(allProducts), sorts: sortsFor(section) }) : null,
+      facets.length ? h(PlpFilters, { facets, hidden: hiddenFacetsOf(allProducts), sorts: sortsFor(section), showSold }) : null,
       h('main', { className: 'plp-list' },
-        search ? null : h('h1', { className: 'plp-list__title' }, SECTION_LABEL[section]),
+        search || wantlist ? null : h('h1', { className: 'plp-list__title' }, SECTION_LABEL[section]),
+        wantlist ? groupHeading('exact', 'Exact matches') : null,
+        wantlist ? groupHeading('other', 'Other pressings') : null,
         // no device: responsive card (desktop variant on PLP - desktop, mobile variant on PLP - mobile)
         products.map((product, i) => h('div', Object.assign({ key: product.listing.slug, className: 'plp-item',
           'data-order': i, 'data-price': product.listing.price ? product.listing.price.amount : undefined,
-          'data-search': search ? searchTextOf(product) : undefined },
+          'data-search': search ? searchTextOf(product) : undefined,
+          // Discogs ids, matched against the visitor's wantlist in their browser (decision 0152)
+          'data-release': wantlist && product.release.discogs_release_id ? product.release.discogs_release_id : undefined,
+          'data-master': wantlist && product.release.discogs_master_id ? product.release.discogs_master_id : undefined },
           ...FACETS.concat(HIDDEN_FACETS).map((f) => ({ [`data-${f.key}`]: JSON.stringify([...new Set(f.values(product))]) }))),
           h(ProductCardFor, { product, url }))),
-        search
+        wantlist
+          ? h('div', { className: 'search-message plp-list__empty', hidden: true, 'data-plp-empty': '' },
+            h('p', { className: 'body-medium', 'data-wantlist-empty': '' }, 'None of the records on your wantlist are here right now.'),
+            h(Z.Button, { hierarchy: 'secondary', href: url('/sale/') }, 'Browse all records'))
+        : search
           ? h('div', { className: 'search-message plp-list__empty', hidden: true, 'data-plp-empty': '' },
             h('p', { className: 'body-medium' }, 'Check the spelling, or try an artist, a label or a catalogue number.'),
             h(Z.Button, { hierarchy: 'secondary', href: url('/sale/') }, 'Browse all records'))
@@ -161,7 +201,7 @@ function Plp({ section, products, allProducts = products, site, url, search = fa
             ? h('p', { className: 'plp-list__empty body-medium', hidden: true, 'data-plp-empty': '' }, 'No records match these filters.')
             // a section with no copies yet (For trade at launch): said plainly, not designed (design/open.md)
             : h('p', { className: 'plp-list__empty body-medium' }, section === 'trade' ? 'Nothing up for trade right now. Come back soon.' : 'No records right now.')),
-      facets.length ? h(PlpLayer, { facets }) : null)
+      facets.length ? h(PlpLayer, { facets, showSold }) : null)
   );
 }
 

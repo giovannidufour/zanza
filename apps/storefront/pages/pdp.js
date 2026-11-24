@@ -7,7 +7,8 @@ const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 
 const { TradeActions } = require('./trade.js');
-const { SECTION_LABEL, tagsOf, tagLinksOf, formatPrice, productName, productNameLinked, smallImageUrl, releaseInfoLinked, gradingProps, SiteHeader, sampleAttrs, ProductCardFor, imageOf, IMAGE_SIZES } = require('./shell.js');
+const { OfferActions } = require('./offer.js');
+const { isOffers, priceText, SECTION_LABEL, tagsOf, tagLinksOf, productName, productNameLinked, smallImageUrl, releaseInfoLinked, gradingProps, SiteHeader, sampleAttrs, ProductCardFor, imageOf, IMAGE_SIZES } = require('./shell.js');
 
 // Figma `breadcrumbs` on the PDP (decision 0122): section / genre, both links. The genre opens the section's PLP
 // filtered by it (?genre=, as the genre tags); no genre → no crumb (the macro genre is never shown, 0048).
@@ -42,14 +43,15 @@ function Pdp({ product, related = [], site, url }) {
         h(Z.ProductReturnCard, {
           image: release.cover ? { src: smallImageUrl(product, release.cover, 48, url), alt: '' } : undefined,
           name: productName(release),
-          price: trade ? 'Trade only' : formatPrice(listing.price),
+          price: priceText(listing),
           'aria-label': `Back to ${productName(release)}`
         })) : null,
       h(Z.ProductInfo, {
         className: 'pdp-content__info',
         title: productNameLinked(product, url),
         // trade (Figma page Trade): "Trade only" in the price slot; the description becomes Gio's note in the actions column
-        price: listing.section === 'sale' ? formatPrice(listing.price) : 'Trade only',
+        // best offer (Figma page Offers, decision 0158): no price slot, the "Make an offer" CTA says it
+        price: priceText(listing),
         releaseInfo: releaseInfoLinked(release, url),
         tags: tagsOf(release).length ? h(Z.TagGroup, null, tagLinksOf(release, url).map((t) => h(Z.Tag, { key: t.label, size: 'large', href: t.href }, t.label))) : null,
         description: trade ? null : copy.notes,
@@ -61,7 +63,7 @@ function Pdp({ product, related = [], site, url }) {
           'aria-label': s.title ? undefined : `${productName(release)}, sample ${i + 1}`
         }, sampleAttrs(product, s, url)), s.title || null)) : null
       }),
-      trade ? h(TradeActions, { product, site, url }) : h('div', { className: 'pdp-content__actions' },
+      trade ? h(TradeActions, { product, site, url }) : isOffers(listing) ? h(OfferActions, { product, url }) : h('div', { className: 'pdp-content__actions' },
         h(Z.Button, { hierarchy: 'primary', size: 'large', className: 'pdp-content__cta', 'data-add-to-bag': listing.id, 'data-listing-status': listing.status }, 'Add to bag'),
         // Reserved (proposal, design/open.md): one line under the CTA explains the hold; site.js shows it live
         h('p', { className: 'pdp-content__note body-small', 'data-reserved-note': listing.id, hidden: listing.status !== 'reserved' },

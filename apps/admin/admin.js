@@ -1,8 +1,6 @@
 /* apps/admin/admin.js — the admin single-page app (React via createElement, no build step).
    Screens: sign-in (email link) · listings (Figma BACKEND → Listings: bulk actions, archive, delete) · create / edit listing (Figma BACKEND → Create)
    · attributes: artists, labels, genres, tags (Figma BACKEND → Attributes) · shipping (Figma BACKEND → Shipping)
-   · memo: Gio's reminder list of records to sell later (Figma BACKEND → Memo, decision 0087).
-   · bulk: many records at once from named photos and samples, as incomplete drafts (Figma BACKEND → Bulk, decision 0107).
    Data: Supabase with the signed-in user's session (RLS: only public.admins can write).
    Save = one call to public.admin_save_listing (one transaction). Files go straight to R2 through
    short-lived upload URLs from the Edge Function sign-upload; the database keeps only the keys. */
@@ -19,7 +17,7 @@
   var FORMATS = LD.FORMATS, MACRO_GENRES = LD.MACRO_GENRES, COUNTRIES = LD.COUNTRIES;
   var textToCents = LD.textToCents, discogsId = LD.discogsId, newLine = LD.newLine, namesOf = LD.namesOf, findEntity = LD.findEntity,
       differs = LD.differs, emptyForm = LD.emptyForm, formatOf = LD.formatOf, positionsOf = LD.positionsOf,
-      patchFromDiscogs = LD.patchFromDiscogs, parseYear = LD.parseYear, yearText = LD.yearText, payloadOf = LD.payloadOf;
+      patchFromDiscogs = LD.patchFromDiscogs, parseYear = LD.parseYear, yearText = LD.yearText, payloadOf = LD.payloadOf, priceModeOf = LD.priceModeOf;
   var STATUS_LABEL = { draft: 'Draft', available: 'Available', reserved: 'Reserved', sold: 'Sold', traded: 'Traded', archived: 'Archived' };
   var STATUS_DONE = { draft: 'Unpublished.', available: 'Available again.', reserved: 'Reserved until you release it.', sold: 'Marked as sold.', traded: 'Marked as traded.' };
   var SLEEVES = [['original', 'Original'], ['generic', 'Generic'], ['none', 'None']];
@@ -191,7 +189,7 @@
     var key = await upload('sample', blob, null, function (f) { report({ phase: 'uploading', value: Math.round(60 + f * 40) }); });
     return { key: key, blob: blob, duration: Math.min(seconds, audio.duration) };
   }
-  // one file of the form or of Bulk → its storage key. onState({ phase: 'converting' | 'uploading', value: 0–100 })
+  // one file of the form → its storage key. onState({ phase: 'converting' | 'uploading', value: 0–100 })
   // drives the file's ProgressBar: a sample that is converted counts 0–60 converting, 60–100 uploading; anything else
   // 0–100 uploading. onNote(text) when a high-bitrate sample goes up as it is.
   function uploadFile(kind, file, onState, onNote) {
@@ -285,7 +283,7 @@
     f.label = le ? [chip(le)] : r.label ? [{ id: null, name: r.label }] : [];
     f.preRelease = !!r.pre_release;
     f.labelSpelled = !!le && differs(r.label, le.name); f.labelCredit = f.labelSpelled ? r.label : ''; f.country = r.country || ''; f.year = yearText(r.year, r.year_precision); f.format = r.format || '';
-    f.section = row.section; f.price = centsToText(row.price_cents);
+    f.section = row.section; f.priceMode = row.price_mode || 'fixed'; f.price = centsToText(row.price_cents);
     var byPos = function (a, b) { return a.position - b.position; };
     var genreRows = (r.genre_rows || []).slice().sort(byPos);
     f.genres = genreRows.length ? genreRows.map(function (t) { return chip(t.genre); }) : (r.genres || []).map(function (n) { return { id: null, name: n }; });
@@ -312,10 +310,10 @@
     if (publish && !f.format) e.format = 'Choose a format.';
     if (publish && !f.condition) e.condition = 'Choose the condition of side A.';
     var cents = textToCents(f.price);
-    if (publish && f.section === 'sale' && cents === null) e.price = 'Enter a price.';
+    if (publish && f.section === 'sale' && priceModeOf(f) === 'fixed' && cents === null) e.price = 'Enter a price.';
     else if (Number.isNaN(cents)) e.price = 'Use a number, e.g. 12 or 12.50.';
     if (f.year.trim() && !parseYear(f.year)) e.year = 'Use a year (1983) or a decade (1990s).';
-    if (f.discogs && discogsId(f.discogs) === null) e.discogs = 'Paste a Discogs release URL or its number.';
+    if (f.discogs && discogsId(f.discogs) === null) e.discogs = 'Pick a release from the list, paste its link or number, or empty the field.';
     if (f.images.some(function (x) { return x.uploading; }) || f.samples.some(function (x) { return x.uploading; })) e.uploads = 'Wait for the uploads to finish.';
     return e;
   }
@@ -374,7 +372,10 @@
     var label = f.labelSpelled && f.labelCredit.trim() ? f.labelCredit.trim() : (f.label[0] || {}).name;
     return [label, label && f.preRelease ? 'Pre' : null, f.format, f.country ? '(' + f.country + ')' : null].filter(Boolean).join(' ');
   }
+  var OFFERS_PRICE = 'Best offer';   // the shop's text for a listing without a price (decision 0158, pages/shell.js)
+  function listPrice(r) { return r.price_mode === 'offers' ? OFFERS_PRICE : r.price_cents === null || r.price_cents === undefined ? null : centsToText(r.price_cents) + ' €'; }
   function previewPrice(f) {
+    if (priceModeOf(f) === 'offers') return OFFERS_PRICE;
     var c = f.section === 'sale' ? textToCents(f.price) : null;
     return c === null || c === undefined || isNaN(c) ? null : (c % 100 === 0 ? c / 100 : (c / 100).toFixed(2)) + '€';
   }
@@ -409,6 +410,7 @@
     var er = useState({}), errors = er[0], setErrors = er[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
     var sv = useState(false), saving = sv[0], setSaving = sv[1];
+    var discogsSearch = useDiscogsSearch('discogs');   // decision 0156: Discogs match searches while typing
     // decision 0118: the last saved form (Unsaved changes), when it was saved in this visit, when the shop was asked to update
     var baseline = useRef(null); if (baseline.current === null) baseline.current = formSnapshot(props.initial);
     var sa = useState(null), savedAt = sa[0], setSavedAt = sa[1];
@@ -446,18 +448,6 @@
     useEffect(function () {
       loadEntities().then(setEntities).catch(function (err) { setMessage({ error: true, text: 'Suggestions not loaded: ' + err.message }); });
     }, []);
-    // opened from the Memo list (0087): the release is fetched once the suggestions are in (chips bind to entities);
-    // a free-text item only names the record in the status line. The first save takes the item off the list.
-    var fromMemo = props.fromMemo || null;
-    var tookOff = useRef(false), autoFetched = useRef(false);
-    useEffect(function () {
-      if (!fromMemo) return;
-      if (!fromMemo.discogs) { setMessage({ error: false, text: 'From Memo: ' + fromMemo.title + (fromMemo.note ? ' (' + fromMemo.note + ')' : '') + '. No Discogs release: fill in the record.' }); return; }
-      if (autoFetched.current || entities === null) return;
-      autoFetched.current = true;
-      fetchDiscogs();
-    }, [entities]);
-
     function set(patch) { setF(function (cur) { return Object.assign({}, cur, typeof patch === 'function' ? patch(cur) : patch); }); }
     function bind(name) {
       return { value: f[name], onChange: function (e) { var p = {}; p[name] = e.target.value; set(p); }, error: errors[name] };
@@ -545,7 +535,8 @@
         });
       };
     }
-    async function save(status) {
+    // andNew (decision 0155): Save draft and new, after the save a blank Create listing opens, to make drafts back to back
+    async function save(status, andNew) {
       var cur = fRef.current, e = validate(cur, status);
       setErrors(e);
       if (Object.keys(e).length) {
@@ -566,18 +557,23 @@
         publishedAt: x.publishedAt || (d.status === 'available' ? new Date(now).toISOString() : null),
         createdAt: x.createdAt || new Date(now).toISOString() }; });
       if (d.status !== 'draft' || wasPublic) setShopAt(now);
-      if (fromMemo && !tookOff.current) {
-        tookOff.current = true;
-        sb.from('memos').delete().eq('id', fromMemo.id).then(function (r) {
-          toast(r.error ? 'Still on Memo: ' + r.error.message : 'Taken off Memo.');
-        });
-      }
       // decision 0118: the result in a toast; the status block at the top of the side column says the new state
       toast(d.status === 'available' ? (wasPublic ? 'Updated' : 'Published') + ' · SKU ' + d.sku + '. The shop updates in about 2 minutes.'
-        : d.status === 'draft' ? 'Draft saved · SKU ' + d.sku + '.' : 'Saved · SKU ' + d.sku + '.');
+        : d.status === 'draft' ? 'Draft saved · SKU ' + d.sku + '.' + (andNew ? ' Next one: a new listing.' : '') : 'Saved · SKU ' + d.sku + '.');
       if (!cur.listingId) history.replaceState(null, '', '#edit-' + d.listing_id);
+      // a new history entry, so Back returns to the draft just saved; the hash changes, so the form remounts blank
+      if (andNew) { location.hash = '#new'; window.scrollTo(0, 0); }
     }
 
+    /* decision 0171 (Memo removed, a draft is the reminder): when the photo finds no pressing, the words read become
+       the title of line 1 if it is empty, as a free-text memo did, so Save draft works right away */
+    function onPhotoFound(found) {
+      var titled = !found.results.length && !!found.query && !fRef.current.lines[0].title.trim();
+      if (titled) setLine(0, 'title', found.query);
+      setPhotoFound({ results: found.results, titled: titled });
+    }
+    // a pressing picked from the Discogs match search (0156): its link in the field, then Fetch Discogs
+    function pickRelease(r) { set({ discogs: 'https://www.discogs.com/release/' + r.id }); fetchDiscogs(r.id); }
     // Fetch Discogs: reads the release in "Discogs match" and fills the release fields
     async function fetchDiscogs(picked) {
       if (fetching) return;
@@ -732,6 +728,8 @@
       : f.status === 'reserved' ? [f.checkoutUntil ? 'Checkout in progress until ' + timeText(f.checkoutUntil) : 'Held until you release it', sku]
       : f.status === 'sold' || f.status === 'traded' ? [f.soldAt ? dayText(f.soldAt) : null, sku, 'No longer editable']
       : [sku, 'Restore it to edit'];
+    // Figma Create → `discogs link` (0150): the matched release on Discogs, in every status, while the field holds one
+    var discogsLink = discogsId(f.discogs) !== null ? h(Z.DiscogsLink, { href: 'https://www.discogs.com/release/' + discogsId(f.discogs) }) : null;
     var listingStatus = h(Z.ListingStatus, {
       status: isNew ? 'Not saved yet' : f.status === 'available' ? 'Published' : STATUS_LABEL[f.status] || f.status,
       details: typeof details === 'string' ? details : details.filter(Boolean).join(' · '),
@@ -743,7 +741,7 @@
     var backTab = isNew ? null : f.status === 'draft' ? ['draft', 'Drafts']
       : f.status === 'sold' || f.status === 'traded' ? ['sold', 'Sold']
       : f.status === 'archived' ? ['archived', 'Archived'] : ['live', 'Live'];
-    var back = h(Z.BackLink, { href: backTab && backTab[0] !== 'live' ? '#listings/' + backTab[0] : '#', label: backTab ? backTab[1] : 'Listings' });
+    var back = h(Z.BackLink, { href: backTab && backTab[0] !== 'live' ? '#listings/' + backTab[0] : '#listings', label: backTab ? backTab[1] : 'Listings' });
     var main = h('div', { className: 'admin-main' },
       back,
       h('h1', { className: 'label-extra-large' }, isNew ? 'Create listing' : 'Edit listing'),
@@ -753,14 +751,26 @@
       // images (Fetch from label reads them)
       h('section', sectionProps('discogs'),
         h(Z.FormSectionHead, { id: 'section-discogs-title' }, FORM_SECTION_LABEL['discogs']),
-        h(Z.Input, Object.assign({ id: 'discogs', label: 'Discogs match', optional: true, variant: 'search',
-          placeholder: 'Release URL or number', supportText: errors.discogs ? undefined : 'Paste the release link, then Fetch Discogs.' }, bind('discogs'))),
+        // decision 0156: typing searches Discogs (Figma Create → `discogs match` · searching); picking a pressing puts its
+        // link in the field and fetches it, as a pick from the photo does. A link or a number still goes by Fetch Discogs.
+        h('div', { className: 'admin-picker' },
+          h(Z.Input, Object.assign({ id: 'discogs', label: 'Discogs match', optional: true, variant: 'search',
+            placeholder: 'Artist – title, or release link',
+            clearLabel: locked ? undefined : 'Clear Discogs match', onClear: function () { set({ discogs: '' }); discogsSearch.close(); var el = document.getElementById('discogs'); if (el) el.focus(); },
+            supportText: errors.discogs ? undefined : 'Type to search Discogs, or paste the release link, then Fetch Discogs.' },
+            bind('discogs'), locked ? null : discogsSearch.inputProps(pickRelease),
+            { onChange: function (e) { set({ discogs: e.target.value }); if (!locked) discogsSearch.search(e.target.value); } })),
+          locked ? null : discogsSearch.list(pickRelease)),
+        // Figma Create → `discogs link` (0150); desktop: in the side column under the status instead, so it stays in view while the form scrolls (Gio 2026-11-23)
+        mobile ? discogsLink : null,
         // Figma Create → `discogs actions` (0092): Fetch Discogs + Photo of the label + Fetch from label (only with
         // images, Gio 2026-11-17); picking a release found from a photo puts its link in Discogs match and fetches it
-        h(PhotoField, { disabled: locked, images: f.images.filter(function (x) { return x.url; }).map(function (x) { return x.url; }), pickHint: 'Pick the pressing to fetch it.', onFound: setPhotoFound,
+        h(PhotoField, { disabled: locked, images: f.images.filter(function (x) { return x.url; }).map(function (x) { return x.url; }), pickHint: 'Pick the pressing to fetch it.', onFound: onPhotoFound,
           actions: h(Z.Button, { hierarchy: 'secondary', disabled: locked, 'aria-busy': fetching || undefined, onClick: function () { fetchDiscogs(); } }, 'Fetch Discogs') }),
         photoFound ? h(Z.ReleaseList, { listId: 'photo-releases', label: 'Releases on Discogs',
-            message: photoFound.results.length ? undefined : 'No match on Discogs for what the photo shows. Paste the release link instead.' },
+            message: photoFound.results.length ? undefined : photoFound.titled
+              ? 'No match on Discogs for what the photo shows. The words read are now the title of line 1: save the draft and find the pressing later.'
+              : 'No match on Discogs for what the photo shows. Paste the release link instead.' },
           photoFound.results.map(function (r, i) {
             function pick() { setPhotoFound(null); set({ discogs: 'https://www.discogs.com/release/' + r.id }); fetchDiscogs(r.id); }
             return h(Z.ReleaseOption, { key: r.id, id: 'photo-release-' + i, title: r.title, meta: r.meta, thumb: r.thumb, tabIndex: 0,
@@ -830,7 +840,11 @@
       h('section', sectionProps('price'),
         h(Z.FormSectionHead, { id: 'section-price-title' }, FORM_SECTION_LABEL['price']),
         h(Z.PriceFields, {
-          saleType: h(Z.Input, Object.assign({ id: 'section', label: 'Sale type', variant: 'select' }, bind('section')), opts([['sale', 'For sale']].concat(tradeOn !== false || f.section === 'trade' ? [['trade', 'For trade']] : []))),
+          // Best offer (decision 0158) = a sale listing with price_mode 'offers': no price, buyers send offers (#offers)
+          saleType: h(Z.Input, { id: 'section', label: 'Sale type', variant: 'select', value: priceModeOf(f) === 'offers' ? 'offers' : f.section, error: errors.section,
+            onChange: function (e) { var v = e.target.value; set(v === 'offers' ? { section: 'sale', priceMode: 'offers' } : { section: v, priceMode: 'fixed' }); } },
+            opts([['sale', 'For sale'], ['offers', 'Best offer']].concat(tradeOn !== false || f.section === 'trade' ? [['trade', 'For trade']] : []))),
+          note: priceModeOf(f) === 'offers' ? 'No fixed price: buyers send offers, you accept or decline them in Offers.' : null,
           price: h(Z.Input, Object.assign({ id: 'price', label: 'Price', suffix: '€', inputMode: 'decimal', optional: f.section === 'trade' }, bind('price')))
         })),
       h(Z.Divider),
@@ -876,14 +890,17 @@
     // a reserved, sold, traded or archived copy has no save at all
     var publishBtn = locked ? null : h(Z.Button, { key: 'publish', hierarchy: 'primary', disabled: saving || (published && !dirty), onClick: function () { save('available'); } }, published ? 'Update' : 'Publish now');
     var draftBtn = locked || published ? null : h(Z.Button, { key: 'draft', hierarchy: 'secondary', disabled: saving, onClick: function () { save('draft'); } }, 'Save draft');
+    // decision 0155 (Figma `action panel` → secondary 2 on Create and drafts): save, then a blank Create listing
+    var nextBtn = locked || published ? null : h(Z.Button, { key: 'next', hierarchy: 'secondary', disabled: saving, onClick: function () { save('draft', true); } }, 'Save draft and new');
     var shopBtn = shopUrl ? h(Z.Button, { key: 'shop', hierarchy: 'secondary', href: shopUrl, target: '_blank', rel: 'noopener' }, 'View in store') : null;
-    // errors stay in an Alert under the buttons until the next save; other notes (Discogs, Memo) in a line of text
+    // errors stay in an Alert under the buttons until the next save; other notes (Discogs) in a line of text
     var note = message ? (message.error ? h(Z.Alert, { role: 'alert' }, message.text) : h('p', { className: 'admin-status body-small', role: 'status' }, message.text)) : null;
-    var panelButtons = [publishBtn, draftBtn, shopBtn].filter(Boolean);
+    var panelButtons = [publishBtn, draftBtn, nextBtn, shopBtn].filter(Boolean);
     // mobile (decision 0089): Publish / Save draft in the ActionBar at the bottom of the viewport, with the note above
     // them; the status under the title; View in store and Change status in the side content, which follows the form
     var side = h('aside', { className: 'admin-side' },
       mobile ? null : listingStatus,
+      mobile ? null : discogsLink,
       mobile ? shopBtn : panelButtons.length ? h(Z.ActionPanel, null, panelButtons) : null,
       mobile ? null : note,
       isNew ? null : statusPanel(),
@@ -995,7 +1012,7 @@
     if (!line1 || !line1.artist) m.push('artist');
     if (!r.format) m.push('format');
     if (!row.condition_media) m.push('grading');
-    if (row.section === 'sale' && (row.price_cents === null || row.price_cents === undefined)) m.push('price');
+    if (row.section === 'sale' && row.price_mode !== 'offers' && (row.price_cents === null || row.price_cents === undefined)) m.push('price');
     return m;
   }
   function incomplete(row) { return effectiveStatus(row) === 'draft' && missingOf(row).length > 0; }
@@ -1018,6 +1035,30 @@
     return fold([r.sku, nameOf(r), (rel.label_entity || {}).name].concat((rel.lines || []).map(function (l) { return l.artist; })).join(' '));
   }
   function matches(r, words) { if (!words.length) return true; var hs = haystack(r); return words.every(function (w) { return hs.indexOf(w) >= 0; }); }
+  /* decision 0162: the Drafts filter column (Figma BACKEND → Listings → `drafts filters`). Facets of what a draft
+     still needs before it can go live; OR inside a block, AND between blocks (as the shop, 0028); a count is what
+     ticking the option would show given the other blocks; an option at 0 hides unless ticked, an empty block hides. */
+  function samplesOf(r) { var s = (r.release || {}).samples; return s && s[0] ? s[0].count : 0; }
+  var DRAFT_FACETS = [
+    ['status', 'Status', function (r) { return [incomplete(r) ? 'incomplete' : 'ready']; }, [['ready', 'Ready to publish'], ['incomplete', 'Incomplete']]],
+    ['missing', 'Missing', function (r) { return missingOf(r); }, [['artist', 'Artist'], ['format', 'Format'], ['grading', 'Grading'], ['price', 'Price']]],
+    ['photos', 'Photos', function (r) { return [(r.photo_keys || []).length ? 'with' : 'none']; }, [['with', 'With photos'], ['none', 'No photos']]],
+    ['samples', 'Samples', function (r) { return [samplesOf(r) ? 'with' : 'none']; }, [['with', 'With samples'], ['none', 'No samples']]],
+    ['section', 'Section', function (r) { return [r.section]; }, [['sale', 'Sale'], ['trade', 'Trade']]],
+    ['format', 'Format', function (r) { return (r.release || {}).format ? [r.release.format] : []; }, FORMATS.map(function (f) { return [f, f]; })],
+    // Gio 2026-11-23: genres and tags too; their options come from the drafts (most used first)
+    ['genre', 'Genre', function (r) { return (r.release || {}).genres || []; }, null],
+    ['tag', 'Tags', function (r) { return ((r.release || {}).tag_rows || []).map(function (t) { return (t.tag || {}).name; }).filter(Boolean); }, null]
+  ];
+  function facetOptions(f, rows) {
+    if (f[3]) return f[3];
+    var n = {};
+    rows.forEach(function (r) { f[2](r).forEach(function (v) { n[v] = (n[v] || 0) + 1; }); });
+    return Object.keys(n).sort(function (a, b) { return n[b] - n[a] || a.localeCompare(b); }).map(function (v) { return [v, v]; });
+  }
+  function facetOk(r, f, picked) { var on = picked[f[0]] || []; if (!on.length) return true; var v = f[2](r); return on.some(function (x) { return v.indexOf(x) >= 0; }); }
+  function passes(r, picked, skip) { return DRAFT_FACETS.every(function (f) { return f[0] === skip || facetOk(r, f, picked); }); }
+  function pickedCount(picked) { return Object.keys(picked).reduce(function (n, k) { return n + picked[k].length; }, 0); }
   var BULK = [['publish', 'Publish'], ['unpublish', 'Unpublish'], ['archive', 'Archive'], ['delete', 'Delete']];
   var UNDO = { publish: 'unpublish', unpublish: 'publish', archive: 'restore' };
   var DONE_VERB = { publish: 'published', unpublish: 'unpublished', archive: 'archived', restore: 'restored', delete: 'deleted' };
@@ -1046,6 +1087,8 @@
     var er = useState(null), error = er[0], setError = er[1];
     var tb = useState(props.tab || 'live'), tab = tb[0], setTab = tb[1];
     var qs = useState(''), query = qs[0], setQuery = qs[1];
+    var fs = useState({}), facets = fs[0], setFacets = fs[1];   // Drafts filter column (0162): { facet: [values] }
+    var fo = useState(''), optQuery = fo[0], setOptQuery = fo[1];   // the field above it narrows its options (0162)
     var se = useState([]), selected = se[0], setSelected = se[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
     var bs = useState(false), busy = bs[0], setBusy = bs[1];
@@ -1053,7 +1096,7 @@
     var focusAfter = useRef(null);
 
     function load() {
-      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_cents,condition_media,custom_title,photo_keys,created_at,sort_order,orders:order_items(count),release:releases(format,label_entity:labels(name),lines:release_lines(position,artist,title))')
+      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_mode,price_cents,condition_media,sleeve_type,condition_sleeve,custom_title,photo_keys,created_at,sort_order,orders:order_items(count),release:releases(format,year,year_precision,genres,tag_rows:release_tags(tag:tags(name)),samples(count),label_entity:labels(name),lines:release_lines(position,artist,title))')
         // decision 0129: one global order, Gio's (sort_order, lower = first); each tab shows it filtered
         .order('sort_order', { ascending: true }).order('created_at', { ascending: false })
         .then(function (res) { if (res.error) setError(res.error.message); else setRows(res.data); });
@@ -1062,6 +1105,7 @@
       load();
       // files of deleted copies leave R2 after 7 days (Edge Function purge-media, 0009); once per visit, best effort
       if (!purgeAsked) { purgeAsked = true; sb.functions.invoke('purge-media').catch(function () {}); }
+      draftsFromLeftoverMemos().then(function (n) { if (n) load(); }).catch(function () {});   // decision 0171
     }, []);
     // after a delete, focus the row that took the place of the first deleted one (never lost to <body>)
     useEffect(function () {
@@ -1079,7 +1123,11 @@
     // the search narrows every tab, and the tab counts follow it (where the matches are)
     var withStatus = all.filter(function (r) { return matches(r, words); });
     var current = TABS.filter(function (t) { return t[0] === tab; })[0];
-    var visible = withStatus.filter(function (r) { return current[2](r.eff); });
+    var inTab = withStatus.filter(function (r) { return current[2](r.eff); });
+    // decision 0162: the filter column is on Drafts only (desktop; mobile parked in design/open.md)
+    var filtering = tab === 'draft' && !mobile;
+    var visible = filtering ? inTab.filter(function (r) { return passes(r, facets); }) : inTab;
+    var filtered = filtering && pickedCount(facets) > 0;
     var picked = visible.filter(function (r) { return selected.indexOf(r.id) >= 0; });
     var allOn = visible.length > 0 && picked.length === visible.length;
     var someOn = picked.length > 0 && !allOn;
@@ -1104,7 +1152,8 @@
       setBusy(true);
       var res = await sb.rpc('admin_bulk_status', { p_ids: ids, p_action: action });
       setBusy(false);
-      if (res.error) { setMessage({ error: true, text: 'Nothing changed: ' + res.error.message }); return; }
+      // the message line is hidden while rows are selected: clear the selection so the reason shows (Gio 2026-11-23)
+      if (res.error) { setSelected([]); setMessage({ error: true, text: 'Nothing changed: ' + res.error.message }); return; }
       var done = res.data.done, skipped = res.data.skipped;
       setSelected([]);
       await load();
@@ -1157,7 +1206,7 @@
     /* decision 0129: drag & drop (or ↑ ↓ on the handle) puts the row between its new visible neighbours; the
        database (admin_move_listing) works out the place in the global order. Off while searching (hidden rows sit
        between the results) and in Archived (not in the shop). */
-    var canOrder = !words.length && tab !== 'archived';
+    var canOrder = !words.length && !filtered && tab !== 'archived';   // filters hide rows too (0162)
     function moveRow(from, to) {
       var ids = visible.map(function (r) { return r.id; });
       var id = ids.splice(from, 1)[0];
@@ -1176,7 +1225,7 @@
     }
 
     var counts = {}; TABS.forEach(function (t) { counts[t[0]] = withStatus.filter(function (r) { return t[2](r.eff); }).length; });
-    var emptyText = words.length ? 'Nothing matches “' + query.trim() + '”' + (withStatus.length ? ' here: see the counts on the other tabs.' : '.') : 'No listings here.';
+    var emptyText = filtered && inTab.length ? 'No drafts match these filters.' : words.length ? 'Nothing matches “' + query.trim() + '”' + (withStatus.length ? ' here: see the counts on the other tabs.' : '.') : 'No listings here.';
     var bar = h('div', { className: 'admin-bulk' },
       h('p', { className: 'admin-bulk__count body-medium', 'aria-live': 'polite' }, picked.length + ' selected'),
       picked.length
@@ -1189,6 +1238,32 @@
       h('div', { className: 'admin-bulk__message', role: 'status', hidden: !!picked.length },
         message ? h('span', { className: 'body-medium' + (message.error ? ' admin-status--error' : '') }, message.text) : null,
         null));
+
+    function tick(key, value, on) {
+      setFacets(function (cur) {
+        var next = Object.assign({}, cur), list = (cur[key] || []).filter(function (x) { return x !== value; });
+        if (on) list.push(value);
+        if (list.length) next[key] = list; else delete next[key];
+        return next;
+      });
+      setSelected([]);   // 0128: the selection never covers hidden rows
+    }
+    var filterColumn = !filtering ? null : h('aside', { className: 'admin-listings__filters', 'aria-label': 'Filter drafts' },
+      h(Z.Filters, null, [h(Z.Input, { key: 'options', variant: 'search', 'aria-label': 'Filter options', placeholder: 'Filter options',
+        value: optQuery, autoComplete: 'off', clearLabel: 'Clear', onClear: function () { setOptQuery(''); },
+        onChange: function (e) { setOptQuery(e.target.value); } })].concat(DRAFT_FACETS.map(function (f) {
+        var base = inTab.filter(function (r) { return passes(r, facets, f[0]); }), on = facets[f[0]] || [];
+        // the field matches the option or its block ("photos" keeps the whole block); a ticked option always stays
+        var optWords = fold(optQuery).split(/\s+/).filter(Boolean);
+        function shown(o) { var t = fold(f[1] + ' ' + o[1]); return optWords.every(function (w) { return t.indexOf(w) >= 0; }); }
+        var options = facetOptions(f, inTab).map(function (o) {
+          var n = base.filter(function (r) { return f[2](r).indexOf(o[0]) >= 0; }).length, checked = on.indexOf(o[0]) >= 0;
+          return checked || (n && shown(o)) ? h(Z.Filter, { key: o[0], label: o[1], count: String(n), checked: checked,
+            'aria-controls': 'listings-table', onChange: function (e) { tick(f[0], o[0], e.target.checked); } }) : null;
+        }).filter(Boolean);
+        return options.length ? h(Z.FilterBlock, { key: f[0], label: f[1] }, options) : null;
+      }))),
+      h('p', { className: 'zz-visually-hidden', role: 'status', 'aria-live': 'polite' }, filtered ? plural(visible.length, 'draft') + ' shown' : ''));
 
     var dialog = null;
     if (confirm) {
@@ -1211,7 +1286,7 @@
 
     return h('div', { className: 'admin-section admin-listings' },
       // the ways to add records live here, not in the admin bar (decision 0125)
-      h(Z.ListingsHead, { title: 'Listings', bulkHref: '#bulk', createHref: '#new' }),
+      h(Z.ListingsHead, { title: 'Listings', createHref: '#new' }),
       // Figma BACKEND → Listings → `listings filter` (decision 0128): status tabs + search
       h(Z.ListingsFilter, {
         tabs: h(Z.Tabs, { value: tab, onValueChange: pickTab, 'aria-label': 'Filter by status' },
@@ -1221,19 +1296,41 @@
           onClear: function () { setQuery(''); setSelected([]); },
           onChange: function (e) { setQuery(e.target.value); setSelected([]); } }) }),
       // mobile (Figma page `admin` → Listings - mobile, decision 0089): rows instead of the table, the bulk bar after them
-      // (sticky at the bottom while something is selected)
-      mobile ? h(OrderedRows, { mobile: true, rows: visible, onMove: canOrder ? moveRow : null, selected: selected, toggle: toggle, empty: emptyText }) : bar,
-      mobile ? bar : h(OrderedRows, { rows: visible, onMove: canOrder ? moveRow : null, selected: selected, toggle: toggle, empty: emptyText,
+      // (sticky at the bottom while something is selected); desktop: bulk bar + table, after the Drafts filter column (0162)
+      mobile ? h(OrderedRows, { mobile: true, rows: visible, onMove: canOrder ? moveRow : null, selected: selected, toggle: toggle, empty: emptyText }) : null,
+      mobile ? bar : h(filterColumn ? 'div' : React.Fragment, filterColumn ? { className: 'admin-listings__body' } : null, filterColumn, h('div', { className: 'admin-listings__list' }, bar, h(OrderedRows, { rows: visible, onMove: canOrder ? moveRow : null, selected: selected, toggle: toggle, empty: emptyText,
         head: h('thead', null, h('tr', null,
           canOrder ? h('th', { className: 'handle' }, h('span', { className: 'zz-visually-hidden' }, 'Order')) : null,
           h('th', { className: 'select' }, visible.length ? h(Z.Checkbox, { id: 'select-all', hideLabel: true, label: 'Select all', checked: allOn, indeterminate: someOn, onChange: toggleAll }) : null),
           h('th', { className: 'thumb' }, h('span', { className: 'zz-visually-hidden' }, 'Photo')),
-          ['SKU', 'Record', 'Status', 'Section', 'Price'].map(function (t) { return h('th', { key: t, className: t === 'SKU' ? 'num' : t === 'Price' ? 'num price' : '' }, t); }))) }),
+          ['SKU', 'Record', 'Status', 'Section'].map(function (t) { return h('th', { key: t, className: t === 'SKU' ? 'num' : t.toLowerCase() }, t); }),
+          INFO_COLUMNS.map(function (c) { return h('th', { key: c[0], className: c[0] + (c[2] ? ' num' : '') }, c[1]); }),
+          h('th', { className: 'num price' }, 'Price'))) }))),
       dialog);
   }
 
   /* the rows of Listings (table body on desktop, ListingRow list on mobile) in Gio's order, reorderable by drag & drop
      with the admin's one drag logic (useDragOrder, the same as photos and samples; decision 0129) */
+  /* decision 0163: the overview columns between Section and Price, what is already filled in for each copy
+     [key, head, numeric, value of the row or null when missing] (Figma `listings table row`, Format … Samples; Year since 0166) */
+  function gradingOf(r) {
+    if (!r.condition_media) return null;
+    var sleeve = r.sleeve_type === 'generic' ? 'generic' : r.sleeve_type === 'none' ? 'no sleeve' : r.condition_sleeve;
+    return sleeve ? r.condition_media + ' / ' + sleeve : r.condition_media;
+  }
+  var INFO_COLUMNS = [
+    ['format', 'Format', false, function (r) { return (r.release || {}).format || null; }],
+    // decision 0166: the year as entered, exact (1983) or a decade (1990s, releases.year_precision, decision 0082)
+    ['year', 'Year', true, function (r) { var rl = r.release || {}; return yearText(rl.year, rl.year_precision) || null; }],
+    ['grading', 'Grading', false, gradingOf],
+    ['genre', 'Genre', false, function (r) { var g = (r.release || {}).genres || []; return g.length ? g.join(', ') : null; }],
+    ['photos', 'Photos', true, function (r) { var n = (r.photo_keys || []).length; return n ? String(n) : null; }],
+    ['samples', 'Samples', true, function (r) { var n = samplesOf(r); return n ? String(n) : null; }]
+  ];
+  // nothing entered yet: an em dash in text/moderate, read as "Missing"
+  function missingMark() {
+    return h('span', { className: 'admin-table__missing' }, h('span', { 'aria-hidden': 'true' }, '—'), h('span', { className: 'zz-visually-hidden' }, 'Missing'));
+  }
   function OrderedRows(props) {
     var rows = props.rows, move = props.onMove;
     var d = Z.useDragOrder({ count: rows.length, onMove: move,
@@ -1252,7 +1349,7 @@
         h('ul', Object.assign({ id: 'listings-table', className: 'admin-rows admin-sortable' }, d.listProps), rows.length ? rows.map(function (r, i) {
           return h(Z.ListingRow, Object.assign({ href: '#edit-' + r.id, title: nameOf(r), image: thumbOf(r), handle: handle(r, i),
             meta: [r.sku, statusText(r), r.section].filter(Boolean).join(' · '),
-            price: r.price_cents === null ? null : centsToText(r.price_cents) + ' €',
+            price: listPrice(r),
             select: check(r) }, d.rowProps(i)));
         }) : h('li', { className: 'body-small admin-rows__empty' }, props.empty)), status);
     }
@@ -1264,24 +1361,114 @@
         h('td', { className: 'thumb' }, h(Z.Thumbnail, thumbOf(r))),
         h('td', { className: 'num' }, r.sku),
         h('td', null, h('a', { href: '#edit-' + r.id, draggable: false }, nameOf(r))),
-        h('td', null, statusText(r)),
-        h('td', null, r.section),
-        h('td', { className: 'num price' }, r.price_cents === null ? '' : centsToText(r.price_cents) + ' €'));
-    }) : h('tr', null, h('td', { colSpan: 7 }, props.empty))))), status);
+        h('td', { className: 'status' }, statusText(r)),
+        h('td', { className: 'section' }, r.section),
+        INFO_COLUMNS.map(function (c) { var v = c[3](r); return h('td', { key: c[0], className: c[0] + (c[2] ? ' num' : '') }, v || missingMark()); }),
+        h('td', { className: 'num price' }, listPrice(r) || (missingOf(r).indexOf('price') >= 0 ? missingMark() : '')));
+    }) : h('tr', null, h('td', { colSpan: 15 }, props.empty))))), status);
   }
 
-  // a listing with everything the form needs (EditLoader, Bulk attach)
-  var LISTING_FORM_SELECT = '*,release:releases(*,label_entity:labels(id,name),genre_rows:release_genres(position,genre:genres(id,name)),tag_rows:release_tags(position,tag:tags(id,name)),lines:release_lines(*,credits:release_line_artists(position,artist:artists(id,name))),samples(*))';
   function EditLoader(props) {
     var st = useState(null), initial = st[0], setInitial = st[1];
     var er = useState(null), error = er[0], setError = er[1];
     useEffect(function () {
-      sb.from('listings').select(LISTING_FORM_SELECT).eq('id', props.id).single()
+      sb.from('listings').select('*,release:releases(*,label_entity:labels(id,name),genre_rows:release_genres(position,genre:genres(id,name)),tag_rows:release_tags(position,tag:tags(id,name)),lines:release_lines(*,credits:release_line_artists(position,artist:artists(id,name))),samples(*))').eq('id', props.id).single()
         .then(function (res) { if (res.error) setError(res.error.message); else setInitial(formFromRow(res.data)); });
     }, [props.id]);
     if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not open this listing: ' + error);
     if (!initial) return h('p', { className: 'body-medium' }, 'Loading…');
     return h(ListingForm, { initial: initial });
+  }
+
+  // ── Offers ────────────────────────────────────────────────────────────────
+  /* Figma BACKEND → Offers (decision 0158): the offers on Best offer listings (price_mode 'offers', migration 0034),
+     confirmed by the buyer's email link (unconfirmed ones never show). View admin_offers, newest first.
+     Tabs New (pending: Accept / Decline) · Accepted (payment link open) · All. Accept / Decline ask first in a Dialog,
+     then run the Edge Function offer-decide (admin_offer_decide + the email to the buyer). Route: #offers */
+  var OFFER_TABS = [
+    ['new', 'New', function (o) { return o.state === 'pending'; }],
+    ['accepted', 'Accepted', function (o) { return o.state === 'accepted'; }],
+    ['all', 'All', function () { return true; }]
+  ];
+  function dateTime(t) {
+    var d = new Date(t);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  }
+  function offerStatus(o) {
+    if (o.state === 'accepted') return 'Accepted · payment link open until ' + dateTime(o.expires_at);
+    if (o.state === 'expired') return 'Expired · not paid in 48 h';
+    if (o.state === 'paid') return o.order_id ? h(React.Fragment, null, 'Paid · ', h('a', { href: '#orders/' + o.order_id }, 'order ' + orderRef({ id: o.order_id }))) : 'Paid';
+    if (o.state === 'declined') return 'Declined';
+    if (o.state === 'closed') return 'Closed · record sold';
+    return o.state;
+  }
+
+  function Offers() {
+    var st = useState(null), rows = st[0], setRows = st[1];
+    var er = useState(null), error = er[0], setError = er[1];
+    var tb = useState('new'), tab = tb[0], setTab = tb[1];
+    var cf = useState(null), confirm = cf[0], setConfirm = cf[1];   // { offer, accept }
+    var bz = useState(false), busy = bz[0], setBusy = bz[1];
+    var ms = useState(null), message = ms[0], setMessage = ms[1];
+    function load() {
+      return sb.from('admin_offers').select('*').order('created_at', { ascending: false })
+        .then(function (res) { if (res.error) setError(res.error.message); else setRows(res.data); });
+    }
+    useEffect(function () { load(); }, []);
+    async function decided() {
+      var o = confirm.offer, accept = confirm.accept;
+      setBusy(true); setMessage(null);
+      try {
+        var r = await invoke('offer-decide', { id: o.id, accept: accept });
+        setConfirm(null);
+        await load();
+        var what = (accept ? 'Offer accepted' : 'Offer declined');
+        if (r && r.emailed) toast(what + ' · email sent to ' + o.email + '.');
+        else setMessage({ error: true, text: what + ', but the email to ' + o.email + ' did not go out: write to them by hand.' });
+      } catch (e) {
+        setConfirm(null);
+        setMessage({ error: true, text: 'Could not ' + (accept ? 'accept' : 'decline') + ' the offer: ' + e.message });
+        load();
+      }
+      setBusy(false);
+    }
+    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not load the offers: ' + error);
+    if (!rows) return h('p', { className: 'body-medium' }, 'Loading…');
+    var counts = {}; OFFER_TABS.forEach(function (t) { counts[t[0]] = rows.filter(t[2]).length; });
+    var visible = rows.filter(OFFER_TABS.filter(function (t) { return t[0] === tab; })[0][2]);
+    var empty = rows.length ? 'No offers here.' : 'No offers yet. They arrive here when a buyer confirms an offer on a Best offer listing.';
+    var dialog;
+    if (confirm) {
+      var o = confirm.offer, amount = euro(o.amount_cents), name = o.name || o.slug;
+      dialog = confirm.accept
+        ? h(Z.Dialog, { open: true, busy: busy, title: 'Accept ' + amount + '?', confirmLabel: 'Accept offer',
+            onCancel: function () { setConfirm(null); }, onConfirm: decided },
+            h('p', null, name + ' goes Reserved for 48 hours and ' + o.email + ' gets the payment link by email (' + amount + ' + shipping to ' + regionName(o.country) + '). Not paid in time: it goes back on sale.'))
+        : h(Z.Dialog, { open: true, busy: busy, title: 'Decline ' + amount + '?', confirmLabel: 'Decline offer',
+            onCancel: function () { setConfirm(null); }, onConfirm: decided },
+            h('p', null, o.email + ' gets a short "not this time" email. ' + name + ' stays as it is.'));
+    } else dialog = h(Z.Dialog, { open: false, title: '', confirmLabel: '', onCancel: function () {}, onConfirm: function () {} }, '');
+    return h('div', { className: 'admin-section admin-listings' },
+      h('h1', { className: 'label-extra-large' }, 'Offers'),
+      message ? h('p', { className: 'body-medium' + (message.error ? ' admin-status--error' : ''), role: message.error ? 'alert' : 'status' }, message.text) : null,
+      h(Z.Tabs, { value: tab, onValueChange: setTab, 'aria-label': 'Filter by status' },
+        OFFER_TABS.map(function (t) { return h(Z.Tab, { key: t[0], value: t[0], suffix: String(counts[t[0]]), 'aria-controls': 'offers-list' }, t[1]); })),
+      h('ul', { id: 'offers-list', className: 'admin-rows' }, visible.length ? visible.map(function (o) {
+        var pending = o.state === 'pending', live = o.listing_status === 'available';
+        return h(Z.OfferRow, { key: o.id,
+          record: { image: thumbOf({ photo_keys: [o.photo_key] }), title: o.name || o.slug, href: '#edit-' + o.listing_id,
+            meta: [o.sku, STATUS_LABEL[o.listing_status] || o.listing_status, OFFERS_PRICE].filter(Boolean).join(' · '), price: euro(o.amount_cents) },
+          buyer: o.email + ' · ships to ' + regionName(o.country),
+          note: o.note ? '“' + o.note + '”' : null,
+          date: dateTime(o.confirmed_at || o.created_at),
+          // Accept only while the record is live (one accepted offer per copy at a time: the database checks it too)
+          actions: pending ? [
+            h(Z.Button, { key: 'a', hierarchy: 'primary', disabled: !live, title: live ? null : 'The record is not live: it can take an offer only while it is.',
+              onClick: function () { setConfirm({ offer: o, accept: true }); } }, 'Accept'),
+            h(Z.Button, { key: 'd', hierarchy: 'secondary', onClick: function () { setConfirm({ offer: o, accept: false }); } }, 'Decline')] : null,
+          status: pending ? null : offerStatus(o) });
+      }) : h('li', { className: 'body-small admin-rows__empty' }, empty)),
+      dialog);
   }
 
   // ── Orders ────────────────────────────────────────────────────────────────
@@ -1322,8 +1509,9 @@
       h(Z.Tabs, { value: tab, onValueChange: setTab, 'aria-label': 'Filter by status' },
         ORDER_TABS.map(function (t) { return h(Z.Tab, { key: t[0], value: t[0], suffix: String(counts[t[0]]), 'aria-controls': 'orders-table' }, t[1]); })),
       mobile ? h('ul', { id: 'orders-table', className: 'admin-rows' }, visible.length ? visible.map(function (o) {
-        return h(Z.ListingRow, { key: o.id, href: '#orders/' + o.id, title: buyerOf(o),
-          meta: [orderRef(o), shortDate(o.created_at), orderStatus(o)].join(' · '), price: euro(o.total_cents) });
+        // the order ref is the link (Gio 2026-11-24): title = ref, the buyer goes into the meta
+        return h(Z.ListingRow, { key: o.id, href: '#orders/' + o.id, title: orderRef(o),
+          meta: [buyerOf(o), shortDate(o.created_at), orderStatus(o)].join(' · '), price: euro(o.total_cents) });
       }) : h('li', { className: 'body-small admin-rows__empty' }, empty))
       : h('div', { className: 'admin-table-wrap' },
           h('table', { id: 'orders-table', className: 'admin-table body-small' },
@@ -1331,8 +1519,8 @@
               ['Order', 'Buyer', 'Status', 'Date', 'Total'].map(function (t) { return h('th', { key: t, className: t === 'Order' ? 'num' : t === 'Total' ? 'num price' : '' }, t); }))),
             h('tbody', null, visible.length ? visible.map(function (o) {
               return h('tr', { key: o.id },
-                h('td', { className: 'num' }, orderRef(o)),
-                h('td', null, h('a', { href: '#orders/' + o.id }, buyerOf(o))),
+                h('td', { className: 'num' }, h('a', { href: '#orders/' + o.id }, orderRef(o))),
+                h('td', null, buyerOf(o)),
                 h('td', null, orderStatus(o)),
                 h('td', null, shortDate(o.created_at)),
                 h('td', { className: 'num price' }, euro(o.total_cents)));
@@ -1346,6 +1534,7 @@
     var tr = useState(''), tracking = tr[0], setTracking = tr[1];
     var sv = useState(false), saving = sv[0], setSaving = sv[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
+    var cf = useState(null), confirm = cf[0], setConfirm = cf[1];   // Delete order dialog: { restock: 'yes' | 'no' }
     useEffect(function () {
       sb.from('orders').select('*,items:order_items(price_cents,listing:listings(id,sku,slug,status,custom_title,photo_keys,release:releases(format,lines:release_lines(position,artist,title))))')
         .eq('id', props.id).single()
@@ -1384,13 +1573,42 @@
         .then(function () { toast('Address copied.'); }, function () { setMessage({ error: true, text: 'Could not copy: select the address and copy it.' }); });
     }
 
+    /* Delete order (decision 0170, migration 0036): the dialog asks what happens to the records still sold by this order.
+       Default: back on sale, except on a shipped order (the record left). Stripe is not touched. */
+    var soldItems = (o.items || []).filter(function (it) { return it.listing && it.listing.status === 'sold'; });
+    function askDelete() { setMessage(null); setConfirm({ restock: o.status === 'shipped' ? 'no' : 'yes' }); }
+    async function doDelete() {
+      if (saving) return;
+      setSaving(true);
+      var res = await sb.rpc('admin_delete_order', { p_order: o.id, p_restock: soldItems.length > 0 && confirm.restock === 'yes' });
+      setSaving(false);
+      if (res.error) { setConfirm(null); setMessage({ error: true, text: 'Not deleted: ' + res.error.message }); return; }
+      var back = res.data && res.data.restocked;
+      toast('Order ' + ref + ' deleted.' + (back ? ' ' + plural(back, 'record') + ' back on sale.' : ''));
+      location.hash = '#orders';
+    }
+
     var shipped = o.status === 'shipped', open = o.status === 'paid';
     var primary = shipped
       ? h(Z.Button, { key: 'ship', hierarchy: 'primary', 'aria-busy': saving || undefined, onClick: saveTracking }, 'Save tracking')
       : h(Z.Button, { key: 'ship', hierarchy: 'primary', disabled: !open, 'aria-busy': saving || undefined, onClick: function () { setShipped(true); } }, 'Mark as shipped');
     var secondary = stripeUrl ? h(Z.Button, { key: 'stripe', hierarchy: 'secondary', href: stripeUrl, target: '_blank', rel: 'noopener' }, 'Open in Stripe') : null;
     var undo = shipped ? h(Z.Button, { key: 'undo', hierarchy: 'secondary', 'aria-busy': saving || undefined, onClick: function () { setShipped(false); } }, 'Mark as not shipped') : null;
+    var del = h(Z.Button, { key: 'delete', hierarchy: 'secondary', disabled: saving, onClick: askDelete }, 'Delete order');
     var statusLine = h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '');
+
+    var dialog;
+    if (confirm) {
+      var n = soldItems.length;
+      dialog = h(Z.Dialog, { open: true, busy: saving, title: 'Delete order ' + ref + '?', confirmLabel: 'Delete order',
+        onCancel: function () { setConfirm(null); }, onConfirm: doDelete,
+        choices: n ? h(Z.RadioGroup, { legend: 'What happens to the records', hideLegend: true, value: confirm.restock,
+          onValueChange: function (v) { setConfirm({ restock: v }); } },
+          h(Z.Radio, { value: 'yes', label: 'Put ' + plural(n, 'record') + ' back on sale' }),
+          h(Z.Radio, { value: 'no', label: 'Keep ' + plural(n, 'record') + ' sold' })) : null },
+        h('p', null, 'It goes from Orders and from the buyer’s account. ' + (stripeUrl ? 'Stripe keeps the payment: refund it there if needed. ' : '') +
+          (n ? '' : 'Its records are not sold any more and stay as they are. ') + 'It cannot be undone.'));
+    } else dialog = h(Z.Dialog, { open: false, title: '', confirmLabel: '', onCancel: function () {}, onConfirm: function () {} }, '');
 
     var main = h('div', { className: 'admin-main' },
       h('h1', { className: 'label-extra-large' }, 'Order ' + ref),
@@ -1414,10 +1632,11 @@
       supportText: 'Saved with the order.', onChange: function (e) { setTracking(e.target.value); } });
     var side = h('aside', { className: 'admin-side' },
       trackingField,
-      mobile ? null : h(Z.ActionPanel, null, primary, undo, secondary),
+      // Figma Orders → Order: Delete order is the last button of the panel; on mobile it sits under the tracking field
+      mobile ? del : h(Z.ActionPanel, null, primary, undo, secondary, del),
       mobile ? null : statusLine);
     return h('div', { className: 'admin-page admin-page--edit' }, main, side,
-      mobile ? h(Z.ActionBar, { status: statusLine }, primary, undo || secondary) : null);
+      mobile ? h(Z.ActionBar, { status: statusLine }, primary, undo || secondary) : null, dialog);
   }
 
   // ── Sell again ────────────────────────────────────────────────────────────
@@ -1433,7 +1652,7 @@
     if (taken.error) throw new Error(taken.error.message);
     var used = {}; (taken.data || []).forEach(function (r) { used[r.slug] = true; });
     var n = 2; while (used[base + '-' + n]) n++;
-    var row = { slug: base + '-' + n, release_id: l.release_id, section: l.section, status: 'draft', price_cents: l.price_cents,
+    var row = { slug: base + '-' + n, release_id: l.release_id, section: l.section, status: 'draft', price_mode: l.price_mode || 'fixed', price_cents: l.price_cents,
       currency: l.currency, condition_media: l.condition_media, condition_media_b: l.condition_media_b, sleeve_type: l.sleeve_type,
       condition_sleeve: l.condition_sleeve, condition_notes: l.condition_notes, notes: l.notes, photo_keys: l.photo_keys,
       weight_g: l.weight_g, custom_title: l.custom_title };
@@ -1451,8 +1670,8 @@
   var KINDS = [
     { key: 'artist', list: 'artists', tab: 'Artists', one: 'artist', aliases: true, discogs: true, split: true, search: 'Search name or spelling' },
     { key: 'label', list: 'labels', tab: 'Labels', one: 'label', aliases: true, discogs: true, split: false, search: 'Search name or spelling' },
-    { key: 'genre', list: 'genres', tab: 'Genres', one: 'genre', aliases: false, discogs: false, split: true, search: 'Search genres' },
-    { key: 'tag', list: 'tags', tab: 'Tags', one: 'tag', aliases: false, discogs: false, split: true, search: 'Search tags' }
+    { key: 'genre', list: 'genres', tab: 'Genres', one: 'genre', aliases: false, discogs: false, split: true, search: 'Search genres', links: 'release_genres', col: 'genre_id' },
+    { key: 'tag', list: 'tags', tab: 'Tags', one: 'tag', aliases: false, discogs: false, split: true, search: 'Search tags', links: 'release_tags', col: 'tag_id' }
   ];
   function kindOf(key) {
     if (key === 'subgenre') key = 'genre';   // links saved before 0048
@@ -1605,6 +1824,87 @@
       dialog);
   }
 
+  /* Figma BACKEND → Attributes › Genre - desktop · edit · records checklist (2523:1736), decision 0168: on a genre or
+     tag page every copy in the catalog (archived ones left out) is a ListingRow with a checkbox. Checked = its release
+     has the attribute; ticking saves at once (release_genres / release_tags, admin RLS), then the shop rebuilds when a
+     copy of that release is public. Genres and tags belong to the release: copies of the same release tick together.
+     Order: the ones that have it first (as loaded, so rows never jump while ticking), then Gio's shop order (0129). */
+  function RecordChecklist(props) {
+    var kind = props.kind;
+    var ls = useState(null), rows = ls[0], setRows = ls[1];
+    var os = useState(null), on = os[0], setOn = os[1];          // { release_id: true }
+    var er = useState(null), error = er[0], setError = er[1];
+    var qs = useState(''), query = qs[0], setQuery = qs[1];
+    var bs = useState({}), busy = bs[0], setBusy = bs[1];        // { release_id: true } while saving
+
+    useEffect(function () {
+      Promise.all([
+        sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,custom_title,photo_keys,release_id,sort_order,created_at,release:releases(lines:release_lines(position,artist,title))')
+          .neq('status', 'archived').order('sort_order', { ascending: true }).order('created_at', { ascending: false }),
+        sb.from(kind.links).select('release_id').eq(kind.col, props.id)
+      ]).then(function (res) {
+        var bad = res[0].error || res[1].error;
+        if (bad) { setError(bad.message); return; }
+        var have = {};
+        res[1].data.forEach(function (x) { have[x.release_id] = true; });
+        var list = res[0].data;
+        setRows(list.filter(function (r) { return have[r.release_id]; }).concat(list.filter(function (r) { return !have[r.release_id]; })));
+        setOn(have);
+      });
+    }, []);
+    var count = rows && on ? rows.filter(function (r) { return on[r.release_id]; }).length : 0;
+    useEffect(function () { if (rows) props.onCount(count); }, [count, rows]);
+
+    async function toggle(r, value) {
+      var rel = r.release_id;
+      if (busy[rel]) return;
+      setBusy(function (b) { var x = Object.assign({}, b); x[rel] = true; return x; });
+      setOn(function (cur) { var x = Object.assign({}, cur); if (value) x[rel] = true; else delete x[rel]; return x; });
+      var res;
+      if (value) {
+        // last in the release's list (position ≥ 1): the order of the chips on the PDP
+        var last = await sb.from(kind.links).select('position').eq('release_id', rel).order('position', { ascending: false }).limit(1);
+        var row = { release_id: rel, position: ((last.data || [])[0] || { position: 0 }).position + 1 };
+        row[kind.col] = props.id;
+        res = last.error ? last : await sb.from(kind.links).insert(row);
+      } else {
+        res = await sb.from(kind.links).delete().eq('release_id', rel).eq(kind.col, props.id);
+      }
+      if (!res.error && kind.key === 'genre') res = await sb.rpc('sync_genres', { p_release_ids: [rel] });   // releases.genres mirrors them
+      var copies = rows.filter(function (x) { return x.release_id === rel; });
+      var isPublic = copies.some(function (x) { return x.status !== 'draft'; });
+      if (!res.error && isPublic) await sb.rpc('mark_site_build');
+      setBusy(function (b) { var x = Object.assign({}, b); delete x[rel]; return x; });
+      if (res.error) {
+        setOn(function (cur) { var x = Object.assign({}, cur); if (value) delete x[rel]; else x[rel] = true; return x; });
+        toast('Not saved: ' + res.error.message);
+        return;
+      }
+      var others = copies.length - 1;
+      toast((value ? '“' + props.name + '” added to ' : '“' + props.name + '” removed from ') + '“' + nameOf(r) + '”' +
+        (others ? ' and its other ' + plural(others, 'copy', 'copies') : '') + '.' + (isPublic ? ' The shop updates in about 2 minutes.' : ''));
+    }
+
+    var head = h('h2', { id: 'records-title', className: 'label-medium' }, 'Records ' + count);
+    if (error) return h('section', { className: 'admin-section', 'aria-labelledby': 'records-title' }, head,
+      h('p', { className: 'body-small admin-status--error', role: 'alert' }, 'Could not load the catalog: ' + error));
+    if (!rows) return h('section', { className: 'admin-section', 'aria-labelledby': 'records-title' }, head, h('p', { className: 'body-small' }, 'Loading…'));
+
+    var q = query.trim().toLowerCase();
+    var visible = q ? rows.filter(function (r) { return nameOf(r).toLowerCase().indexOf(q) >= 0 || String(r.sku).indexOf(q) >= 0; }) : rows;
+    return h('section', { className: 'admin-section', 'aria-labelledby': 'records-title' }, head,
+      h('p', { className: 'body-small' }, 'Tick a record to give it this ' + kind.one + ', untick to remove it. Each change is saved at once; the shop updates in about 2 minutes.'),
+      h(Z.Input, { variant: 'search', 'aria-label': 'Search records', placeholder: 'Search records', value: query,
+        onChange: function (e) { setQuery(e.target.value); } }),
+      h('ul', { className: 'admin-rows', 'aria-label': 'Records with ' + kind.one + ' “' + props.name + '”' }, visible.length ? visible.map(function (r) {
+        return h(Z.ListingRow, { key: r.id, href: '#edit-' + r.id, title: nameOf(r), image: thumbOf(r),
+          meta: [r.sku, statusText(r), r.section].filter(Boolean).join(' · '),
+          select: h(Z.Checkbox, { id: 'has-' + r.id, hideLabel: true, label: props.name + ' on ' + nameOf(r) + ' (' + r.sku + ')',
+            checked: !!on[r.release_id], 'aria-busy': busy[r.release_id] || undefined,
+            onChange: function (e) { toggle(r, e.target.checked); } }) });
+      }) : h('li', { className: 'body-small admin-rows__empty' }, q ? 'Nothing matches “' + query.trim() + '”.' : 'No records yet.')));
+  }
+
   /* Figma BACKEND → Attributes › Artist - desktop · edit (2123:3216) and · split confirm (2123:4664) */
   function AttributeForm(props) {
     var mobile = useIsMobile();
@@ -1629,6 +1929,7 @@
         var e = res.data;
         setF({ name: e.name, slug: e.slug, discogs: e.discogs_id ? String(e.discogs_id) : '',
                aliases: (e.aliases || []).map(function (a) { return { id: null, name: a }; }) });
+        if (kind.links) return;   // genres and tags: RecordChecklist loads the catalog and reports the count
         setCount(e.listing_ids.length);
         if (e.listing_ids.length) {
           sb.from('listings').select('id,sku,slug,status,reserved_until,custom_title,release:releases(lines:release_lines(position,artist,title))')
@@ -1708,8 +2009,8 @@
           h(Z.Input, { className: 'span-4', id: 'slug', label: 'Slug', value: f.slug, error: errors.slug,
             onChange: function (e) { slugTouched.current = true; set({ slug: e.target.value }); },
             supportText: f.slug ? 'Page address: /' + kind.list + '/' + f.slug : 'Made from the name on save.' }))),
-      isNew ? null : h(Z.Divider),
-      isNew ? null : h('section', { className: 'admin-section', 'aria-labelledby': 'records-title' },
+      isNew || kind.links ? null : h(Z.Divider),
+      isNew || kind.links ? null : h('section', { className: 'admin-section', 'aria-labelledby': 'records-title' },
         h('h2', { id: 'records-title', className: 'label-medium' }, 'Records ' + n),   // Figma: one text "Records 2"
         n ? h('ul', { className: 'admin-links body-small' }, records.map(function (r) {
           return h('li', { key: r.id }, h('a', { href: '#edit-' + r.id }, [String(r.sku), nameOf(r), STATUS_LABEL[effectiveStatus(r)] || r.status].join(' · ')));
@@ -1754,7 +2055,10 @@
           (kind.key === 'artist' || kind.key === 'label' ? ' The credit printed on the record does not change.' : ' The shop updates in about 2 minutes.')));
     } else dialog = h(Z.Dialog, { open: false, title: '', confirmLabel: '', onCancel: function () {}, onConfirm: function () {} }, '');
 
-    return h('div', { className: 'admin-page admin-page--attribute' }, main, side,
+    // genres and tags (0168, amended): the checklist is a column of its own on the right (Figma 2523:1736)
+    var checklist = !isNew && kind.links ? h('div', { className: 'admin-records' },
+      h(RecordChecklist, { kind: kind, id: props.id, name: f.name, onCount: setCount })) : null;
+    return h('div', { className: 'admin-page admin-page--attribute' + (checklist ? ' admin-page--records' : '') }, main, side, checklist,
       mobile ? h(Z.ActionBar, { status: statusLine }, saveBtn, otherBtn) : null, dialog);
   }
 
@@ -1935,7 +2239,8 @@
       if (res.error) throw res.error;
       var d = res.data || {};
       return { trade: d.trade_enabled !== false, tradeWanted: d.trade_wanted !== undefined ? d.trade_wanted !== false : d.trade_enabled !== false,
-               identity: d.identity_enabled !== false, hasIdentity: d.identity_enabled !== undefined };
+               identity: d.identity_enabled !== false, hasIdentity: d.identity_enabled !== undefined,
+               wantlist: d.wantlist_enabled !== false, hasWantlist: d.wantlist_enabled !== undefined };   // decision 0152
     });
   }
   function loadTradeEnabled(force) {
@@ -1956,12 +2261,13 @@
     var ss = useState(null), saved = ss[0], setSaved = ss[1];     // what the database says: { tradeWanted, identity, hasIdentity }
     var ts = useState(null), trade = ts[0], setTrade = ts[1];     // the Trade tick
     var is = useState(null), identity = is[0], setIdentity = is[1];   // the Who I am tick (decision 0106)
+    var ws = useState(null), wantlist = ws[0], setWantlist = ws[1];   // the Wantlist check tick (decision 0152)
     var er = useState(null), error = er[0], setError = er[1];
     var ps = useState(null), problem = ps[0], setProblem = ps[1];
     var bs = useState(false), busy = bs[0], setBusy = bs[1];
 
     useEffect(function () {
-      loadShopSettings().then(function (st) { setSaved(st); setTrade(st.tradeWanted); setIdentity(st.identity); }, function (e) { setError(e.message || String(e)); });
+      loadShopSettings().then(function (st) { setSaved(st); setTrade(st.tradeWanted); setIdentity(st.identity); setWantlist(st.wantlist); }, function (e) { setError(e.message || String(e)); });
     }, []);
     if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' },
       'Could not load the settings: ' + error + '. Is migration 0023 (trade switch) applied?');
@@ -1969,15 +2275,19 @@
 
     async function save() {
       var identityChanged = identity !== saved.identity, tradeChanged = trade !== saved.tradeWanted;
-      if (!identityChanged && !tradeChanged) { toast('Nothing to save.'); return; }
+      var wantlistChanged = saved.hasWantlist && wantlist !== saved.wantlist;
+      if (!identityChanged && !tradeChanged && !wantlistChanged) { toast('Nothing to save.'); return; }
       setBusy(true);
       var res = identityChanged ? await sb.rpc('admin_set_identity_enabled', { p_enabled: identity }) : { error: null };
       if (!res.error && tradeChanged) res = await sb.rpc('admin_set_trade_enabled', { p_enabled: trade });
+      if (!res.error && wantlistChanged) res = await sb.rpc('admin_set_wantlist_enabled', { p_enabled: wantlist });
       setBusy(false);
       if (res.error) { setProblem('Not saved: ' + res.error.message); loadShopSettings().then(setSaved, function () {}); return; }
-      var next = { tradeWanted: trade, identity: identity, hasIdentity: saved.hasIdentity };
+      var next = { tradeWanted: trade, identity: identity, hasIdentity: saved.hasIdentity, wantlist: wantlist, hasWantlist: saved.hasWantlist };
       setProblem(null); setSaved(next); tradeSetting = Promise.resolve(trade && identity);
-      toast((identityChanged ? (identity ? 'The shop shows who you are.' : 'The shop no longer shows who you are, nor trade.') : (trade ? 'Trade is on.' : 'Trade is off.')) + ' It updates in about 2 minutes.');
+      toast((identityChanged ? (identity ? 'The shop shows who you are.' : 'The shop no longer shows who you are, nor trade.')
+        : tradeChanged ? (trade ? 'Trade is on.' : 'Trade is off.')
+        : (wantlist ? 'The wantlist check is on.' : 'The wantlist check is off.')) + ' It updates in about 2 minutes.');
     }
 
     return h('div', { className: 'admin-section admin-shipping admin-settings' },
@@ -1999,6 +2309,12 @@
           (identity ? '' : ' While “Show who I am” is off, trade stays off whatever this says.')),
         h('div', null, h(Z.Checkbox, { label: 'Show trade on the shop', checked: trade, 'aria-describedby': 'settings-trade-help',
           onChange: function (e) { setTrade(e.target.checked); setProblem(null); } }))),
+      // Figma BACKEND → Settings → `wantlist setting` (decision 0152). Hidden until migration 0033 is applied.
+      saved.hasWantlist ? h('section', { className: 'admin-shipping__section', 'aria-labelledby': 'settings-wantlist' },
+        h('h2', { id: 'settings-wantlist', className: 'label-medium' }, 'Wantlist check'),
+        h('p', { className: 'body-small', id: 'settings-wantlist-help' }, 'Off: the shop shows no trace of the wantlist check. On: visitors can connect their Discogs account and see which records here are on their wantlist. Their wantlist is compared in their browser and never reaches the shop. Saving rebuilds the shop, live in about 2 minutes.'),
+        h('div', null, h(Z.Checkbox, { label: 'Show the wantlist check on the shop', checked: wantlist, 'aria-describedby': 'settings-wantlist-help',
+          onChange: function (e) { setWantlist(e.target.checked); setProblem(null); } }))) : null,
       h(PhotoSizes));
   }
 
@@ -2281,11 +2597,7 @@
           h('p', { className: 'body-medium admin-shipping__result', role: 'status' }, result))));
   }
 
-  // ── Memo ──────────────────────────────────────────────────────────────────
-  /* Figma BACKEND → Memo (2296:9962, decision 0087): Gio's list of records to sell later, made for the phone.
-     Add = Record (free text, or a Discogs release picked while typing) + optional Note. The list is public.memos
-     (migration 0019, admin only), newest first. Create listing opens #new/memo/<id> (release fetched; the first
-     save takes the item off the list). Create draft saves a draft at once, no form (0135). Remove deletes at once, toast with Undo (0049). */
+  // ── Discogs search and Photo of the label (Create listing) ──────────
   // a release as the picker shows it, from the discogs-lookup release answer (a pasted link)
   function releaseFromLookup(d) {
     var fmt = d.format || {}, desc = (fmt.descriptions || []).slice(0, 2).join(', ') || fmt.name || '';
@@ -2296,74 +2608,75 @@
   /* Record: the offer form's "Which record" (Figma `which record`, 0069) for the admin. ARIA 1.2 combobox: focus stays
      in the input, arrows move aria-activedescendant, Enter picks (or submits when nothing is highlighted), Escape
      closes. 3+ letters ask discogs-lookup { query } (debounced; a newer request wins); a pasted release link resolves. */
-  function RecordField(props) {
-    var id = props.id || 'memo-record', label = props.label || 'Record';
+  /* Search Discogs while typing (Create listing → Discogs match, decision 0156). ARIA 1.2
+     combobox: focus stays in the input, arrows move aria-activedescendant, Enter picks, Escape closes. 3+ letters ask
+     discogs-lookup { query } (debounced; a newer request wins). opts.resolveLinks: a pasted release link is looked up
+     and offered as the one result (Which record); without it a link or a number closes the list (Discogs match fetches it). */
+  function useDiscogsSearch(id, opts) {
+    opts = opts || {};
     var rs = useState(null), box = rs[0], setBox = rs[1];          // null | { results: [] } | { message: '' }
     var ac = useState(-1), active = ac[0], setActive = ac[1];
     var timer = useRef(null), seq = useRef(0);
     useEffect(function () { return function () { clearTimeout(timer.current); }; }, []);
-    // releases found from a photo of the label (0090): shown as if typed; a newer photo or keystroke wins
-    useEffect(function () {
-      var f = props.found;
-      if (!f) return;
-      clearTimeout(timer.current); seq.current++;
-      setBox(f.results.length ? { results: f.results } : { message: 'No match on Discogs for what the photo shows. Fix the text, or keep it as it is.' });
-      setActive(-1);
-    }, [props.found]);
     function close() { clearTimeout(timer.current); seq.current++; setBox(null); setActive(-1); }
-    function show(next) { setBox(next); setActive(-1); }
-    function onText(e) {
-      var q = e.target.value;
-      props.onText(q);
+    function show(next) { clearTimeout(timer.current); seq.current++; setBox(next); setActive(-1); }
+    function search(q) {
       clearTimeout(timer.current);
       var n = ++seq.current, t = q.trim();
       var link = t.match(/discogs\.com\/(?:[a-z-]+\/)?(release|master)\/(\d+)/i);
-      if (link && link[1].toLowerCase() === 'master') { show({ message: 'That link is the master (every pressing). Search the title and pick your pressing, or paste its release link.' }); return; }
-      if (!link && t.length < 3) { setBox(null); return; }
+      if (link && link[1].toLowerCase() === 'master') { setBox({ message: 'That link is the master (every pressing). Search the title and pick your pressing, or paste its release link.' }); setActive(-1); return; }
+      if (!opts.resolveLinks && (link || /^\[?r?\d+\]?$/i.test(t))) { setBox(null); setActive(-1); return; }
+      if (!link && t.length < 3) { setBox(null); setActive(-1); return; }
+      var empty = opts.emptyMessage || 'No match on Discogs.';
       timer.current = setTimeout(function () {
         var ask = link ? invoke('discogs-lookup', { releaseId: parseInt(link[2], 10) }).then(function (d) { return [releaseFromLookup(d)]; })
                        : invoke('discogs-lookup', { query: t }).then(function (d) { return d.results || []; });
         ask.then(function (list) {
           if (n !== seq.current) return;
-          show(list.length ? { results: list } : { message: 'No match on Discogs. Keep it as you wrote it.' });
+          setBox(list.length ? { results: list } : { message: empty }); setActive(-1);
         }).catch(function (err) {
           if (n !== seq.current) return;
-          show({ message: 'Discogs isn’t answering (' + err.message + '). Keep it as you wrote it.' });
+          setBox({ message: 'Discogs isn’t answering (' + err.message + ').' + (opts.failHint ? ' ' + opts.failHint : '') }); setActive(-1);
         });
       }, link ? 0 : 350);
     }
-    function pick(r) { close(); props.onRelease(r); }
     var results = box && box.results || [];
-    function onKey(e) {
-      if (e.key === 'ArrowDown' && results.length) { e.preventDefault(); setActive((active + 1) % results.length); }
-      else if (e.key === 'ArrowUp' && results.length) { e.preventDefault(); setActive((active - 1 + results.length) % results.length); }
-      else if (e.key === 'Enter' && active >= 0 && results[active]) { e.preventDefault(); pick(results[active]); }
-      else if (e.key === 'Escape' && box) { e.preventDefault(); close(); }
-    }
-    if (props.release) {
-      var r = props.release;
-      return h('div', { className: 'admin-picker' },
-        h('p', { className: 'body-small' }, label),
-        h(Z.ChosenRelease, { title: r.title, meta: r.meta, thumb: r.thumb, href: r.uri, 'aria-live': 'polite',
-          changeLabel: 'Change', onChange: function () { props.onRelease(null); setTimeout(function () { var el = document.getElementById(id); if (el) el.focus(); }, 0); } }));
-    }
-    return h('div', { className: 'admin-picker' },
-      h(Z.Input, { id: id, label: label, value: props.value, error: props.error, placeholder: 'Artist – title, or search Discogs',
-        autoComplete: 'off', role: 'combobox', 'aria-autocomplete': 'list', 'aria-expanded': results.length ? 'true' : 'false',
-        'aria-controls': id + '-list', 'aria-activedescendant': active >= 0 ? id + '-opt-' + active : undefined,
-        onChange: onText, onKeyDown: onKey, onBlur: function () { setTimeout(close, 150); } }),
-      box ? h(Z.ReleaseList, { className: 'admin-picker__list', listId: id + '-list', label: 'Releases on Discogs', message: box.message },
-        results.map(function (r, i) {
-          return h(Z.ReleaseOption, { key: r.id, id: id + '-opt-' + i, title: r.title, meta: r.meta, thumb: r.thumb, highlighted: i === active,
-            onMouseDown: function (e) { e.preventDefault(); }, onClick: function () { pick(r); } });
-        })) : null,
-      h('p', { className: 'zz-visually-hidden', 'aria-live': 'polite' },
-        box ? (box.message || results.length + (results.length === 1 ? ' release' : ' releases') + ' found. Use the arrow keys to choose.') : ''));
+    function pickWith(onPick) { return function (r) { close(); onPick(r); }; }
+    return {
+      box: box, results: results, close: close, show: show, search: search,
+      // props for the Input
+      inputProps: function (onPick) {
+        var pick = pickWith(onPick);
+        return { autoComplete: 'off', role: 'combobox', 'aria-autocomplete': 'list', 'aria-expanded': results.length ? 'true' : 'false',
+          'aria-controls': id + '-list', 'aria-activedescendant': active >= 0 ? id + '-opt-' + active : undefined,
+          onKeyDown: function (e) {
+            if (e.key === 'ArrowDown' && results.length) { e.preventDefault(); setActive((active + 1) % results.length); }
+            else if (e.key === 'ArrowUp' && results.length) { e.preventDefault(); setActive((active - 1 + results.length) % results.length); }
+            else if (e.key === 'Enter' && active >= 0 && results[active]) { e.preventDefault(); pick(results[active]); }
+            else if (e.key === 'Escape' && box) { e.preventDefault(); close(); }
+          },
+          onBlur: function () { setTimeout(close, 150); } };
+      },
+      // the ReleaseList under the Input + the live region
+      list: function (onPick) {
+        var pick = pickWith(onPick);
+        return [
+          box ? h(Z.ReleaseList, { key: 'list', className: 'admin-picker__list', listId: id + '-list', label: 'Releases on Discogs', message: box.message },
+            results.map(function (r, i) {
+              return h(Z.ReleaseOption, { key: r.id, id: id + '-opt-' + i, title: r.title, meta: r.meta, thumb: r.thumb, highlighted: i === active,
+                onMouseDown: function (e) { e.preventDefault(); }, onClick: function () { pick(r); } });
+            })) : null,
+          h('p', { key: 'live', className: 'zz-visually-hidden', 'aria-live': 'polite' },
+            box ? (box.message || results.length + (results.length === 1 ? ' release' : ' releases') + ' found. Use the arrow keys to choose.') : '')
+        ];
+      }
+    };
   }
-  /* Photo of the label (Figma BACKEND → Memo → `memo photo`, state default | reading | read | not read; decision 0090).
+  /* Photo of the label (Figma BACKEND → Create → `photo of the label`, state default | reading | read | not read; decisions 0090, 0171).
      Opens the phone's back camera (a file picker on desktop). The photo is shrunk here (longest side 1280 px, JPEG),
      read by read-label (free vision model on Cloudflare Workers AI, nothing stored), then the fields go to
-     discogs-lookup { fields }: barcode, then catalogue number, then artist + title. The words read land in Record. */
+     discogs-lookup { fields }: barcode, then catalogue number, then artist + title. No pressing found: the words read
+     become the title of line 1 when it is empty (0171). */
   var PHOTO_SIDE = 1280;
   function shrinkPhoto(file) {
     return new Promise(function (resolve, reject) {
@@ -2436,7 +2749,7 @@
           creep(97, 3);
           var found = await invoke('discogs-lookup', { fields: r });
           if (n !== seq.current) return;
-          lastRead = { said: said, results: found.results || [] };
+          lastRead = { said: said, query: got.query, results: found.results || [] };
           if (lastRead.results.length) break;
         } catch (err) {
           if (n !== seq.current) return;
@@ -2451,639 +2764,52 @@
         return;
       }
       stopAt(100);
-      props.onFound({ results: lastRead.results });
-      setSt({ state: 'read', text: 'Read from the photo: ' + lastRead.said + '. ' + (props.pickHint || 'Pick your pressing in the list, or fix the text.') });
+      props.onFound({ results: lastRead.results, query: lastRead.query });
+      // no pressing found: the release list under it says what happens next (0171)
+      setSt({ state: 'read', text: 'Read from the photo: ' + lastRead.said + '.' + (lastRead.results.length ? ' ' + (props.pickHint || 'Pick your pressing in the list.') : '') });
     }
     var reading = st.state === 'reading';
-    // full: one full-width button (Memo); otherwise the button sits in a row after props.actions (Create, 0092)
-    var button = h(Z.Button, { type: 'button', hierarchy: 'secondary', disabled: props.disabled, className: props.full ? 'admin-memo__photo-button' : undefined,
+    // the button sits in a row after props.actions (Create, 0092)
+    var button = h(Z.Button, { type: 'button', hierarchy: 'secondary', disabled: props.disabled,
         'aria-busy': reading || undefined, onClick: function () { if (!reading) input.current.click(); } },
         st.state === 'read' || st.state === 'not read' ? 'Another photo' : 'Photo of the label');
-    return h('div', { className: 'admin-memo__photo' },
+    return h('div', { className: 'admin-photo' },
       h('input', { ref: input, type: 'file', accept: 'image/*', capture: 'environment', className: 'zz-visually-hidden',
         tabIndex: -1, 'aria-hidden': 'true', onChange: onFile }),
-      props.full ? button : h('div', { className: 'admin-photo-actions' }, props.actions, button,
+      h('div', { className: 'admin-photo-actions' }, props.actions, button,
         props.images && props.images.length ? h(Z.Button, { type: 'button', hierarchy: 'secondary', disabled: props.disabled,
           'aria-busy': reading || undefined, onClick: function () { if (!reading) fromImages(); } }, 'Fetch from label') : null),
       reading ? h(Z.ProgressBar, { value: progress, 'aria-label': 'Reading the photo' }) : null,
-      h('p', { className: 'body-small admin-memo__photo-status', role: 'status' }, st.text));
+      h('p', { className: 'body-small admin-photo__status', role: 'status' }, st.text));
   }
-  function Memo() {
-    var mobile = useIsMobile();
-    var ls = useState(null), rows = ls[0], setRows = ls[1];
-    var es = useState(null), loadError = es[0], setLoadError = es[1];
-    var ts = useState(''), text = ts[0], setText = ts[1];
-    var rl = useState(null), release = rl[0], setRelease = rl[1];
-    var ns = useState(''), note = ns[0], setNote = ns[1];
-    var er = useState(null), error = er[0], setError = er[1];
-    var sv = useState(false), saving = sv[0], setSaving = sv[1];
-    var ms = useState(null), message = ms[0], setMessage = ms[1];
-    var fs = useState(null), found = fs[0], setFound = fs[1];       // releases from the last photo (0090)
-    var pk = useState(0), photoKey = pk[0], setPhotoKey = pk[1];   // a new PhotoField after each add
-    function load() {
-      return sb.from('memos').select('*').order('created_at', { ascending: false }).then(function (res) {
-        if (res.error) setLoadError(res.error.message); else { setLoadError(null); setRows(res.data); }
-      });
-    }
-    useEffect(function () { load(); }, []);
-    async function add(e) {
-      e.preventDefault();
-      if (saving) return;
-      var title = release ? release.title : text.trim();
-      if (!title) { setError('Write the record, or pick it on Discogs.'); return; }
-      setError(null); setSaving(true); setMessage(null);
-      var row = { title: title.slice(0, 300), note: note.trim() ? note.trim().slice(0, 1000) : null,
-                  discogs_release_id: release ? release.id : null, discogs_meta: release && release.meta ? release.meta.slice(0, 300) : null };
-      var res = await sb.from('memos').insert(row).select().single();
-      setSaving(false);
-      if (res.error) { setMessage({ error: true, text: 'Not added: ' + res.error.message }); return; }
-      setRows(function (cur) { return [res.data].concat(cur || []); });
-      setText(''); setRelease(null); setNote(''); setFound(null); setPhotoKey(photoKey + 1);
-      setMessage({ error: false, text: 'Added: ' + res.data.title + '.' });
-      var el = document.getElementById('memo-record'); if (el) el.focus();
-    }
-    async function remove(row) {
-      setMessage(null);   // the last "Added:" line would outlive its row
-      setRows(function (cur) { return cur.filter(function (r) { return r.id !== row.id; }); });
-      setSelected(function (cur) { return cur.filter(function (x) { return x !== row.id; }); });
-      var res = await sb.from('memos').delete().eq('id', row.id);
-      if (res.error) { setMessage({ error: true, text: 'Not removed: ' + res.error.message }); load(); return; }
-      toast('Removed: ' + row.title + '.', function () {
-        sb.from('memos').insert(row).then(function (r) { if (r.error) setMessage({ error: true, text: 'Not restored: ' + r.error.message }); load(); });
-      });
-    }
-    /* Create draft (decision 0135): one tap, no form. A release is fetched as Fetch Discogs does; free text = line 1
-       titled with the memo (as a skipped record of Bulk, 0107). The draft may be incomplete; the memo leaves the list. */
-    var cd = useState(null), drafting = cd[0], setDrafting = cd[1];   // id of the memo being turned into a draft
-    // one memo → one draft (saved listing { listing_id, sku }); the memo is deleted after the save
-    async function draftFromMemo(row, entities) {
-      var payload;
-      if (row.discogs_release_id) {
-        payload = LD.draftPayload(await invoke('discogs-lookup', { releaseId: row.discogs_release_id }), entities);   // same as the Scanner (0145)
-      } else {
-        var f = emptyForm();
-        f.lines = [newLine({ title: row.title })];
-        payload = payloadOf(f, 'draft');
-      }
-      var res = await sb.rpc('admin_save_listing', { payload: payload });
-      if (res.error) throw new Error(res.error.message);
-      var del = await sb.from('memos').delete().eq('id', row.id);
-      return { saved: res.data, memoKept: del.error ? del.error.message : null };
-    }
-    async function entitiesOrNull() { try { return await loadEntities(); } catch (e) { return null; } }   // bound by name on save
-    async function createDraft(row) {
-      if (drafting) return;
-      setDrafting(row.id); setMessage(null);
+  /* Memo was removed (decision 0171): a draft is the reminder now. Records still in public.memos (the table stays until
+     Gio drops it) become drafts the first time Listings opens, as Memo's Create draft did (0135): a release is fetched
+     with the same mapping as the Scanner (packages/listing-draft, 0145), free text = line 1. Each memo is deleted only
+     after its draft is saved, so a failure leaves it for the next visit. Once per visit; no table or no rows = nothing. */
+  var memosChecked = false;
+  async function draftsFromLeftoverMemos() {
+    if (memosChecked) return 0;
+    memosChecked = true;
+    var res = await sb.from('memos').select('*').order('created_at', { ascending: true });
+    if (res.error || !res.data || !res.data.length) return 0;
+    var entities = null;
+    if (res.data.some(function (r) { return r.discogs_release_id; })) { try { entities = await loadEntities(); } catch (e) { entities = null; } }
+    var made = [], failed = 0;
+    for (var i = 0; i < res.data.length; i++) {
+      var row = res.data[i];
       try {
-        var r = await draftFromMemo(row, row.discogs_release_id ? await entitiesOrNull() : null);
-        setRows(function (cur) { return cur.filter(function (x) { return x.id !== row.id; }); });
-        setSelected(function (cur) { return cur.filter(function (x) { return x !== row.id; }); });
-        if (r.memoKept) { setMessage({ error: true, text: 'Draft created (SKU ' + r.saved.sku + '), but the memo was not removed: ' + r.memoKept }); load(); }
-        if (window.ZanzaToast) window.ZanzaToast.show({ message: 'Draft created · SKU ' + r.saved.sku + '.', actionLabel: 'Open',
-          onAction: function () { location.hash = '#edit-' + r.saved.listing_id; } });
-      } catch (err) {
-        setMessage({ error: true, text: 'Draft not created: ' + err.message });
-      }
-      setDrafting(null);
+        var payload;
+        if (row.discogs_release_id) payload = LD.draftPayload(await invoke('discogs-lookup', { releaseId: row.discogs_release_id }), entities);
+        else { var f = emptyForm(); f.lines = [newLine({ title: row.title })]; payload = payloadOf(f, 'draft'); }
+        var saved = await sb.rpc('admin_save_listing', { payload: payload });
+        if (saved.error) throw new Error(saved.error.message);
+        made.push(saved.data.sku);
+        await sb.from('memos').delete().eq('id', row.id);
+      } catch (err) { failed++; }
     }
-
-    /* Bulk (decision 0140, the grammar of Listings 0025 / 0089): a checkbox per row, Select all on the count line,
-       the bulk bar (desktop: always rendered; mobile: fixed at the bottom while something is selected). Create drafts
-       and Remove ask first; drafts are created one at a time; the failed memos stay selected with the reason. */
-    var se = useState([]), selected = se[0], setSelected = se[1];
-    var bk = useState(null), bulk = bk[0], setBulk = bk[1];          // null | { action, busy }
-    var picked = (rows || []).filter(function (r) { return selected.indexOf(r.id) >= 0; });
-    function toggle(id, on) { setSelected(function (cur) { return on ? cur.concat([id]) : cur.filter(function (x) { return x !== id; }); }); }
-    async function bulkCreate() {
-      var list = picked.slice();
-      setBulk({ action: 'drafts', busy: true }); setMessage(null);
-      var entities = list.some(function (r) { return r.discogs_release_id; }) ? await entitiesOrNull() : null;
-      var done = [], failed = [], kept = [];
-      for (var i = 0; i < list.length; i++) {
-        setMessage({ error: false, text: 'Creating draft ' + (i + 1) + ' of ' + list.length + '…' });
-        try {
-          var r = await draftFromMemo(list[i], entities);
-          done.push(list[i].id);
-          if (r.memoKept) kept.push(r.saved.sku);
-        } catch (err) { failed.push(list[i].title + ': ' + err.message); }
-      }
-      setRows(function (cur) { return cur.filter(function (x) { return done.indexOf(x.id) < 0; }); });
-      setSelected(function (cur) { return cur.filter(function (x) { return done.indexOf(x) < 0; }); });
-      setBulk(null);
-      if (kept.length) load();
-      setMessage(failed.length || kept.length ? { error: true, text: [
-        done.length ? plural(done.length, 'draft') + ' created.' : null,
-        failed.length ? 'Not created (still selected): ' + failed.join('; ') + '.' : null,
-        kept.length ? 'Memos not removed for SKU ' + kept.join(', ') + ': remove them by hand.' : null].filter(Boolean).join(' ') } : null);
-      if (done.length && !failed.length && !kept.length) toast(plural(done.length, 'draft') + ' created. Find them in Listings → Drafts.');
-    }
-    async function bulkRemove() {
-      var list = picked.slice(), ids = list.map(function (r) { return r.id; });
-      setBulk({ action: 'remove', busy: true }); setMessage(null);
-      var res = await sb.from('memos').delete().in('id', ids);
-      setBulk(null);
-      if (res.error) { setMessage({ error: true, text: 'Not removed: ' + res.error.message }); return; }
-      setRows(function (cur) { return cur.filter(function (x) { return ids.indexOf(x.id) < 0; }); });
-      setSelected([]);
-      toast('Removed ' + plural(list.length, 'memo') + '.', function () {
-        sb.from('memos').insert(list).then(function (r) { if (r.error) setMessage({ error: true, text: 'Not restored: ' + r.error.message }); load(); });
-      });
-    }
-    var count = rows ? rows.length : 0;
-    var allOn = count > 0 && picked.length === count, someOn = picked.length > 0 && !allOn;
-    var busy = !!(bulk && bulk.busy);
-    var bar = h('div', { className: 'admin-bulk' },
-      h('p', { className: 'admin-bulk__count body-medium', 'aria-live': 'polite' }, picked.length + ' selected'),
-      picked.length ? h('div', { className: 'admin-bulk__actions' },
-        h(Z.Button, { hierarchy: 'secondary', 'aria-busy': busy || undefined, onClick: busy ? undefined : function () { setBulk({ action: 'drafts' }); } }, 'Create drafts'),
-        h(Z.Button, { hierarchy: 'secondary', 'aria-busy': busy || undefined, onClick: busy ? undefined : function () { setBulk({ action: 'remove' }); } }, 'Remove')) : null);
-    var n = picked.length, names = picked.slice(0, 3).map(function (r) { return r.title; }).join(', ') + (n > 3 ? ' and ' + (n - 3) + ' more' : '');
-    var dialog = bulk && bulk.action === 'drafts'
-      ? h(Z.Dialog, { open: true, busy: busy, title: 'Create ' + plural(n, 'draft') + '?', confirmLabel: 'Create ' + plural(n, 'draft'),
-          onCancel: function () { if (!busy) setBulk(null); }, onConfirm: bulkCreate },
-          h('p', null, names + ': ' + (n === 1 ? 'becomes a draft (from its Discogs release, if it has one) and leaves the Memo list.'
-            : 'become drafts (from their Discogs releases, where they have one) and leave the Memo list.') + ' Grading and price come later, before publishing.'))
-      : bulk && bulk.action === 'remove'
-      ? h(Z.Dialog, { open: true, busy: busy, title: 'Remove ' + plural(n, 'memo') + '?', confirmLabel: 'Remove ' + plural(n, 'memo'),
-          onCancel: function () { if (!busy) setBulk(null); }, onConfirm: bulkRemove },
-          h('p', null, names + (n === 1 ? ' leaves' : ' leave') + ' the Memo list. You can undo it from the message that follows.'))
-      : h(Z.Dialog, { open: false, title: '', confirmLabel: '', onCancel: function () {}, onConfirm: function () {} }, '');
-    return h('div', { className: 'admin-memo' },
-      h('h1', { className: 'label-extra-large' }, 'Memo'),
-      h('form', { className: 'admin-memo__add', onSubmit: add, noValidate: true },
-        h(RecordField, { value: text, release: release, error: error,
-          found: found, onText: function (v) { setText(v); if (error) setError(null); }, onRelease: function (r) { setRelease(r); if (r) setError(null); } }),
-        h(PhotoField, { key: 'photo-' + photoKey, full: true,
-          onText: function (v) { setRelease(null); setText(v); if (error) setError(null); }, onFound: setFound }),
-        h(Z.Input, { id: 'memo-note', label: 'Note', optional: true, placeholder: 'Sleeve, condition, where it is…',
-          value: note, onChange: function (e) { setNote(e.target.value); } }),
-        h(Z.Button, { type: 'submit', className: 'admin-memo__submit', 'aria-busy': saving || undefined }, 'Add to list'),
-        h('p', { className: 'body-small admin-status' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '')),
-      loadError ? h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'List not loaded: ' + loadError)
-        : !rows ? h('p', { className: 'body-small' }, 'Loading…')
-        : h('div', { className: 'admin-memo__list' },
-            // Figma `memo status`, boolean `select all` (0140)
-            h('div', { className: 'admin-memo__count' },
-              count ? h(Z.Checkbox, { id: 'memo-select-all', hideLabel: true, label: 'Select all', checked: allOn, indeterminate: someOn,
-                onChange: function () { setSelected(allOn ? [] : rows.map(function (r) { return r.id; })); } }) : null,
-              h('p', { className: 'body-small' }, count ? count + (count === 1 ? ' record' : ' records') : 'Nothing here yet. Add the records you want to sell later.')),
-            count && !mobile ? bar : null,   // desktop: always above the list; mobile: after it, sticky while selecting (0089)
-            count ? h('ul', { className: 'admin-memo__items', 'aria-label': 'Memo list' }, rows.map(function (r) {
-              return h(Z.MemoItem, { key: r.id, title: r.title, meta: r.discogs_meta || undefined, note: r.note || undefined,
-                href: r.discogs_release_id ? 'https://www.discogs.com/release/' + r.discogs_release_id : undefined,
-                select: h(Z.Checkbox, { id: 'memo-select-' + r.id, hideLabel: true, label: 'Select ' + r.title,
-                  checked: selected.indexOf(r.id) >= 0, onChange: function (e) { toggle(r.id, e.target.checked); } }),
-                onCreateDraft: function () { createDraft(r); }, createDraftBusy: drafting === r.id,
-                onCreate: function () { location.hash = '#new/memo/' + r.id; },
-                onRemove: function () { remove(r); } });
-            })) : null,
-            count && mobile ? bar : null),
-      dialog);
-  }
-
-  /* ── Bulk create (#bulk, Figma BACKEND → Bulk, decision 0107) ─────────────
-     Gio drops many photos and samples named <record>_<role>: the page groups them per record, uploads them as Create
-     does, reads each record's label photo with the AI of Memo (read-label → discogs-lookup { fields }), then shows an
-     overview (BulkRecord rows) and a one-by-one review (Which record, Next / Skip). "Create N drafts" saves one draft per
-     record through admin_save_listing; drafts may lack grading, format and price (migration 0026).
-     Roles: photos _1 _2 … (gallery order; photo 1 is the one the AI reads, Gio 2026-11-17), any
-     other word = a photo at the end; samples _a _b (sides) or _a1 _b2 (tracks) = the line with that Discogs position,
-     anything else = an additional sample. A file without <record>_ is "not recognised": an image is read by the AI and
-     joins the record with the same release; the rest waits for Gio to pick its record (or stays out).
-     The batch lives in this page only: leaving it asks first. */
-  var BULK_NAME = /^(.+)_([^_.]+?)(?:[ _-]?(?:copy|\(\d+\)))?\.([a-z0-9]+)$/i;
-  var IMAGE_EXT = /^(jpe?g|png|webp|heic|heif|gif)$/i;
-  function bulkKind(file) {
-    var ext = (file.name.split('.').pop() || '').toLowerCase();
-    if (/^image\//.test(file.type) || IMAGE_EXT.test(ext)) return 'photo';
-    if (file.type === 'audio/mpeg' || ext === 'mp3') return 'sample';
-    return null;
-  }
-  // { prefix, role } or null; the prefix is the record (case and spaces ignored), the role says where the file goes
-  function bulkParse(name) {
-    var m = BULK_NAME.exec(String(name || '').trim());
-    // a role is 1–2 digits, a word (label, cover) or a side with a track (a, b2): IMG_4471.jpg is a camera name, not ours
-    if (!m || !/^(\d{1,2}|[a-z]+|[a-z]\d{1,2})$/i.test(m[2])) return null;
-    return { prefix: m[1].trim(), key: m[1].trim().toLowerCase().replace(/\s+/g, '-'), role: m[2].toLowerCase() };
-  }
-  /* Bulk attach (decision 0139): a scanner / File names file <sku>_<role>_<slug> (0136) goes to the listing with that SKU,
-     not to a new draft: no label read. Photo _n replaces the photo at place n (or comes last), _a / _b the sample of
-     that side (the Discogs position); a SKU that is not a draft or a live copy is refused. */
-  var SKU_NAME = /^(\d{5})_(\d{1,2}|[ab]\d{0,2})(?:_[^.]*)?(?:[ _-]?(?:copy|\(\d+\)))?\.([a-z0-9]+)$/i;
-  function skuParse(name) {
-    var m = SKU_NAME.exec(String(name || '').trim());
-    return m ? { sku: m[1], role: m[2].toLowerCase() } : null;
-  }
-  var ATTACH_OK = { draft: true, available: true };
-  // the form of the listing once the batch's files are in it: { form, photos: [places], sides: [A, B…], replaced }
-  function attachInto(f, r, positions) {
-    var images = f.images.slice(), places = [], replaced = 0;
-    r.photos.filter(function (x) { return x.key; }).slice().sort(photoSort).forEach(function (x) {
-      var n = parseInt(x.role, 10), item = { id: x.id, key: x.key, name: x.name };
-      if (!isNaN(n) && n >= 1 && n <= images.length) { images[n - 1] = item; replaced++; places.push(n); }
-      else { images.push(item); places.push(images.length); }
-    });
-    var samples = f.samples.slice(), sides = [];
-    r.samples.filter(function (x) { return x.key; }).forEach(function (x) {
-      var line = sampleLine(x.role, positions);
-      if (line && line > f.lines.length) line = null;
-      var item = { id: x.id, key: x.key, name: x.name, line: line, title: '' };
-      var at = line ? samples.findIndex(function (s) { return s.line === line; }) : -1;
-      if (at >= 0) { samples[at] = item; replaced++; } else samples.push(item);
-      sides.push(line ? x.role.toUpperCase() : 'extra');
-    });
-    return { form: Object.assign({}, f, { images: images, samples: samples }), places: places, sides: sides, replaced: replaced };
-  }
-  function attachStatus(r) {
-    if (r.state === 'looking') return 'Looking for SKU ' + r.sku + '…';
-    if (!r.form) return null;
-    var res = attachInto(r.form, Object.assign({}, r, { photos: r.photos.map(function (x) { return Object.assign({}, x, { key: x.key || 'x' }); }),
-                                                      samples: r.samples.map(function (x) { return Object.assign({}, x, { key: x.key || 'x' }); }) }), r.positions || []);
-    var what = [res.places.length ? (res.places.length === 1 ? 'photo ' : 'photos ') + res.places.join(', ') : null,
-                res.sides.length ? (res.sides.length === 1 ? 'sample ' : 'samples ') + res.sides.join(', ') : null].filter(Boolean).join(', ');
-    return 'Adds to this ' + (r.form.status === 'draft' ? 'draft' : 'listing') + ': ' + what + (res.replaced ? ' (' + plural(res.replaced, 'file') + ' replaced)' : '') + '. No label read.';
-  }
-  // at most n promises at a time (uploads, AI reads): the free tiers prefer a queue to a burst
-  function limiter(n) {
-    var running = 0, queue = [];
-    function next() {
-      if (running >= n || !queue.length) return;
-      var job = queue.shift(); running++;
-      job.fn().then(job.resolve, job.reject).then(function () { running--; next(); });
-    }
-    return function (fn) { return new Promise(function (resolve, reject) { queue.push({ fn: fn, resolve: resolve, reject: reject }); next(); }); };
-  }
-  var bulkUploads = limiter(3), bulkReads = limiter(1);
-  // a record's files still going up, as one number for its ProgressBar (files waiting their turn count as 0); null = none
-  function uploadProgressOf(r) {
-    var up = r.photos.concat(r.samples).filter(function (x) { return x.uploading; });
-    if (!up.length) return null;
-    return Math.round(up.reduce(function (a, x) { return a + (x.progress || 0); }, 0) / up.length);
-  }
-  function photoSort(a, b) {
-    function rank(p) { var n = parseInt(p.role, 10); return isNaN(n) ? 2e6 : n; }
-    return rank(a) - rank(b) || a.name.localeCompare(b.name);
-  }
-  function filesText(r) {
-    var photos = r.photos.length, sides = r.samples.map(function (x) { return /^[ab]\d*$/.test(x.role) ? x.role.toUpperCase() : 'extra'; });
-    var up = r.photos.concat(r.samples).filter(function (x) { return x.uploading; }).length;
-    var converting = r.samples.filter(function (x) { return x.uploading && x.phase === 'converting'; }).length;
-    var failed = r.photos.concat(r.samples).filter(function (x) { return x.error; }).length;
-    return [photos ? photos + (photos === 1 ? ' photo' : ' photos') : 'no photos',
-            sides.length ? (sides.length === 1 ? 'sample ' : 'samples ') + sides.join(', ') : 'no samples',
-            r.prefix, converting ? 'converting ' + converting + ' to 128 kbps' : null, up - converting ? 'uploading ' + (up - converting) : null, failed ? failed + ' not uploaded' : null].filter(Boolean).join(' · ');
-  }
-  function bulkWarnings(r) {
-    var w = [], seen = {};
-    r.samples.forEach(function (x) {
-      if (!/^[ab]\d*$/.test(x.role)) return;
-      if (seen[x.role]) w.push('Two samples for ' + x.role.toUpperCase() + ': ' + seen[x.role] + ' is used, ' + x.name + ' becomes an additional sample.');
-      else seen[x.role] = x.name;
-    });
-    if (!r.photos.length) w.push('No photos: the draft has none.');
-    r.photos.concat(r.samples).forEach(function (x) { if (x.error) w.push(x.name + ': ' + x.error); if (x.note) w.push(x.note); });
-    return w.join(' ');
-  }
-  var BULK_STATUS = {
-    matched: function (r) { return 'Found on Discogs from ' + r.readFrom + '. Confirm in review.'; },
-    choose: function (r) { return r.found.results.length + ' pressings found on Discogs: pick yours in review.'; },
-    'not found': function (r) { return (r.readText ? 'Read: ' + r.readText + '. Not found on Discogs' : 'Couldn’t read the label' + (r.readError ? ' (' + r.readError + ')' : '')) + ': search it in review, or skip.'; },
-    confirmed: function () { return 'Confirmed.'; },
-    skipped: function () { return 'Skipped: the draft is created without a Discogs release.'; }
-  };
-  // a sample's line once the release is known: exact Discogs position (A1), else the first track of that side (A)
-  function sampleLine(role, positions) {
-    if (!/^[ab]\d*$/.test(role)) return null;
-    var R = role.toUpperCase(), i = positions.indexOf(R);
-    if (i < 0 && R.length === 1) i = positions.findIndex(function (p) { return p.charAt(0) === R; });
-    if (i < 0 && !positions.length) i = R === 'A' ? 0 : -1;     // no release: side A = line 1, the rest are additional
-    return i >= 0 ? i + 1 : null;
-  }
-
-  function Bulk() {
-    var mobile = useIsMobile();
-    var rs = useState([]), records = rs[0], setRecords = rs[1];
-    var us = useState([]), unsorted = us[0], setUnsorted = us[1];
-    var vs = useState({ name: 'overview' }), view = vs[0], setView = vs[1];   // overview | review (at) | creating
-    var ms = useState(null), message = ms[0], setMessage = ms[1];
-    var recRef = useRef(records); recRef.current = records;
-    var unsRef = useRef(unsorted); unsRef.current = unsorted;
-    var busy = view.name === 'creating';
-
-    // leaving with a batch not yet created asks first (the files are uploaded, the drafts are not)
-    useEffect(function () {
-      function warn(e) { if (recRef.current.length) { e.preventDefault(); e.returnValue = ''; } }
-      window.addEventListener('beforeunload', warn);
-      return function () { window.removeEventListener('beforeunload', warn); };
-    }, []);
-
-    function patchRecord(id, patch) {
-      setRecords(function (cur) { return cur.map(function (r) { return r.id === id ? Object.assign({}, r, typeof patch === 'function' ? patch(r) : patch) : r; }); });
-    }
-    function patchFile(recId, fileId, patch) {
-      patchRecord(recId, function (r) {
-        function one(x) { return x.id === fileId ? Object.assign({}, x, patch) : x; }
-        return { photos: r.photos.map(one), samples: r.samples.map(one) };
-      });
-    }
-    function startUpload(recId, item) {
-      bulkUploads(function () {
-        return uploadFile(item.kind, item.file, function (st) { patchFile(recId, item.id, { phase: st.phase, progress: st.value }); },
-          function (note) { patchFile(recId, item.id, { note: note }); });
-      }).then(function (key) { patchFile(recId, item.id, { key: key, uploading: false }); })
-        .catch(function (err) { patchFile(recId, item.id, { uploading: false, error: err.message }); });
-    }
-    function fileItem(file, kind, role) {
-      return { id: nextId(), file: file, name: file.name, kind: kind, role: role, key: null, uploading: true, error: null,
-               url: kind === 'photo' ? URL.createObjectURL(file) : null };
-    }
-    // the AI read of one photo: { read, query, results } (read null = not read)
-    async function readPhoto(file) {
-      var image = await shrinkPhoto(file);
-      var got = await invoke('read-label', { image: image });
-      if (!got.read) return { read: null, results: [] };
-      var found = await invoke('discogs-lookup', { fields: got.read });
-      return { read: got.read, query: got.query, results: found.results || [] };
-    }
-    function readRecord(id) {
-      var r = recRef.current.filter(function (x) { return x.id === id; })[0];
-      if (!r) return Promise.resolve();
-      var photo = r.photos.slice().sort(photoSort)[0];   // photo 1 (Gio: the AI reads image 1, nothing else)
-      if (!photo) { patchRecord(id, { state: 'not found', found: { results: [] } }); return Promise.resolve(); }
-      patchRecord(id, { progress: 10 });
-      return bulkReads(function () { patchRecord(id, { progress: 40 }); return readPhoto(photo.file); }).then(function (res) {
-        var read = res.read, text = read ? [read.artist, read.title, [read.label, read.catno].filter(Boolean).join(' ')].filter(Boolean).join(' · ') : '';
-        var n = res.results.length;
-        patchRecord(id, { progress: 100, readFrom: photo.name, readText: text, query: res.query || '', found: { results: res.results },
-          release: n === 1 ? res.results[0] : null, state: n === 1 ? 'matched' : n > 1 ? 'choose' : 'not found' });
-      }).catch(function (err) {
-        patchRecord(id, { progress: 100, readError: err.message, found: { results: [] }, state: 'not found' });
-      });
-    }
-    // an image without <record>_ in its name: read it, and if its release is one of the batch's, it joins that record
-    function readUnsorted(item) {
-      return bulkReads(function () { return readPhoto(item.file); }).then(function (res) {
-        var ids = res.results.map(function (x) { return x.id; });
-        var home = recRef.current.filter(function (r) {
-          return (r.release && ids.indexOf(r.release.id) >= 0) || (r.found && r.found.results.some(function (x) { return ids.indexOf(x.id) >= 0; }));
-        })[0];
-        if (home) assign(item, home.id, 'read');
-        else setUnsorted(function (cur) { return cur.map(function (u) { return u.id === item.id ? Object.assign({}, u, { reading: false }) : u; }); });
-      }).catch(function () {
-        setUnsorted(function (cur) { return cur.map(function (u) { return u.id === item.id ? Object.assign({}, u, { reading: false }) : u; }); });
-      });
-    }
-    // an unsorted file goes to a record (Gio's pick, or the AI's): a photo at the end of its gallery, a sample as additional
-    function assign(item, recId, how) {
-      setUnsorted(function (cur) { return cur.filter(function (u) { return u.id !== item.id; }); });
-      var f = fileItem(item.file, item.kind, item.kind === 'photo' ? 'z' : 'x');
-      f.assigned = how;
-      patchRecord(recId, function (r) { return item.kind === 'photo' ? { photos: r.photos.concat([f]) } : { samples: r.samples.concat([f]) }; });
-      startUpload(recId, f);
-    }
-
-    // SKU records (Bulk attach, 0139): the listing with that SKU, as the form loads it, and its Discogs positions
-    async function lookUpSkus(list) {
-      var res = await sb.from('listings').select(LISTING_FORM_SELECT).in('sku', list.map(function (r) { return r.sku; }));
-      list.forEach(function (r) {
-        if (res.error) { patchRecord(r.id, { state: 'attach', attachError: 'Could not look up SKU ' + r.sku + ': ' + res.error.message }); return; }
-        var row = (res.data || []).filter(function (x) { return String(x.sku) === r.sku; })[0];
-        if (!row) { patchRecord(r.id, { state: 'attach', attachError: 'No listing with SKU ' + r.sku + ': these files are left out.' }); return; }
-        var form = formFromRow(row);
-        if (!ATTACH_OK[form.status]) { patchRecord(r.id, { state: 'attach', form: form, attachError: 'SKU ' + r.sku + ' is ' + (STATUS_LABEL[form.status] || form.status).toLowerCase() + ': its files are left out.' }); return; }
-        patchRecord(r.id, { state: 'attach', form: form, positions: [] });
-        var relId = discogsId(form.discogs);
-        if (relId) invoke('discogs-lookup', { releaseId: relId })
-          .then(function (d) { patchRecord(r.id, { positions: positionsOf(d) }); })
-          .catch(function () { /* no positions: sides by line order (sampleLine) */ });
-      });
-    }
-    function onFiles(files) {
-      setMessage(null);
-      var byKey = {}, added = [], extra = [], loose = [], ignored = 0;
-      recRef.current.forEach(function (r) { byKey[r.key] = { rec: r, old: true }; });
-      files.forEach(function (file) {
-        var kind = bulkKind(file);
-        if (!kind) { ignored++; return; }
-        var k = skuParse(file.name);
-        var p = k ? { prefix: k.sku, key: 'sku:' + k.sku, role: k.role, sku: k.sku } : bulkParse(file.name);
-        if (!p) { loose.push({ id: nextId(), file: file, name: file.name, kind: kind, reading: kind === 'photo', url: kind === 'photo' ? URL.createObjectURL(file) : null }); return; }
-        var slot = byKey[p.key];
-        if (!slot) {
-          slot = byKey[p.key] = { old: false, rec: { id: nextId(), key: p.key, prefix: p.prefix, photos: [], samples: [], state: p.sku ? 'looking' : 'reading',
-                                                      sku: p.sku || null, progress: 0, found: null, release: null, query: '' } };
-          added.push(slot.rec);
-        }
-        var item = fileItem(file, kind, p.role);
-        if (slot.old) extra.push({ recId: slot.rec.id, item: item });                 // a file for a record already here
-        else (kind === 'photo' ? slot.rec.photos : slot.rec.samples).push(item);
-      });
-      setRecords(function (cur) {
-        return cur.map(function (r) {
-          var mine = extra.filter(function (x) { return x.recId === r.id; }).map(function (x) { return x.item; });
-          if (!mine.length) return r;
-          return Object.assign({}, r, { photos: r.photos.concat(mine.filter(function (x) { return x.kind === 'photo'; })),
-                                        samples: r.samples.concat(mine.filter(function (x) { return x.kind === 'sample'; })) });
-        }).concat(added);
-      });
-      added.forEach(function (r) { r.photos.concat(r.samples).forEach(function (it) { startUpload(r.id, it); }); });
-      extra.forEach(function (x) { startUpload(x.recId, x.item); });
-      setUnsorted(function (cur) { return cur.concat(loose); });
-      if (ignored) setMessage({ error: true, text: ignored + (ignored === 1 ? ' file' : ' files') + ' left out: only photos (jpg, png, webp) and mp3 samples.' });
-      // read the new records first, then the loose photos (they look for a record with the same release)
-      var attach = added.filter(function (r) { return r.sku; }), toRead = added.filter(function (r) { return !r.sku; });
-      if (attach.length) lookUpSkus(attach);
-      setTimeout(function () {
-        Promise.all(toRead.map(function (r) { return readRecord(r.id); })).then(function () {
-          loose.filter(function (u) { return u.kind === 'photo'; }).forEach(readUnsorted);
-        });
-      }, 0);
-    }
-
-    function removeRecord(r) {
-      setRecords(function (cur) { return cur.filter(function (x) { return x.id !== r.id; }); });
-      toast('Removed: ' + (r.release ? r.release.title : r.prefix) + '.');
-    }
-    var co = useState(false), confirmOver = co[0], setConfirmOver = co[1];
-    function startOver() { setConfirmOver(false); setRecords([]); setUnsorted([]); setMessage(null); setView({ name: 'overview' }); }
-
-    // ── review one by one ──
-    function reviewIndexFrom(i) {
-      var list = recRef.current;
-      for (var k = i; k < list.length; k++) if (['matched', 'choose', 'not found'].indexOf(list[k].state) >= 0) return k;
-      return -1;
-    }
-    function openReview(at) { setMessage(null); setView({ name: 'review', at: at }); window.scrollTo(0, 0); }
-    // Next / Skip go to the next record still to review; after the last one, back to the overview
-    function advance(at) {
-      var n = reviewIndexFrom(at + 1);
-      setView(n < 0 ? { name: 'overview' } : { name: 'review', at: n }); window.scrollTo(0, 0);
-    }
-
-    // ── create the drafts ──
-    async function createDrafts() {
-      var list = recRef.current;
-      if (!list.length) return;
-      if (list.some(function (r) { return r.state === 'reading' || r.state === 'looking'; })) { setMessage({ error: true, text: 'Wait until every label is read.' }); return; }
-      if (list.some(function (r) { return r.photos.concat(r.samples).some(function (x) { return x.uploading; }); })) { setMessage({ error: true, text: 'Wait for the uploads to finish.' }); return; }
-      setView({ name: 'creating' }); setMessage({ error: false, text: 'Creating drafts…' });
-      var entities = null;
-      try { entities = await loadEntities(); } catch (e) { /* the drafts bind entities by name on save */ }
-      var done = 0, updated = 0, failed = [];
-      for (var i = 0; i < list.length; i++) {
-        var r = list[i];
-        setMessage({ error: false, text: 'Saving record ' + (i + 1) + ' of ' + list.length + '…' });
-        if (r.sku) {
-          // Bulk attach (0139): the listing keeps its status; a SKU that was refused stays in the batch with its reason
-          try {
-            if (r.attachError || !r.form) throw new Error(r.attachError || 'SKU ' + r.sku + ' not found.');
-            var a = attachInto(r.form, r, r.positions || []);
-            var saved = await sb.rpc('admin_save_listing', { payload: payloadOf(a.form, r.form.status) });
-            if (saved.error) throw new Error(saved.error.message);
-            updated++;
-          } catch (err) { failed.push({ id: r.id, text: err.message }); }
-          continue;
-        }
-        try {
-          var f = emptyForm(), positions = [];
-          var release = r.state === 'skipped' ? null : r.release;
-          if (release) {
-            var d = await invoke('discogs-lookup', { releaseId: release.id });
-            Object.assign(f, patchFromDiscogs(f, d, entities).patch);
-            positions = (d.tracks || []).filter(function (t) { return t.title; }).map(function (t) { return String(t.position || '').toUpperCase(); });
-          } else {
-            f.lines = [newLine({ title: r.prefix })];
-          }
-          f.images = r.photos.filter(function (x) { return x.key; }).slice().sort(photoSort).map(function (x) { return { id: x.id, key: x.key, name: x.name }; });
-          var used = {};
-          f.samples = r.samples.filter(function (x) { return x.key; }).map(function (x) {
-            var line = sampleLine(x.role, positions);
-            if (line && (used[line] || line > f.lines.length)) line = null;   // a second sample of a side: additional
-            if (line) used[line] = true;
-            return { id: x.id, key: x.key, name: x.name, line: line };
-          });
-          var res = await sb.rpc('admin_save_listing', { payload: payloadOf(f, 'draft') });
-          if (res.error) throw new Error(res.error.message);
-          done++;
-          patchRecord(r.id, { created: true });
-        } catch (err) {
-          failed.push({ id: r.id, text: err.message });
-        }
-      }
-      // the created ones leave the batch; the failed ones stay with the reason
-      setRecords(function (cur) {
-        var why = {}; failed.forEach(function (f) { why[f.id] = f.text; });
-        return cur.filter(function (x) { return why[x.id]; }).map(function (x) { return Object.assign({}, x, { saveError: why[x.id] }); });
-      });
-      setView({ name: 'overview' });
-      if (!failed.length) {
-        setUnsorted([]);
-        setMessage(null);
-        toast([done ? plural(done, 'draft') + ' created' : null, updated ? plural(updated, 'listing') + ' updated with the scans' : null].filter(Boolean).join(', ') +
-          (done ? '. Fill in grading and price to publish.' : '.'));
-        location.hash = '#';
-        return;
-      }
-      setMessage({ error: true, text: [plural(done, 'draft') + ' created', updated ? plural(updated, 'listing') + ' updated' : null].filter(Boolean).join(', ') + '; ' + plural(failed.length, 'record') + ' not saved: see below.' });
-    }
-
-    // ── render ──
-    var statusLine = h('p', { className: 'body-small admin-status' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : '');
-    var help = h(Z.BulkHelp, { heading: 'Name the files record_role, one prefix per record:',
-      lines: ['Photos: _1, _2, _3… in gallery order. Photo _1 is read to find the record on Discogs: make it the label.',
-              'Samples: _a and _b for the A and B side. On an LP _a1, _a2, _b1… Anything else becomes an additional sample.',
-              'Scanner files 28529_1_… (SKU first) are added to the listing with that SKU: _1, _2… replace the photo at that place, _a, _b the sample of that side. No label read, no new draft.'],
-      example: 'e.g. nooks-hero_1.jpg · nooks-hero_2.jpg · nooks-hero_a.mp3 · nooks-hero_b.mp3' });
-    var drop = h(Z.DropZone, { label: records.length ? 'Add more files' : 'Browse photos and samples', multiple: true,
-      accept: 'image/jpeg,image/png,image/webp,image/heic,audio/mpeg,.mp3', disabled: busy, onFiles: onFiles });
-
-    if (view.name === 'review' && records[view.at]) {
-      var r = records[view.at], at = view.at;
-      var photo = r.photos.slice().sort(photoSort)[0];   // photo 1 (Gio: the AI reads image 1, nothing else)
-      function next() {
-        var cur = recRef.current[at];
-        if (!cur.release) { setMessage({ error: true, text: 'Pick a release, or Skip.' }); return; }
-        setMessage(null); patchRecord(cur.id, { state: 'confirmed' }); advance(at);
-      }
-      function skip() { setMessage(null); patchRecord(r.id, { state: 'skipped', release: null }); advance(at); }
-      var nextBtn = h(Z.Button, { key: 'next', hierarchy: 'primary', onClick: next }, 'Next');
-      var skipBtn = h(Z.Button, { key: 'skip', hierarchy: 'secondary', onClick: skip }, 'Skip');
-      return h('div', { className: 'admin-bulk-page admin-bulk-page--review' },
-        h('div', { className: 'admin-bulk-page__head' },
-          h('p', { className: 'body-small admin-memo__count' }, 'Record ' + (at + 1) + ' of ' + records.length + ' · ' + r.prefix),
-          h(Z.Button, { hierarchy: 'secondary', size: 'small', onClick: function () { setMessage(null); setView({ name: 'overview' }); } }, 'Back to overview')),
-        photo ? h('img', { className: 'admin-bulk-page__photo', src: photo.url, alt: 'Photo ' + photo.name }) : null,
-        h('p', { className: 'body-small' }, filesText(r)),
-        h(RecordField, { key: r.id, id: 'bulk-record', label: 'Which record', value: r.query || '', release: r.release, found: r.found,
-          onText: function (v) { patchRecord(r.id, { query: v }); },
-          onRelease: function (rel) { patchRecord(r.id, { release: rel }); if (rel) setMessage(null); } }),
-        mobile ? h(Z.ActionBar, { status: statusLine }, nextBtn, skipBtn)
-          : h('div', { className: 'admin-bulk-page__actions' }, nextBtn, skipBtn, statusLine));
-    }
-
-    var reading = records.filter(function (x) { return x.state === 'reading' || x.state === 'looking'; }).length;
-    var nAttach = records.filter(function (x) { return x.sku; }).length;
-    var toReview = records.filter(function (x) { return ['matched', 'choose', 'not found'].indexOf(x.state) >= 0; }).length;
-    var nFiles = records.reduce(function (n, x) { return n + x.photos.length + x.samples.length; }, 0) + unsorted.length;
-    var summary = records.length ? [plural(records.length, 'record'), plural(nFiles, 'file'), reading ? reading + ' reading' : null,
-      toReview ? toReview + ' to review' : null, unsorted.length ? plural(unsorted.length, 'file') + ' not recognised' : null].filter(Boolean).join(' · ') : '';
-    var createBtn = h(Z.Button, { key: 'create', hierarchy: toReview ? 'secondary' : 'primary', 'aria-busy': busy || undefined, disabled: !records.length || reading > 0,
-      onClick: busy ? undefined : createDrafts }, nAttach ? (mobile && toReview ? 'Save' : 'Save ' + plural(records.length, 'record'))
-        : mobile && toReview ? 'Create drafts' : 'Create ' + plural(records.length, 'draft'));   // the count is in the summary line
-    var reviewBtn = toReview ? h(Z.Button, { key: 'review', hierarchy: 'primary', disabled: busy || reading > 0, onClick: function () { openReview(reviewIndexFrom(0)); } }, 'Review') : null;
-    var options = records.map(function (x) { return [x.id, x.release ? x.release.title : x.prefix]; });
-
-    return h('div', { className: 'admin-bulk-page' },
-      h('h1', { className: 'label-extra-large' }, 'Bulk create'),
-      records.length ? null : help,
-      drop,
-      summary ? h('p', { className: 'body-small admin-memo__count', 'aria-live': 'polite' }, summary) : null,
-      unsorted.length ? h('div', { className: 'admin-bulk-page__unsorted' }, unsorted.map(function (u) {
-        return h('div', { key: u.id, className: 'admin-bulk-page__file' },
-          h(Z.FileItem, { name: u.name, position: '', image: u.kind === 'photo' ? { src: u.url, alt: '' } : undefined,
-            onRemove: function () { setUnsorted(function (cur) { return cur.filter(function (x) { return x.id !== u.id; }); }); }, removeLabel: 'Leave out ' + u.name }),
-          h(Z.Input, { variant: 'select', id: 'unsorted-' + u.id, label: 'Record', value: '',
-            supportText: u.reading ? 'Reading the photo…' : 'Name not recognised. Pick the record it belongs to.',
-            disabled: busy || !records.length, placeholder: 'Leave out',
-            onChange: function (e) { if (e.target.value) assign(u, e.target.value, 'picked'); } }, opts(options)));
-      })) : null,
-      records.length ? h('ul', { className: 'admin-memo__items', 'aria-label': 'Records found' }, records.map(function (x, i) {
-        var warn = [x.attachError || '', x.sku ? '' : bulkWarnings(x), x.saveError && x.saveError !== x.attachError ? 'Not saved: ' + x.saveError : ''].filter(Boolean).join(' ');
-        if (x.sku) return h(Z.BulkRecord, { key: x.id, state: 'attach', uploadProgress: uploadProgressOf(x),
-          title: x.form ? previewName(x.form) || 'SKU ' + x.sku : 'SKU ' + x.sku,
-          meta: x.form ? 'SKU ' + x.sku + ' · ' + (STATUS_LABEL[x.form.status] || x.form.status) : undefined,
-          files: filesText(x), status: x.attachError ? null : attachStatus(x), warning: warn || undefined,
-          onRemove: busy ? undefined : function () { removeRecord(x); } });
-        return h(Z.BulkRecord, { key: x.id, state: x.state, progress: x.progress, uploadProgress: uploadProgressOf(x),
-          title: x.release && x.state !== 'skipped' ? x.release.title : x.prefix,
-          meta: x.release && x.state !== 'skipped' ? x.release.meta : undefined,
-          files: filesText(x),
-          status: x.state === 'reading' ? (x.progress < 40 ? 'Waiting to read the label…' : 'Reading the label…') : BULK_STATUS[x.state](x),
-          warning: warn || undefined,
-          onReview: busy ? undefined : function () { openReview(i); },
-          onRemove: busy ? undefined : function () { removeRecord(x); } });
-      })) : null,
-      records.length ? (mobile ? h(Z.ActionBar, { status: statusLine }, reviewBtn || createBtn, reviewBtn ? createBtn : null)
-        : h('div', { className: 'admin-bulk-page__actions' }, reviewBtn, createBtn,
-            h(Z.Button, { key: 'over', hierarchy: 'secondary', disabled: busy, onClick: function () { setConfirmOver(true); } }, 'Start over'), statusLine))
-        : statusLine,
-      h(Z.Dialog, { open: confirmOver, title: 'Start over?', confirmLabel: 'Start over',
-        onCancel: function () { setConfirmOver(false); }, onConfirm: startOver },
-        h('p', null, 'The ' + plural(records.length, 'record') + ' of this batch are left out: no draft is created (the files already uploaded stay in storage, unused).')));
-  }
-  // #new/memo/<id>: the listing form, started from a memo
-  function FromMemoLoader(props) {
-    var st = useState(null), item = st[0], setItem = st[1];
-    var er = useState(null), error = er[0], setError = er[1];
-    useEffect(function () {
-      sb.from('memos').select('*').eq('id', props.id).single()
-        .then(function (res) { if (res.error) setError(res.error.message); else setItem(res.data); });
-    }, [props.id]);
-    if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not open this memo: ' + error);
-    if (!item) return h('p', { className: 'body-medium' }, 'Loading…');
-    var initial = emptyForm();
-    if (item.discogs_release_id) initial.discogs = String(item.discogs_release_id);
-    return h(ListingForm, { initial: initial, fromMemo: { id: item.id, title: item.title, note: item.note, discogs: item.discogs_release_id } });
+    if (made.length || failed) toast([made.length ? plural(made.length, 'memo') + ' from the old Memo list became ' + (made.length === 1 ? 'a draft' : 'drafts') + ' (SKU ' + made.join(', ') + ').' : '',
+      failed ? plural(failed, 'memo') + ' not converted: tried again next time.' : ''].filter(Boolean).join(' '));
+    return made.length;
   }
 
   // ── App ───────────────────────────────────────────────────────────────────
@@ -3126,12 +2852,10 @@
     else if (hash === '#content') body = h(Content, { key: 'content-' + route.visit });
     else if (/^#content\/[a-z_.]+$/.test(hash)) body = h(ContentEditor, { key: hash + route.visit, blockKey: hash.slice(9) });
     else if (hash === '#orders') body = h(Orders, { key: 'orders-' + route.visit });
+    else if (hash === '#offers') body = h(Offers, { key: 'offers-' + route.visit });
     else if (/^#orders\/[^/]+$/.test(hash)) body = h(OrderDetail, { key: hash + route.visit, id: hash.split('/')[1] });
-    else if (hash === '#memo') body = h(Memo, { key: 'memo-' + route.visit });
-    else if (hash === '#bulk') body = h(Bulk, { key: 'bulk' });
-    else if (/^#new\/memo\/[^/]+$/.test(hash)) body = h(FromMemoLoader, { key: hash + route.visit, id: hash.split('/')[2] });
     else if (/^#listings(\/(live|draft|sold|archived))?$/.test(hash)) body = h(Listings, { key: hash + route.visit, tab: hash.split('/')[1] || 'live' });
-    else body = h(Listings, { key: 'list-' + route.visit });
+    else body = h(Dashboard, { key: 'dashboard-' + route.visit });   // '', '#', #dashboard: the landing page (decision 0170)
 
     return h('div', { className: 'admin' },
       session ? h(Nav, { hash: hash, email: session.user.email }) : null,
@@ -3141,15 +2865,16 @@
   /* Admin navigation (Figma page `admin`, decision 0089): AdminBar (desktop buttons / mobile Menu · title)
      + the mobile menu, a full-screen native modal <dialog> with a MenuLayer, like the shop's (0060): Esc, × or
      following a link closes it, focus goes back to the Menu button. */
-  var SECTIONS = [['listings', 'Listings', '#'], ['orders', 'Orders', '#orders'], ['memo', 'Memo', '#memo'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings'], ['content', 'Content', '#content']];
+  var SECTIONS = [['dashboard', 'Dashboard', '#dashboard'], ['listings', 'Listings', '#listings'], ['orders', 'Orders', '#orders'], ['offers', 'Offers', '#offers'], ['attributes', 'Attributes', '#attributes'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings'], ['content', 'Content', '#content']];
   function sectionOf(hash) {
+    if (!hash || hash === '#' || hash === '#dashboard') return 'dashboard';
     if (/^#orders/.test(hash)) return 'orders';
-    if (/^#(new\/)?memo/.test(hash)) return 'memo';   // a listing created from a memo starts in Memo
+    if (hash === '#offers') return 'offers';
     if (/^#attributes/.test(hash)) return 'attributes';
     if (hash === '#shipping') return 'shipping';
     if (hash === '#settings') return 'settings';
     if (/^#content/.test(hash)) return 'content';
-    return 'listings';   // list, #edit-<id>, and Create (#new) / Bulk create (#bulk): actions of Listings (decision 0125)
+    return 'listings';   // list, #edit-<id>, and Create (#new): an action of Listings (decision 0125)
   }
   function Nav(props) {
     var dialogRef = useRef(null), menuBtn = useRef(null);
