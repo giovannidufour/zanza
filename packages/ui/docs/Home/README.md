@@ -9,7 +9,7 @@ The blocks of the home page, Home v2 (decision 0120, replaces 0085). Figma: page
 - ProductTile: media, title block, price row (price + samples), Button fill; gap small. Desktop shows the cover; mobile every photo in a horizontal scroll-snap gallery with a GalleryCounter 8px from the bottom-left corner (the page script updates it). Hover = surface/hover on the whole tile, pointer devices only.
 - ViewToggle: a secondary Button whose label names the other view ("List view" with icon bars-three, "Grid view": its icon is still a placeholder in Figma, design/open.md).
 - CollectionCard (decision 0174): a link box, label centered (label/large), 1px border divider/strong, padding medium-small, min height 96; hover = surface/hover. Focus = the browser ring (no focus token yet).
-- HomeCollections (decision 0174): the cards under the intro, a `<nav aria-label="Collections">` with a list; wrapping grid, gap gutter/small, 4 per row on desktop (a card = the side column), 2 on mobile.
+- HomeCollections (decision 0174): the cards under the intro, a `<nav aria-label="Collections">` with a list; the cards share the full width (2 cards = halves, 3 = thirds…), as many per row as fit at their minimum width: desktop 200, mobile 144 (always 2 per row on a phone); wrapped cards keep the column width (decision 0176). Gap gutter/small.
 - Accessibility: shelves are `<section>`s named by their title; tiles are `<article>`s named by the product name (h3); the swipe gallery is part of the tile link; the counter is decorative (aria-hidden), the photos' alt is on the first one only.
 
 ## API

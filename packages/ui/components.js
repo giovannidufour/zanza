@@ -165,7 +165,7 @@
     var showMenu = device !== 'desktop';
     var showTabs = device !== 'mobile' && !!props.tabs;
     var hasSearch = !!(props.search || props.searchHref);
-    // Logo + store name = one home link (decision 0175): one tab stop, accessible name = the store name (the logo is
+    // Logo + store name = one home link (decision 0176): one tab stop, accessible name = the store name (the logo is
     // alt=""). Without homeHref the same pair sits in a plain div. On the home page the link stays clickable: the
     // storefront reloads the page (scripts/site.js, soft navigation).
     var homeTag = props.homeHref ? 'a' : 'div';
@@ -1916,8 +1916,9 @@
      CollectionCard: `collection card` (state default | hover, decision 0174): a link box, label centered (label/large,
        text/strong), 1px border divider/strong inside, padding medium-small, min height 96; hover = surface/hover on the
        whole card (as the product card, 0088). Focus: the browser ring (no focus token yet, open.md).
-     HomeCollections: `home collections` (device desktop | mobile): the cards under the home intro, wrapping rows, gap
-       gutter/small; desktop 4 per row (a card = the 3-of-12 side column), mobile 2 per row. A <nav> named "Collections". */
+     HomeCollections: `home collections` (device desktop | mobile): the cards under the home intro, gap gutter/small;
+       they share the full width, as many per row as fit at their minimum width (desktop 200, mobile 144; decision 0176),
+       wrapped cards keep the column width. A <nav> named "Collections". */
   function SectionHead(props) {
     var HeadingTag = 'h' + (props.headingLevel || 2);
     var hasMeta = props.meta !== undefined && props.meta !== null && props.meta !== false;

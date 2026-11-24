@@ -195,3 +195,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0173](0173-scanner-waveform-peak-differences.md) | Scanner waveform: one tone, 480 thin bars, height = (bar peak / clip peak)² so differences between peaks show; display only | accepted |
 | [0174](0174-curated-collections.md) | Curated collections: cards under the home intro → /collections/<slug>/ (rules Years / Genres / Tags, AND between, OR inside), admin → Collections with drag order; every PLP lists sold records last | accepted |
 | [0175](0175-header-home-link.md) | Header: logo + store name = one link to the home; a link to the current page (the home too) reloads it softly, the player keeps playing | accepted |
+| [0176](0176-collection-cards-fill-the-row.md) | Home collection cards share the full row (1 = whole, 2 = halves…), as many per row as fit at min width 200 desktop / 144 mobile; wrapped cards keep the column width | accepted |
