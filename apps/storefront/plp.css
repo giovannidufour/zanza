@@ -17,6 +17,10 @@
   position: sticky; top: var(--site-header-visible, 0px);
   max-height: calc(100dvh - var(--site-header-visible, 0px));
   overflow-y: auto; overscroll-behavior: contain;
+  /* Gio 2026-11-24 (decision 0181): the last option never sits flush on the window edge or the open player,
+     and its focus ring is not clipped by the scroller */
+  padding-bottom: var(--medium-small);
+  box-sizing: border-box;
 }
 body[data-player-open] .plp-filters { max-height: calc(100dvh - var(--site-header-visible, 0px) - var(--site-player-height, 0px)); }
 /* follows the header's animated reveal (same placeholder timing as .site-header[data-revealing] in base.css) */
