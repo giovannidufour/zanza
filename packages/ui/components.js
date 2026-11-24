@@ -1019,32 +1019,6 @@
           props.linkLabel || 'On Discogs', h('span', { 'aria-hidden': 'true' }, ' ↗'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')) : null),
       h('button', { type: 'button', className: 'zz-chosen-release__change body-small', onClick: props.onChange }, props.changeLabel || 'Change'));
   }
-  /* ── Memo item (Figma BACKEND → Memo › `memo item`, decision 0087) ──
-     One record on the admin Memo list. Text column: title body/medium text/strong, meta body/small text/moderate,
-     note body/small, "On Discogs ↗" body/small underlined; actions = two secondary small Buttons (Create listing, Remove).
-     Row: padding 16 top/bottom, gap 8, 1px border-divider/strong at the bottom. device=mobile stacks the actions under
-     the text; desktop puts them on the right, centred (CSS @media, one markup). */
-  function MemoItem(props) {
-    var name = typeof props.title === 'string' ? props.title : 'record';
-    return h('li', Object.assign({}, omit(props, ['title', 'meta', 'note', 'href', 'select', 'onCreateDraft', 'onCreate', 'onRemove', 'createDraftLabel', 'createDraftBusy', 'createLabel', 'removeLabel', 'className']),
-      { className: cx('zz-memo-item', props.className) }),
-      // Figma boolean `select` (decision 0140): the row's checkbox, first
-      props.select ? h('div', { className: 'zz-memo-item__select' }, props.select) : null,
-      h('div', { className: 'zz-memo-item__text' },
-        h('p', { className: 'zz-memo-item__title body-medium' }, props.title),
-        props.meta ? h('p', { className: 'zz-memo-item__meta body-small' }, props.meta) : null,
-        props.note ? h('p', { className: 'zz-memo-item__note body-small' }, props.note) : null,
-        props.href ? h('a', { className: 'zz-memo-item__link body-small', href: props.href, target: '_blank', rel: 'noopener' },
-          'On Discogs', h('span', { 'aria-hidden': 'true' }, ' ↗'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')) : null),
-      h('div', { className: 'zz-memo-item__actions' },
-        // Figma boolean `create draft` (decision 0135): a draft in one tap, no form; busy = "Creating…", disabled
-        props.onCreateDraft ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.createDraftBusy ? undefined : props.onCreateDraft,
-          'aria-busy': props.createDraftBusy || undefined, 'aria-disabled': props.createDraftBusy || undefined,
-          'aria-label': (props.createDraftBusy ? 'Creating draft' : props.createDraftLabel || 'Create draft') + ': ' + name },
-          props.createDraftBusy ? 'Creating…' : props.createDraftLabel || 'Create draft') : null,
-        props.onCreate ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onCreate, 'aria-label': (props.createLabel || 'Create listing') + ': ' + name }, props.createLabel || 'Create listing') : null,
-        props.onRemove ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onRemove, 'aria-label': (props.removeLabel || 'Remove') + ': ' + name }, props.removeLabel || 'Remove') : null));
-  }
   /* BackLink (Figma `admin` → `back link`): a text link back to a list, above a detail/edit page title. An <a>,
      body/small text/moderate, "← " + label; hover underlines. Used by Edit listing (→ the matching Listings tab). */
   function BackLink(props) {
@@ -1053,7 +1027,7 @@
       '\u2190 ', props.label);
   }
   /* DiscogsLink (Figma BACKEND → Create › `discogs link`, decision 0150): the Discogs release a listing is matched to,
-     opening in a new tab. Same grammar as the "On Discogs ↗" link of MemoItem / ChosenRelease: body/small, underlined,
+     opening in a new tab. Same grammar as the "On Discogs ↗" link of ChosenRelease: body/small, underlined,
      text colour inherited (text/strong). Screen readers also hear "(opens in a new tab)". */
   function DiscogsLink(props) {
     return h('a', Object.assign({}, omit(props, ['href', 'label', 'className']),
@@ -1062,7 +1036,7 @@
   }
   /* ── Bulk create (Figma BACKEND → Bulk, decision 0107) ──
      BulkRecord (`bulk record`, device mobile | desktop, state reading | matched | choose | not found | confirmed | skipped,
-     boolean `warning`): one record found in the dropped files, MemoItem grammar. Text column: title body/medium
+     boolean `warning`): one record found in the dropped files, admin row grammar. Text column: title body/medium
      text/strong, meta body/small text/moderate, files body/small, then (reading) a ProgressBar, the status line
      (support text, body/small text/strong) and the warning (support text, emphasis alert); actions = Review, Remove
      (secondary small). Row padding 16 / 0, gap 8, bottom border divider/strong; desktop: actions on the right, top.
@@ -1094,7 +1068,7 @@
   }
   /* ── Admin Content (Figma BACKEND → Content, decision 0106) ──
      ContentGroupHead (`content group head`): heading label/medium + help body/small text/moderate, gap 4.
-     ContentRow (`content row`, device desktop | mobile, one responsive markup): an <li>, MemoItem grammar: text (title
+     ContentRow (`content row`, device desktop | mobile, one responsive markup): an <li>, admin row grammar: text (title
      body/medium · where body/small text/moderate · edited body/small · condition body/small, booleans `has edited`,
      `has condition`) + Edit (Button secondary small, a link). Padding 16 / 0, gap 16, bottom border divider/strong;
      mobile: stacked, gap 8.
@@ -1139,7 +1113,7 @@
       props.heading, props.text,
       props.onRemove ? h('div', null, h(Button, { hierarchy: 'secondary', size: 'small', type: 'button', onClick: props.onRemove }, props.removeLabel || 'Remove')) : null);
   }
-  /* ── ProgressBar (Figma BACKEND → Memo → `progress bar`, decision 0091) ──
+  /* ── ProgressBar (Figma COMPONENTS → admin → `progress bar`, decision 0091) ──
      Determinate bar: track surface/subtle, value action/primary/background/default, 4px high, square ends.
      value 0–100. role=progressbar + aria-valuenow; the visible status text stays next to it. */
   function ProgressBar(props) {
@@ -1201,7 +1175,7 @@
         width: 40, height: 40, loading: 'lazy', decoding: 'async' }) : null);
   }
   /* ── ListingRow (Figma page `admin` → `listing row`, decision 0089) ──
-     One row of an admin list on mobile (Listings, Attributes), in place of the table row. Same grammar as MemoItem:
+     One row of an admin list on mobile (Listings, Attributes), in place of the table row. Same admin row grammar:
      select (a Checkbox, label hidden) · text (title link body/small underlined, meta body/small text/moderate, gap 4)
      · price (body/small, right). Padding 16 top/bottom, gap 16, bottom border divider/strong. */
   function ListingRow(props) {
@@ -2040,6 +2014,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, Step: Step,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, MemoItem: MemoItem, BackLink: BackLink, DiscogsLink: DiscogsLink, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, useDragOrder: useDragOrder, DragHandle: DragHandle, AdminBar: AdminBar, ListingsHead: ListingsHead, ListingsFilter: ListingsFilter, Thumbnail: Thumbnail, ListingRow: ListingRow, OfferRow: OfferRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, BackLink: BackLink, DiscogsLink: DiscogsLink, BulkRecord: BulkRecord, BulkHelp: BulkHelp, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, useDragOrder: useDragOrder, DragHandle: DragHandle, AdminBar: AdminBar, ListingsHead: ListingsHead, ListingsFilter: ListingsFilter, Thumbnail: Thumbnail, ListingRow: ListingRow, OfferRow: OfferRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
            NewsletterDialog: NewsletterDialog, SectionHead: SectionHead, GenreLinks: GenreLinks, HomeIntro: HomeIntro, HomeNewsletter: HomeNewsletter, ProductTile: ProductTile, GalleryCounter: GalleryCounter, ViewToggle: ViewToggle };
 });
