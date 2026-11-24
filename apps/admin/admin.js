@@ -1648,8 +1648,8 @@
   var KINDS = [
     { key: 'artist', list: 'artists', tab: 'Artists', one: 'artist', aliases: true, discogs: true, split: true, search: 'Search name or spelling' },
     { key: 'label', list: 'labels', tab: 'Labels', one: 'label', aliases: true, discogs: true, split: false, search: 'Search name or spelling' },
-    { key: 'genre', list: 'genres', tab: 'Genres', one: 'genre', aliases: false, discogs: false, split: true, search: 'Search genres' },
-    { key: 'tag', list: 'tags', tab: 'Tags', one: 'tag', aliases: false, discogs: false, split: true, search: 'Search tags' }
+    { key: 'genre', list: 'genres', tab: 'Genres', one: 'genre', aliases: false, discogs: false, split: true, search: 'Search genres', links: 'release_genres', col: 'genre_id' },
+    { key: 'tag', list: 'tags', tab: 'Tags', one: 'tag', aliases: false, discogs: false, split: true, search: 'Search tags', links: 'release_tags', col: 'tag_id' }
   ];
   function kindOf(key) {
     if (key === 'subgenre') key = 'genre';   // links saved before 0048
@@ -1802,6 +1802,87 @@
       dialog);
   }
 
+  /* Figma BACKEND → Attributes › Genre - desktop · edit · records checklist (2523:1736), decision 0168: on a genre or
+     tag page every copy in the catalog (archived ones left out) is a ListingRow with a checkbox. Checked = its release
+     has the attribute; ticking saves at once (release_genres / release_tags, admin RLS), then the shop rebuilds when a
+     copy of that release is public. Genres and tags belong to the release: copies of the same release tick together.
+     Order: the ones that have it first (as loaded, so rows never jump while ticking), then Gio's shop order (0129). */
+  function RecordChecklist(props) {
+    var kind = props.kind;
+    var ls = useState(null), rows = ls[0], setRows = ls[1];
+    var os = useState(null), on = os[0], setOn = os[1];          // { release_id: true }
+    var er = useState(null), error = er[0], setError = er[1];
+    var qs = useState(''), query = qs[0], setQuery = qs[1];
+    var bs = useState({}), busy = bs[0], setBusy = bs[1];        // { release_id: true } while saving
+
+    useEffect(function () {
+      Promise.all([
+        sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,custom_title,photo_keys,release_id,sort_order,created_at,release:releases(lines:release_lines(position,artist,title))')
+          .neq('status', 'archived').order('sort_order', { ascending: true }).order('created_at', { ascending: false }),
+        sb.from(kind.links).select('release_id').eq(kind.col, props.id)
+      ]).then(function (res) {
+        var bad = res[0].error || res[1].error;
+        if (bad) { setError(bad.message); return; }
+        var have = {};
+        res[1].data.forEach(function (x) { have[x.release_id] = true; });
+        var list = res[0].data;
+        setRows(list.filter(function (r) { return have[r.release_id]; }).concat(list.filter(function (r) { return !have[r.release_id]; })));
+        setOn(have);
+      });
+    }, []);
+    var count = rows && on ? rows.filter(function (r) { return on[r.release_id]; }).length : 0;
+    useEffect(function () { if (rows) props.onCount(count); }, [count, rows]);
+
+    async function toggle(r, value) {
+      var rel = r.release_id;
+      if (busy[rel]) return;
+      setBusy(function (b) { var x = Object.assign({}, b); x[rel] = true; return x; });
+      setOn(function (cur) { var x = Object.assign({}, cur); if (value) x[rel] = true; else delete x[rel]; return x; });
+      var res;
+      if (value) {
+        // last in the release's list (position ≥ 1): the order of the chips on the PDP
+        var last = await sb.from(kind.links).select('position').eq('release_id', rel).order('position', { ascending: false }).limit(1);
+        var row = { release_id: rel, position: ((last.data || [])[0] || { position: 0 }).position + 1 };
+        row[kind.col] = props.id;
+        res = last.error ? last : await sb.from(kind.links).insert(row);
+      } else {
+        res = await sb.from(kind.links).delete().eq('release_id', rel).eq(kind.col, props.id);
+      }
+      if (!res.error && kind.key === 'genre') res = await sb.rpc('sync_genres', { p_release_ids: [rel] });   // releases.genres mirrors them
+      var copies = rows.filter(function (x) { return x.release_id === rel; });
+      var isPublic = copies.some(function (x) { return x.status !== 'draft'; });
+      if (!res.error && isPublic) await sb.rpc('mark_site_build');
+      setBusy(function (b) { var x = Object.assign({}, b); delete x[rel]; return x; });
+      if (res.error) {
+        setOn(function (cur) { var x = Object.assign({}, cur); if (value) delete x[rel]; else x[rel] = true; return x; });
+        toast('Not saved: ' + res.error.message);
+        return;
+      }
+      var others = copies.length - 1;
+      toast((value ? '“' + props.name + '” added to ' : '“' + props.name + '” removed from ') + '“' + nameOf(r) + '”' +
+        (others ? ' and its other ' + plural(others, 'copy', 'copies') : '') + '.' + (isPublic ? ' The shop updates in about 2 minutes.' : ''));
+    }
+
+    var head = h('h2', { id: 'records-title', className: 'label-medium' }, 'Records ' + count);
+    if (error) return h('section', { className: 'admin-section', 'aria-labelledby': 'records-title' }, head,
+      h('p', { className: 'body-small admin-status--error', role: 'alert' }, 'Could not load the catalog: ' + error));
+    if (!rows) return h('section', { className: 'admin-section', 'aria-labelledby': 'records-title' }, head, h('p', { className: 'body-small' }, 'Loading…'));
+
+    var q = query.trim().toLowerCase();
+    var visible = q ? rows.filter(function (r) { return nameOf(r).toLowerCase().indexOf(q) >= 0 || String(r.sku).indexOf(q) >= 0; }) : rows;
+    return h('section', { className: 'admin-section', 'aria-labelledby': 'records-title' }, head,
+      h('p', { className: 'body-small' }, 'Tick a record to give it this ' + kind.one + ', untick to remove it. Each change is saved at once; the shop updates in about 2 minutes.'),
+      h(Z.Input, { variant: 'search', 'aria-label': 'Search records', placeholder: 'Search records', value: query,
+        onChange: function (e) { setQuery(e.target.value); } }),
+      h('ul', { className: 'admin-rows', 'aria-label': 'Records with ' + kind.one + ' “' + props.name + '”' }, visible.length ? visible.map(function (r) {
+        return h(Z.ListingRow, { key: r.id, href: '#edit-' + r.id, title: nameOf(r), image: thumbOf(r),
+          meta: [r.sku, statusText(r), r.section].filter(Boolean).join(' · '),
+          select: h(Z.Checkbox, { id: 'has-' + r.id, hideLabel: true, label: props.name + ' on ' + nameOf(r) + ' (' + r.sku + ')',
+            checked: !!on[r.release_id], 'aria-busy': busy[r.release_id] || undefined,
+            onChange: function (e) { toggle(r, e.target.checked); } }) });
+      }) : h('li', { className: 'body-small admin-rows__empty' }, q ? 'Nothing matches “' + query.trim() + '”.' : 'No records yet.')));
+  }
+
   /* Figma BACKEND → Attributes › Artist - desktop · edit (2123:3216) and · split confirm (2123:4664) */
   function AttributeForm(props) {
     var mobile = useIsMobile();
@@ -1826,6 +1907,7 @@
         var e = res.data;
         setF({ name: e.name, slug: e.slug, discogs: e.discogs_id ? String(e.discogs_id) : '',
                aliases: (e.aliases || []).map(function (a) { return { id: null, name: a }; }) });
+        if (kind.links) return;   // genres and tags: RecordChecklist loads the catalog and reports the count
         setCount(e.listing_ids.length);
         if (e.listing_ids.length) {
           sb.from('listings').select('id,sku,slug,status,reserved_until,custom_title,release:releases(lines:release_lines(position,artist,title))')
@@ -1906,7 +1988,8 @@
             onChange: function (e) { slugTouched.current = true; set({ slug: e.target.value }); },
             supportText: f.slug ? 'Page address: /' + kind.list + '/' + f.slug : 'Made from the name on save.' }))),
       isNew ? null : h(Z.Divider),
-      isNew ? null : h('section', { className: 'admin-section', 'aria-labelledby': 'records-title' },
+      isNew ? null : kind.links ? h(RecordChecklist, { kind: kind, id: props.id, name: f.name, onCount: setCount }) :
+      h('section', { className: 'admin-section', 'aria-labelledby': 'records-title' },
         h('h2', { id: 'records-title', className: 'label-medium' }, 'Records ' + n),   // Figma: one text "Records 2"
         n ? h('ul', { className: 'admin-links body-small' }, records.map(function (r) {
           return h('li', { key: r.id }, h('a', { href: '#edit-' + r.id }, [String(r.sku), nameOf(r), STATUS_LABEL[effectiveStatus(r)] || r.status].join(' · ')));
