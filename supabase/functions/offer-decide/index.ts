@@ -13,7 +13,7 @@ const berlin = (iso: string) => new Intl.DateTimeFormat("en-GB", { timeZone: "Eu
   month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(iso)) + " (Berlin time)";
 
 // the admin's origins, as sign-upload: ADMIN_ORIGINS (comma separated), localhost for development
-const ALLOWED_ORIGINS = (env("ADMIN_ORIGINS") || "https://admin.rythem-works.com,https://store-admin-3k1.pages.dev").split(",").map((s) => s.trim());
+const ALLOWED_ORIGINS = (env("ADMIN_ORIGINS") || "https://admin.highmuzik.com,https://store-admin-3k1.pages.dev").split(",").map((s) => s.trim());
 function allowedOrigin(origin: string | null) {
   if (!origin) return null;
   if (ALLOWED_ORIGINS.includes(origin) || /^http:\/\/localhost(:\d+)?$/.test(origin)) return origin;

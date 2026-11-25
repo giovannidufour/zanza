@@ -1,41 +1,41 @@
 # Email transazionali (Resend) — runbook
 
-Come sono configurate le email del negozio e **come rifare tutto da zero** con nome, dominio o email nuovi (nome **rythem-works** e dominio **rythem-works.com** dal 2026-11-15; prima "Zanza" su `gio-d.xyz`). Seconda: **offerte di scambio** (decisione 0068, funzione `trade-offer`: email a Gio con Reply-To del trader; secret in più `OFFER_TO` = indirizzo di Gio, Verify JWT **off**, chiamata dal browser, origini ammesse = `SHOP_URL` + anteprime Pages + `ALLOWED_ORIGINS`). Prima email in uso: **Notify me** (decisione 0059, migrazione 0016, funzione `notify-back-in-stock`). Le prossime (conferma ordine) useranno lo stesso account e dominio.
+Come sono configurate le email del negozio e **come rifare tutto da zero** con nome, dominio o email nuovi (dal 2026-11-25 nome **HIGHMUZIK** e dominio **highmuzik.com**; prima nome **rythem-works** e dominio **rythem-works.com** dal 2026-11-15; prima "Zanza" su `gio-d.xyz`). Seconda: **offerte di scambio** (decisione 0068, funzione `trade-offer`: email a Gio con Reply-To del trader; secret in più `OFFER_TO` = indirizzo di Gio, Verify JWT **off**, chiamata dal browser, origini ammesse = `SHOP_URL` + anteprime Pages + `ALLOWED_ORIGINS`). Prima email in uso: **Notify me** (decisione 0059, migrazione 0016, funzione `notify-back-in-stock`). Le prossime (conferma ordine) useranno lo stesso account e dominio.
 
-## Nome del mittente: RYTHEM-WORKS (Gio, 2026-11-16)
+## Nome del mittente: HIGHMUZIK (Gio, 2026-11-16; HIGHMUZIK dal 2026-11-25)
 
-Ogni email in uscita mostra come mittente **RYTHEM-WORKS** (maiuscolo). Il nome nel testo delle email (`STORE_NAME`) resta `rythem-works`. Dove si imposta:
+Ogni email in uscita mostra come mittente **HIGHMUZIK** (maiuscolo). Il nome nel testo delle email (`STORE_NAME`) = `HIGHMUZIK`. Dove si imposta:
 
 | Dove | Campo |
 |---|---|
-| Supabase → Edge Functions → Secrets | `MAIL_FROM` = `RYTHEM-WORKS <gio@rythem-works.com>` (ordini, offerte, contatti, Notify me, conferma newsletter) |
-| Supabase → Authentication → Emails → SMTP Settings | Sender name = `RYTHEM-WORKS` (codice di login dei clienti) |
-| Buttondown → Settings → Email | Author name = `RYTHEM-WORKS` (newsletter) |
-| Gmail della casella del negozio → Impostazioni → Account → Invia messaggio come → modifica info | Nome = `RYTHEM-WORKS` (risposte di Gio ai clienti) |
+| Supabase → Edge Functions → Secrets | `MAIL_FROM` = `HIGHMUZIK <gio@highmuzik.com>` (ordini, offerte, contatti, Notify me, conferma newsletter) |
+| Supabase → Authentication → Emails → SMTP Settings | Sender name = `HIGHMUZIK` (codice di login dei clienti) |
+| Buttondown → Settings → Email | Author name = `HIGHMUZIK` (newsletter) |
+| Gmail della casella del negozio → Impostazioni → Account → Invia messaggio come → modifica info | Nome = `HIGHMUZIK` (risposte di Gio ai clienti) |
 
 ## Caselle (Gio, 2026-11-15)
 
 | Casella | A cosa serve |
 |---|---|
-| `gio@rythem-works.com` | **l'unico indirizzo pubblico**: sito, Privacy, mittente delle email, "Rispondi a" della newsletter. Non è una casella: Cloudflare Email Routing la inoltra |
-| `gio.rythem.works@gmail.com` | **casella del negozio**: vendite, scambi, offerte, contatti. Invia come `gio@rythem-works.com` (Gmail → Impostazioni → Account → "Invia messaggio come", SMTP `smtp.resend.com:465` SSL, utente `resend`, password = chiave Resend `gmail-smtp-3`). Non va mai mostrata in pubblico |
+| `gio@highmuzik.com` | **l'unico indirizzo pubblico**: sito, Privacy, mittente delle email, "Rispondi a" della newsletter. Non è una casella: Cloudflare Email Routing la inoltra |
+| `gio.highmuzik@gmail.com` | **casella del negozio**: vendite, scambi, offerte, contatti. Invia come `gio@highmuzik.com` (Gmail → Impostazioni → Account → "Invia messaggio come", SMTP `smtp.resend.com:465` SSL, utente `resend`, password = chiave Resend `gmail-smtp-3`). Non va mai mostrata in pubblico |
 | Gmail personale di Gio | **solo login e gestione degli account** dei servizi (Cloudflare, Supabase, GitHub, Resend, Stripe, Figma). Non deve mai comparire a clienti o iscritti |
 
-Eccezione voluta: l'account **Buttondown** ha come email `gio@rythem-works.com`, perché Buttondown usa l'email dell'account come "Rispondi a" (senza dominio di invio a pagamento non si separano). Il login resta con Google sul Gmail personale.
+Eccezione voluta: l'account **Buttondown** ha come email `gio@highmuzik.com`, perché Buttondown usa l'email dell'account come "Rispondi a" (senza dominio di invio a pagamento non si separano). Il login resta con Google sul Gmail personale.
 
-**Inoltro:** la regola `gio@rythem-works.com` → `gio.rythem.works@gmail.com` è **da fare**: la destinazione su Cloudflare (Email Routing → Destination addresses) è ancora *Pending* perché la mail di verifica di Cloudflare non arriva (2026-11-15). Finché non è verificata, la regola punta ancora al Gmail personale.
+**Inoltro:** `gio@highmuzik.com` → `gio.highmuzik@gmail.com` (Cloudflare Email Routing, destinazione verificata il 2026-11-25). Tutti i login degli account (Cloudflare, Supabase, GitHub, Resend, Buttondown, admin) restano sulla Gmail personale di Gio.
 
 ## Stato attuale (2026-11-15)
 
 | Cosa | Valore |
 |---|---|
 | Account Resend | login Google con il Gmail personale |
-| Dominio di invio | `rythem-works.com` (DNS su Cloudflare, regione Resend **eu-west-1**) · `gio-d.xyz` rimosso da Resend e dal DNS il 2026-11-15 |
-| Chiavi API | `rythem-works-site` (Sending access, solo rythem-works.com) = secret `RESEND_API_KEY` · `gmail-smtp-3` (Sending access, creata il 2026-11-16 al posto di `gmail-smtp-2`, che non era mai stata usata) = password SMTP del "Invia come" nella casella del negozio · `supabase-auth-staging` = password SMTP di Supabase Auth (codici di login) · `zanza-notify` (vecchia) cancellata il 2026-11-15 |
-| Mittente (`MAIL_FROM`) | `RYTHEM-WORKS <gio@rythem-works.com>` (nome mittente in maiuscolo, Gio 2026-11-16) |
-| Nome nel testo (`STORE_NAME`) | `rythem-works` |
-| Link nel testo (`SHOP_URL`) | `https://rythem-works.com` (oggi è la pagina coming soon: va bene finché il negozio non è aperto) |
-| Destinatario offerte (`OFFER_TO`) | `gio.rythem.works@gmail.com` |
+| Dominio di invio | `highmuzik.com` (DNS su Cloudflare, regione Resend **eu-west-1**) · `gio-d.xyz` rimosso da Resend e dal DNS il 2026-11-15 |
+| Chiavi API | `highmuzik-site` (Sending access, solo highmuzik.com) = secret `RESEND_API_KEY` · `highmuzik-smtp` = password SMTP di Supabase Auth (2026-11-25) · Gmail "Invia come" della casella del negozio: chiave ancora da creare · le vecchie chiavi rythem-works.com vanno cancellate a fine rinomina |
+| Mittente (`MAIL_FROM`) | `HIGHMUZIK <gio@highmuzik.com>` (nome mittente in maiuscolo, Gio 2026-11-16) |
+| Nome nel testo (`STORE_NAME`) | `HIGHMUZIK` |
+| Link nel testo (`SHOP_URL`) | `https://highmuzik.com` (oggi è la pagina coming soon: va bene finché il negozio non è aperto) |
+| Destinatario offerte (`OFFER_TO`) | `gio.highmuzik@gmail.com` |
 | Avviso nuovi iscritti newsletter | funzione `newsletter`, alla conferma del link: email a `NEWSLETTER_TO` se c'è, altrimenti `OFFER_TO` (casella del negozio). Mai al Gmail personale (2026-11-22) |
 | Tracking aperture/click | spento (privacy) |
 | Ricezione email | spenta |
@@ -48,7 +48,7 @@ Nessun nome, dominio o indirizzo è scritto nel codice: stanno tutti nei secrets
 
 ## Pezzi e dove stanno
 
-1. **Resend** → Domains: il dominio con 3 record DNS (sotto). → API keys: `rythem-works-site` (funzioni) e `gmail-smtp-3` (Gmail), *Sending access*, solo sul dominio.
+1. **Resend** → Domains: il dominio con 3 record DNS (sotto). → API keys: `highmuzik-site` (funzioni) e `gmail-smtp-3` (Gmail), *Sending access*, solo sul dominio.
 2. **Cloudflare** → DNS del dominio: i 3 record di Resend (*DNS only*, non proxied).
 3. **Supabase** (`store-staging`) → Edge Functions → `notify-back-in-stock`: *Verify JWT* **off** (la chiama un job senza login; il controllo è `NOTIFY_SECRET`).
 4. **Supabase** → Edge Functions → Secrets: `RESEND_API_KEY`, `NOTIFY_SECRET`, `MAIL_FROM`, `SHOP_URL`, `STORE_NAME`, `OFFER_TO` (offerte di scambio).
@@ -56,7 +56,7 @@ Nessun nome, dominio o indirizzo è scritto nel codice: stanno tutti nei secrets
 6. **pg_cron** job `back-in-stock` (migrazione 0016): ogni minuto, chiama la funzione solo se c'è una richiesta dovuta.
 7. **Permessi** (migrazione 0017): questo progetto non dà permessi sulle tabelle a `service_role` di default; la funzione ha bisogno di select/update/delete su `back_in_stock` e select su `listings`, `releases`, `release_lines`. Senza: `permission denied for table back_in_stock`.
 
-### Record DNS (rythem-works.com, regione eu-west-1; erano uguali su gio-d.xyz)
+### Record DNS (highmuzik.com, regione eu-west-1; erano uguali su gio-d.xyz)
 | Tipo | Nome | Contenuto |
 |---|---|---|
 | TXT | `resend._domainkey` | chiave DKIM data da Resend (`p=MIGf…`; cambia per ogni dominio) |
@@ -82,3 +82,6 @@ Chi fa cosa: i passi marcati **(Gio)** toccano chiavi, segreti, DNS o login e li
 - Piano gratuito Resend: 3.000 email/mese, 100/giorno.
 - Il testo dell'email (oggetto "It's back: …") è in `supabase/functions/notify-back-in-stock/index.ts`; l'indirizzo viene cancellato dopo l'invio, e il testo lo dice.
 - Datenschutz: le pagine legali (passo 4 del piano) devono citare Resend come responsabile del trattamento per queste email.
+
+
+**2026-11-25 (HIGHMUZIK):** mail di prova dal form contatti di staging.highmuzik.com con mittente gio@highmuzik.com e chiave `highmuzik-site`: inviata (risposta ok della funzione).

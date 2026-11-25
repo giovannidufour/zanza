@@ -3,9 +3,9 @@
   "lang": "en",
   "outputDir": "highmuzik",
   "basePath": "/highmuzik",
-  "mediaBaseUrl": "https://media.rythem-works.com",
-  "liveHostsNote": "Hosts that show the live favicon (white ground, decision 0127). Every other host (staging.rythem-works.com, *.pages.dev, gio-d.xyz, local) shows the staging one (acid-green).",
-  "liveHosts": ["rythem-works.com", "www.rythem-works.com"],
+  "mediaBaseUrl": "https://media.highmuzik.com",
+  "liveHostsNote": "Hosts that show the live favicon (white ground, decision 0127). Every other host (staging.highmuzik.com, *.pages.dev, gio-d.xyz, local) shows the staging one (acid-green).",
+  "liveHosts": ["highmuzik.com", "www.highmuzik.com"],
   "owner": {
     "note": "Who runs the shop (Figma page Trade / About). PLACEHOLDERS until Gio fills them: name, bio, Instagram and Mixes links. Discogs (highmuzik) and Instagram (giouann) are real (Gio, 2026-11-12/13); Facebook is real too (Gio, 2026-11-13), used only for the verification button, not listed on About (the profile URL carries his full name); stats show only the join year until the ratings are checked. No legal name or address here (that is the Impressum).",
     "name": "",
@@ -51,7 +51,7 @@
   "legal": {
     "note": "Legal pages (decisions 0079, 0093): content/legal/*.md, {{legal.x}} is filled from here; empty = a bracketed placeholder on the page, listed by the build. Gio sells privately (2026-11-15): no address, no phone, no VAT line, no Impressum: no name at all (Gio 2026-11-22, accepted risk, decision 0130; legal.name unused) + email, and the contact form (site.json → contact). email = the shop contact address, also shown on /contact/ (provisional: see _context/provisional-names.md). updated = date of the last change to Privacy.",
     "name": "",
-    "email": "gio@rythem-works.com",
+    "email": "gio@highmuzik.com",
     "updated": "2026-11-23"
   },
   "contact": {
@@ -73,14 +73,14 @@
       "basePath": "",
       "outputDir": "",
       "noindex": true,
-      "note": "noindex = every page answers X-Robots-Tag: noindex (_headers), while the shop is on staging and rythem-works.com shows the coming-soon page (build-coming-soon.js). Set to false at launch. Cloudflare Pages (npm run build:pages): served from the web root. The top-level values are the GoDaddy staging (gio-d.xyz/zanza)."
+      "note": "noindex = every page answers X-Robots-Tag: noindex (_headers), while the shop is on staging and highmuzik.com shows the coming-soon page (build-coming-soon.js). Set to false at launch. Cloudflare Pages (npm run build:pages): served from the web root. The top-level values are the GoDaddy staging (gio-d.xyz/zanza)."
     }
   },
   "comingSoon": {
-    "note": "Temporary page of rythem-works.com while the shop is on staging (build-coming-soon.js, Figma page Coming soon, decision 0096). text = Figma `coming soon` text property. email = the Contact link (mailto).",
+    "note": "Temporary page of highmuzik.com while the shop is on staging (build-coming-soon.js, Figma page Coming soon, decision 0096). text = Figma `coming soon` text property. email = the Contact link (mailto).",
     "title": "Opening soon",
     "text": "Reggae and dancehall records from my crates. The shop opens soon: leave your email and you’ll hear first.",
-    "email": "gio@rythem-works.com"
+    "email": "gio@highmuzik.com"
   },
   "offers": {
     "note": "Best offer (migration 0034, decision 0158): endpoint = URL of the Supabase function offer (Verify JWT OFF; puzzle on GET like contact). It sends the offer, confirms it from the email link and starts the payment of an accepted offer. Empty = the offer form says offers are not switched on yet.",
@@ -91,7 +91,7 @@
     "endpoint": "https://hhpknvyfypqipxufmbys.supabase.co/functions/v1/create-checkout"
   },
   "analytics": {
-    "note": "Shop analytics (decision 0131): PostHog EU Cloud, project 362828 (account: Gio's personal Gmail). key = the project token (phc_…, public by design, write-only); empty = no analytics scripts on any page. Cookieless ('always'), no recordings, heatmaps + web vitals on; never on the admin. Settings live in PostHog: Web analytics → cookieless tracking ON, domain https://rythem-works.com; Heatmaps ON (capture URLs: home, /sale/*, /products/*, free plan max 3); Privacy → discard client IP ON; Session replay OFF.",
+    "note": "Shop analytics (decision 0131): PostHog EU Cloud, project 362828 (account: Gio's personal Gmail). key = the project token (phc_…, public by design, write-only); empty = no analytics scripts on any page. Cookieless ('always'), no recordings, heatmaps + web vitals on; never on the admin. Settings live in PostHog: Web analytics → cookieless tracking ON, domain https://highmuzik.com; Heatmaps ON (capture URLs: home, /sale/*, /products/*, free plan max 3); Privacy → discard client IP ON; Session replay OFF.",
     "key": "phc_mkjXCRdhYtDHSrtg7tCsk3xTrxNzayLLY8QDvwzNCji6",
     "host": "https://eu.i.posthog.com"
   }

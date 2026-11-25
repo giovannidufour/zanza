@@ -19,7 +19,7 @@ const clip = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-// the shop's own domain and its subdomains (rythem-works.com = coming-soon page, staging.… = shop), the pages.dev
+// the shop's own domain and its subdomains (highmuzik.com = coming-soon page, staging.… = shop), the pages.dev
 // previews of SHOP_URL, and ALLOWED_ORIGINS
 function allowedOrigin(origin: string | null) {
   if (!origin) return null;

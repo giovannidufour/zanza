@@ -12,7 +12,7 @@
 //         422 { error: "below_minimum", missing_cents } · 422 { error: "shipping", status } · 4xx/5xx { error }.
 // Called by the browser: deploy with Verify JWT OFF; allowed origins as trade-offer (SHOP_URL, ALLOWED_ORIGINS, pages.dev).
 // Secrets: STRIPE_SECRET_KEY (sk_test_… until launch), SHOP_URL, optional ALLOWED_ORIGINS, MEDIA_BASE_URL
-// (default https://media.rythem-works.com). SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and SUPABASE_ANON_KEY are set by Supabase.
+// (default https://media.highmuzik.com). SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and SUPABASE_ANON_KEY are set by Supabase.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import "./shipping.js";
 
@@ -57,7 +57,7 @@ async function stripe(path: string, body?: Record<string, unknown>, idempotencyK
 const mediaUrl = (key: string | null) => {
   if (!key) return undefined;
   if (/^https:\/\//.test(key)) return key;   // test data from the seed (absolute URLs)
-  return `${(env("MEDIA_BASE_URL") || "https://media.rythem-works.com").replace(/\/$/, "")}/${key}`;
+  return `${(env("MEDIA_BASE_URL") || "https://media.highmuzik.com").replace(/\/$/, "")}/${key}`;
 };
 
 Deno.serve(async (req) => {

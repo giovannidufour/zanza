@@ -12,32 +12,32 @@ Gio: nome **HIGHMUZIK, sempre maiuscolo** (testi, email, Figma), dominio **highm
 
 **Fase 1 — dominio**
 - [x] [C] auto-renew rythem-works.com OFF (2026-11-25)
-- [ ] [G] VAT-ID nel billing Cloudflare (fattura), poi acquisto highmuzik.com ($11.17/anno) con ok di Gio
+- [x] [G] VAT-ID nel billing Cloudflare (fattura), poi acquisto highmuzik.com ($11.17/anno) con ok di Gio
 
 **Fase 2 — PR A, nome e identificatori (non dipende dal dominio)**
-- [ ] [C] `storeName`, testi, DS (`tokens.json`, artifact), Scanner (nome, bundle id `com.highmuzik.scanner`, cartelle `HIGHMUZIK samples/scans/videos`), `hm-` al posto di `zz-`, `window.Highmuzik*`, chiavi `highmuzik-*`, `package.json`, GoDaddy legacy `/highmuzik`
+- [x] [C] (PR #257) `storeName`, testi, DS (`tokens.json`, artifact), Scanner (nome, bundle id `com.highmuzik.scanner`, cartelle `HIGHMUZIK samples/scans/videos`), `hm-` al posto di `zz-`, `window.Highmuzik*`, chiavi `highmuzik-*`, `package.json`, GoDaddy legacy `/highmuzik`
 - [ ] [G/Mac] dopo il merge: ricompilare lo Scanner, spostare `~/Music/Zanza samples`, `~/Pictures/Zanza scans`, `~/Movies/Zanza videos` nelle cartelle HIGHMUZIK, rifare il login dello Scanner (keychain nuovo)
-- [ ] [C] Supabase secret `STORE_NAME` = HIGHMUZIK (con ok di Gio)
+- [x] [C] Supabase secret `STORE_NAME` = HIGHMUZIK (con ok di Gio)
 - [ ] [C] Figma: store name nel `header`, coming soon, copyright footer, legal; [G] rinominare il file in "HIGHMUZIK - Record Store"
 
 **Fase 3 — DNS e hosting (highmuzik.com)**
-- [ ] [C] Pages: `coming-soon` su apex + www · `store-front` su `staging.` · `store-admin` su `admin.` · R2 `store-media` su `media.` (+ CORS R2 con admin.highmuzik.com)
+- [x] [C] Pages: `coming-soon` su apex + www · `store-front` su `staging.` · `store-admin` su `admin.` · R2 `store-media` su `media.` (+ CORS R2 con admin.highmuzik.com)
 - [ ] [C] Access: app `staging` su staging.highmuzik.com; team Zero Trust `rythem-works` → `highmuzik` (se rinominabile)
 - [ ] [C] rythem-works.com: Redirect Rule 301 → highmuzik.com (path e query conservati), tutti i sottodomini
 - [ ] [C] Supabase Auth: Site URL + redirect `https://admin.highmuzik.com/**`; secrets `ADMIN_ORIGINS`, `ALLOWED_ORIGINS`, `SHOP_URL`, `ADMIN_URL`, `MEDIA_BASE_URL` (ok di Gio)
 
 **Fase 4 — email**
-- [ ] [G] nuova Gmail della casella del negozio (proposta `gio.highmuzik@gmail.com`), o tenere quella attuale
-- [ ] [C] Email Routing `gio@highmuzik.com` → casella del negozio ([G] clic di verifica), DMARC
-- [ ] [C] Resend: dominio highmuzik.com + DNS; [G] nuove chiavi (`highmuzik-site`, SMTP Gmail, SMTP Supabase Auth)
-- [ ] [C] secrets `MAIL_FROM` = `HIGHMUZIK <gio@highmuzik.com>`, `OFFER_TO`, `RESEND_API_KEY`; Supabase Auth SMTP (sender HIGHMUZIK, gio@highmuzik.com)
+- [x] [G] nuova Gmail della casella del negozio: `gio.highmuzik@gmail.com`, solo per transazionali e clienti. TUTTI i login degli account (Cloudflare, Supabase, GitHub, Resend, Buttondown, login admin) restano sulla Gmail personale di Gio
+- [x] [C] Email Routing `gio@highmuzik.com` → gio.highmuzik@gmail.com (verificata 2026-11-25) · [ ] DMARC
+- [x] [C] Resend: dominio highmuzik.com verificato; [G] chiave `highmuzik-site` in `RESEND_API_KEY` (2026-11-25, mail di prova dal form contatti ok) · [ ] [G] chiavi SMTP per Supabase Auth e Gmail
+- [x] [C] secrets `MAIL_FROM` = `HIGHMUZIK <gio@highmuzik.com>`, `OFFER_TO`, `RESEND_API_KEY`; Supabase Auth SMTP (sender HIGHMUZIK, gio@highmuzik.com)
 - [ ] [G] Gmail "Invia come" `gio@highmuzik.com`, nome HIGHMUZIK (popup che Claude non raggiunge)
 
 **Fase 5 — PR B, dominio nel codice** (dopo fasi 3–4)
-- [ ] [C] `site.json` (mediaBaseUrl, liveHosts, legal.email, comingSoon.email, newsletter.action), `admin.json`, default delle Edge Functions + User-Agent Discogs, commenti; redeploy funzioni (ok di Gio)
+- [x] [C] (PR B) `site.json` (mediaBaseUrl, liveHosts, legal.email, comingSoon.email; newsletter.action resta finché Buttondown non è rinominato), `admin.json`, default delle Edge Functions + User-Agent Discogs, commenti; redeploy funzioni (ok di Gio)
 
 **Fase 6 — servizi**
-- [ ] [C/G] Buttondown: username `highmuzik` (cambia l'endpoint, va insieme a PR B), newsletter name e Author name HIGHMUZIK, email account gio@highmuzik.com
+- [ ] [C/G] Buttondown: username `highmuzik` (cambia l'endpoint, va insieme a PR B), newsletter name e Author name HIGHMUZIK, email dell'account resta la Gmail personale
 - [ ] [G] Stripe: public business name HIGHMUZIK, statement descriptor HIGHMUZIK, support email gio@highmuzik.com
 - [ ] [C] Discogs developer app: nome HIGHMUZIK, callback URL sul nuovo dominio
 - [ ] [C] PostHog: nome progetto, dominio web analytics + URL heatmap su highmuzik.com
