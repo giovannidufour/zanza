@@ -137,7 +137,7 @@ const withFooter = (body, newsletter) => (body.startsWith('<div class="hm-page"'
 
 // Favicon = the logo illustration (decision 0097) on a ground that names the environment (decision 0127, Figma
 // component `favicon` on page assets): live = white, staging = acid-green. One build serves both hosts (the same Pages
-// deployment answers on staging.rythem-works.com, the pages.dev URLs and, at launch, rythem-works.com), so the choice is
+// deployment answers on staging.highmuzik.com, the pages.dev URLs and, at launch, highmuzik.com), so the choice is
 // made in the browser: the HTML carries the live icon (what crawlers and no-JS clients see) and a one-line script
 // switches to the staging icon on any host not listed in site.json → liveHosts.
 const faviconFiles = (env) => ({ svg: `/assets/favicon-${env}.svg`, png: `/assets/favicon-${env}-32.png`, touch: `/assets/apple-touch-icon-${env}.png` });
@@ -375,7 +375,7 @@ const homeCollections = collections.filter(c => c.on_home).map(c => ({ label: c.
 // Home (Figma page `Home`, decision 0120): intro, genres, This week, newsletter, Recent. Its newsletter box replaces the
 // footer's signup there (Figma Home v2: footer `newsletter` off)
 write('index.html', page({ template: 'home', title: Home.title, body: renderToStaticMarkup(React.createElement(Home.Home, { products, site, url, collections: homeCollections })), footerNewsletter: false }));
-// Cloudflare Pages response headers (target pages only). Until launch the shop lives on staging.rythem-works.com
+// Cloudflare Pages response headers (target pages only). Until launch the shop lives on staging.highmuzik.com
 // (behind Cloudflare Access) and store-front-6fx.pages.dev: neither may be indexed (site.json → noindex).
 if (targetArg === 'pages' && site.noindex) write('_headers', '/*\n  X-Robots-Tag: noindex\n');
 console.log(`done: ${products.length} product page(s), ${forSale.length} for sale` + (site.tradeEnabled ? `, ${forTrade.length} for trade` : ', trade off'));

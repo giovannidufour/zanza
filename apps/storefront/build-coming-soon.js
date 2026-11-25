@@ -1,4 +1,4 @@
-/* apps/storefront/build-coming-soon.js — the temporary page of rythem-works.com while the shop is on staging
+/* apps/storefront/build-coming-soon.js — the temporary page of highmuzik.com while the shop is on staging
    (Figma page `Coming soon`, component `coming soon`; decision 0096). Output: apps/storefront/dist-coming-soon/ =
    index.html (store name, title, text, newsletter signup), /privacy/ (a short privacy text, linked from the newsletter note), css, fonts,
    logo, and a _headers file with noindex. Published to the Cloudflare Pages project `coming-soon` by
@@ -63,7 +63,7 @@ function page({ title, body, description }) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escape(title)}</title>
-<!-- live favicon (decision 0127): this page only runs on rythem-works.com -->
+<!-- live favicon (decision 0127): this page only runs on highmuzik.com -->
 <link rel="icon" href="/assets/favicon-live.svg" type="image/svg+xml">
 <link rel="icon" href="/assets/favicon-live-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon-live.png">

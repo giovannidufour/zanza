@@ -13,7 +13,7 @@
 // "HIGHMUZIK", Gio's developer settings), SHOP_URL; optional ALLOWED_ORIGINS. SUPABASE_URL / SUPABASE_ANON_KEY are
 // set by Supabase (the wantlist switch, shop_settings).
 const env = (k: string) => Deno.env.get(k) ?? "";
-const USER_AGENT = "rythem-works/1.0 +https://rythem-works.com";
+const USER_AGENT = "highmuzik/1.0 +https://highmuzik.com";
 const API = "https://api.discogs.com";
 const MAX_SIGN = 60;
 

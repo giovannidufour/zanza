@@ -12,7 +12,7 @@
 // No minimum order for an accepted offer. ./shipping.js is a COPY of packages/shipping (npm run sync:functions).
 // Called by the browser: deploy with Verify JWT OFF. Origins as create-checkout (SHOP_URL, ALLOWED_ORIGINS, pages.dev).
 // Secrets: RESEND_API_KEY, MAIL_FROM, SHOP_URL, STORE_NAME, ORDERS_TO (or OFFER_TO), STRIPE_SECRET_KEY, optional
-// ADMIN_URL (default https://admin.rythem-works.com), MEDIA_BASE_URL, POW_SECRET. SUPABASE_* are set by Supabase.
+// ADMIN_URL (default https://admin.highmuzik.com), MEDIA_BASE_URL, POW_SECRET. SUPABASE_* are set by Supabase.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import "./shipping.js";
 
@@ -104,7 +104,7 @@ async function stripe(path: string, body?: Record<string, unknown>) {
 const mediaUrl = (key: string | null) => {
   if (!key) return undefined;
   if (/^https:\/\//.test(key)) return key;
-  return `${(env("MEDIA_BASE_URL") || "https://media.rythem-works.com").replace(/\/$/, "")}/${key}`;
+  return `${(env("MEDIA_BASE_URL") || "https://media.highmuzik.com").replace(/\/$/, "")}/${key}`;
 };
 
 Deno.serve(async (req) => {
@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
     if (r.result === "confirmed" && r.first) {
       const to = env("ORDERS_TO") || env("OFFER_TO");
       if (to) {
-        const admin = (env("ADMIN_URL") || "https://admin.rythem-works.com").replace(/\/$/, "");
+        const admin = (env("ADMIN_URL") || "https://admin.highmuzik.com").replace(/\/$/, "");
         const text = [`New offer: ${euro(r.amount_cents)} for ${r.name} (SKU ${r.sku})`, "",
           `Ships to: ${countryName(r.country)}`, `From: ${r.email}`, ...(r.note ? ["", `“${r.note}”`] : []), "",
           `Accept or decline: ${admin}/#offers`, `The record: ${shop}/products/${r.slug}/`, "",

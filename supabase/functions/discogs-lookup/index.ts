@@ -12,7 +12,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const ALLOWED_ORIGINS = (Deno.env.get("ADMIN_ORIGINS") ?? "https://store-admin-3k1.pages.dev").split(",").map((s) => s.trim());
-const USER_AGENT = "rythem-works-admin/1.0 +https://rythem-works.com";
+const USER_AGENT = "highmuzik-admin/1.0 +https://highmuzik.com";
 
 function cors(origin: string | null) {
   const allow = origin && (ALLOWED_ORIGINS.includes(origin) || /^http:\/\/localhost(:\d+)?$/.test(origin)) ? origin : ALLOWED_ORIGINS[0];

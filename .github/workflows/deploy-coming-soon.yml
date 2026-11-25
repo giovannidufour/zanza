@@ -1,4 +1,4 @@
-# Deploys the temporary page of rythem-works.com (apps/storefront/build-coming-soon.js, decision 0096) to the
+# Deploys the temporary page of highmuzik.com (apps/storefront/build-coming-soon.js, decision 0096) to the
 # Cloudflare Pages project `coming-soon` on every push to main that touches it. No Supabase: the page has no products.
 # Repository secret (already used by deploy-admin.yml):
 #   CLOUDFLARE_API_TOKEN  Cloudflare token with "Cloudflare Pages: Edit" on the account

@@ -1,6 +1,6 @@
 {
   "title": "Store admin",
-  "mediaBaseUrl": "https://media.rythem-works.com",
-  "storefrontUrl": "https://rythem-works.com",
+  "mediaBaseUrl": "https://media.highmuzik.com",
+  "storefrontUrl": "https://highmuzik.com",
   "note": "Domain-dependent values live here (stack.md → Portabilità). SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY come from apps/storefront/.supabase.env (git-ignored): the publishable key is public by design, the admin is protected by Auth + RLS."
 }

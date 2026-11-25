@@ -19,7 +19,7 @@ import "./file-names.js";
 
 // deno-lint-ignore no-explicit-any
 const FileNames = (globalThis as any).HighmuzikFileNames;
-const USER_AGENT = "rythem-works-admin/1.0 +https://rythem-works.com";
+const USER_AGENT = "highmuzik-admin/1.0 +https://highmuzik.com";
 const headers = {
   "Access-Control-Allow-Origin": "*",   // a native app sends no Origin; the session token is what protects it
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
