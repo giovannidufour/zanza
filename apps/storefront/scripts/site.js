@@ -3,14 +3,14 @@
    1. Header (desktop and mobile)
       - scroll down: it follows the page 1:1 (moves up by exactly the scrolled amount until it is out), no delay
       - scroll up: it comes back sticky at the top (animated reveal, see base.css [data-revealing])
-   2. Player (packages/ui Player, rendered once per page outside .zz-page)
+   2. Player (packages/ui Player, rendered once per page outside .hm-page)
       - a PlayerButton with data-sample-src plays its sample; the PlayerButtons of the same product are the queue
       - a [data-play-all] button (home) queues every sample of its [data-play-scope] section
       - previous / play-pause / next, the native audio controls and the Media Session (lock screen) stay in sync
       - opens by sliding up from the bottom of the viewport; the close button stops playback and slides it away
    3. Soft navigation
-      - internal links load the next page with fetch and swap only .zz-page, so the player and its audio keep playing
-      - anything unexpected (error, other origin, page without .zz-page) falls back to a normal page load
+      - internal links load the next page with fetch and swap only .hm-page, so the player and its audio keep playing
+      - anything unexpected (error, other origin, page without .hm-page) falls back to a normal page load
    4. PDP gallery
       - tracks the gallery's top in the window (--pdp-gallery-top), so pdp.css keeps its bottom at the window bottom
       - sticky scroll (desktop, decision 0119): measures the record (info + actions) for pdp.css, and brings it back from
@@ -24,7 +24,7 @@
         until Apply, close discards, Reset clears the draft (decision 0038)
 
    6. Bag (decision 0044)
-      - the bag = the listing ids in localStorage ('zanza-bag'), in the order they were added; a copy is unique, so an
+      - the bag = the listing ids in localStorage ('highmuzik-bag'), in the order they were added; a copy is unique, so an
         id is in the bag once (no quantity). Adding does NOT hold the copy: the hold starts at checkout
       - "Add to bag" (card, PDP, player) adds and shows the toast "Added to bag." + View bag (decision 0050); then the button reads "In bag" (secondary + tick)
         and opens the bag (decision 0058); taking a copy out happens only on /bag/; the header Bag shows the count in brackets on every page
@@ -52,7 +52,7 @@
   'use strict';
 
   // analytics (decision 0131, scripts/analytics.js): named events, a no-op when analytics is off
-  function track(name, props) { if (window.ZanzaAnalytics) window.ZanzaAnalytics.track(name, props); }
+  function track(name, props) { if (window.HighmuzikAnalytics) window.HighmuzikAnalytics.track(name, props); }
 
   /* ---------------------------------------------------------------- 1. header */
 
@@ -115,14 +115,14 @@
   }
 
   // Logo only when everything fits (owner, 2026-11-15; Figma `header` boolean `logo`): on screens too narrow for
-  // menu + logo + store name + Bag in one row (desktop: + tabs + search + Account) (e.g. 375px with "rythem-works"), the logo goes and the name stays.
+  // menu + logo + store name + Bag in one row (desktop: + tabs + search + Account) (e.g. 375px with "HIGHMUZIK"), the logo goes and the name stays.
   // Measured, not a breakpoint: the room depends on the store name and on the Bag count. Min gap = the row's 8px gap.
   function fitHeaderLogo(header) {
-    var bar = header.classList.contains('zz-header') ? header : header.querySelector('.zz-header');
-    var row = bar && bar.querySelector('.zz-header__row');
-    var leading = row && row.querySelector('.zz-header__leading');
-    var trailing = row && row.querySelector('.zz-header__trailing');
-    if (!leading || !trailing || !bar.querySelector('.zz-header__logo')) return function () {};
+    var bar = header.classList.contains('hm-header') ? header : header.querySelector('.hm-header');
+    var row = bar && bar.querySelector('.hm-header__row');
+    var leading = row && row.querySelector('.hm-header__leading');
+    var trailing = row && row.querySelector('.hm-header__trailing');
+    if (!leading || !trailing || !bar.querySelector('.hm-header__logo')) return function () {};
     function overflows() {
       var parts = Array.prototype.filter.call(row.children, function (el) { return el.offsetWidth > 0; });
       return parts.reduce(function (sum, el) { return sum + el.getBoundingClientRect().width; }, 0) + 8 * (parts.length - 1) > row.clientWidth;
@@ -144,7 +144,7 @@
   /* ---------------------------------------------------------------- 2. player */
 
   var player = document.querySelector('.site-player');
-  var audio = player && player.querySelector('.zz-player__audio');
+  var audio = player && player.querySelector('.hm-player__audio');
   var queue = [];      // [{ src, title, track, product, image, href }]
   var index = -1;      // position in queue of the loaded sample
   var lastTrigger = null;
@@ -172,7 +172,7 @@
   }
   // the queue of a sample button = the playable sample buttons of the same group (ProductInfo samples)
   function queueFor(btn) {
-    var group = btn.closest('.zz-product-info__samples') || btn.parentNode;
+    var group = btn.closest('.hm-product-info__samples') || btn.parentNode;
     return Array.prototype.slice.call(group.querySelectorAll('[data-sample-src]')).map(sampleFrom);
   }
 
@@ -191,14 +191,14 @@
     var cur = current();
     var playing = isPlaying();
     player.setAttribute('data-playing', playing ? 'true' : 'false');
-    var toggleBtn = q('.zz-player__toggle');
+    var toggleBtn = q('.hm-player__toggle');
     if (toggleBtn) toggleBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
     if (cur) {
-      setText('.zz-player__number', String(index + 1));   // the sample's place in the queue (decision 0056)
-      setText('.zz-player__sample', cur.title);
-      setText('.zz-player__product', cur.product);
-      setText('.zz-player__position', (index + 1) + ' of ' + queue.length);
-      var box = q('.zz-player__image');
+      setText('.hm-player__number', String(index + 1));   // the sample's place in the queue (decision 0056)
+      setText('.hm-player__sample', cur.title);
+      setText('.hm-player__product', cur.product);
+      setText('.hm-player__position', (index + 1) + ' of ' + queue.length);
+      var box = q('.hm-player__image');
       if (box) {
         var img = box.querySelector('img');
         if (cur.image) {
@@ -214,8 +214,8 @@
       // best offer (decision 0158): no "Add to bag" either, the offer is made on the record's page
       var noBag = cur.section === 'trade' || cur.offers;
       if (add) { add.hidden = noBag; add.disabled = !cur.listing; if (!noBag) syncAddButton(add, cur.listing); }
-      q('.zz-player__previous').disabled = index <= 0;
-      q('.zz-player__next').disabled = index >= queue.length - 1;
+      q('.hm-player__previous').disabled = index <= 0;
+      q('.hm-player__next').disabled = index >= queue.length - 1;
     }
     syncButtons();
     mediaSession(cur, playing);
@@ -311,10 +311,10 @@
       var btn = e.target.closest && e.target.closest('[data-sample-src]');
       if (btn && !btn.disabled) onSampleClick(btn);
     });
-    q('.zz-player__toggle').addEventListener('click', toggle);
-    q('.zz-player__previous').addEventListener('click', previous);
-    q('.zz-player__next').addEventListener('click', next);
-    q('.zz-player__close').addEventListener('click', close);
+    q('.hm-player__toggle').addEventListener('click', toggle);
+    q('.hm-player__previous').addEventListener('click', previous);
+    q('.hm-player__next').addEventListener('click', next);
+    q('.hm-player__close').addEventListener('click', close);
     // the native controls drive the same element: listen to the element, not to our buttons
     ['play', 'pause', 'ended', 'emptied'].forEach(function (t) { audio.addEventListener(t, render); });
     audio.addEventListener('ended', function () { if (index < queue.length - 1) next(); });
@@ -418,7 +418,7 @@
       frame = 0;
       var height = Math.max.apply(null, parts.map(function (el) { return el.offsetHeight; }));
       content.style.setProperty('--pdp-record-height', Math.ceil(height) + 'px');
-      var band = related.querySelector('.zz-related-products__title');
+      var band = related.querySelector('.hm-related-products__title');
       if (band) document.documentElement.style.setProperty('--pdp-related-band', Math.ceil(band.offsetHeight) + 'px');
       content.setAttribute('data-record-stack', '');
     }
@@ -436,7 +436,7 @@
     // the record's title, so keyboard and screen reader users land where the card took them.
     var back = content.querySelector('[data-record-back]');
     var gallery = content.querySelector('.pdp-content__gallery');
-    var band = related.querySelector('.zz-related-products__title');
+    var band = related.querySelector('.hm-related-products__title');
     var visFrame = 0;
     function updateBack() {
       visFrame = 0;
@@ -448,13 +448,13 @@
     }
     function scheduleBack() { if (!visFrame) visFrame = window.requestAnimationFrame(updateBack); }
     function focusRecord() {
-      var title = content.querySelector('.pdp-content__info .zz-product-info__name');
+      var title = content.querySelector('.pdp-content__info .hm-product-info__name');
       if (!title) return;
       title.setAttribute('tabindex', '-1');
       title.focus({ preventScroll: true });
     }
     function onBackClick(e) {
-      if (!back || !e.target.closest || !e.target.closest('.zz-return-card')) return;
+      if (!back || !e.target.closest || !e.target.closest('.hm-return-card')) return;
       var g = gallery || { scrollTop: 0 };
       var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (scrollTopAnimation) scrollTopAnimation.stop();
@@ -484,7 +484,7 @@
     measure();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
     var ro = window.ResizeObserver ? new ResizeObserver(schedule) : null;
-    if (ro) parts.concat(related.querySelector('.zz-related-products__title') || []).forEach(function (el) { ro.observe(el); });
+    if (ro) parts.concat(related.querySelector('.hm-related-products__title') || []).forEach(function (el) { ro.observe(el); });
     window.addEventListener('resize', schedule);
     content.addEventListener('focusin', onFocusIn);
     content.addEventListener('click', onBackClick);
@@ -543,7 +543,7 @@
   }
   // × in the search field (Figma `input` type=search, state=filled): empties it and keeps focus in it
   document.addEventListener('click', function (e) {
-    var clear = e.target.closest && e.target.closest('.zz-input__clear');
+    var clear = e.target.closest && e.target.closest('.hm-input__clear');
     if (!clear) return;
     var input = clear.parentNode.querySelector('input');
     if (!input) return;
@@ -623,7 +623,7 @@
     }
     var sortSelects = Array.prototype.slice.call(document.querySelectorAll('[data-plp-sort]'));
     var sort = params.get('sort') || 'newest';
-    var P = window.ZanzaPagination;
+    var P = window.HighmuzikPagination;
     var perPage = list ? parseInt(list.getAttribute('data-per-page'), 10) || 0 : 0;
     var page = parseInt(params.get('page'), 10) || 1, pages = 1, lastShown = 0;
 
@@ -651,13 +651,13 @@
     function refreshOptions(checkboxes, s, scope) {
       checkboxes.forEach(function (b) {
         var n = 0; values.forEach(function (v) { if (v[b.name].indexOf(b.value) !== -1 && matches(v, s, b.name)) n++; });
-        var count = b.closest('.zz-filter').querySelector('.zz-filter__count');
+        var count = b.closest('.hm-filter').querySelector('.hm-filter__count');
         if (count) count.textContent = n;
-        b.closest('.zz-filter').hidden = n === 0 && !b.checked;
+        b.closest('.hm-filter').hidden = n === 0 && !b.checked;
       });
       // a block shows only when something in the current view can be picked (owner, 2026-11-10)
-      Array.prototype.forEach.call(scope.querySelectorAll('.zz-filter-block'), function (block) {
-        block.setAttribute('data-empty', block.querySelector('.zz-filter:not([hidden])') ? 'false' : 'true');
+      Array.prototype.forEach.call(scope.querySelectorAll('.hm-filter-block'), function (block) {
+        block.setAttribute('data-empty', block.querySelector('.hm-filter:not([hidden])') ? 'false' : 'true');
         if (scope === root) block.hidden = block.getAttribute('data-empty') === 'true';
       });
     }
@@ -683,8 +683,8 @@
     // name: the accessible name when the visible text drops the filter type (genre / tag chips)
     function makeChip(template, text, onRemove, name) {
       var chip = template.content.firstElementChild.cloneNode(true);
-      chip.querySelector('.zz-entity-chip__label').textContent = text;
-      var btn = chip.querySelector('.zz-entity-chip__remove');
+      chip.querySelector('.hm-entity-chip__label').textContent = text;
+      var btn = chip.querySelector('.hm-entity-chip__remove');
       btn.setAttribute('aria-label', 'Remove filter ' + (name || text));
       btn.removeAttribute('tabindex');
       btn.addEventListener('click', onRemove);
@@ -776,13 +776,13 @@
       history.replaceState(history.state, '', location.pathname + (withPage ? '?' + withPage : '') + location.hash);
       // active filter row (0041): the link filter's chip; hidden when there is none
       var row = document.querySelector('[data-plp-active]');
-      var holder = row && row.querySelector('.zz-active-filter__row');
+      var holder = row && row.querySelector('.hm-active-filter__row');
       if (holder && chipTemplate) {
         // the collection chip (built in the page, decision 0178) stays; its remove link keeps filters and sort on /sale/
         var fixed = Array.prototype.slice.call(holder.querySelectorAll('[data-plp-fixed]'));
         holder.textContent = '';
         fixed.forEach(function (el) {
-          var a = el.querySelector('a.zz-entity-chip__remove');
+          var a = el.querySelector('a.hm-entity-chip__remove');
           if (a) a.setAttribute('href', a.getAttribute('href').split('?')[0] + (qs ? '?' + qs : ''));
           holder.appendChild(el);
         });
@@ -809,7 +809,7 @@
       var tpl = document.querySelector('template[data-pagination-template]');
       if (!nav || !tpl || !P) return;
       nav.hidden = pages <= 1;
-      var ul = nav.querySelector('.zz-pagination__list');
+      var ul = nav.querySelector('.hm-pagination__list');
       if (!ul) return;
       ul.textContent = '';
       if (pages <= 1) return;
@@ -824,7 +824,7 @@
           a.setAttribute('href', it.page === 1 ? base.replace(/[?&]$/, '') : base + 'page=' + it.page);   // page 1 = no ?page=
           if (it.kind === 'page' || it.kind === 'current') {
             a.setAttribute('aria-label', 'Page ' + it.page);
-            var label = a.querySelector('.zz-button__label');
+            var label = a.querySelector('.hm-button__label');
             if (label) label.textContent = String(it.page);
           }
         }
@@ -848,10 +848,10 @@
     }
     // Button suffix (packages/ui Button `suffix`): created or removed in place
     function setSuffix(button, text) {
-      var label = button.querySelector('.zz-button__label');
-      var el = label && label.querySelector('.zz-button__suffix');
+      var label = button.querySelector('.hm-button__label');
+      var el = label && label.querySelector('.hm-button__suffix');
       if (text === null) { if (el) el.remove(); return; }
-      if (!el && label) { el = document.createElement('span'); el.className = 'zz-button__suffix'; label.appendChild(el); }
+      if (!el && label) { el = document.createElement('span'); el.className = 'hm-button__suffix'; label.appendChild(el); }
       if (el) el.textContent = text;
     }
 
@@ -880,7 +880,7 @@
       var draftHidden = {};
       var rows = Array.prototype.slice.call(layer.querySelectorAll('[data-facet]'));
       var blocks = Array.prototype.slice.call(layer.querySelectorAll('[data-facet-block]'));
-      var panel = layer.querySelector('.zz-filters-layer');
+      var panel = layer.querySelector('.hm-filters-layer');
       var title = layer.querySelector('[data-layer-title]');
       var back = layer.querySelector('[data-layer-back]');
       var appliedBox = layer.querySelector('[data-layer-applied]');
@@ -898,9 +898,9 @@
         rows.forEach(function (row) {
           var key = row.getAttribute('data-facet');
           var picked = draftBoxes.filter(function (b) { return b.name === key && b.checked; }).map(labelOf);
-          var value = row.querySelector('.zz-filter-facet__value');
+          var value = row.querySelector('.hm-filter-facet__value');
           if (picked.length) {
-            if (!value) { value = document.createElement('span'); value.className = 'zz-filter-facet__value body-small'; row.insertBefore(value, row.querySelector('.zz-filter-facet__chevron')); }
+            if (!value) { value = document.createElement('span'); value.className = 'hm-filter-facet__value body-small'; row.insertBefore(value, row.querySelector('.hm-filter-facet__chevron')); }
             value.textContent = picked.join(', ');
           } else if (value) value.remove();
           row.setAttribute('aria-label', row.getAttribute('data-facet-label') + (picked.length ? ', ' + picked.join(', ') : ''));
@@ -924,7 +924,7 @@
         setSuffix(applyBtn, String(shownFor(s)));
       };
       var focusAfterRemove = function () {
-        var next = chipsBox.querySelector('.zz-entity-chip__remove') || rows.filter(function (r) { return !r.hidden; })[0] || applyBtn;
+        var next = chipsBox.querySelector('.hm-entity-chip__remove') || rows.filter(function (r) { return !r.hidden; })[0] || applyBtn;
         if (next) next.focus();
       };
       var showLevel = function (key) {
@@ -937,7 +937,7 @@
         var soldRow = layer.querySelector('[data-layer-sold]'); if (soldRow) soldRow.hidden = !!key;
         blocks.forEach(function (bl) { bl.hidden = bl.getAttribute('data-facet-block') !== key; });
         renderDraft();
-        layer.querySelector('.zz-filters-layer__body').scrollTop = 0;
+        layer.querySelector('.hm-filters-layer__body').scrollTop = 0;
       };
       var open = function () {
         draftBoxes.forEach(function (d) {
@@ -995,8 +995,8 @@
     // the wantlist check marks the cards later: it calls this to sort and show them
     if (wantPage) wantPage.__reapply = function () { applySort(); apply(false); };
     // analytics: one search per results page; 0 results = what people look for and the shop doesn't have
-    if (searchPage && query && window.ZanzaAnalytics) {
-      var term = window.ZanzaAnalytics.safeTerm(query);
+    if (searchPage && query && window.HighmuzikAnalytics) {
+      var term = window.HighmuzikAnalytics.safeTerm(query);
       var results = lastShown;
       track('search', { term: term || '[redacted]', results: results, no_results: results === 0 });
     }
@@ -1010,7 +1010,7 @@
      check runs. The visitor's Discogs permission lives in sessionStorage (this tab only, no cookie) until the tab is
      closed or Disconnect is pressed. Matches: release id = "Exact matches" (data-want="exact"), else master id =
      "Other pressings" (data-want="other"). */
-  var WANT_REQ = 'zanza-wantlist-request', WANT_ACCESS = 'zanza-wantlist-access';
+  var WANT_REQ = 'highmuzik-wantlist-request', WANT_ACCESS = 'highmuzik-wantlist-access';
   var wantRun = 0;   // the running check; a new one (or Disconnect, or leaving the page) makes the old one stop
   function sessionGet(k) { try { return JSON.parse(sessionStorage.getItem(k) || 'null'); } catch (e) { return null; } }
   function sessionSet(k, v) { try { if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* no storage: the check still runs once */ } }
@@ -1153,7 +1153,7 @@
 
   /* ---------------------------------------------------------------- 6. bag */
 
-  var BAG_KEY = 'zanza-bag';
+  var BAG_KEY = 'highmuzik-bag';
   // storage can be missing or refuse (private window, blocked site data): the bag is then empty, never an error
   function readBag() {
     try {
@@ -1168,12 +1168,12 @@
   // same rule as formatPrice in pages/shell.js: whole euros without decimals (12, 12.50) + the euro sign
   function formatPrice(cents) { return (cents % 100 === 0 ? cents / 100 : (cents / 100).toFixed(2)) + '\u20ac'; }
 
-  // a polite live region, once per document (outside .zz-page, so the soft navigation keeps it)
+  // a polite live region, once per document (outside .hm-page, so the soft navigation keeps it)
   var bagStatus = null;
   function announce(text) {
     if (!bagStatus) {
       bagStatus = document.createElement('p');
-      bagStatus.className = 'zz-visually-hidden';
+      bagStatus.className = 'hm-visually-hidden';
       bagStatus.setAttribute('role', 'status');
       document.body.appendChild(bagStatus);
     }
@@ -1187,8 +1187,8 @@
     if (ids.indexOf(id) === -1) { ids.push(id); writeBag(ids); track('bag_add', { listing_id: id, bag_size: ids.length }); }
     // a toast too (owner, decision 0050), even if the button and the header count already change: View bag = the header
     // Bag link (soft navigation keeps the player), so the toast closes after 6 s like a text-only one
-    if (window.ZanzaToast) {
-      window.ZanzaToast.show({ message: 'Added to bag.', actionLabel: 'View bag', actionElsewhere: true, onAction: function () {
+    if (window.HighmuzikToast) {
+      window.HighmuzikToast.show({ message: 'Added to bag.', actionLabel: 'View bag', actionElsewhere: true, onAction: function () {
         var link = document.querySelector('a[data-bag-count]');
         if (link) link.click();
       } });
@@ -1202,7 +1202,7 @@
 
   // the header Bag button: "(n)" in its suffix, on every page
   function renderBagCount(n) {
-    Array.prototype.forEach.call(document.querySelectorAll('[data-bag-count] .zz-button__suffix'), function (el) {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-bag-count] .hm-button__suffix'), function (el) {
       el.textContent = '(' + n + ')';
     });
     Array.prototype.forEach.call(document.querySelectorAll('[data-bag-count]'), function (el) {
@@ -1228,7 +1228,7 @@
       li.hidden = false;
       list.appendChild(li);   // in the order they were added
       if (li.getAttribute('data-available') === 'true') { count++; cents += parseInt(li.getAttribute('data-price'), 10) || 0; }
-      else if (li.querySelector('.zz-bag-item[data-status="sold"]')) sold++;
+      else if (li.querySelector('.hm-bag-item[data-status="sold"]')) sold++;
       else { held++; if (holdKind && holdKind[id] === 'manual') heldByHand++; }
     });
     // sold and reserved lines are not in the order: say it above Checkout, in full sentences, so a partial checkout
@@ -1289,12 +1289,12 @@
   // config (admin page Shipping), packages/shipping/shipping.js does the maths, the country is remembered.
   // Returns false when the bag cannot go to checkout for this country (not served, too heavy). No config on the
   // page = shipping not set up: "Calculated at checkout", as before.
-  var SHIP_KEY = 'zanza-ship-to';
+  var SHIP_KEY = 'highmuzik-ship-to';
   function readShipTo() { try { return window.localStorage.getItem(SHIP_KEY); } catch (e) { return null; } }
   function renderShipping(root, availableLines, subtotal) {
     var select = root.querySelector('[data-bag-ship-to]');
     var configEl = root.querySelector('[data-shipping-config]');
-    if (!select || !configEl || !window.ZanzaShipping) return true;
+    if (!select || !configEl || !window.HighmuzikShipping) return true;
     var config;
     try { config = JSON.parse(configEl.textContent); } catch (e) { return true; }
     var stored = readShipTo();
@@ -1303,10 +1303,10 @@
     var items = availableLines.map(function (li) {
       return { format: li.getAttribute('data-format'), weight_g: parseInt(li.getAttribute('data-weight'), 10) || null };
     });
-    var est = window.ZanzaShipping.estimate(config, items, country);
+    var est = window.HighmuzikShipping.estimate(config, items, country);
     var shipping = root.querySelector('[data-bag-shipping]'), total = root.querySelector('[data-bag-total]');
     var note = root.querySelector('[data-bag-note]');
-    var totalRow = total && total.closest('.zz-bag-summary__row');
+    var totalRow = total && total.closest('.hm-bag-summary__row');
     var served = est.status === 'ok' || est.status === 'empty';
     if (est.status === 'ok') {
       shipping.textContent = formatPrice(est.price_cents);
@@ -1348,13 +1348,13 @@
 
   /* checkout (migration 0021, _context/backend.md → Checkout con hold): Checkout posts the AVAILABLE ids of the bag and
      the country to create-checkout, which holds the copies for 33 min and answers the Stripe Checkout URL. The session
-     and its ids are remembered ('zanza-checkout'): back on the bag (cancel link or browser Back) the session is expired at
+     and its ids are remembered ('highmuzik-checkout'): back on the bag (cancel link or browser Back) the session is expired at
      once and the copies are free again, for the buyer too (checkoutReturn); on the thanks page ([data-checkout-thanks]) the bought ids leave the bag.
      TODO Figma: Button has no loading state; while the request runs Checkout is aria-disabled and ignores clicks,
      with no visual change (a disabled Button is struck through = unavailable, decision 0058). */
-  var CHECKOUT_KEY = 'zanza-checkout';
+  var CHECKOUT_KEY = 'highmuzik-checkout';
   var checkoutBusy = false;
-  function checkoutMessage(text) { if (window.ZanzaToast) window.ZanzaToast.show({ message: text }); else announce(text); }
+  function checkoutMessage(text) { if (window.HighmuzikToast) window.HighmuzikToast.show({ message: text }); else announce(text); }
   function startCheckout(btn) {
     if (checkoutBusy) return;
     var endpoint = btn.getAttribute('data-endpoint');
@@ -1446,8 +1446,8 @@
   // Figma: page Checkout → Checkout not completed - desktop / mobile (`order thanks` with message override, show note off).
   function thanksResult(pending) {
     var m = /[?&]session_id=(cs_(?:test|live)_[A-Za-z0-9]+)/.exec(window.location.search);
-    var base = document.querySelector('meta[name="zz-supabase-url"]');
-    var key = document.querySelector('meta[name="zz-supabase-key"]');
+    var base = document.querySelector('meta[name="hm-supabase-url"]');
+    var key = document.querySelector('meta[name="hm-supabase-key"]');
     if (!m || !base || !key || !window.fetch) return;
     var tries = 0;
     (function ask() {
@@ -1462,7 +1462,7 @@
           var msg = main.querySelector('.bag-empty > p');
           if (title) title.textContent = 'Order not completed';
           if (msg) msg.textContent = 'Sorry: someone else bought a record in your order a moment before you. You were not charged, and nothing was sold to you.';
-          Array.prototype.forEach.call(main.querySelectorAll('.bag-empty > p ~ *:not(.zz-button)'), function (el) { el.hidden = true; });
+          Array.prototype.forEach.call(main.querySelectorAll('.bag-empty > p ~ *:not(.hm-button)'), function (el) { el.hidden = true; });
           if (pending && Array.isArray(pending.ids)) writeBag(readBag().concat(pending.ids.filter(function (id) { return readBag().indexOf(id) === -1; })));
           announce(msg ? msg.textContent : 'Order not completed');
         }).catch(function () { /* the email tells them */ });
@@ -1488,7 +1488,7 @@
   // "(Reserved)", label "Notify me", hierarchy secondary, trailing icon = envelope, no leading icon. Pressing it opens
   // the "Reserved" dialog (explains the hold, asks the email). It wins over "In bag". Never disabled (struck = sold, 0058).
   function syncAddButton(btn, id, ids) {
-    var label = btn.querySelector('.zz-button__label');
+    var label = btn.querySelector('.hm-button__label');
     // the label's own text node (a prefix span may sit before it, 0065)
     var text = label && Array.prototype.filter.call(label.childNodes, function (n) { return n.nodeType === 3; })[0];
     if (!text || text.nodeType !== 3) return;
@@ -1508,8 +1508,8 @@
     if (reserved) btn.setAttribute('aria-label', 'Reserved. Notify me if it is back');
     else if (inBag) btn.setAttribute('aria-label', 'In bag, view bag');
     else btn.removeAttribute('aria-label');
-    setLeadingIcon(btn, label, inBag ? 'zz-icon-tick' : null);
-    setTrailingIcon(btn, reserved ? 'zz-icon-envelope' : null);
+    setLeadingIcon(btn, label, inBag ? 'hm-icon-tick' : null);
+    setTrailingIcon(btn, reserved ? 'hm-icon-envelope' : null);
   }
   // "(Reserved) Notify me" (decision 0065): Button prefix "(Reserved)" + label "Notify me". On mobile only "Reserved"
   // shows (owner 2026-11-12): the brackets and "Notify me" are spans that base.css hides at the mobile breakpoint, so the
@@ -1519,7 +1519,7 @@
     if (!on) { Array.prototype.forEach.call(label.querySelectorAll('[data-reserved-label]'), function (n) { label.removeChild(n); }); return; }
     if (cur) return;
     var prefix = document.createElement('span');
-    prefix.className = 'zz-button__prefix'; prefix.setAttribute('data-reserved-label', '');
+    prefix.className = 'hm-button__prefix'; prefix.setAttribute('data-reserved-label', '');
     prefix.innerHTML = '<span class="site-reserved__bracket">(</span>Reserved<span class="site-reserved__bracket">)</span>';
     var action = document.createElement('span');
     action.className = 'site-reserved__action'; action.setAttribute('data-reserved-label', ''); action.textContent = 'Notify me';
@@ -1548,7 +1548,7 @@
     btn.insertBefore(icon, label);
   }
   function syncAddButtons(ids) {
-    Array.prototype.forEach.call(document.querySelectorAll('[data-listing-id] .zz-product-card__add'), function (b) {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-listing-id] .hm-product-card__add'), function (b) {
       var holder = b.closest('[data-listing-id]');
       if (holder.getAttribute('data-listing-section') === 'trade' || holder.getAttribute('data-price-mode') === 'offers') return;   // a link to the offer page, not a bag button (0068, 0158)
       syncAddButton(b, holder.getAttribute('data-listing-id'), ids);
@@ -1575,11 +1575,11 @@
   function removeWithUndo(id, returnFocus, onUndo) {
     var at = readBag().indexOf(id);
     removeFromBag(id);
-    if (!window.ZanzaToast) { announce('Removed from bag.'); return; }
-    window.ZanzaToast.show({ message: 'Removed from bag.', actionLabel: 'Undo', returnFocus: returnFocus, onAction: function () {
+    if (!window.HighmuzikToast) { announce('Removed from bag.'); return; }
+    window.HighmuzikToast.show({ message: 'Removed from bag.', actionLabel: 'Undo', returnFocus: returnFocus, onAction: function () {
       var ids = readBag();
       if (ids.indexOf(id) === -1) { ids.splice(at < 0 ? ids.length : Math.min(at, ids.length), 0, id); writeBag(ids); }
-      window.ZanzaToast.show({ message: 'Undone.' });
+      window.HighmuzikToast.show({ message: 'Undone.' });
       if (onUndo) onUndo();
       else if (returnFocus && document.contains(returnFocus)) returnFocus.focus();
     } });
@@ -1615,17 +1615,17 @@
   function reservedText(id) { return RESERVED_TEXT[holdKind[id] === 'manual' ? 'manual' : 'checkout']; }
   var notifyFor = null, notifyReturn = null, notifyBusy = false;
   function supabaseConfig() {
-    var base = document.querySelector('meta[name="zz-supabase-url"]');
-    var key = document.querySelector('meta[name="zz-supabase-key"]');
+    var base = document.querySelector('meta[name="hm-supabase-url"]');
+    var key = document.querySelector('meta[name="hm-supabase-key"]');
     return base && key ? { url: base.content, key: key.content } : null;
   }
   function notifyParts() {
     var d = document.querySelector('[data-notify-dialog]');
     if (!d) return null;
     var input = d.querySelector('[data-notify-email]');
-    var field = input && input.closest('.zz-input');
+    var field = input && input.closest('.hm-input');
     return { dialog: d, input: input, field: field, support: field && field.querySelector('[id$="-support"]'),
-      confirm: d.querySelector('.zz-dialog__actions .zz-button:not([data-dialog-cancel])') };
+      confirm: d.querySelector('.hm-dialog__actions .hm-button:not([data-dialog-cancel])') };
   }
   var NOTIFY_SUPPORT = 'One email, only for this record. Then we delete your address.';
   function setNotifyError(p, text) {
@@ -1636,11 +1636,11 @@
   function openNotify(id) {
     var p = notifyParts();
     if (!p || !p.dialog.showModal || !supabaseConfig()) {
-      if (window.ZanzaToast) window.ZanzaToast.show({ message: reservedText(id) }); else announce(reservedText(id));
+      if (window.HighmuzikToast) window.HighmuzikToast.show({ message: reservedText(id) }); else announce(reservedText(id));
       return;
     }
     notifyFor = id;
-    var body = p.dialog.querySelector('.zz-dialog__body');
+    var body = p.dialog.querySelector('.hm-dialog__body');
     if (body) body.textContent = reservedText(id) + ' Leave your email and we\u2019ll tell you.';
     notifyReturn = document.activeElement;
     setNotifyError(p, null);
@@ -1679,7 +1679,7 @@
         : answer === 'unavailable' ? 'Sorry, this record is no longer available.'
         : 'We\u2019ll email you if it\u2019s back.';
       if (answer !== 'ok') { live[id] = answer === 'available' ? 'available' : 'sold'; renderBag(); }
-      if (window.ZanzaToast) window.ZanzaToast.show({ message: msg }); else announce(msg);
+      if (window.HighmuzikToast) window.HighmuzikToast.show({ message: msg }); else announce(msg);
     }).catch(function () {
       notifyBusy = false;
       p.confirm.removeAttribute('aria-busy');
@@ -1691,7 +1691,7 @@
     var d = e.target && e.target.closest && e.target.closest('[data-notify-dialog]');
     if (!d) return;
     if (e.target.closest('[data-dialog-cancel]')) closeNotify();
-    else if (e.target.closest('.zz-dialog__actions .zz-button')) sendNotify();
+    else if (e.target.closest('.hm-dialog__actions .hm-button')) sendNotify();
   });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && e.target && e.target.hasAttribute && e.target.hasAttribute('data-notify-email')) { e.preventDefault(); sendNotify(); }
@@ -1710,18 +1710,18 @@
     var available = line === 'available';
     li.setAttribute('data-listing-status', status);
     li.setAttribute('data-available', available ? 'true' : 'false');
-    var item = li.querySelector('.zz-bag-item');
+    var item = li.querySelector('.hm-bag-item');
     if (!item) return;
     item.setAttribute('data-status', line);
     // sold and reserved (0064, 0065): no notice on top; the word beside the struck price
-    var notice = item.querySelector('.zz-bag-item__notice');
+    var notice = item.querySelector('.hm-bag-item__notice');
     if (notice) notice.parentNode.removeChild(notice);
-    var purchase = item.querySelector('.zz-bag-item__purchase');
-    var price = item.querySelector('.zz-bag-item__price');
+    var purchase = item.querySelector('.hm-bag-item__purchase');
+    var price = item.querySelector('.hm-bag-item__price');
     if (purchase) {
       if (!price) {
         price = document.createElement('p');
-        price.className = 'zz-bag-item__price body-large body-medium--mobile';   // = BagItem responsive (CARD_TYPE.head)
+        price.className = 'hm-bag-item__price body-large body-medium--mobile';   // = BagItem responsive (CARD_TYPE.head)
         purchase.insertBefore(price, purchase.firstChild);
       }
       var text = formatPrice(parseInt(li.getAttribute('data-price'), 10) || 0);
@@ -1730,8 +1730,8 @@
         // as BagItem: "SOLD OUT" / "RESERVED" + (screen readers) "not in your order" + the struck price
         // the word in an inline Alert (red box, decision 0078): same classes as Alert layout=inline
         var label = document.createElement('span'); label.textContent = line === 'sold' ? 'SOLD OUT' : 'RESERVED';
-        label.className = 'zz-alert body-small zz-bag-item__status'; label.setAttribute('data-layout', 'inline');
-        var sr = document.createElement('span'); sr.className = 'zz-visually-hidden'; sr.textContent = ', not in your order, ';
+        label.className = 'hm-alert body-small hm-bag-item__status'; label.setAttribute('data-layout', 'inline');
+        var sr = document.createElement('span'); sr.className = 'hm-visually-hidden'; sr.textContent = ', not in your order, ';
         var s = document.createElement('s'); s.textContent = text;
         price.appendChild(label); price.appendChild(sr); price.appendChild(s);
       } else price.textContent = text;
@@ -1750,8 +1750,8 @@
     });
   }
   function readLive(force) {
-    var base = document.querySelector('meta[name="zz-supabase-url"]');
-    var key = document.querySelector('meta[name="zz-supabase-key"]');
+    var base = document.querySelector('meta[name="hm-supabase-url"]');
+    var key = document.querySelector('meta[name="hm-supabase-key"]');
     if (!base || !key || !window.fetch) return;
     if (!force && Date.now() - lastLiveRead < LIVE_MIN_GAP) return;
     var ids = Object.keys(seeded).concat(readBag());
@@ -1779,7 +1779,7 @@
   document.addEventListener('click', function (e) {
     var t = e.target;
     if (!t || !t.closest) return;
-    var card = t.closest('.zz-product-card__add');
+    var card = t.closest('.hm-product-card__add');
     if (card) {
       var holder = card.closest('[data-listing-id]');
       if (holder && (holder.getAttribute('data-listing-section') === 'trade' || holder.getAttribute('data-price-mode') === 'offers')) return;   // offer link, or a reserved/traded state (0068, 0158)
@@ -1792,7 +1792,7 @@
     if (padd) { var cur = typeof current === 'function' ? current() : null; if (cur && cur.section !== 'trade' && !cur.offers) addOrOpen(cur.listing); return; }
     var checkoutBtn = t.closest('[data-bag-checkout]');
     if (checkoutBtn) { if (!checkoutBtn.disabled) startCheckout(checkoutBtn); return; }
-    var remove = t.closest('.zz-bag-item__remove');
+    var remove = t.closest('.hm-bag-item__remove');
     if (remove) {
       var li = remove.closest('[data-bag-line]');
       if (!li) return;
@@ -1801,9 +1801,9 @@
       var i = lines.indexOf(li);
       var next = lines[i + 1] || lines[i - 1];
       var id = li.getAttribute('data-bag-line');
-      var focusEl = next ? next.querySelector('.zz-bag-item__remove') : document.querySelector('[data-bag-page] h1');
+      var focusEl = next ? next.querySelector('.hm-bag-item__remove') : document.querySelector('[data-bag-page] h1');
       removeWithUndo(id, focusEl, function () {
-        var back = document.querySelector('[data-bag-line="' + id + '"] .zz-bag-item__remove');
+        var back = document.querySelector('[data-bag-line="' + id + '"] .hm-bag-item__remove');
         if (back) back.focus();
       });
       if (focusEl) { if (!next) focusEl.setAttribute('tabindex', '-1'); focusEl.focus(); }
@@ -1827,16 +1827,16 @@
     if (!endpoint || !picker || picker.hasAttribute('data-ready')) return;
     picker.setAttribute('data-ready', '');
     var input = picker.querySelector('[data-release-input]');
-    var inputBox = input.closest('.zz-input');
+    var inputBox = input.closest('.hm-input');
     var hidden = picker.querySelector('[data-release-id]');
     var chosenBox = picker.querySelector('[data-release-chosen]');
     var uid = 'release-picker-' + (++pickerUid);
     var box = document.createElement('div');
-    box.className = 'zz-release-list release-picker__list';
+    box.className = 'hm-release-list release-picker__list';
     box.hidden = true;
     inputBox.parentNode.insertBefore(box, inputBox.nextSibling);
     var live = document.createElement('p');
-    live.className = 'zz-visually-hidden';
+    live.className = 'hm-visually-hidden';
     live.setAttribute('aria-live', 'polite');
     picker.appendChild(live);
     input.setAttribute('role', 'combobox');
@@ -1847,13 +1847,13 @@
 
     function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
     function thumb(src) {
-      if (!src) { var s = el('span', 'zz-release-option__thumb'); s.setAttribute('aria-hidden', 'true'); return s; }
-      var i = el('img', 'zz-release-option__thumb'); i.src = src; i.alt = ''; i.width = 40; i.height = 40; return i;
+      if (!src) { var s = el('span', 'hm-release-option__thumb'); s.setAttribute('aria-hidden', 'true'); return s; }
+      var i = el('img', 'hm-release-option__thumb'); i.src = src; i.alt = ''; i.width = 40; i.height = 40; return i;
     }
     function textCol(r) {
-      var t = el('span', 'zz-release-option__text');
-      t.appendChild(el('span', 'zz-release-option__title body-medium', r.title));
-      if (r.meta) t.appendChild(el('span', 'zz-release-option__meta body-small', r.meta));
+      var t = el('span', 'hm-release-option__text');
+      t.appendChild(el('span', 'hm-release-option__title body-medium', r.title));
+      if (r.meta) t.appendChild(el('span', 'hm-release-option__meta body-small', r.meta));
       return t;
     }
     function close() {
@@ -1863,10 +1863,10 @@
       input.setAttribute('aria-expanded', 'false');
       input.removeAttribute('aria-activedescendant');
     }
-    function footer() { box.appendChild(el('p', 'zz-release-list__source body-small', 'Data from Discogs')); }
+    function footer() { box.appendChild(el('p', 'hm-release-list__source body-small', 'Data from Discogs')); }
     function showMessage(text) {
       results = []; box.textContent = '';
-      box.appendChild(el('p', 'zz-release-list__message body-small', text));
+      box.appendChild(el('p', 'hm-release-list__message body-small', text));
       footer();
       box.hidden = false;
       input.setAttribute('aria-expanded', 'false');   // no listbox to go into, only a message
@@ -1875,12 +1875,12 @@
     function showResults(list) {
       results = list; active = -1; box.textContent = '';
       if (!list.length) { showMessage('No match on Discogs. Write it as you like: artist – title.'); return; }
-      var ul = el('ul', 'zz-release-list__options');
+      var ul = el('ul', 'hm-release-list__options');
       ul.id = uid + '-list';
       ul.setAttribute('role', 'listbox');
       ul.setAttribute('aria-label', 'Releases on Discogs');
       list.forEach(function (r, i) {
-        var li = el('li', 'zz-release-option');
+        var li = el('li', 'hm-release-option');
         li.id = uid + '-opt-' + i;
         li.setAttribute('role', 'option');
         li.setAttribute('aria-selected', 'false');
@@ -1926,18 +1926,18 @@
       close();
       chosenBox.textContent = '';
       chosenBox.appendChild(el('p', 'body-small', 'Which record'));
-      var card = el('div', 'zz-chosen-release');
+      var card = el('div', 'hm-chosen-release');
       card.appendChild(thumb(r.thumb));
       var t = textCol(r);
       if (r.uri) {
-        var a = el('a', 'zz-chosen-release__link body-small', 'On Discogs');
+        var a = el('a', 'hm-chosen-release__link body-small', 'On Discogs');
         a.href = r.uri; a.target = '_blank'; a.rel = 'noopener';
         var arrow = el('span', null, ' ↗'); arrow.setAttribute('aria-hidden', 'true'); a.appendChild(arrow);
-        a.appendChild(el('span', 'zz-visually-hidden', ' (opens in a new tab)'));
+        a.appendChild(el('span', 'hm-visually-hidden', ' (opens in a new tab)'));
         t.appendChild(a);
       }
       card.appendChild(t);
-      var change = el('button', 'zz-chosen-release__change body-small', 'Change');
+      var change = el('button', 'hm-chosen-release__change body-small', 'Change');
       change.type = 'button';
       change.setAttribute('aria-label', 'Change record: ' + r.title);
       change.addEventListener('click', function () {
@@ -2041,7 +2041,7 @@
     function mark(el, bad) {
       if (!el) return;
       el.setAttribute('aria-invalid', bad ? 'true' : 'false');
-      var box = el.closest('.zz-input');
+      var box = el.closest('.hm-input');
       if (box) box.setAttribute('data-invalid', bad ? 'true' : 'false');
     }
     function fail(text, el) {
@@ -2077,7 +2077,7 @@
         discogs: val(form, 'discogs'), instagram: val(form, 'instagram'), facebook: val(form, 'facebook'),
         inPerson: !!(form.querySelector('[name="inPerson"]') || {}).checked, email: val(form, 'email'), website: val(form, 'website')
       };
-      var label = sendBtn.querySelector('.zz-button__label');
+      var label = sendBtn.querySelector('.hm-button__label');
       var idle = label ? label.textContent : '';
       sendBtn.disabled = true;
       if (label) label.textContent = 'Sending…';
@@ -2155,7 +2155,7 @@
     function val(name) { var el = field(name); return el ? String(el.value || '').trim() : ''; }
     function mark(el, bad) {
       el.setAttribute('aria-invalid', bad ? 'true' : 'false');
-      var box = el.closest('.zz-input');
+      var box = el.closest('.hm-input');
       if (box) box.setAttribute('data-invalid', bad ? 'true' : 'false');
     }
     function fail(text, el) { errorEl.textContent = text; errorEl.hidden = false; if (el) el.focus(); }
@@ -2170,7 +2170,7 @@
       if (badEmail || badMessage) { fail('Fill in your email and your message.', badEmail ? email : message); return; }
       var endpoint = form.getAttribute('data-endpoint');
       if (!endpoint) { fail('The form isn\u2019t switched on yet: please write to the email above.'); return; }
-      var label = sendBtn.querySelector('.zz-button__label');
+      var label = sendBtn.querySelector('.hm-button__label');
       var idle = label ? label.textContent : '';
       sendBtn.disabled = true;
       if (label) label.textContent = 'Sending\u2026';
@@ -2236,7 +2236,7 @@
     function val(name) { var el = field(name); return el ? String(el.value || '').trim() : ''; }
     function mark(el, bad) {
       el.setAttribute('aria-invalid', bad ? 'true' : 'false');
-      var box = el.closest('.zz-input');
+      var box = el.closest('.hm-input');
       if (box) box.setAttribute('data-invalid', bad ? 'true' : 'false');
     }
     function fail(text, el) { errorEl.textContent = text; errorEl.hidden = false; if (el) el.focus(); }
@@ -2255,7 +2255,7 @@
       if (badCountry) { fail('Choose where the record ships to.', country); return; }
       if (badEmail) { fail('Enter your email: the confirmation link goes there.', email); return; }
       if (!endpoint) { fail('Offers aren’t switched on yet.'); return; }
-      var label = sendBtn.querySelector('.zz-button__label');
+      var label = sendBtn.querySelector('.hm-button__label');
       var idle = label ? label.textContent : '';
       sendBtn.disabled = true;
       if (label) label.textContent = 'Sending…';
@@ -2324,8 +2324,8 @@
       var configEl = root.querySelector('[data-shipping-config]'), config = null;
       try { config = configEl ? JSON.parse(configEl.textContent) : null; } catch (e) { config = null; }
       var served = true;
-      if (select && config && window.ZanzaShipping) {
-        var est = window.ZanzaShipping.estimate(config, [{ format: info.format, weight_g: info.weight_g }], select.value);
+      if (select && config && window.HighmuzikShipping) {
+        var est = window.HighmuzikShipping.estimate(config, [{ format: info.format, weight_g: info.weight_g }], select.value);
         served = est.status === 'ok';
         shipEl.textContent = served ? formatPrice(est.price_cents) : 'Not available';
         totalEl.textContent = served ? formatPrice(amount + est.price_cents) : '—';
@@ -2374,9 +2374,9 @@
     }).then(function (html) {
       if (token !== navToken) return;   // a newer navigation started
       var doc = new DOMParser().parseFromString(html, 'text/html');
-      var incoming = doc.querySelector('.zz-page');
-      var page = document.querySelector('.zz-page');
-      if (!incoming || !page) throw new Error('no .zz-page');
+      var incoming = doc.querySelector('.hm-page');
+      var page = document.querySelector('.hm-page');
+      if (!incoming || !page) throw new Error('no .hm-page');
       addMissingStyles(doc);
       page.parentNode.replaceChild(document.importNode(incoming, true), page);
       document.title = doc.title;
@@ -2399,10 +2399,10 @@
       initOfferPay();
       initContact();
       initHome();
-      if (window.ZanzaAccount) window.ZanzaAccount.init();   // customer account (scripts/account.js, decision 0101)
+      if (window.HighmuzikAccount) window.HighmuzikAccount.init();   // customer account (scripts/account.js, decision 0101)
       if (player && audio) render();
       // screen readers and keyboard: start from the new page's main heading, like a full load would
-      var focusEl = document.querySelector('main h1') || document.querySelector('.zz-page h1:not([hidden])') || document.querySelector('main');
+      var focusEl = document.querySelector('main h1') || document.querySelector('.hm-page h1:not([hidden])') || document.querySelector('main');
       if (focusEl) { focusEl.setAttribute('tabindex', '-1'); focusEl.focus({ preventScroll: true }); }
     }).catch(function () {
       if (token === navToken) location.href = href;   // anything unexpected: a normal page load
@@ -2427,7 +2427,7 @@
 
   // grid | list: the view toggle flips .home-content[data-view] (home.css shows one view); the choice is remembered in
   // this browser (a convenience: storage may be blocked, then every visit starts in grid). Desktop only (mobile = tiles).
-  var HOME_VIEW_KEY = 'zz-home-view';
+  var HOME_VIEW_KEY = 'hm-home-view';
   function initHome() {
     var home = document.querySelector('.home-content[data-view]');
     if (!home) return;
@@ -2505,15 +2505,15 @@
   // the SelectButton, while the last input was a pointer. Any key press brings the ring back (components.css).
   function initSelectFocus() {
     document.addEventListener('pointerdown', function (e) {
-      var box = e.target.closest && e.target.closest('.zz-select-button');
+      var box = e.target.closest && e.target.closest('.hm-select-button');
       if (box) box.setAttribute('data-focus-source', 'pointer');
     }, true);
     document.addEventListener('keydown', function (e) {
-      var box = e.target.closest && e.target.closest('.zz-select-button');
+      var box = e.target.closest && e.target.closest('.hm-select-button');
       if (box) box.removeAttribute('data-focus-source');
     }, true);
     document.addEventListener('focusout', function (e) {
-      var box = e.target.closest && e.target.closest('.zz-select-button');
+      var box = e.target.closest && e.target.closest('.hm-select-button');
       if (box) box.removeAttribute('data-focus-source');
     }, true);
   }
@@ -2533,6 +2533,6 @@
   initOfferPay();
   initContact();
   initHome();
-  if (window.ZanzaAccount) window.ZanzaAccount.init();
+  if (window.HighmuzikAccount) window.HighmuzikAccount.init();
   initSelectFocus();
 })();

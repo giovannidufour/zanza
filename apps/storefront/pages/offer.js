@@ -49,7 +49,7 @@ function PriceOffer({ product, site, url, countries }) {
   const endpoint = (site.offers || {}).endpoint || '';
   const list = countries || [];
   const def = list.some((c) => c.code === DEFAULT_COUNTRY) ? DEFAULT_COUNTRY : (list[0] || {}).code;
-  return h('div', { className: 'zz-page' },
+  return h('div', { className: 'hm-page' },
     h(SiteHeader, { site, url, section: 'sale' }),
     h('main', { className: 'trade-content', 'data-price-offer-page': '' },
       h('h1', { className: 'trade-content__title body-large', 'data-offer-title': '' }, 'Make an offer'),
@@ -67,7 +67,7 @@ function PriceOffer({ product, site, url, countries }) {
           supportText: 'I send you a link to confirm the offer. It reaches me only after that.' }),
         h(Z.Input, { variant: 'text-area', label: 'Note', optional: true, name: 'note', maxLength: 1000, placeholder: 'Anything I should know?' }),
         // honeypot: hidden from people, bots fill it (the function drops those offers)
-        h('div', { className: 'zz-visually-hidden', 'aria-hidden': 'true' },
+        h('div', { className: 'hm-visually-hidden', 'aria-hidden': 'true' },
           h('label', null, 'Website', h('input', { type: 'text', name: 'website', tabIndex: -1, autoComplete: 'off' }))),
         // Figma `offer submit`: fine print, error line, Send offer
         h('p', { className: 'body-small' }, 'Nothing is agreed until I say yes. If I accept, you get a payment link valid 48 h, and the record is held for you. ',
@@ -95,7 +95,7 @@ function LiveTarget({ label }) {
 function OfferConfirm({ site, url }) {
   const endpoint = (site.offers || {}).endpoint || '';
   const more = h(Z.Button, { hierarchy: 'secondary', href: url('/sale/') }, 'More records for sale');
-  return h('div', { className: 'zz-page' },
+  return h('div', { className: 'hm-page' },
     h(SiteHeader, { site, url, section: 'sale' }),
     h('main', { className: 'trade-content', 'data-offer-confirm-page': '', 'data-endpoint': endpoint, 'data-products-base': url('/products/') },
       h('h1', { className: 'trade-content__title body-large' }, 'Make an offer'),
@@ -118,7 +118,7 @@ function OfferPay({ site, url, shipping, countries }) {
   const list = countries || [];
   const def = list.some((c) => c.code === DEFAULT_COUNTRY) ? DEFAULT_COUNTRY : (list[0] || {}).code;
   const more = h(Z.Button, { hierarchy: 'secondary', href: url('/sale/') }, 'More records for sale');
-  return h('div', { className: 'zz-page' },
+  return h('div', { className: 'hm-page' },
     h(SiteHeader, { site, url, section: 'sale' }),
     h('main', { className: 'trade-content', 'data-offer-pay-page': '', 'data-endpoint': endpoint, 'data-products-base': url('/products/') },
       h('h1', { className: 'trade-content__title body-large' }, 'Your offer was accepted'),

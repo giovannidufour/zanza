@@ -1,4 +1,4 @@
-# Zanza Scanner
+# HIGHMUZIK Scanner
 
 Small macOS app to scan record labels with the Canon CanoScan LiDE 100 straight to the file names of decision 0136.
 Why and how it behaves: `design/decisions/0137-label-scanner-app.md`. Figma: BACKEND → `Scanner`.
@@ -9,11 +9,11 @@ Why and how it behaves: `design/decisions/0137-label-scanner-app.md`. Figma: BAC
 apps/scanner/build.sh
 ```
 
-Needs only the Command Line Tools (Swift 6, macOS SDK); no Xcode. Output: `apps/scanner/build/Zanza Scanner.app`
+Needs only the Command Line Tools (Swift 6, macOS SDK); no Xcode. Output: `apps/scanner/build/HIGHMUZIK Scanner.app`
 (git-ignored), signed ad hoc, so it runs on this Mac only. Copy it to `/Applications` to keep it in Launchpad.
 
-`ZanzaScanner --snapshot out.png` renders the window with sample names and quits (design check; native pickers and
-text fields are not drawn by the renderer). `ZanzaScanner --test-scan <folder> <x mm> <y mm>` does a real Preview + Scan (300 dpi, 7") centred at x, y and writes preview.png, labels/ and originals/ in <folder>.
+`HighmuzikScanner --snapshot out.png` renders the window with sample names and quits (design check; native pickers and
+text fields are not drawn by the renderer). `HighmuzikScanner --test-scan <folder> <x mm> <y mm>` does a real Preview + Scan (300 dpi, 7") centred at x, y and writes preview.png, labels/ and originals/ in <folder>.
 
 ## Files
 

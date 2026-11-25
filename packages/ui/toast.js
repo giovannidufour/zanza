@@ -2,7 +2,7 @@
    (static pages) and in the admin (React app). The markup comes from components.js (ToastRegion renders the live
    region, an empty slot and a <template> of the Toast), so this file only clones, fills and removes. ASCII only.
 
-   ZanzaToast.show({ message, actionLabel, onAction, actionElsewhere, returnFocus }) -> { dismiss }
+   HighmuzikToast.show({ message, actionLabel, onAction, actionElsewhere, returnFocus }) -> { dismiss }
      - one toast at a time: a new one replaces the current one (no queue)
      - the message is announced by the live region (role=status, polite); focus never moves to the toast (0043)
      - without an action: gone after 6 s, paused while the pointer is over it, focus is inside it, or the tab is
@@ -11,10 +11,10 @@
      - the action runs onAction and closes the toast; the caller usually shows "Undone." next
      - Esc (focus inside) and the dismiss button close it; if focus was inside, it goes back to `returnFocus` when
        that element is still on the page
-   ZanzaToast.dismiss() closes the current one. */
+   HighmuzikToast.dismiss() closes the current one. */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.ZanzaToast = factory();
+  else root.HighmuzikToast = factory();
 }(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
@@ -73,7 +73,7 @@
     if (action) {
       if (!hasAction) action.parentNode.removeChild(action);
       else {
-        var label = action.querySelector('.zz-button__label') || action;
+        var label = action.querySelector('.hm-button__label') || action;
         label.textContent = opts.actionLabel;
         action.addEventListener('click', function () {
           close(t, false);

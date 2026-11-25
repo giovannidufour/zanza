@@ -425,7 +425,7 @@ export interface ProductReturnCardProps extends ButtonHTMLAttributes<HTMLButtonE
 }
 export declare function ProductReturnCard(props: ProductReturnCardProps): JSX.Element;
 
-/** Product images: 2 per product. Desktop: stacked full width, gap gutter-small, vertical scroll inside `--zz-gallery-max-height` (set by the page); mobile: horizontal swipe. Mirrors the PDP frames (no Figma gallery component yet). */
+/** Product images: 2 per product. Desktop: stacked full width, gap gutter-small, vertical scroll inside `--hm-gallery-max-height` (set by the page); mobile: horizontal swipe. Mirrors the PDP frames (no Figma gallery component yet). */
 export interface GalleryImage {
   /** Image URL. */
   src: string;
@@ -660,9 +660,9 @@ export interface ToastProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function Toast(props: ToastProps): JSX.Element;
 
-/** The one place toasts appear: fixed at the top of the viewport, gutter-small below `--zz-toast-offset` (the shop:
+/** The one place toasts appear: fixed at the top of the viewport, gutter-small below `--hm-toast-offset` (the shop:
  *  its visible header, 0071); a visually hidden live region (role=status, polite) present at load, an empty slot and a template of the Toast. Render it once per page, outside the swapped
- *  page content; the behaviour is `ZanzaToast.show()` in packages/ui/toast.js. */
+ *  page content; the behaviour is `HighmuzikToast.show()` in packages/ui/toast.js. */
 export interface ToastRegionProps extends HTMLAttributes<HTMLElement> {
   /** Landmark name. Default "Notifications". */
   "aria-label"?: string;
@@ -927,7 +927,7 @@ export interface FooterProps extends HTMLAttributes<HTMLElement> {
   legal?: ReactNode;
   /** Accessible name of the legal links group. @default "Legal" */
   legalLabel?: string;
-  /** Figma `copyright`, e.g. "© 2026 rythem-works". */
+  /** Figma `copyright`, e.g. "© 2026 HIGHMUZIK". */
   copyright?: ReactNode;
 }
 export declare function Footer(props: FooterProps): JSX.Element;
@@ -1296,7 +1296,7 @@ export declare function useDragOrder(opts: {
   nameOf?: (i: number) => string | undefined;
   /** null/undefined = fixed order (no drag). */
   onMove?: ((from: number, to: number) => void) | null;
-  /** The handle that keeps the focus after a keyboard move. @default ".zz-drag-handle" */
+  /** The handle that keeps the focus after a keyboard move. @default ".hm-drag-handle" */
   handleSelector?: string;
 }): {
   listRef: { current: HTMLElement | null };
@@ -1330,7 +1330,7 @@ export declare function ActionBar(props: ActionBarProps): JSX.Element;
 
 /** Figma `newsletter dialog` (page dialog, decision 0121): the newsletter signup as a modal. A native <dialog>, rendered closed; the page opens it. */
 export interface NewsletterDialogProps extends HTMLAttributes<HTMLDialogElement> {
-  /** id of the <dialog> (its title and body ids derive from it). @default "zz-newsletter-dialog" */
+  /** id of the <dialog> (its title and body ids derive from it). @default "hm-newsletter-dialog" */
   id?: string;
   /** Figma `title`. @default "Get new records first" */
   title?: ReactNode;

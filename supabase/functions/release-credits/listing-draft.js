@@ -4,11 +4,11 @@
    form = the admin's form state (emptyForm); patchFromDiscogs(form, release, entities) fills the release fields;
    payloadOf(form, status) = the payload of public.admin_save_listing; saveCredits then stores the Discogs credits (0148). release = the answer of discogs-lookup { releaseId }.
    entities = { artists, labels, genres, tags: [{ id, name }] } or null (then everything binds by name on save).
-   No dependencies, no DOM. CommonJS (tests), classic script (window.ZanzaListingDraft), Deno via globalThis.
+   No dependencies, no DOM. CommonJS (tests), classic script (window.HighmuzikListingDraft), Deno via globalThis.
    The Edge Function holds a COPY (`npm run sync:functions`). */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.ZanzaListingDraft = factory();
+  else root.HighmuzikListingDraft = factory();
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
   var lineSeq = 0;   // line ids only need to be unique inside one form

@@ -21,7 +21,7 @@
 /* Figma `empty bag` (and `order thanks`, page Checkout): divider, message(s), Browse; gap medium-small */
 .bag-empty { display: flex; flex-direction: column; align-items: flex-start; gap: var(--medium-small); }
 .bag-empty p { margin: 0; }
-.bag-empty .zz-divider { align-self: stretch; }               /* full width: align-items start would shrink it to 0 */
+.bag-empty .hm-divider { align-self: stretch; }               /* full width: align-items start would shrink it to 0 */
 .bag-empty[hidden], .bag-list[hidden], .bag-content__summary[hidden] { display: none; }
 .bag-empty__browse[data-device="mobile"] { display: none; }
 

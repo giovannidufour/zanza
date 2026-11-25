@@ -198,7 +198,7 @@ const Paragraphs = ({ text, className = 'body-medium' }) => h(React.Fragment, nu
 // `section` = the active tab (none on /bag/). `current = 'home'` → the store name is lit (decision 0085). `current = 'bag'` → the Bag button is the current page (state active,
 // decision 0045). The Bag count is the button's suffix in brackets (Gio 2026-11-10): "(0)" in the static HTML,
 // scripts/site.js writes the real count from the bag in the browser ([data-bag-count]).
-// Mobile: the hamburger opens SiteMenu (scripts/site.js); it is rendered next to the header, inside .zz-page.
+// Mobile: the hamburger opens SiteMenu (scripts/site.js); it is rendered next to the header, inside .hm-page.
 function SiteHeader({ site, url, section, current }) {
   return h(React.Fragment, null,
     h(Z.Header, {
@@ -216,7 +216,7 @@ function SiteHeader({ site, url, section, current }) {
         tradeOn(site) ? h(Z.Tab, { value: 'trade', href: url('/trade/') }, 'For trade') : null),
       actions: h(React.Fragment, null,
         // Account (decision 0101): the customer's orders; state active on /account/ pages, as Bag on /bag/ (0045)
-        h(Z.Button, { hierarchy: 'secondary', className: 'zz-header__account', href: url('/account/'),
+        h(Z.Button, { hierarchy: 'secondary', className: 'hm-header__account', href: url('/account/'),
           state: current === 'account' ? 'active' : undefined }, 'Account'),
         h(Z.Button, { hierarchy: 'secondary', href: url('/bag/'), state: current === 'bag' ? 'active' : undefined,
           suffix: '(0)', 'data-bag-count': '' }, 'Bag'))

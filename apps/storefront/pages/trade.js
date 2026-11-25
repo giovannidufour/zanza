@@ -90,7 +90,7 @@ function Offer({ product, site, url }) {
   const owner = site.owner || {};
   const days = T(site, 'replyDays') || (site.trade || {}).replyDays || 3;
   const search = (site.trade || {}).searchEndpoint || '';
-  return h('div', { className: 'zz-page' },
+  return h('div', { className: 'hm-page' },
     h(SiteHeader, { site, url, section: 'trade' }),
     h('main', { className: 'trade-content', 'data-offer-page': '' },
       h('h1', { className: 'trade-content__title body-large', 'data-offer-title': '' }, 'Make an offer'),
@@ -119,7 +119,7 @@ function Offer({ product, site, url }) {
             supportText: 'This is where I answer you.' }),
           h(Z.Checkbox, { name: 'inPerson', value: 'yes', label: 'I\u2019d rather meet in person' }),
           // honeypot: hidden from people, bots fill it (the function drops those offers)
-          h('div', { className: 'zz-visually-hidden', 'aria-hidden': 'true' },
+          h('div', { className: 'hm-visually-hidden', 'aria-hidden': 'true' },
             h('label', null, 'Website', h('input', { type: 'text', name: 'website', tabIndex: -1, autoComplete: 'off' }))),
           h('p', { className: 'body-small' }, T(site, 'agreement')),
           h('p', { className: 'trade-form__error body-small', role: 'alert', hidden: true, 'data-offer-error': '' }),
@@ -133,7 +133,7 @@ function Offer({ product, site, url }) {
         h('div', { className: 'trade-sent__verify' },
           verifyLinks(owner).map((v) => h(Z.Button, { key: v.key, hierarchy: 'secondary', href: v.href, target: '_blank', rel: 'noopener',
             hidden: v.key !== 'discogs', 'data-verify': v.key }, v.label, h('span', { 'aria-hidden': 'true' }, ' \u2197'),
-            h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')))),
+            h('span', { className: 'hm-visually-hidden' }, ' (opens in a new tab)')))),
         h('p', { className: 'body-medium' }, 'Then I read your offer myself and answer you by email within ', String(days),
           ' days. If it\u2019s a yes, we work out the details together.'),
         h('p', { className: 'trade-sent__signature body-small' }, `— ${owner.name || ''}`),
@@ -143,7 +143,7 @@ function Offer({ product, site, url }) {
 // Gio 2026-11-12: generic, no shipping rule: trust comes from introductions and the conversation.
 // The steps are Gio's (admin → Content → How trading works, decision 0106).
 function HowTrading({ site, url }) {
-  return h('div', { className: 'zz-page' },
+  return h('div', { className: 'hm-page' },
     h(SiteHeader, { site, url, section: 'trade' }),
     h('main', { className: 'trade-content' },
       h('h1', { className: 'trade-content__title body-large' }, 'How trading works'),
@@ -158,7 +158,7 @@ function HowTrading({ site, url }) {
 
 function About({ site, url }) {
   const o = site.owner || {};
-  return h('div', { className: 'zz-page' },
+  return h('div', { className: 'hm-page' },
     h(SiteHeader, { site, url, current: 'about' }),
     h('main', { className: 'trade-content' },
       h('h1', { className: 'trade-content__title body-large' }, 'About'),
@@ -168,7 +168,7 @@ function About({ site, url }) {
           h('h2', { className: 'body-extra-large body-large--mobile' }, identityOn(site) ? o.djName : site.storeName),
           h(Paragraphs, { text: o.bio }),
           h('div', { className: 'about-intro__links' }, (o.links || []).map((l) => h(Z.Button, { key: l.href + l.label, hierarchy: 'secondary', href: l.href,
-            target: '_blank', rel: 'noopener' }, l.label, h('span', { 'aria-hidden': 'true' }, ' ↗'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')))))),
+            target: '_blank', rel: 'noopener' }, l.label, h('span', { 'aria-hidden': 'true' }, ' ↗'), h('span', { className: 'hm-visually-hidden' }, ' (opens in a new tab)')))))),
       // Gio 2026-11-12: no gigs anywhere; the Discogs card moves up to the second column
       identityOn(site) ? h('div', { className: 'trade-col trade-col--2' }, h(Z.Divider), h(OwnerDiscogs, { site })) : null));
 }

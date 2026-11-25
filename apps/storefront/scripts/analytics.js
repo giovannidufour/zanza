@@ -1,7 +1,7 @@
 /* apps/storefront/scripts/analytics.js — shop analytics (decision 0131): PostHog EU, cookieless.
 
    Loaded only when site.json → analytics.key is set (build.js), right after js/posthog.js (posthog-js array build, served
-   from our own domain) and before site.js, so site.js can call window.ZanzaAnalytics.track() from its first run.
+   from our own domain) and before site.js, so site.js can call window.HighmuzikAnalytics.track() from its first run.
 
    Privacy (Gio, 2026-11-22: "only solutions that need no cookies"):
    - cookieless_mode 'always' + persistence 'memory': nothing is written to the visitor's device (no cookie, no
@@ -11,15 +11,15 @@
    - search terms that look like an email address or a phone number are not sent.
    - never on the admin (separate app, never loads this file).
 
-   Every event carries `template` (home, plp, search, pdp_sale, pdp_trade, bag…), from data-template on .zz-page, which
+   Every event carries `template` (home, plp, search, pdp_sale, pdp_trade, bag…), from data-template on .hm-page, which
    build.js writes and the soft navigation in site.js swaps with the page: PostHog groups by template, not by URL. */
 (function () {
   'use strict';
-  var config = window.ZanzaAnalyticsConfig || {};
+  var config = window.HighmuzikAnalyticsConfig || {};
   var ph = window.posthog;
 
   function template() {
-    var page = document.querySelector('.zz-page[data-template]');
+    var page = document.querySelector('.hm-page[data-template]');
     return page ? page.getAttribute('data-template') : 'other';
   }
 
@@ -35,7 +35,7 @@
   // the owner's own browsers (Gio, 2026-11-22: "exclude me"): ?analytics=off once per browser turns analytics off
   // there for good, ?analytics=on turns it back on. An IP filter can't work: cookieless mode drops the IP first.
   // This flag is the only thing analytics writes, and only in a browser that asked for it.
-  var OFF_KEY = 'zanza-analytics-off';
+  var OFF_KEY = 'highmuzik-analytics-off';
   var optedOut = false;
   try {
     var flag = new URLSearchParams(location.search).get('analytics');
@@ -69,7 +69,7 @@
     });
   }
 
-  window.ZanzaAnalytics = {
+  window.HighmuzikAnalytics = {
     // track('search', { term: 'roots', results: 4 }); a no-op when analytics is off
     track: function (name, props) {
       if (!on) return;

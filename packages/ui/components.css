@@ -1,8 +1,8 @@
-/* packages/ui/components.css — the ONE stylesheet of the rythem-works components.
+/* packages/ui/components.css — the ONE stylesheet of the HIGHMUZIK components.
    Every color is a token from tokens.css. Dimensions are the values hardcoded in the Figma components
    unless a dimension token exists (page-margin-*, small). */
 
-.zz-button {
+.hm-button {
   /* ── anatomy: horizontal auto-layout, hug, radius 0, 1px inside border ── */
   display: inline-flex;
   align-items: center;
@@ -21,161 +21,161 @@
   /* ── type: the label carries the text-style class (label-medium: large, medium | label-extra-small: small, extra-small), see components.js ── */
 
   /* ── per-instance slots, set by hierarchy + state below ── */
-  background-color: var(--zz-btn-bg);
-  border-color: var(--zz-btn-border);
-  color: var(--zz-btn-fg);
+  background-color: var(--hm-btn-bg);
+  border-color: var(--hm-btn-border);
+  color: var(--hm-btn-fg);
 }
 
-.zz-button__label { display: inline-flex; align-items: center; }
-.zz-button__icon { display: inline-flex; flex: none; }
-.zz-button__icon > svg { width: 100%; height: 100%; display: block; }
-.zz-button__icon svg [fill]:not([fill="none"]) { fill: var(--zz-btn-icon); }
-.zz-button__icon svg [stroke]:not([stroke="none"]) { stroke: var(--zz-btn-icon); }
+.hm-button__label { display: inline-flex; align-items: center; }
+.hm-button__icon { display: inline-flex; flex: none; }
+.hm-button__icon > svg { width: 100%; height: 100%; display: block; }
+.hm-button__icon svg [fill]:not([fill="none"]) { fill: var(--hm-btn-icon); }
+.hm-button__icon svg [stroke]:not([stroke="none"]) { stroke: var(--hm-btn-icon); }
 
 /* ── size (Figma: _button-sizes) ──
    Figma padding as is: _button-states has "strokes included in layout", so the 1px border adds
    to the box in Figma too. Heights: 46 / 38 / 32 / 24 (decision 0014). */
-.zz-button[data-size="large"] {
+.hm-button[data-size="large"] {
   padding: 12px;
   gap: 8px;
 }
-.zz-button[data-size="large"] .zz-button__label { gap: 4px; }
-.zz-button[data-size="large"] .zz-button__icon { width: 20px; height: 20px; }
+.hm-button[data-size="large"] .hm-button__label { gap: 4px; }
+.hm-button[data-size="large"] .hm-button__icon { width: 20px; height: 20px; }
 
-.zz-button[data-size="medium"] {
+.hm-button[data-size="medium"] {
   padding: 8px;
   gap: 8px;
 }
-.zz-button[data-size="medium"] .zz-button__label { gap: 4px; }
-.zz-button[data-size="medium"] .zz-button__icon { width: 20px; height: 20px; }
+.hm-button[data-size="medium"] .hm-button__label { gap: 4px; }
+.hm-button[data-size="medium"] .hm-button__icon { width: 20px; height: 20px; }
 
-.zz-button[data-size="small"] {
+.hm-button[data-size="small"] {
   padding: 8px;
   gap: 8px;
 }
-.zz-button[data-size="small"] .zz-button__label { gap: 4px; }
-.zz-button[data-size="small"] .zz-button__icon { width: 14px; height: 14px; }
+.hm-button[data-size="small"] .hm-button__label { gap: 4px; }
+.hm-button[data-size="small"] .hm-button__icon { width: 14px; height: 14px; }
 
-.zz-button[data-size="extra-small"] {
+.hm-button[data-size="extra-small"] {
   padding: 4px;
   gap: 2px;
 }
-.zz-button[data-size="extra-small"] .zz-button__label { gap: 2px; }
-.zz-button[data-size="extra-small"] .zz-button__icon { width: 14px; height: 14px; }
+.hm-button[data-size="extra-small"] .hm-button__label { gap: 2px; }
+.hm-button[data-size="extra-small"] .hm-button__icon { width: 14px; height: 14px; }
 
 /* ── hierarchy × state (Figma: _button-states) ──
    [data-state] exists only so documentation can pin a state; in the product
    the browser pseudo-classes drive it. */
 
 /* primary */
-.zz-button[data-hierarchy="primary"] {
-  --zz-btn-bg: var(--action-primary-background-default);
-  --zz-btn-border: var(--action-primary-border-default);
-  --zz-btn-fg: var(--text-strong-invert);
-  --zz-btn-icon: var(--icon-strong-invert);
+.hm-button[data-hierarchy="primary"] {
+  --hm-btn-bg: var(--action-primary-background-default);
+  --hm-btn-border: var(--action-primary-border-default);
+  --hm-btn-fg: var(--text-strong-invert);
+  --hm-btn-icon: var(--icon-strong-invert);
 }
-.zz-button[data-hierarchy="primary"][data-state="hover"] {
-  --zz-btn-bg: var(--action-primary-background-hover);
-  --zz-btn-border: var(--action-primary-border-hover);
+.hm-button[data-hierarchy="primary"][data-state="hover"] {
+  --hm-btn-bg: var(--action-primary-background-hover);
+  --hm-btn-border: var(--action-primary-border-hover);
 }
 @media (hover: hover) {   /* touch screens keep :hover after a tap (decision 0043) */
-  .zz-button[data-hierarchy="primary"]:hover {
-    --zz-btn-bg: var(--action-primary-background-hover);
-    --zz-btn-border: var(--action-primary-border-hover);
+  .hm-button[data-hierarchy="primary"]:hover {
+    --hm-btn-bg: var(--action-primary-background-hover);
+    --hm-btn-border: var(--action-primary-border-hover);
   }
 }
-.zz-button[data-hierarchy="primary"]:active,
-.zz-button[data-hierarchy="primary"][data-state="pressed"] {
-  --zz-btn-bg: var(--action-primary-background-pressed);
-  --zz-btn-border: var(--action-primary-border-pressed);
+.hm-button[data-hierarchy="primary"]:active,
+.hm-button[data-hierarchy="primary"][data-state="pressed"] {
+  --hm-btn-bg: var(--action-primary-background-pressed);
+  --hm-btn-border: var(--action-primary-border-pressed);
 }
-.zz-button[data-hierarchy="primary"]:disabled,
-.zz-button[data-hierarchy="primary"][data-state="disabled"] {
-  --zz-btn-bg: var(--action-primary-background-disabled);
-  --zz-btn-border: var(--action-primary-border-disabled);
-  --zz-btn-fg: var(--text-strong);
-  --zz-btn-icon: var(--icon-strong);
+.hm-button[data-hierarchy="primary"]:disabled,
+.hm-button[data-hierarchy="primary"][data-state="disabled"] {
+  --hm-btn-bg: var(--action-primary-background-disabled);
+  --hm-btn-border: var(--action-primary-border-disabled);
+  --hm-btn-fg: var(--text-strong);
+  --hm-btn-icon: var(--icon-strong);
 }
 
 /* secondary */
-.zz-button[data-hierarchy="secondary"] {
-  --zz-btn-bg: var(--action-secondary-background-default);
-  --zz-btn-border: var(--action-secondary-border-default);
-  --zz-btn-fg: var(--text-strong);
-  --zz-btn-icon: var(--icon-strong);
+.hm-button[data-hierarchy="secondary"] {
+  --hm-btn-bg: var(--action-secondary-background-default);
+  --hm-btn-border: var(--action-secondary-border-default);
+  --hm-btn-fg: var(--text-strong);
+  --hm-btn-icon: var(--icon-strong);
 }
-.zz-button[data-hierarchy="secondary"][data-state="hover"] {
-  --zz-btn-bg: var(--action-secondary-background-hover);
-  --zz-btn-border: var(--action-secondary-border-hover);
+.hm-button[data-hierarchy="secondary"][data-state="hover"] {
+  --hm-btn-bg: var(--action-secondary-background-hover);
+  --hm-btn-border: var(--action-secondary-border-hover);
 }
 @media (hover: hover) {
-  .zz-button[data-hierarchy="secondary"]:hover {
-    --zz-btn-bg: var(--action-secondary-background-hover);
-    --zz-btn-border: var(--action-secondary-border-hover);
+  .hm-button[data-hierarchy="secondary"]:hover {
+    --hm-btn-bg: var(--action-secondary-background-hover);
+    --hm-btn-border: var(--action-secondary-border-hover);
   }
 }
-.zz-button[data-hierarchy="secondary"]:active,
-.zz-button[data-hierarchy="secondary"][data-state="pressed"] {
-  --zz-btn-bg: var(--action-secondary-background-pressed);
-  --zz-btn-border: var(--action-secondary-border-pressed);
+.hm-button[data-hierarchy="secondary"]:active,
+.hm-button[data-hierarchy="secondary"][data-state="pressed"] {
+  --hm-btn-bg: var(--action-secondary-background-pressed);
+  --hm-btn-border: var(--action-secondary-border-pressed);
 }
-.zz-button[data-hierarchy="secondary"]:disabled,
-.zz-button[data-hierarchy="secondary"][data-state="disabled"] {
-  --zz-btn-bg: var(--action-secondary-background-disabled);
-  --zz-btn-border: var(--action-secondary-border-disabled);
+.hm-button[data-hierarchy="secondary"]:disabled,
+.hm-button[data-hierarchy="secondary"][data-state="disabled"] {
+  --hm-btn-bg: var(--action-secondary-background-disabled);
+  --hm-btn-border: var(--action-secondary-border-disabled);
 }
 
 /* active = the current page (Figma state=active, 2026-11-10; decision 0045). Label text/strong on both hierarchies;
    no hover / pressed look and no pointer: it does not go anywhere new. Comes after hover/pressed so it wins. */
-.zz-button[data-hierarchy="primary"][data-state="active"],
-.zz-button[data-hierarchy="primary"][aria-current="page"] {
-  --zz-btn-bg: var(--action-primary-background-active);
-  --zz-btn-border: var(--action-primary-border-active);
-  --zz-btn-fg: var(--text-strong);
-  --zz-btn-icon: var(--icon-strong);
+.hm-button[data-hierarchy="primary"][data-state="active"],
+.hm-button[data-hierarchy="primary"][aria-current="page"] {
+  --hm-btn-bg: var(--action-primary-background-active);
+  --hm-btn-border: var(--action-primary-border-active);
+  --hm-btn-fg: var(--text-strong);
+  --hm-btn-icon: var(--icon-strong);
 }
-.zz-button[data-hierarchy="secondary"][data-state="active"],
-.zz-button[data-hierarchy="secondary"][aria-current="page"] {
-  --zz-btn-bg: var(--action-secondary-background-active);
-  --zz-btn-border: var(--action-secondary-border-active);
+.hm-button[data-hierarchy="secondary"][data-state="active"],
+.hm-button[data-hierarchy="secondary"][aria-current="page"] {
+  --hm-btn-bg: var(--action-secondary-background-active);
+  --hm-btn-border: var(--action-secondary-border-active);
 }
-.zz-button[data-state="active"], .zz-button[aria-current="page"] { cursor: default; }
+.hm-button[data-state="active"], .hm-button[aria-current="page"] { cursor: default; }
 
 /* secondary border: same logic as Tab — Figma 1px inside stroke, solid (default, disabled), dashPattern [4,4] (hover),
    [2,2] (pressed). Drawn as four 1px repeating gradients (see Tab below for the @property registration),
-   so solid → dashed animates. The colour is --zz-btn-border (action-secondary-border-*). */
-.zz-button[data-hierarchy="secondary"] {
-  --zz-dash-on: 4px;
-  --zz-dash-off: 0px;                         /* Figma: solid */
+   so solid → dashed animates. The colour is --hm-btn-border (action-secondary-border-*). */
+.hm-button[data-hierarchy="secondary"] {
+  --hm-dash-on: 4px;
+  --hm-dash-off: 0px;                         /* Figma: solid */
   border-color: transparent;
   background-origin: border-box;
   background-clip: border-box;
   background-repeat: no-repeat;
   background-image:
-    repeating-linear-gradient(90deg,  var(--zz-btn-border) 0 var(--zz-dash-on), transparent var(--zz-dash-on) calc(var(--zz-dash-on) + var(--zz-dash-off))),
-    repeating-linear-gradient(90deg,  var(--zz-btn-border) 0 var(--zz-dash-on), transparent var(--zz-dash-on) calc(var(--zz-dash-on) + var(--zz-dash-off))),
-    repeating-linear-gradient(180deg, var(--zz-btn-border) 0 var(--zz-dash-on), transparent var(--zz-dash-on) calc(var(--zz-dash-on) + var(--zz-dash-off))),
-    repeating-linear-gradient(180deg, var(--zz-btn-border) 0 var(--zz-dash-on), transparent var(--zz-dash-on) calc(var(--zz-dash-on) + var(--zz-dash-off)));
+    repeating-linear-gradient(90deg,  var(--hm-btn-border) 0 var(--hm-dash-on), transparent var(--hm-dash-on) calc(var(--hm-dash-on) + var(--hm-dash-off))),
+    repeating-linear-gradient(90deg,  var(--hm-btn-border) 0 var(--hm-dash-on), transparent var(--hm-dash-on) calc(var(--hm-dash-on) + var(--hm-dash-off))),
+    repeating-linear-gradient(180deg, var(--hm-btn-border) 0 var(--hm-dash-on), transparent var(--hm-dash-on) calc(var(--hm-dash-on) + var(--hm-dash-off))),
+    repeating-linear-gradient(180deg, var(--hm-btn-border) 0 var(--hm-dash-on), transparent var(--hm-dash-on) calc(var(--hm-dash-on) + var(--hm-dash-off)));
   background-size: 100% 1px, 100% 1px, 1px 100%, 1px 100%;
   background-position: 0 0, 0 100%, 0 0, 100% 0;
   /* TODO motion: placeholder, same as Tab (no motion tokens in Figma yet) */
-  transition: --zz-dash-on 150ms ease-out, --zz-dash-off 150ms ease-out, background-color 150ms ease-out;
+  transition: --hm-dash-on 150ms ease-out, --hm-dash-off 150ms ease-out, background-color 150ms ease-out;
 }
-.zz-button[data-hierarchy="secondary"][data-state="hover"] { --zz-dash-on: 4px; --zz-dash-off: 4px; }   /* Figma: [4,4] */
-@media (hover: hover) { .zz-button[data-hierarchy="secondary"]:hover { --zz-dash-on: 4px; --zz-dash-off: 4px; } }
-.zz-button[data-hierarchy="secondary"]:active,
-.zz-button[data-hierarchy="secondary"][data-state="pressed"] { --zz-dash-on: 2px; --zz-dash-off: 2px; } /* Figma: [2,2] */
-.zz-button[data-hierarchy="secondary"]:disabled,
-.zz-button[data-hierarchy="secondary"][data-state="disabled"] { --zz-dash-on: 4px; --zz-dash-off: 0px; } /* Figma: solid */
-.zz-button[data-hierarchy="secondary"][data-state="active"],
-.zz-button[data-hierarchy="secondary"][aria-current="page"] { --zz-dash-on: 4px; --zz-dash-off: 0px; } /* Figma: solid, also on hover */
-@media (prefers-reduced-motion: reduce) { .zz-button[data-hierarchy="secondary"] { transition: none; } }
+.hm-button[data-hierarchy="secondary"][data-state="hover"] { --hm-dash-on: 4px; --hm-dash-off: 4px; }   /* Figma: [4,4] */
+@media (hover: hover) { .hm-button[data-hierarchy="secondary"]:hover { --hm-dash-on: 4px; --hm-dash-off: 4px; } }
+.hm-button[data-hierarchy="secondary"]:active,
+.hm-button[data-hierarchy="secondary"][data-state="pressed"] { --hm-dash-on: 2px; --hm-dash-off: 2px; } /* Figma: [2,2] */
+.hm-button[data-hierarchy="secondary"]:disabled,
+.hm-button[data-hierarchy="secondary"][data-state="disabled"] { --hm-dash-on: 4px; --hm-dash-off: 0px; } /* Figma: solid */
+.hm-button[data-hierarchy="secondary"][data-state="active"],
+.hm-button[data-hierarchy="secondary"][aria-current="page"] { --hm-dash-on: 4px; --hm-dash-off: 0px; } /* Figma: solid, also on hover */
+@media (prefers-reduced-motion: reduce) { .hm-button[data-hierarchy="secondary"] { transition: none; } }
 
 /* disabled: label struck through (Figma: textDecoration STRIKETHROUGH on both hierarchies) */
-.zz-button:disabled,
-.zz-button[data-state="disabled"] { cursor: not-allowed; }
-.zz-button:disabled .zz-button__label,
-.zz-button[data-state="disabled"] .zz-button__label { text-decoration: line-through; }
+.hm-button:disabled,
+.hm-button[data-state="disabled"] { cursor: not-allowed; }
+.hm-button:disabled .hm-button__label,
+.hm-button[data-state="disabled"] .hm-button__label { text-decoration: line-through; }
 
 /* focus: not yet defined in Figma — intentionally no style here (TODO: border/focus token) */
 
@@ -183,7 +183,7 @@
    Tabs (Figma: tab group) · Tab (Figma: tab → _tab-states → _tab-sizes)
    ═══════════════════════════════════════════════════════════════════════ */
 
-.zz-tabs {
+.hm-tabs {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -192,9 +192,9 @@
   padding: 0;
 }
 
-.zz-tab,
-a.zz-tab {
-  /* same anatomy as .zz-button medium: 1px inside border, radius 0, padding 8, gap 8 */
+.hm-tab,
+a.hm-tab {
+  /* same anatomy as .hm-button medium: 1px inside border, radius 0, padding 8, gap 8 */
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -218,63 +218,63 @@ a.zz-tab {
   background-color: var(--tab-background-default);
   border-color: transparent;     /* the visible border is drawn by the gradients below */
 }
-.zz-tab__label { display: inline-flex; align-items: center; gap: 4px; }
-.zz-tab__icon { display: inline-flex; flex: none; width: 20px; height: 20px; color: var(--icon-strong); }
-.zz-tab__icon > svg { width: 100%; height: 100%; display: block; }
+.hm-tab__label { display: inline-flex; align-items: center; gap: 4px; }
+.hm-tab__icon { display: inline-flex; flex: none; width: 20px; height: 20px; color: var(--icon-strong); }
+.hm-tab__icon > svg { width: 100%; height: 100%; display: block; }
 
 /* border: Figma draws a 1px inside stroke — solid (default, active), dashPattern [4,4] (hover), [2,2] (pressed).
    CSS `dashed` can neither set the pattern nor animate, so the four sides are always drawn as repeating
-   gradients, 1px thick: --zz-dash-on = dash length, --zz-dash-off = gap. Solid = gap 0.
+   gradients, 1px thick: --hm-dash-on = dash length, --hm-dash-off = gap. Solid = gap 0.
    Both lengths are registered (@property) so they interpolate: solid → dashed opens the gaps smoothly. */
-@property --zz-dash-on  { syntax: "<length>"; inherits: false; initial-value: 4px; }
-@property --zz-dash-off { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --hm-dash-on  { syntax: "<length>"; inherits: false; initial-value: 4px; }
+@property --hm-dash-off { syntax: "<length>"; inherits: false; initial-value: 0px; }
 
-.zz-tab {
-  --zz-dash-color: var(--tab-border-default);
-  --zz-dash-on: 4px;
-  --zz-dash-off: 0px;                           /* Figma: solid */
+.hm-tab {
+  --hm-dash-color: var(--tab-border-default);
+  --hm-dash-on: 4px;
+  --hm-dash-off: 0px;                           /* Figma: solid */
   background-image:
-    repeating-linear-gradient(90deg,  var(--zz-dash-color) 0 var(--zz-dash-on), transparent var(--zz-dash-on) calc(var(--zz-dash-on) + var(--zz-dash-off))),
-    repeating-linear-gradient(90deg,  var(--zz-dash-color) 0 var(--zz-dash-on), transparent var(--zz-dash-on) calc(var(--zz-dash-on) + var(--zz-dash-off))),
-    repeating-linear-gradient(180deg, var(--zz-dash-color) 0 var(--zz-dash-on), transparent var(--zz-dash-on) calc(var(--zz-dash-on) + var(--zz-dash-off))),
-    repeating-linear-gradient(180deg, var(--zz-dash-color) 0 var(--zz-dash-on), transparent var(--zz-dash-on) calc(var(--zz-dash-on) + var(--zz-dash-off)));
+    repeating-linear-gradient(90deg,  var(--hm-dash-color) 0 var(--hm-dash-on), transparent var(--hm-dash-on) calc(var(--hm-dash-on) + var(--hm-dash-off))),
+    repeating-linear-gradient(90deg,  var(--hm-dash-color) 0 var(--hm-dash-on), transparent var(--hm-dash-on) calc(var(--hm-dash-on) + var(--hm-dash-off))),
+    repeating-linear-gradient(180deg, var(--hm-dash-color) 0 var(--hm-dash-on), transparent var(--hm-dash-on) calc(var(--hm-dash-on) + var(--hm-dash-off))),
+    repeating-linear-gradient(180deg, var(--hm-dash-color) 0 var(--hm-dash-on), transparent var(--hm-dash-on) calc(var(--hm-dash-on) + var(--hm-dash-off)));
   background-size: 100% 1px, 100% 1px, 1px 100%, 1px 100%;
   background-position: 0 0, 0 100%, 0 0, 100% 0;
   /* TODO motion: no duration/easing in Figma yet — 150ms ease-out is a placeholder (candidate token motion/duration/fast) */
-  transition: --zz-dash-on 150ms ease-out, --zz-dash-off 150ms ease-out, background-color 150ms ease-out;
+  transition: --hm-dash-on 150ms ease-out, --hm-dash-off 150ms ease-out, background-color 150ms ease-out;
 }
-@media (prefers-reduced-motion: reduce) { .zz-tab { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .hm-tab { transition: none; } }
 
-.zz-tab[data-state="hover"] {
+.hm-tab[data-state="hover"] {
   background-color: var(--tab-background-hover);
-  --zz-dash-color: var(--tab-border-hover);
-  --zz-dash-on: 4px;  --zz-dash-off: 4px;      /* Figma: dashPattern [4,4] */
+  --hm-dash-color: var(--tab-border-hover);
+  --hm-dash-on: 4px;  --hm-dash-off: 4px;      /* Figma: dashPattern [4,4] */
 }
 @media (hover: hover) {   /* decision 0043 */
-  .zz-tab:hover {
+  .hm-tab:hover {
     background-color: var(--tab-background-hover);
-    --zz-dash-color: var(--tab-border-hover);
-    --zz-dash-on: 4px;  --zz-dash-off: 4px;
+    --hm-dash-color: var(--tab-border-hover);
+    --hm-dash-on: 4px;  --hm-dash-off: 4px;
   }
 }
-.zz-tab:active,
-.zz-tab[data-state="pressed"] {
+.hm-tab:active,
+.hm-tab[data-state="pressed"] {
   background-color: var(--tab-background-pressed);
-  --zz-dash-color: var(--tab-border-pressed);
-  --zz-dash-on: 2px;  --zz-dash-off: 2px;      /* Figma: dashPattern [2,2] */
+  --hm-dash-color: var(--tab-border-pressed);
+  --hm-dash-on: 2px;  --hm-dash-off: 2px;      /* Figma: dashPattern [2,2] */
 }
-.zz-tab[aria-selected="true"],
-.zz-tab[data-selected="true"],
-.zz-tab[data-state="active"] {
+.hm-tab[aria-selected="true"],
+.hm-tab[data-selected="true"],
+.hm-tab[data-state="active"] {
   background-color: var(--tab-background-active);
-  --zz-dash-color: var(--tab-border-active);
-  --zz-dash-on: 4px;  --zz-dash-off: 0px;      /* Figma: solid */
+  --hm-dash-color: var(--tab-border-active);
+  --hm-dash-on: 4px;  --hm-dash-off: 0px;      /* Figma: solid */
   cursor: default;
 }
 
 /* Figma `_tab-sizes` size=extra small (account nav, decision 0101): padding 4, gap 2; label/extra small (12/14) → 24px tall */
-.zz-tab[data-size="extra-small"] { padding: 4px; gap: 2px; }
-.zz-tab[data-size="extra-small"] .zz-tab__label { gap: 2px; }
+.hm-tab[data-size="extra-small"] { padding: 4px; gap: 2px; }
+.hm-tab[data-size="extra-small"] .hm-tab__label { gap: 2px; }
 
 /* focus: not yet defined in Figma — no style (TODO: border/focus token) */
 
@@ -282,7 +282,7 @@ a.zz-tab {
    Header (Figma: header · device=desktop | mobile)
    ═══════════════════════════════════════════════════════════════════════ */
 
-.zz-header {
+.hm-header {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -296,45 +296,45 @@ a.zz-tab {
 }
 /* width: always fill (Figma: layout sizing FILL). The mobile variant is drawn at 375 in Figma; the parent sets the width. */
 
-.zz-header__row {
+.hm-header__row {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: flex-start;     /* Figma: counterAxis MIN */
 }
 
-.zz-header__leading,
-.zz-header__trailing {
+.hm-header__leading,
+.hm-header__trailing {
   display: flex;
   flex-direction: row;
   gap: 8px;
 }
-.zz-header__leading { align-items: flex-start; min-height: 46px; }   /* Figma: min height = store name 38 + 8, so without the logo (0094) the name keeps 8px above the bottom rule (Gio, 2026-11-15) */
-.zz-header__trailing { align-items: center; }
-.zz-header__tabs { display: flex; }
+.hm-header__leading { align-items: flex-start; min-height: 46px; }   /* Figma: min height = store name 38 + 8, so without the logo (0094) the name keeps 8px above the bottom rule (Gio, 2026-11-15) */
+.hm-header__trailing { align-items: center; }
+.hm-header__tabs { display: flex; }
 
 /* logo + store name: one home link (decision 0176), laid out like the leading row (gap 8, top-aligned) */
-.zz-header__home { display: flex; align-items: flex-start; gap: 8px; color: inherit; text-decoration: none; }
-a.zz-header__home:focus-visible { outline: auto; }   /* browser ring: no focus token yet (open.md) */
-.zz-header__logo { display: block; flex: none; width: 64px; height: 64px; overflow: hidden; }
-.zz-header[data-device="mobile"] .zz-header__logo { width: 48px; height: 48px; }
+.hm-header__home { display: flex; align-items: flex-start; gap: 8px; color: inherit; text-decoration: none; }
+a.hm-header__home:focus-visible { outline: auto; }   /* browser ring: no focus token yet (open.md) */
+.hm-header__logo { display: block; flex: none; width: 64px; height: 64px; overflow: hidden; }
+.hm-header[data-device="mobile"] .hm-header__logo { width: 48px; height: 48px; }
 /* Figma `header` boolean `logo` (default on). The storefront turns it off when the row cannot hold everything
    (apps/storefront/scripts/site.js → fitHeaderLogo): the store name always stays. */
-.zz-header[data-logo="inside"] .zz-header__logo,
-.zz-header[data-logo="hidden"] .zz-header__logo { display: none; }
+.hm-header[data-logo="inside"] .hm-header__logo,
+.hm-header[data-logo="hidden"] .hm-header__logo { display: none; }
 /* …and it moves inside the store name (Figma `store name` logo=true): logo 36x36 against the left border,
    padding 0 8 0 0, gap 8 → still 38px tall like the plain name. */
-.zz-header__name-logo { display: none; flex: none; width: 36px; height: 36px; overflow: hidden; }
-.zz-header__name-logo > img,
-.zz-header__name-logo > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
-.zz-header[data-logo="inside"] .zz-header__name-logo { display: block; }
-.zz-header[data-logo="inside"] .zz-header__name { padding: 0 8px 0 0; }
+.hm-header__name-logo { display: none; flex: none; width: 36px; height: 36px; overflow: hidden; }
+.hm-header__name-logo > img,
+.hm-header__name-logo > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
+.hm-header[data-logo="inside"] .hm-header__name-logo { display: block; }
+.hm-header[data-logo="inside"] .hm-header__name { padding: 0 8px 0 0; }
 /* data-logo="hidden": not even the small one fits (e.g. 320px): only the name */
-.zz-header__logo > img,
-.zz-header__logo > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
+.hm-header__logo > img,
+.hm-header__logo > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
 
 /* store name: 1px border divider/strong, padding 8, label/medium */
-.zz-header__name {
+.hm-header__name {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -348,10 +348,10 @@ a.zz-header__home:focus-visible { outline: auto; }   /* browser ring: no focus t
   background-clip: border-box;
   background-repeat: no-repeat;
   background-image:
-    repeating-linear-gradient(90deg,  var(--zz-name-border, var(--border-divider-strong)) 0 8px, transparent 8px 16px),
-    repeating-linear-gradient(90deg,  var(--zz-name-border, var(--border-divider-strong)) 0 8px, transparent 8px 16px),
-    repeating-linear-gradient(180deg, var(--zz-name-border, var(--border-divider-strong)) 0 8px, transparent 8px 16px),
-    repeating-linear-gradient(180deg, var(--zz-name-border, var(--border-divider-strong)) 0 8px, transparent 8px 16px);
+    repeating-linear-gradient(90deg,  var(--hm-name-border, var(--border-divider-strong)) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(90deg,  var(--hm-name-border, var(--border-divider-strong)) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(180deg, var(--hm-name-border, var(--border-divider-strong)) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(180deg, var(--hm-name-border, var(--border-divider-strong)) 0 8px, transparent 8px 16px);
   background-size: 100% 1px, 100% 1px, 1px 100%, 1px 100%;
   background-position: 0 0, 0 100%, 0 0, 100% 0;
   border-radius: 0;
@@ -363,32 +363,32 @@ a.zz-header__home:focus-visible { outline: auto; }   /* browser ring: no focus t
 
 /* Figma `store name` state=active (2026-11-14): the home page lights the store name like the tab of the current
    section (tab/background/active, tab/border/active); the dashed border stays */
-.zz-header__name[data-state="active"] { --zz-name-border: var(--tab-border-active); background-color: var(--tab-background-active); }
+.hm-header__name[data-state="active"] { --hm-name-border: var(--tab-border-active); background-color: var(--tab-background-active); }
 
 /* bottom rule — Figma has it hardcoded #000000; the token it should bind to is border divider/strong */
-.zz-header__rule { height: 1px; width: 100%; background: var(--border-divider-strong); }
+.hm-header__rule { height: 1px; width: 100%; background: var(--border-divider-strong); }
 
 /* responsive header (device omitted): one of menu / tabs is shown.
    Breakpoint: `--mobile` from tokens.json → breakpoint (expanded at build time by media.js). */
 /* search (Figma boolean `search`, 2026-11-12): the field on desktop (280 wide, Gio 2026-11-12), the magnifier Button on mobile */
-.zz-header__search { width: 280px; }
-.zz-header[data-device="responsive"] .zz-header__search-link { display: none; }
-.zz-header[data-device="responsive"] .zz-header__menu { display: none; }
+.hm-header__search { width: 280px; }
+.hm-header[data-device="responsive"] .hm-header__search-link { display: none; }
+.hm-header[data-device="responsive"] .hm-header__menu { display: none; }
 @media (--mobile) {
-  .zz-header[data-device="responsive"] .zz-header__search { display: none; }
-  .zz-header[data-device="responsive"] .zz-header__search-link { display: inline-flex; }
-  .zz-header[data-device="responsive"] .zz-header__menu { display: inline-flex; }
-  .zz-header[data-device="responsive"] .zz-header__tabs { display: none; }
-  .zz-header[data-device="responsive"] .zz-header__account { display: none; }   /* Figma mobile: only Bag */
-  .zz-header[data-device="responsive"] .zz-header__logo { width: 48px; height: 48px; }
+  .hm-header[data-device="responsive"] .hm-header__search { display: none; }
+  .hm-header[data-device="responsive"] .hm-header__search-link { display: inline-flex; }
+  .hm-header[data-device="responsive"] .hm-header__menu { display: inline-flex; }
+  .hm-header[data-device="responsive"] .hm-header__tabs { display: none; }
+  .hm-header[data-device="responsive"] .hm-header__account { display: none; }   /* Figma mobile: only Bag */
+  .hm-header[data-device="responsive"] .hm-header__logo { width: 48px; height: 48px; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
    Breadcrumbs (Figma: breadcrumbs)
    ═══════════════════════════════════════════════════════════════════════ */
 
-.zz-breadcrumbs { display: flex; flex-direction: column; width: 100%; }
-.zz-breadcrumbs__list {
+.hm-breadcrumbs { display: flex; flex-direction: column; width: 100%; }
+.hm-breadcrumbs__list {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -402,28 +402,28 @@ a.zz-header__home:focus-visible { outline: auto; }   /* browser ring: no focus t
   /* type: class body-medium on the list */
   color: var(--text-strong);
 }
-.zz-breadcrumbs__item { flex: none; display: flex; align-items: center; gap: 4px; }   /* "/" + label: same 4 as the slot */
-.zz-breadcrumbs__item a { color: inherit; text-decoration: none; }
-@media (hover: hover) { .zz-breadcrumbs__item a:hover { text-decoration: underline; } }   /* as .site-inline-link (0043, 0122) */
-.zz-breadcrumbs__rule { height: 1px; width: 100%; background: var(--border-divider-strong); }
+.hm-breadcrumbs__item { flex: none; display: flex; align-items: center; gap: 4px; }   /* "/" + label: same 4 as the slot */
+.hm-breadcrumbs__item a { color: inherit; text-decoration: none; }
+@media (hover: hover) { .hm-breadcrumbs__item a:hover { text-decoration: underline; } }   /* as .site-inline-link (0043, 0122) */
+.hm-breadcrumbs__rule { height: 1px; width: 100%; background: var(--border-divider-strong); }
 
 /* ═══════════════════════════════════════════════════════════════════════
    ActiveFilter (Figma: active filter, device=desktop|mobile — only the chip size differs, set by the consumer)
    ═══════════════════════════════════════════════════════════════════════ */
 
-.zz-active-filter { display: flex; flex-direction: column; width: 100%; }
-.zz-active-filter[hidden] { display: none; }
-.zz-active-filter__row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: var(--small); }   /* Figma: row padding `small`, counter-axis center */
-.zz-active-filter__rule { height: 1px; width: 100%; background: var(--border-divider-strong); }   /* Figma: border, fill border divider/strong */
+.hm-active-filter { display: flex; flex-direction: column; width: 100%; }
+.hm-active-filter[hidden] { display: none; }
+.hm-active-filter__row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: var(--small); }   /* Figma: row padding `small`, counter-axis center */
+.hm-active-filter__rule { height: 1px; width: 100%; background: var(--border-divider-strong); }   /* Figma: border, fill border divider/strong */
 /* Figma 2026-11-12: on desktop the medium chip's instance has padding-top/bottom 8 → 40px tall (24 + 8 + 8).
    Override in `active filter` only: the medium chip inside the admin EntityField stays 24 so the field keeps 38. */
-.zz-active-filter .zz-entity-chip:not([data-size="large"]) { height: 40px; }
+.hm-active-filter .hm-entity-chip:not([data-size="large"]) { height: 40px; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    Tag (Figma: tag item) · TagGroup (Figma: tag group)
    ═══════════════════════════════════════════════════════════════════════ */
 
-.zz-tag {
+.hm-tag {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -433,14 +433,14 @@ a.zz-header__home:focus-visible { outline: auto; }   /* browser ring: no focus t
   color: var(--text-strong);
   white-space: nowrap;
 }
-a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interaction states yet (open.md) */
+a.hm-tag { text-decoration: none; }   /* a tag with href: same look, no interaction states yet (open.md) */
 /* type: the label carries body-extra-small (extra-small, small) | body-small (medium) | body-medium (large) */
-.zz-tag[data-size="extra-small"] { padding: 2px 4px; }
-.zz-tag[data-size="small"]       { padding: 4px 8px; }
-.zz-tag[data-size="medium"]      { padding: 4px 8px; }
-.zz-tag[data-size="large"]       { padding: 4px 8px; }
+.hm-tag[data-size="extra-small"] { padding: 2px 4px; }
+.hm-tag[data-size="small"]       { padding: 4px 8px; }
+.hm-tag[data-size="medium"]      { padding: 4px 8px; }
+.hm-tag[data-size="large"]       { padding: 4px 8px; }
 
-.zz-tag-group {
+.hm-tag-group {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -450,7 +450,7 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
   list-style: none;
   width: 100%;
 }
-.zz-tag-group__item { display: contents; }
+.hm-tag-group__item { display: contents; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    PlayerButton (Figma: player button · state default | hover | pressed | disabled)
@@ -458,7 +458,7 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
    the button itself fills with action-floating-background-{state} (a tint only on hover/pressed).
    ═══════════════════════════════════════════════════════════════════════ */
 
-.zz-player-button {
+.hm-player-button {
   display: inline-flex;
   align-items: center;
   gap: 0;                   /* Figma: itemSpacing 0 */
@@ -474,15 +474,15 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
   /* type: label carries body-medium */
   white-space: nowrap;
 }
-.zz-player-button[data-state="hover"]    { color: var(--action-floating-foreground-hover);    background: var(--action-floating-background-hover); }
-@media (hover: hover) { .zz-player-button:hover { color: var(--action-floating-foreground-hover); background: var(--action-floating-background-hover); } }   /* 0043 */
-.zz-player-button:active,
-.zz-player-button[data-state="pressed"]  { color: var(--action-floating-foreground-pressed);  background: var(--action-floating-background-pressed); }
-.zz-player-button:disabled,
-.zz-player-button[data-state="disabled"] { color: var(--action-floating-foreground-disabled); background: var(--action-floating-background-disabled); cursor: not-allowed; }
+.hm-player-button[data-state="hover"]    { color: var(--action-floating-foreground-hover);    background: var(--action-floating-background-hover); }
+@media (hover: hover) { .hm-player-button:hover { color: var(--action-floating-foreground-hover); background: var(--action-floating-background-hover); } }   /* 0043 */
+.hm-player-button:active,
+.hm-player-button[data-state="pressed"]  { color: var(--action-floating-foreground-pressed);  background: var(--action-floating-background-pressed); }
+.hm-player-button:disabled,
+.hm-player-button[data-state="disabled"] { color: var(--action-floating-foreground-disabled); background: var(--action-floating-background-disabled); cursor: not-allowed; }
 
 /* ── IconButton (Figma: icon button) — 24 × 24, the icon fills the box; colours as PlayerButton ── */
-.zz-icon-button {
+.hm-icon-button {
   display: inline-flex;
   flex: none;
   width: 24px;
@@ -497,23 +497,23 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
   appearance: none;
   -webkit-appearance: none;
 }
-.zz-icon-button[data-state="hover"]    { color: var(--action-floating-foreground-hover);    background: var(--action-floating-background-hover); }
-@media (hover: hover) { .zz-icon-button:hover { color: var(--action-floating-foreground-hover); background: var(--action-floating-background-hover); } }   /* 0043 */
-.zz-icon-button:active,
-.zz-icon-button[data-state="pressed"]  { color: var(--action-floating-foreground-pressed);  background: var(--action-floating-background-pressed); }
-.zz-icon-button:disabled,
-.zz-icon-button[data-state="disabled"] { color: var(--action-floating-foreground-disabled); background: var(--action-floating-background-disabled); cursor: not-allowed; }
-.zz-icon-button__icon { display: inline-flex; width: 100%; height: 100%; color: inherit; }
-.zz-icon-button__icon svg { width: 100%; height: 100%; display: block; }
+.hm-icon-button[data-state="hover"]    { color: var(--action-floating-foreground-hover);    background: var(--action-floating-background-hover); }
+@media (hover: hover) { .hm-icon-button:hover { color: var(--action-floating-foreground-hover); background: var(--action-floating-background-hover); } }   /* 0043 */
+.hm-icon-button:active,
+.hm-icon-button[data-state="pressed"]  { color: var(--action-floating-foreground-pressed);  background: var(--action-floating-background-pressed); }
+.hm-icon-button:disabled,
+.hm-icon-button[data-state="disabled"] { color: var(--action-floating-foreground-disabled); background: var(--action-floating-background-disabled); cursor: not-allowed; }
+.hm-icon-button__icon { display: inline-flex; width: 100%; height: 100%; color: inherit; }
+.hm-icon-button__icon svg { width: 100%; height: 100%; display: block; }
 
 /* _player button-icon: 24px, fill = the button colour (Figma overrides icon/strong with action/floating/foreground/*) */
-.zz-player-button__icon { display: inline-flex; flex: none; width: 24px; height: 24px; color: inherit; }
-.zz-player-button__icon svg { width: 100%; height: 100%; display: block; }
+.hm-player-button__icon { display: inline-flex; flex: none; width: 24px; height: 24px; color: inherit; }
+.hm-player-button__icon svg { width: 100%; height: 100%; display: block; }
 
 /* play ↔ pause: both icons are in the markup, the nearest [data-playing] decides (PlayerButton, Player) */
-.zz-icon-play, .zz-icon-pause { display: contents; }
-[data-playing="true"] .zz-icon-play,
-[data-playing="false"] .zz-icon-pause { display: none; }
+.hm-icon-play, .hm-icon-pause { display: contents; }
+[data-playing="true"] .hm-icon-play,
+[data-playing="false"] .hm-icon-pause { display: none; }
 
 /* focus: not yet defined in Figma — no style (TODO: border/focus token) */
 
@@ -522,7 +522,7 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
    Docking, slide in/out and playback belong to the site (apps/storefront), not here.
    ═══════════════════════════════════════════════════════════════════════ */
 
-.zz-player {
+.hm-player {
   box-sizing: border-box;
   display: grid;
   gap: var(--gutter-small);                       /* Figma desktop: itemSpacing gutter/small */
@@ -536,56 +536,56 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
   grid-template-areas: "actions now controls native close";
   align-items: start;
 }
-.zz-player__now      { grid-area: now; display: flex; gap: 8px; min-width: 0; }
-.zz-player__actions  { grid-area: actions; display: flex; gap: 4px; }
-.zz-player__controls { grid-area: controls; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
-.zz-player__native   { grid-area: native; }
-.zz-player__close    { grid-area: close; }
+.hm-player__now      { grid-area: now; display: flex; gap: 8px; min-width: 0; }
+.hm-player__actions  { grid-area: actions; display: flex; gap: 4px; }
+.hm-player__controls { grid-area: controls; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.hm-player__native   { grid-area: native; }
+.hm-player__close    { grid-area: close; }
 
 /* now playing: image 48 + title row (track · sample / product), gap 8 */
-.zz-player__image { flex: none; width: 48px; height: 48px; overflow: hidden; background: var(--surface-media); }   /* 0124 */
-.zz-player__image > img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.zz-player__title { display: flex; gap: 8px; min-width: 0; margin: 0; }
-.zz-player__number { flex: none; }
-.zz-player__names { display: flex; flex-direction: column; min-width: 0; }
-.zz-player__sample, .zz-player__product { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hm-player__image { flex: none; width: 48px; height: 48px; overflow: hidden; background: var(--surface-media); }   /* 0124 */
+.hm-player__image > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.hm-player__title { display: flex; gap: 8px; min-width: 0; margin: 0; }
+.hm-player__number { flex: none; }
+.hm-player__names { display: flex; flex-direction: column; min-width: 0; }
+.hm-player__sample, .hm-player__product { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* _player controls: position + transport (gap 8), fixed 136, right-aligned */
-.zz-player__position { white-space: nowrap; }
-.zz-player__transport { display: flex; gap: 8px; }
+.hm-player__position { white-space: nowrap; }
+.hm-player__transport { display: flex; gap: 8px; }
 
 /* native player slot: the browser's audio controls, 32 tall, full width of the slot (Figma placeholder) */
-.zz-player__audio { display: block; width: 100%; height: 32px; }
+.hm-player__audio { display: block; width: 100%; height: 32px; }
 
 /* mobile (Figma device=mobile): now + close / actions · controls (space-between, centred) / native (padding-y 8) */
-.zz-player[data-device="mobile"] {
+.hm-player[data-device="mobile"] {
   padding: 8px var(--page-margin-mobile);
   grid-template-columns: auto minmax(0, 1fr) 24px;
   grid-template-areas: "now now close" "actions controls controls" "native native native";
   column-gap: 8px;
   row-gap: 8px;
 }
-.zz-player[data-device="mobile"] .zz-player__actions,
-.zz-player[data-device="mobile"] .zz-player__controls { align-self: center; }
-.zz-player[data-device="mobile"] .zz-player__native { padding-bottom: 8px; }
+.hm-player[data-device="mobile"] .hm-player__actions,
+.hm-player[data-device="mobile"] .hm-player__controls { align-self: center; }
+.hm-player[data-device="mobile"] .hm-player__native { padding-bottom: 8px; }
 @media (--mobile) {
-  .zz-player[data-device="responsive"] {
+  .hm-player[data-device="responsive"] {
     padding: 8px var(--page-margin-mobile);
     grid-template-columns: auto minmax(0, 1fr) 24px;
     grid-template-areas: "now now close" "actions controls controls" "native native native";
     column-gap: 8px;
     row-gap: 8px;
   }
-  .zz-player[data-device="responsive"] .zz-player__actions,
-  .zz-player[data-device="responsive"] .zz-player__controls { align-self: center; }
-  .zz-player[data-device="responsive"] .zz-player__native { padding-bottom: 8px; }
+  .hm-player[data-device="responsive"] .hm-player__actions,
+  .hm-player[data-device="responsive"] .hm-player__controls { align-self: center; }
+  .hm-player[data-device="responsive"] .hm-player__native { padding-bottom: 8px; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
    ProductInfo (Figma: product info · device=desktop | mobile)
    ═══════════════════════════════════════════════════════════════════════ */
 
-.zz-product-info {
+.hm-product-info {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));   /* Figma: 3 FLEX columns, no gaps */
   gap: 0;
@@ -593,29 +593,29 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
   padding-bottom: 64px;   /* Figma: device=desktop paddingBottom 64 (literal: no spacing token, open.md) */
   color: var(--text-strong);
 }
-.zz-product-info[data-device="mobile"] { padding-bottom: 32px; }   /* Figma: device=mobile paddingBottom 32 */
-@media (--mobile) { .zz-product-info[data-device="responsive"] { padding-bottom: 32px; } }
+.hm-product-info[data-device="mobile"] { padding-bottom: 32px; }   /* Figma: device=mobile paddingBottom 32 */
+@media (--mobile) { .hm-product-info[data-device="responsive"] { padding-bottom: 32px; } }
 /* type: every text node carries its text-style class (components.js); here only the UA margins are reset */
-.zz-product-info p, .zz-product-info :is(h1, h2, h3, h4, h5, h6) { margin: 0; }   /* the title level is a prop (headingLevel) */
+.hm-product-info p, .hm-product-info :is(h1, h2, h3, h4, h5, h6) { margin: 0; }   /* the title level is a prop (headingLevel) */
 
-.zz-product-info__details { grid-column: 1 / -1; display: flex; flex-direction: column; }
-.zz-product-info__title-block { display: flex; flex-direction: column; padding-bottom: 16px; }
-.zz-product-info__title-row { display: flex; flex-direction: row; align-items: flex-start; gap: var(--gutter-small); }
-.zz-product-info__name { flex: 1 1 auto; min-width: 0; }
-.zz-product-info__price { flex: none; }
-.zz-product-info__tags { display: flex; flex-direction: column; gap: 8px; padding-bottom: 16px; }
-.zz-product-info__description-block { display: flex; flex-direction: column; gap: 4px; padding-bottom: 16px; }
+.hm-product-info__details { grid-column: 1 / -1; display: flex; flex-direction: column; }
+.hm-product-info__title-block { display: flex; flex-direction: column; padding-bottom: 16px; }
+.hm-product-info__title-row { display: flex; flex-direction: row; align-items: flex-start; gap: var(--gutter-small); }
+.hm-product-info__name { flex: 1 1 auto; min-width: 0; }
+.hm-product-info__price { flex: none; }
+.hm-product-info__tags { display: flex; flex-direction: column; gap: 8px; padding-bottom: 16px; }
+.hm-product-info__description-block { display: flex; flex-direction: column; gap: 4px; padding-bottom: 16px; }
 
 /* samples: desktop = middle column, vertical, gap 8 · mobile = full width, horizontal, wrap, gap 16 (rows and columns) (Figma `slot container` 2018:10164); the bottom space is the component's own padding */
-.zz-product-info__samples { grid-column: 2 / 4; display: flex; flex-direction: column; gap: 8px; }
-.zz-product-info__samples .zz-player-button { width: 100%; justify-content: flex-start; }
+.hm-product-info__samples { grid-column: 2 / 4; display: flex; flex-direction: column; gap: 8px; }
+.hm-product-info__samples .hm-player-button { width: 100%; justify-content: flex-start; }
 
-.zz-product-info[data-device="mobile"] .zz-product-info__samples { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-content: flex-start; gap: 16px; }
-.zz-product-info[data-device="mobile"] .zz-product-info__samples .zz-player-button { width: auto; }
+.hm-product-info[data-device="mobile"] .hm-product-info__samples { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-content: flex-start; gap: 16px; }
+.hm-product-info[data-device="mobile"] .hm-product-info__samples .hm-player-button { width: auto; }
 
 @media (--mobile) {
-  .zz-product-info[data-device="responsive"] .zz-product-info__samples { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-content: flex-start; gap: 16px; }
-  .zz-product-info[data-device="responsive"] .zz-product-info__samples .zz-player-button { width: auto; }
+  .hm-product-info[data-device="responsive"] .hm-product-info__samples { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-content: flex-start; gap: 16px; }
+  .hm-product-info[data-device="responsive"] .hm-product-info__samples .hm-player-button { width: auto; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -628,7 +628,7 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
             details gap 8 = gutter/small today (Figma: literal 8).
    ═══════════════════════════════════════════════════════════════════════ */
 
-.zz-product-card {
+.hm-product-card {
   display: grid;
   grid-template-columns: repeat(9, minmax(0, 1fr));
   grid-template-rows: auto 1fr;
@@ -638,97 +638,97 @@ a.zz-tag { text-decoration: none; }   /* a tag with href: same look, no interact
 }
 /* Hover (Figma `product card` state=hover, decision 0088): the whole card takes surface/hover. Pointer devices only,
    so a tap on touch does not leave the card tinted. No padding change: the tint is the card box as it is. */
-.zz-product-card[data-state="hover"] { background: var(--surface-hover); }
+.hm-product-card[data-state="hover"] { background: var(--surface-hover); }
 @media (hover: hover) {
-  .zz-product-card:hover { background: var(--surface-hover); }
+  .hm-product-card:hover { background: var(--surface-hover); }
 }
-.zz-product-card p, .zz-product-card h1, .zz-product-card h2, .zz-product-card h3, .zz-product-card h4 { margin: 0; }
-.zz-product-card__image {
+.hm-product-card p, .hm-product-card h1, .hm-product-card h2, .hm-product-card h3, .hm-product-card h4 { margin: 0; }
+.hm-product-card__image {
   grid-column: 1 / 3; grid-row: 1 / -1;
   aspect-ratio: 1;   /* Figma: product image, proportions locked 1:1 */
   overflow: hidden;
   background: var(--surface-media);   /* Figma: product image fill (shown while loading / when there is no cover), 0124 */
 }
-a.zz-product-card__image { display: block; color: inherit; }
-.zz-product-card__image > img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.zz-product-card__info        { grid-column: 3 / 6; grid-row: 1 / -1; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.zz-product-card__title-block { display: flex; flex-direction: column; min-width: 0; }
-.zz-product-card__samples     { display: flex; flex-wrap: wrap; gap: 8px; }
-.zz-product-card__purchase    { grid-column: 6 / 10; grid-row: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
-.zz-product-card__add         { width: 100%; }   /* Figma: button layout=fill (the parent decides the width) */
-.zz-product-card__description { grid-column: 6 / 10; grid-row: 2; display: flex; flex-direction: column; gap: 4px; }
+a.hm-product-card__image { display: block; color: inherit; }
+.hm-product-card__image > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.hm-product-card__info        { grid-column: 3 / 6; grid-row: 1 / -1; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.hm-product-card__title-block { display: flex; flex-direction: column; min-width: 0; }
+.hm-product-card__samples     { display: flex; flex-wrap: wrap; gap: 8px; }
+.hm-product-card__purchase    { grid-column: 6 / 10; grid-row: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
+.hm-product-card__add         { width: 100%; }   /* Figma: button layout=fill (the parent decides the width) */
+.hm-product-card__description { grid-column: 6 / 10; grid-row: 2; display: flex; flex-direction: column; gap: 4px; }
 
 /* responsive: both buttons are in the markup, one shows per breakpoint */
-.zz-product-card[data-device="responsive"] .zz-product-card__add[data-device="mobile"] { display: none; }
+.hm-product-card[data-device="responsive"] .hm-product-card__add[data-device="mobile"] { display: none; }
 
-.zz-product-card[data-device="mobile"] {
+.hm-product-card[data-device="mobile"] {
   grid-template-columns: min(calc((100% - 11 * var(--gutter-small)) / 3 + 3 * var(--gutter-small)), 96px) minmax(0, 1fr) auto;   /* image = 4 of 12 cols, max 96 (Figma: image track fixed 96, decision 0039); info fill; purchase hug */
   grid-template-rows: repeat(4, auto) minmax(16px, 1fr);   /* title, description, tags, samples; last row = Figma details padding-bottom 16 */
   row-gap: 0;   /* info spacing is per block (margin), so a missing block leaves no gap */
 }
-.zz-product-card[data-device="mobile"] .zz-product-card__image       { grid-column: 1; grid-row: 1 / -1; }
-.zz-product-card[data-device="mobile"] .zz-product-card__info        { display: contents; }
-.zz-product-card[data-device="mobile"] .zz-product-card__title-block { grid-column: 2; grid-row: 1; }
-.zz-product-card[data-device="mobile"] .zz-product-card__description { grid-column: 2; grid-row: 2; margin-top: 8px; }
-.zz-product-card[data-device="mobile"] .zz-product-card__tags        { grid-column: 2; grid-row: 3; margin-top: 8px; }
-.zz-product-card[data-device="mobile"] .zz-product-card__samples     { grid-column: 2; grid-row: 4; margin-top: 8px; padding-top: 8px; }   /* Figma: info gap 8 + samples padding-top 8 */
-.zz-product-card[data-device="mobile"] .zz-product-card__purchase    { grid-column: 3; grid-row: 1 / -1; align-items: flex-end; }   /* Figma: hug, counter-axis MAX */
-.zz-product-card[data-device="mobile"] .zz-product-card__add         { width: auto; }   /* Figma: button layout=hug */
+.hm-product-card[data-device="mobile"] .hm-product-card__image       { grid-column: 1; grid-row: 1 / -1; }
+.hm-product-card[data-device="mobile"] .hm-product-card__info        { display: contents; }
+.hm-product-card[data-device="mobile"] .hm-product-card__title-block { grid-column: 2; grid-row: 1; }
+.hm-product-card[data-device="mobile"] .hm-product-card__description { grid-column: 2; grid-row: 2; margin-top: 8px; }
+.hm-product-card[data-device="mobile"] .hm-product-card__tags        { grid-column: 2; grid-row: 3; margin-top: 8px; }
+.hm-product-card[data-device="mobile"] .hm-product-card__samples     { grid-column: 2; grid-row: 4; margin-top: 8px; padding-top: 8px; }   /* Figma: info gap 8 + samples padding-top 8 */
+.hm-product-card[data-device="mobile"] .hm-product-card__purchase    { grid-column: 3; grid-row: 1 / -1; align-items: flex-end; }   /* Figma: hug, counter-axis MAX */
+.hm-product-card[data-device="mobile"] .hm-product-card__add         { width: auto; }   /* Figma: button layout=hug */
 
 @media (--mobile) {
-  .zz-product-card[data-device="responsive"] {
+  .hm-product-card[data-device="responsive"] {
     grid-template-columns: min(calc((100% - 11 * var(--gutter-small)) / 3 + 3 * var(--gutter-small)), 96px) minmax(0, 1fr) auto;   /* image = 4 of 12 cols, max 96 (Figma: image track fixed 96, decision 0039); info fill; purchase hug */
     grid-template-rows: repeat(4, auto) minmax(16px, 1fr);   /* title, description, tags, samples; last row = Figma details padding-bottom 16 */
     row-gap: 0;   /* info spacing is per block (margin), so a missing block leaves no gap */
   }
-  .zz-product-card[data-device="responsive"] .zz-product-card__image       { grid-column: 1; grid-row: 1 / -1; }
-  .zz-product-card[data-device="responsive"] .zz-product-card__info        { display: contents; }
-  .zz-product-card[data-device="responsive"] .zz-product-card__title-block { grid-column: 2; grid-row: 1; }
-  .zz-product-card[data-device="responsive"] .zz-product-card__description { grid-column: 2; grid-row: 2; margin-top: 8px; }
-  .zz-product-card[data-device="responsive"] .zz-product-card__tags        { grid-column: 2; grid-row: 3; margin-top: 8px; }
-  .zz-product-card[data-device="responsive"] .zz-product-card__samples     { grid-column: 2; grid-row: 4; margin-top: 8px; padding-top: 8px; }   /* Figma: info gap 8 + samples padding-top 8 */
-  .zz-product-card[data-device="responsive"] .zz-product-card__purchase    { grid-column: 3; grid-row: 1 / -1; align-items: flex-end; }   /* Figma: hug, counter-axis MAX */
-  .zz-product-card[data-device="responsive"] .zz-product-card__add         { width: auto; }   /* Figma: button layout=hug */
-  .zz-product-card[data-device="responsive"] .zz-product-card__add[data-device="desktop"] { display: none; }
-  .zz-product-card[data-device="responsive"] .zz-product-card__add[data-device="mobile"]  { display: inline-flex; }
+  .hm-product-card[data-device="responsive"] .hm-product-card__image       { grid-column: 1; grid-row: 1 / -1; }
+  .hm-product-card[data-device="responsive"] .hm-product-card__info        { display: contents; }
+  .hm-product-card[data-device="responsive"] .hm-product-card__title-block { grid-column: 2; grid-row: 1; }
+  .hm-product-card[data-device="responsive"] .hm-product-card__description { grid-column: 2; grid-row: 2; margin-top: 8px; }
+  .hm-product-card[data-device="responsive"] .hm-product-card__tags        { grid-column: 2; grid-row: 3; margin-top: 8px; }
+  .hm-product-card[data-device="responsive"] .hm-product-card__samples     { grid-column: 2; grid-row: 4; margin-top: 8px; padding-top: 8px; }   /* Figma: info gap 8 + samples padding-top 8 */
+  .hm-product-card[data-device="responsive"] .hm-product-card__purchase    { grid-column: 3; grid-row: 1 / -1; align-items: flex-end; }   /* Figma: hug, counter-axis MAX */
+  .hm-product-card[data-device="responsive"] .hm-product-card__add         { width: auto; }   /* Figma: button layout=hug */
+  .hm-product-card[data-device="responsive"] .hm-product-card__add[data-device="desktop"] { display: none; }
+  .hm-product-card[data-device="responsive"] .hm-product-card__add[data-device="mobile"]  { display: inline-flex; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
    BagItem (Figma: page Bag → `bag item`, device=desktop | mobile × status=available | unavailable; decision 0044)
    Row: cover 96 · info (gap 8) · purchase (right-aligned, gap 8); row gap gutter/small, as ProductCard (0074). Type classes come from components.js.
    ═══════════════════════════════════════════════════════════════════════ */
-.zz-bag-item {
+.hm-bag-item {
   display: flex;
   align-items: flex-start;
   gap: var(--gutter-small);                   /* Figma: itemSpacing → gutter/small, same as ProductCard columns (0074) */
   color: var(--text-strong);
   font-family: var(--font-sans);
 }
-.zz-bag-item p, .zz-bag-item h1, .zz-bag-item h2, .zz-bag-item h3, .zz-bag-item h4 { margin: 0; }
-.zz-bag-item__image { flex: none; width: 96px; height: 96px; display: block; background: var(--surface-media); }   /* 0124 */   /* Figma: product image 96 × 96 */
-.zz-bag-item__image > img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.zz-bag-item__info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: var(--small); }
-.zz-bag-item__title-block { display: flex; flex-direction: column; min-width: 0; }
-.zz-bag-item__link { color: inherit; text-decoration: none; }
-@media (hover: hover) { .zz-bag-item__link:hover { text-decoration: underline; } }   /* as .site-inline-link (decision 0043) */
-.zz-bag-item__description { display: flex; flex-direction: column; gap: 4px; }
-.zz-bag-item__samples { display: flex; flex-wrap: wrap; gap: 8px; }
-.zz-bag-item__purchase { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: var(--small); }
+.hm-bag-item p, .hm-bag-item h1, .hm-bag-item h2, .hm-bag-item h3, .hm-bag-item h4 { margin: 0; }
+.hm-bag-item__image { flex: none; width: 96px; height: 96px; display: block; background: var(--surface-media); }   /* 0124 */   /* Figma: product image 96 × 96 */
+.hm-bag-item__image > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.hm-bag-item__info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: var(--small); }
+.hm-bag-item__title-block { display: flex; flex-direction: column; min-width: 0; }
+.hm-bag-item__link { color: inherit; text-decoration: none; }
+@media (hover: hover) { .hm-bag-item__link:hover { text-decoration: underline; } }   /* as .site-inline-link (decision 0043) */
+.hm-bag-item__description { display: flex; flex-direction: column; gap: 4px; }
+.hm-bag-item__samples { display: flex; flex-wrap: wrap; gap: 8px; }
+.hm-bag-item__purchase { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: var(--small); }
 /* sold (decision 0064) and reserved (0065): name plain (decision 0078); "SOLD OUT" / "RESERVED" in an inline Alert beside the struck price (Figma `price row`, gap small) */
-.zz-bag-item:is([data-status="sold"], [data-status="reserved"]) .zz-bag-item__price { display: flex; align-items: center; gap: var(--small); white-space: nowrap; }
+.hm-bag-item:is([data-status="sold"], [data-status="reserved"]) .hm-bag-item__price { display: flex; align-items: center; gap: var(--small); white-space: nowrap; }
 /* mobile: the word below the struck price (Figma mobile `price row` vertical: price, then word; align right, gap small; Gio 2026-11-14). column-reverse keeps the DOM / screen reader order "SOLD OUT, not in your order, 12€" */
-.zz-bag-item[data-device="mobile"]:is([data-status="sold"], [data-status="reserved"]) .zz-bag-item__price { flex-direction: column-reverse; align-items: flex-end; }
-@media (--mobile) { .zz-bag-item[data-device="responsive"]:is([data-status="sold"], [data-status="reserved"]) .zz-bag-item__price { flex-direction: column-reverse; align-items: flex-end; } }
+.hm-bag-item[data-device="mobile"]:is([data-status="sold"], [data-status="reserved"]) .hm-bag-item__price { flex-direction: column-reverse; align-items: flex-end; }
+@media (--mobile) { .hm-bag-item[data-device="responsive"]:is([data-status="sold"], [data-status="reserved"]) .hm-bag-item__price { flex-direction: column-reverse; align-items: flex-end; } }
 /* mobile: samples padding-top 8 (Figma: copied from the mobile product card) */
-.zz-bag-item[data-device="mobile"] .zz-bag-item__samples { padding-top: 8px; }
-@media (--mobile) { .zz-bag-item[data-device="responsive"] .zz-bag-item__samples { padding-top: 8px; } }
+.hm-bag-item[data-device="mobile"] .hm-bag-item__samples { padding-top: 8px; }
+@media (--mobile) { .hm-bag-item[data-device="responsive"] .hm-bag-item__samples { padding-top: 8px; } }
 
 /* ═══════════════════════════════════════════════════════════════════════
    OrderItem = BagItem without Remove (Figma: page Account → `order item`, decision 0101): same classes, nothing to add.
    OrderRow (Figma: page Account → `order row`, decision 0101): BagItem anatomy, the whole row is one link.
    Hover = the ProductCard hover (surface/hover on the whole row, padding unchanged, decision 0088): Claude's choice, not drawn.
    ═══════════════════════════════════════════════════════════════════════ */
-.zz-order-row {
+.hm-order-row {
   display: flex;
   align-items: flex-start;
   gap: var(--gutter-small);
@@ -736,35 +736,35 @@ a.zz-product-card__image { display: block; color: inherit; }
   font-family: var(--font-sans);
   text-decoration: none;
 }
-.zz-order-row > span, .zz-order-row .zz-bag-item__title-block > span, .zz-order-row .zz-bag-item__description > span { display: block; }
-.zz-order-row .zz-bag-item__info, .zz-order-row .zz-bag-item__title-block, .zz-order-row .zz-bag-item__description { display: flex; }
-.zz-order-row .zz-bag-item__purchase { display: flex; }
-.zz-order-row__total { white-space: nowrap; }
-.zz-order-row__view { pointer-events: none; }
-.zz-order-row[data-state="hover"] { background: var(--surface-hover); }
-@media (hover: hover) { .zz-order-row:hover { background: var(--surface-hover); } }
+.hm-order-row > span, .hm-order-row .hm-bag-item__title-block > span, .hm-order-row .hm-bag-item__description > span { display: block; }
+.hm-order-row .hm-bag-item__info, .hm-order-row .hm-bag-item__title-block, .hm-order-row .hm-bag-item__description { display: flex; }
+.hm-order-row .hm-bag-item__purchase { display: flex; }
+.hm-order-row__total { white-space: nowrap; }
+.hm-order-row__view { pointer-events: none; }
+.hm-order-row[data-state="hover"] { background: var(--surface-hover); }
+@media (hover: hover) { .hm-order-row:hover { background: var(--surface-hover); } }
 
 /* ═══════════════════════════════════════════════════════════════════════
    BagSummary (Figma: page Bag → `bag summary`; decision 0044)
    Column gap 8: divider · rows (label | value, space-between) · Checkout (primary large, fill) · note.
    ═══════════════════════════════════════════════════════════════════════ */
-.zz-bag-summary { display: flex; flex-direction: column; gap: var(--small); color: var(--text-strong); font-family: var(--font-sans); }
-.zz-bag-summary__ship-to > * { width: 100%; }
-.zz-bag-summary__row[hidden] { display: none; }
-.zz-bag-summary__rows { display: flex; flex-direction: column; gap: var(--small); margin: 0; }
-.zz-bag-summary__row { display: flex; justify-content: space-between; gap: var(--small); }
-.zz-bag-summary__row dt, .zz-bag-summary__row dd { margin: 0; }
-.zz-bag-summary__row dd { text-align: right; }
-.zz-bag-summary__checkout { width: 100%; }   /* Figma: button layout=fill */
-.zz-bag-summary__note { margin: 0; }
+.hm-bag-summary { display: flex; flex-direction: column; gap: var(--small); color: var(--text-strong); font-family: var(--font-sans); }
+.hm-bag-summary__ship-to > * { width: 100%; }
+.hm-bag-summary__row[hidden] { display: none; }
+.hm-bag-summary__rows { display: flex; flex-direction: column; gap: var(--small); margin: 0; }
+.hm-bag-summary__row { display: flex; justify-content: space-between; gap: var(--small); }
+.hm-bag-summary__row dt, .hm-bag-summary__row dd { margin: 0; }
+.hm-bag-summary__row dd { text-align: right; }
+.hm-bag-summary__checkout { width: 100%; }   /* Figma: button layout=fill */
+.hm-bag-summary__note { margin: 0; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    Alert (Figma: page Bag → `alert`; decision 0077)
    A blocking message in a coloured box: padding 8 (small), surface-alert, body/small in text-on-alert, full width.
    ═══════════════════════════════════════════════════════════════════════ */
-.zz-alert { margin: 0; padding: var(--small); background: var(--surface-alert); color: var(--text-on-alert); font-family: var(--font-sans); }
-.zz-alert[data-layout="inline"] { display: inline-flex; padding: 2px 4px; }   /* Figma layout=inline: as Tag extra-small */
-.zz-alert[hidden] { display: none; }
+.hm-alert { margin: 0; padding: var(--small); background: var(--surface-alert); color: var(--text-on-alert); font-family: var(--font-sans); }
+.hm-alert[data-layout="inline"] { display: inline-flex; padding: 2px 4px; }   /* Figma layout=inline: as Tag extra-small */
+.hm-alert[hidden] { display: none; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    RelatedProducts (Figma: PDP `you may also like`, device=desktop | mobile — same layout, only the cards differ)
@@ -772,7 +772,7 @@ a.zz-product-card__image { display: block; color: inherit; }
    padding 8/0, title body/medium, list of cards gap 8. Figma padding/gap are literal 8 (open.md).
    ═══════════════════════════════════════════════════════════════════════ */
 
-.zz-related-products {
+.hm-related-products {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -782,10 +782,10 @@ a.zz-product-card__image { display: block; color: inherit; }
   color: var(--text-strong);
   min-width: 0;
 }
-.zz-related-products__title { margin: 0; }
-.zz-related-products__list  { display: flex; flex-direction: column; gap: 8px; }
+.hm-related-products__title { margin: 0; }
+.hm-related-products__list  { display: flex; flex-direction: column; gap: 8px; }
 /* Figma `view all`: the Button fills the width (layout=fill) */
-.zz-related-products__action > * { width: 100%; }
+.hm-related-products__action > * { width: 100%; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    ProductReturnCard (Figma: PDP `product return card`, state default | hover, decision 0119)
@@ -793,7 +793,7 @@ a.zz-product-card__image { display: block; color: inherit; }
    (two layers, so it stays opaque over the gallery). Cover 48 × 48, name max 2 lines, chevron up 24.
    ═══════════════════════════════════════════════════════════════════════ */
 
-.zz-return-card {
+.hm-return-card {
   display: flex; align-items: center; gap: var(--small);
   width: 100%; margin: 0; padding: var(--small);
   border: 1px solid var(--border-divider-strong);
@@ -803,37 +803,37 @@ a.zz-product-card__image { display: block; color: inherit; }
   cursor: pointer;
   box-sizing: border-box;
 }
-.zz-return-card:hover, .zz-return-card[data-state="hover"] { background-image: linear-gradient(var(--surface-hover), var(--surface-hover)); }
-.zz-return-card:focus-visible { outline: auto; }   /* browser ring: no focus token yet (open.md) */
-.zz-return-card__cover { flex: 0 0 auto; width: 48px; height: 48px; background: var(--surface-media); overflow: hidden; }
-.zz-return-card__cover > img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.zz-return-card__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
-.zz-return-card__name { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.zz-return-card__icon { flex: 0 0 auto; width: 24px; height: 24px; }
-.zz-return-card__icon > svg { display: block; width: 100%; height: 100%; }
+.hm-return-card:hover, .hm-return-card[data-state="hover"] { background-image: linear-gradient(var(--surface-hover), var(--surface-hover)); }
+.hm-return-card:focus-visible { outline: auto; }   /* browser ring: no focus token yet (open.md) */
+.hm-return-card__cover { flex: 0 0 auto; width: 48px; height: 48px; background: var(--surface-media); overflow: hidden; }
+.hm-return-card__cover > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.hm-return-card__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.hm-return-card__name { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.hm-return-card__icon { flex: 0 0 auto; width: 24px; height: 24px; }
+.hm-return-card__icon > svg { display: block; width: 100%; height: 100%; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    Gallery (Figma: PDP - desktop `gallery` 2138:1176 · PDP - mobile `mobile gallery`)
    desktop: both images full width, stacked, gap gutter/small (Figma itemSpacing bound to gutter/small); the box scrolls vertically on its own
-            once it is taller than --zz-gallery-max-height (set by the page; Figma: clip + overflow vertical)
+            once it is taller than --hm-gallery-max-height (set by the page; Figma: clip + overflow vertical)
    mobile:  horizontal swipe, one full-width square per screen, gap 1px (as in Figma)
    ═══════════════════════════════════════════════════════════════════════ */
 
-.zz-gallery {
+.hm-gallery {
   display: flex;
   flex-direction: column;
   gap: var(--gutter-small);       /* Figma: gallery itemSpacing → gutter/small */
   width: 100%;
-  max-height: var(--zz-gallery-max-height, none);
+  max-height: var(--hm-gallery-max-height, none);
   overflow-y: auto;
   scrollbar-width: none;          /* no scrollbar in Figma (open.md): wheel, touch and keyboard (tabindex) still scroll */
 }
-.zz-gallery::-webkit-scrollbar { display: none; }
-.zz-gallery:focus-visible { outline: auto; }   /* browser ring: no focus token yet */
-.zz-gallery__item { flex: 0 0 auto; aspect-ratio: 1 / 1; overflow: hidden; background: var(--surface-media); }   /* 0124 */
-.zz-gallery__item > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.hm-gallery::-webkit-scrollbar { display: none; }
+.hm-gallery:focus-visible { outline: auto; }   /* browser ring: no focus token yet */
+.hm-gallery__item { flex: 0 0 auto; aspect-ratio: 1 / 1; overflow: hidden; background: var(--surface-media); }   /* 0124 */
+.hm-gallery__item > img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
-.zz-gallery[data-device="mobile"] {
+.hm-gallery[data-device="mobile"] {
   display: flex;
   flex-direction: row;
   gap: 1px;                       /* Figma: mobile gallery itemSpacing 1 */
@@ -844,29 +844,29 @@ a.zz-product-card__image { display: block; color: inherit; }
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
-.zz-gallery[data-device="mobile"]::-webkit-scrollbar { display: none; }
-/* --zz-gallery-bleed: how far the scroller extends past its column on BOTH sides (the page sets it to the page margin).
+.hm-gallery[data-device="mobile"]::-webkit-scrollbar { display: none; }
+/* --hm-gallery-bleed: how far the scroller extends past its column on BOTH sides (the page sets it to the page margin).
    The scroller spans the full viewport, padding + scroll-padding put the snap point back on the page margin:
    image 1 rests at the left margin with image 2 peeking at the right edge; swiping, image 1 exits on the left
    and image 2 stops at the margin, keeping the right margin. Items stay as wide as the column (100% of the content box).
    width auto: with width 100% the negative margins would only shift the box, not widen it. */
-.zz-gallery[data-device="mobile"] {
+.hm-gallery[data-device="mobile"] {
   width: auto;
-  margin-inline: calc(-1 * var(--zz-gallery-bleed, 0px));
-  padding-inline: var(--zz-gallery-bleed, 0px);
-  scroll-padding-inline: var(--zz-gallery-bleed, 0px);
+  margin-inline: calc(-1 * var(--hm-gallery-bleed, 0px));
+  padding-inline: var(--hm-gallery-bleed, 0px);
+  scroll-padding-inline: var(--hm-gallery-bleed, 0px);
 }
 /* the next photo peeks in by exactly medium-small (16) at the screen edge (Gio 2026-11-18, decision 0121): a photo is
    the column − 16 + the bleed (the page margin, which the next photo also crosses) − the 1px gap. A single photo
    fills the column. Used by Gallery and ProductTile on mobile. */
-.zz-gallery, .zz-product-tile__gallery {
-  --zz-gallery-item-width: calc(100% - var(--medium-small) + var(--zz-gallery-bleed, 0px) - 1px);
+.hm-gallery, .hm-product-tile__gallery {
+  --hm-gallery-item-width: calc(100% - var(--medium-small) + var(--hm-gallery-bleed, 0px) - 1px);
 }
-.zz-gallery[data-device="mobile"] .zz-gallery__item { flex: 0 0 var(--zz-gallery-item-width); scroll-snap-align: start; }
-.zz-gallery[data-device="mobile"] .zz-gallery__item:only-child { flex-basis: 100%; }
+.hm-gallery[data-device="mobile"] .hm-gallery__item { flex: 0 0 var(--hm-gallery-item-width); scroll-snap-align: start; }
+.hm-gallery[data-device="mobile"] .hm-gallery__item:only-child { flex-basis: 100%; }
 
 @media (--mobile) {
-  .zz-gallery[data-device="responsive"] {
+  .hm-gallery[data-device="responsive"] {
     display: flex;
     flex-direction: row;
     gap: 1px;
@@ -877,15 +877,15 @@ a.zz-product-card__image { display: block; color: inherit; }
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }
-  .zz-gallery[data-device="responsive"]::-webkit-scrollbar { display: none; }
-  .zz-gallery[data-device="responsive"] {
+  .hm-gallery[data-device="responsive"]::-webkit-scrollbar { display: none; }
+  .hm-gallery[data-device="responsive"] {
     width: auto;
-    margin-inline: calc(-1 * var(--zz-gallery-bleed, 0px));
-    padding-inline: var(--zz-gallery-bleed, 0px);
-    scroll-padding-inline: var(--zz-gallery-bleed, 0px);
+    margin-inline: calc(-1 * var(--hm-gallery-bleed, 0px));
+    padding-inline: var(--hm-gallery-bleed, 0px);
+    scroll-padding-inline: var(--hm-gallery-bleed, 0px);
   }
-  .zz-gallery[data-device="responsive"] .zz-gallery__item { flex: 0 0 var(--zz-gallery-item-width); scroll-snap-align: start; }
-  .zz-gallery[data-device="responsive"] .zz-gallery__item:only-child { flex-basis: 100%; }
+  .hm-gallery[data-device="responsive"] .hm-gallery__item { flex: 0 0 var(--hm-gallery-item-width); scroll-snap-align: start; }
+  .hm-gallery[data-device="responsive"] .hm-gallery__item:only-child { flex-basis: 100%; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -897,18 +897,18 @@ a.zz-product-card__image { display: block; color: inherit; }
    Column, gap 4: top content (label · Optional) / field / support text.
    Field: 1px border-divider-strong, surface-accent, padding 8 (compact 4), gap 8 (compact 4), strokes included in
    layout (0014) → 38px (compact 30px). Text: label + Optional + support body-small, value + affixes body-medium. */
-.zz-input {
+.hm-input {
   display: flex;
   flex-direction: column;
   gap: 4px;
   min-width: 0;
   color: var(--text-strong);
 }
-.zz-input__top { display: flex; align-items: flex-start; gap: 8px; }
-.zz-input__label { flex: 1 1 0; min-width: 0; color: var(--text-strong); }
-.zz-input__optional { flex: none; color: var(--text-moderate); }
+.hm-input__top { display: flex; align-items: flex-start; gap: 8px; }
+.hm-input__label { flex: 1 1 0; min-width: 0; color: var(--text-strong); }
+.hm-input__optional { flex: none; color: var(--text-moderate); }
 
-.zz-input__field {
+.hm-input__field {
   position: relative;
   display: flex;
   align-items: center;
@@ -920,12 +920,12 @@ a.zz-product-card__image { display: block; color: inherit; }
   background: var(--surface-accent);
   cursor: text;
 }
-.zz-input[data-size="compact"] .zz-input__field { gap: 4px; padding: 4px; }
+.hm-input[data-size="compact"] .hm-input__field { gap: 4px; padding: 4px; }
 /* text area (Figma `_input-master` size=multiline, proposal 2026-11-12): field at least 120 tall, text from the top */
-.zz-input[data-variant="text-area"] .zz-input__field { align-items: flex-start; min-height: 120px; }
-.zz-input[data-variant="text-area"] .zz-input__control { min-height: 102px; resize: vertical; }
+.hm-input[data-variant="text-area"] .hm-input__field { align-items: flex-start; min-height: 120px; }
+.hm-input[data-variant="text-area"] .hm-input__control { min-height: 102px; resize: vertical; }
 
-.zz-input__control {
+.hm-input__control {
   flex: 1 1 0;
   min-width: 0;
   height: 20px;            /* body-medium line height: the field is 38 = 1 + 8 + 20 + 8 + 1 */
@@ -942,48 +942,48 @@ a.zz-product-card__image { display: block; color: inherit; }
 /* focus (0063): the ring goes around the whole field, not the bare control inside it. Still the browser ring
    (no border/focus token yet, design/open.md). Without :has the control keeps its own ring: never no ring. */
 @supports selector(:has(*)) {
-  .zz-input__control:focus-visible { outline: none; }
-  .zz-input__field:has(.zz-input__control:focus-visible) { outline: auto; }
+  .hm-input__control:focus-visible { outline: none; }
+  .hm-input__field:has(.hm-input__control:focus-visible) { outline: auto; }
 }
-.zz-input__control::placeholder { color: var(--text-moderate); opacity: 1; }
-.zz-input__control::-webkit-search-decoration,
-.zz-input__control::-webkit-search-cancel-button { -webkit-appearance: none; }
+.hm-input__control::placeholder { color: var(--text-moderate); opacity: 1; }
+.hm-input__control::-webkit-search-decoration,
+.hm-input__control::-webkit-search-cancel-button { -webkit-appearance: none; }
 
 /* select: native element, chevron drawn by the trailing icon on top of it; "Select" placeholder = the empty option */
-.zz-input[data-variant="select"] .zz-input__field { cursor: pointer; }
-.zz-input[data-variant="select"] .zz-input__control { cursor: inherit; padding-right: 28px; margin-right: -28px; }   /* the 20px chevron + 8px gap stay clickable */
-.zz-input[data-variant="select"] .zz-input__control:has(option[value=""]:checked) { color: var(--text-moderate); }
-.zz-input[data-variant="select"][data-size="compact"] .zz-input__control { padding-right: 24px; margin-right: -24px; }
+.hm-input[data-variant="select"] .hm-input__field { cursor: pointer; }
+.hm-input[data-variant="select"] .hm-input__control { cursor: inherit; padding-right: 28px; margin-right: -28px; }   /* the 20px chevron + 8px gap stay clickable */
+.hm-input[data-variant="select"] .hm-input__control:has(option[value=""]:checked) { color: var(--text-moderate); }
+.hm-input[data-variant="select"][data-size="compact"] .hm-input__control { padding-right: 24px; margin-right: -24px; }
 
-.zz-input__affix { flex: none; color: var(--text-strong); white-space: nowrap; }
-.zz-input__icon { display: inline-flex; flex: none; width: 20px; height: 20px; color: var(--icon-strong); }
-.zz-input__icon svg { width: 100%; height: 100%; display: block; }
-.zz-input__icon--trailing { pointer-events: none; }
+.hm-input__affix { flex: none; color: var(--text-strong); white-space: nowrap; }
+.hm-input__icon { display: inline-flex; flex: none; width: 20px; height: 20px; color: var(--icon-strong); }
+.hm-input__icon svg { width: 100%; height: 100%; display: block; }
+.hm-input__icon--trailing { pointer-events: none; }
 /* search actions (Figma `input` type=search, 2026-11-12): × clear (leading, only with text) and magnifier submit
    (trailing). Same 20px icon slot as the decorative icons; the button adds no box of its own. */
-.zz-input__action {
+.hm-input__action {
   display: inline-flex; flex: none; width: 20px; height: 20px; padding: 0; margin: 0;
   border: 0; background: none; color: var(--icon-strong); cursor: pointer;
 }
-.zz-input__action svg { width: 100%; height: 100%; display: block; }
-.zz-input__clear:has(+ .zz-input__control:placeholder-shown),
-.zz-input:has(.zz-input__control:placeholder-shown) .zz-input__clear { display: none; }
+.hm-input__action svg { width: 100%; height: 100%; display: block; }
+.hm-input__clear:has(+ .hm-input__control:placeholder-shown),
+.hm-input:has(.hm-input__control:placeholder-shown) .hm-input__clear { display: none; }
 
-.zz-input__support { margin: 0; color: var(--text-strong); }
+.hm-input__support { margin: 0; color: var(--text-strong); }
 
 /* state=error: field border + support text in the alert colour (PROVISIONAL tokens, see tokens.json / open.md) */
-.zz-input[data-invalid="true"] .zz-input__field { border-color: var(--border-alert); }
-.zz-input[data-invalid="true"] .zz-input__support { color: var(--text-alert); }
+.hm-input[data-invalid="true"] .hm-input__field { border-color: var(--border-alert); }
+.hm-input[data-invalid="true"] .hm-input__support { color: var(--text-alert); }
 
 /* state=locked (readOnly): surface-subtle, no stroke (Figma) → field 36px (compact 28px); value in text-moderate as drawn */
-.zz-input[data-locked="true"] .zz-input__field { border: 0; padding: 8px; background: var(--surface-subtle); cursor: default; }
-.zz-input[data-locked="true"][data-size="compact"] .zz-input__field { padding: 4px; }
-.zz-input[data-locked="true"] .zz-input__control { color: var(--text-moderate); }
+.hm-input[data-locked="true"] .hm-input__field { border: 0; padding: 8px; background: var(--surface-subtle); cursor: default; }
+.hm-input[data-locked="true"][data-size="compact"] .hm-input__field { padding: 4px; }
+.hm-input[data-locked="true"] .hm-input__control { color: var(--text-moderate); }
 
 /* ── DropZone (Figma: `uploads` → `drop zone`) ──
    surface-subtle, 1px dashed [16,16] border-divider-strong (four gradients, as the outlined controls in 0005),
    the button centred → 88px with a medium Button. No drag-over state in Figma. */
-.zz-drop-zone {
+.hm-drop-zone {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1005,28 +1005,28 @@ a.zz-product-card__image { display: block; color: inherit; }
 /* ── FileList / FileItem (Figma: `uploads` → `file item`; the list is a layout frame) ──
    List gap 8. Row: gap 16 between handle · content · remove; content gap 8, top-aligned (image rows),
    centred with a play button (audio rows). Thumbnail 40 × 40, surface-media when empty (0124). */
-.zz-file-list { position: relative; display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }   /* relative: rows' offsetTop is measured from the list */
-.zz-file-list__item { display: block; }
+.hm-file-list { position: relative; display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }   /* relative: rows' offsetTop is measured from the list */
+.hm-file-list__item { display: block; }
 /* live reorder: rows slide to their new place (FLIP, set in JS).
    TODO motion: no duration/easing in Figma yet — 150ms ease-out is the same placeholder as Button/Tab.
    The dragged row itself follows the pointer (no browser drag image), its number showing the slot it will land in,
    and the list shows an empty slot of its size there (Gio, 2026-11-10). The dragged row is on surface-base (opaque white, Gio 2026-11-10); the slot has no style. */
-.zz-file-list__item { transition: transform 150ms ease-out; }
-@media (prefers-reduced-motion: reduce) { .zz-file-list__item { transition: none; } }
-.zz-file-list__item[data-dragged] { position: relative; z-index: 1; transition: none; background: var(--surface-base); }   /* opaque, so it covers the rows it passes (Gio, 2026-11-10) */
-.zz-file-list__status { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+.hm-file-list__item { transition: transform 150ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .hm-file-list__item { transition: none; } }
+.hm-file-list__item[data-dragged] { position: relative; z-index: 1; transition: none; background: var(--surface-base); }   /* opaque, so it covers the rows it passes (Gio, 2026-11-10) */
+.hm-file-list__status { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 
-.zz-file-item { display: inline-flex; align-items: flex-start; gap: 16px; color: var(--text-strong); }
-.zz-file-item[data-body] { display: flex; }
-.zz-file-item__body { display: flex; flex-direction: column; gap: 16px; flex: 1; min-width: 0; }
-.zz-file-item__row { display: flex; align-items: flex-start; gap: 16px; }
-.zz-file-item__content { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
-.zz-file-item[data-media="audio"] .zz-file-item__content { align-items: center; }
-.zz-file-item__position,
-.zz-file-item__featured { flex: none; white-space: nowrap; }
-.zz-file-item__name { min-width: 0; overflow-wrap: anywhere; }
+.hm-file-item { display: inline-flex; align-items: flex-start; gap: 16px; color: var(--text-strong); }
+.hm-file-item[data-body] { display: flex; }
+.hm-file-item__body { display: flex; flex-direction: column; gap: 16px; flex: 1; min-width: 0; }
+.hm-file-item__row { display: flex; align-items: flex-start; gap: 16px; }
+.hm-file-item__content { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+.hm-file-item[data-media="audio"] .hm-file-item__content { align-items: center; }
+.hm-file-item__position,
+.hm-file-item__featured { flex: none; white-space: nowrap; }
+.hm-file-item__name { min-width: 0; overflow-wrap: anywhere; }
 
-.zz-file-item__thumb {
+.hm-file-item__thumb {
   display: block;
   flex: none;
   width: 40px;
@@ -1034,10 +1034,10 @@ a.zz-product-card__image { display: block; color: inherit; }
   background: var(--surface-media);
   overflow: hidden;
 }
-.zz-file-item__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hm-file-item__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 /* drag handle (DragHandle, decision 0129): 24 × 24 icon, chromeless (no Figma states: it reuses the floating colours of IconButton) */
-.zz-drag-handle {
+.hm-drag-handle {
   display: inline-flex;
   flex: none;
   width: 24px;
@@ -1052,32 +1052,32 @@ a.zz-product-card__image { display: block; color: inherit; }
   appearance: none;
   -webkit-appearance: none;
 }
-@media (hover: hover) { .zz-drag-handle:hover { background: var(--action-floating-background-hover); } }   /* 0043 */
-.zz-drag-handle:active { background: var(--action-floating-background-pressed); cursor: grabbing; }
-.zz-drag-handle__icon { display: inline-flex; width: 100%; height: 100%; }
-.zz-drag-handle__icon svg { width: 100%; height: 100%; display: block; }
+@media (hover: hover) { .hm-drag-handle:hover { background: var(--action-floating-background-hover); } }   /* 0043 */
+.hm-drag-handle:active { background: var(--action-floating-background-pressed); cursor: grabbing; }
+.hm-drag-handle__icon { display: inline-flex; width: 100%; height: 100%; }
+.hm-drag-handle__icon svg { width: 100%; height: 100%; display: block; }
 
 /* ── Checkbox (Figma: controls → checkbox, state default | active) ─────────
    row gap 8, icon 24, label body/medium text/strong. The native input is visually hidden and drives the drawn box. */
-.zz-checkbox { display: inline-flex; align-items: flex-start; gap: 8px; color: var(--text-strong); cursor: pointer; position: relative; }
-.zz-checkbox__control { position: absolute; width: 24px; height: 24px; margin: 0; opacity: 0; cursor: inherit; }
-.zz-checkbox__box { display: inline-flex; width: 24px; height: 24px; flex: none; color: var(--icon-strong); }
-.zz-checkbox__box svg { width: 100%; height: 100%; display: block; }
+.hm-checkbox { display: inline-flex; align-items: flex-start; gap: 8px; color: var(--text-strong); cursor: pointer; position: relative; }
+.hm-checkbox__control { position: absolute; width: 24px; height: 24px; margin: 0; opacity: 0; cursor: inherit; }
+.hm-checkbox__box { display: inline-flex; width: 24px; height: 24px; flex: none; color: var(--icon-strong); }
+.hm-checkbox__box svg { width: 100%; height: 100%; display: block; }
 /* one of three icons: empty (default) · tick (:checked) · minus (:indeterminate wins, Figma state=indeterminate) */
-.zz-checkbox__box svg:nth-child(n+2),
-.zz-checkbox__control:checked + .zz-checkbox__box svg:first-child { display: none; }
-.zz-checkbox__control:checked + .zz-checkbox__box svg:nth-child(2) { display: block; }
-.zz-checkbox__control:is(:indeterminate, [data-indeterminate]) + .zz-checkbox__box svg { display: none; }
-.zz-checkbox__control:is(:indeterminate, [data-indeterminate]) + .zz-checkbox__box svg:nth-child(3) { display: block; }
+.hm-checkbox__box svg:nth-child(n+2),
+.hm-checkbox__control:checked + .hm-checkbox__box svg:first-child { display: none; }
+.hm-checkbox__control:checked + .hm-checkbox__box svg:nth-child(2) { display: block; }
+.hm-checkbox__control:is(:indeterminate, [data-indeterminate]) + .hm-checkbox__box svg { display: none; }
+.hm-checkbox__control:is(:indeterminate, [data-indeterminate]) + .hm-checkbox__box svg:nth-child(3) { display: block; }
 /* Figma label=false: the label stays for assistive tech (e.g. "Select <record>") */
-.zz-checkbox--hide-label .zz-checkbox__label {
+.hm-checkbox--hide-label .hm-checkbox__label {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
-.zz-checkbox__control:focus-visible + .zz-checkbox__box { outline: auto; }   /* browser ring: no border/focus token yet */
+.hm-checkbox__control:focus-visible + .hm-checkbox__box { outline: auto; }   /* browser ring: no border/focus token yet */
 /* disabled: not designed (design/open.md) */
 
 /* ── Dialog (Figma: page dialog → dialog, 2026-11-10) ─────────────────── */
-.zz-dialog {
+.hm-dialog {
   width: min(400px, calc(100vw - 32px)); box-sizing: border-box;
   margin: auto; padding: 16px;
   display: flex; flex-direction: column; gap: 24px;
@@ -1086,18 +1086,18 @@ a.zz-product-card__image { display: block; color: inherit; }
   font-family: var(--font-sans);                   /* a modal sits in the top layer: never inherit the page font (a field inside reads it) */
   border: 1px solid var(--border-divider-strong);
 }
-.zz-dialog:not([open]) { display: none; }
-.zz-dialog::backdrop { background: var(--surface-scrim); }
-.zz-dialog__content { display: flex; flex-direction: column; gap: 8px; }
-.zz-dialog__title { margin: 0; text-transform: uppercase; }
-.zz-dialog__body { margin: 0; }
-.zz-dialog__body p { margin: 0; }
-.zz-dialog__actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.hm-dialog:not([open]) { display: none; }
+.hm-dialog::backdrop { background: var(--surface-scrim); }
+.hm-dialog__content { display: flex; flex-direction: column; gap: 8px; }
+.hm-dialog__title { margin: 0; text-transform: uppercase; }
+.hm-dialog__body { margin: 0; }
+.hm-dialog__body p { margin: 0; }
+.hm-dialog__actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
 /* newsletter dialog (Figma `newsletter dialog`, decision 0121): head row = title + close icon button, top-aligned, gap 8 */
-.zz-newsletter-dialog__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-.zz-newsletter-dialog .zz-footer-newsletter__note a { color: inherit; text-decoration: underline; }
-.zz-newsletter-dialog .zz-footer-newsletter__row { flex-wrap: wrap; }
-.zz-newsletter-dialog .zz-footer-newsletter__input { min-width: 200px; }
+.hm-newsletter-dialog__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.hm-newsletter-dialog .hm-footer-newsletter__note a { color: inherit; text-decoration: underline; }
+.hm-newsletter-dialog .hm-footer-newsletter__row { flex-wrap: wrap; }
+.hm-newsletter-dialog .hm-footer-newsletter__input { min-width: 200px; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    EntityField + EntityChip (Figma: BACKEND → Create, "DRAFT · entity chips" 2106:676; decision 0020)
@@ -1105,13 +1105,13 @@ a.zz-product-card__image { display: block; color: inherit; }
    field padding overridden to 6, so a row of 24px chips keeps the 38px of a text field (1 + 6 + 24 + 6 + 1).
    The menu hangs 4px below the field.
    ═══════════════════════════════════════════════════════════════════════ */
-.zz-entity-field__field { flex-wrap: wrap; row-gap: 8px; padding: 6px; }
-.zz-entity-field__chips { display: contents; list-style: none; margin: 0; padding: 0; }
-.zz-entity-field__chips > li { display: contents; }
-.zz-entity-field__control { flex: 1 1 96px; height: 24px; }   /* a chip tall: the empty field is 38 too */
+.hm-entity-field__field { flex-wrap: wrap; row-gap: 8px; padding: 6px; }
+.hm-entity-field__chips { display: contents; list-style: none; margin: 0; padding: 0; }
+.hm-entity-field__chips > li { display: contents; }
+.hm-entity-field__control { flex: 1 1 96px; height: 24px; }   /* a chip tall: the empty field is 38 too */
 
 /* entity chip = tag item medium (surface-support-1, body-small, padding-left 8) + a 24×24 remove target (WCAG 2.5.8) */
-.zz-entity-chip {
+.hm-entity-chip {
   display: inline-flex;
   align-items: center;
   height: 24px;
@@ -1121,22 +1121,22 @@ a.zz-product-card__image { display: block; color: inherit; }
   color: var(--text-strong);
   white-space: nowrap;
 }
-.zz-entity-chip__remove {
+.hm-entity-chip__remove {
   display: inline-flex; align-items: center; justify-content: center;
   width: 24px; height: 24px; flex: none;
   margin: 0; padding: 0; border: 0; border-radius: 0;
   background: transparent; color: var(--icon-strong); cursor: pointer;
 }
-.zz-entity-chip__remove svg { width: 16px; height: 16px; display: block; }
-.zz-entity-chip[data-state="hover"] .zz-entity-chip__remove { background: var(--surface-subtle); }
-@media (hover: hover) { .zz-entity-chip__remove:hover { background: var(--surface-subtle); } }   /* 0043 */
+.hm-entity-chip__remove svg { width: 16px; height: 16px; display: block; }
+.hm-entity-chip[data-state="hover"] .hm-entity-chip__remove { background: var(--surface-subtle); }
+@media (hover: hover) { .hm-entity-chip__remove:hover { background: var(--surface-subtle); } }   /* 0043 */
 /* focus: 2px text-strong outside, as drawn (TODO: no focus token yet, design/open.md) */
-.zz-entity-chip:has(.zz-entity-chip__remove:focus-visible),
-.zz-entity-chip[data-state="focus"] { outline: 2px solid var(--text-strong); outline-offset: 0; }
-.zz-entity-chip__remove:focus-visible { outline: none; }
+.hm-entity-chip:has(.hm-entity-chip__remove:focus-visible),
+.hm-entity-chip[data-state="focus"] { outline: 2px solid var(--text-strong); outline-offset: 0; }
+.hm-entity-chip__remove:focus-visible { outline: none; }
 
 /* menu (listbox) + entity option (kind entity | alias | create; active = aria-selected) */
-.zz-entity-field__menu {
+.hm-entity-field__menu {
   position: absolute; z-index: 10;
   top: calc(100% + 4px); left: -1px; right: -1px;
   margin: 0; padding: 0; list-style: none;
@@ -1144,125 +1144,125 @@ a.zz-product-card__image { display: block; color: inherit; }
   background: var(--surface-base);   /* floats over the form: opaque in every mode (0023; Gio 2026-11-10) */
   border: 1px solid var(--border-divider-strong);
 }
-.zz-entity-field__menu[hidden] { display: none; }
-.zz-entity-option {
+.hm-entity-field__menu[hidden] { display: none; }
+.hm-entity-option {
   display: flex; align-items: center; gap: 8px;
   padding: 8px;
   background: var(--surface-base);
   color: var(--text-strong);
   cursor: pointer;
 }
-.zz-entity-option[aria-selected="true"] { background: var(--surface-subtle); }
-.zz-entity-option__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.zz-entity-option__official { flex: none; color: var(--text-moderate); }
-.zz-entity-option__icon { display: inline-flex; width: 20px; height: 20px; flex: none; color: var(--icon-strong); }
-.zz-entity-option__icon svg { width: 100%; height: 100%; display: block; }
+.hm-entity-option[aria-selected="true"] { background: var(--surface-subtle); }
+.hm-entity-option__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hm-entity-option__official { flex: none; color: var(--text-moderate); }
+.hm-entity-option__icon { display: inline-flex; width: 20px; height: 20px; flex: none; color: var(--icon-strong); }
+.hm-entity-option__icon svg { width: 100%; height: 100%; display: block; }
 
 /* ── Divider (Figma: `divider` → `divider`) ── 1px border/divider/strong, full width. */
-.zz-divider { display: block; height: 1px; margin: 0; border: 0; background: var(--border-divider-strong); }
+.hm-divider { display: block; height: 1px; margin: 0; border: 0; background: var(--border-divider-strong); }
 
 /* ── ActionPanel (Figma: `listing form` → `action panel`) ── surface/subtle, padding 16, Buttons fill, gap 8. */
-.zz-action-panel { display: flex; flex-direction: column; gap: 8px; padding: 16px; background: var(--surface-subtle); }
-.zz-action-panel > .zz-button { width: 100%; }
+.hm-action-panel { display: flex; flex-direction: column; gap: 8px; padding: 16px; background: var(--surface-subtle); }
+.hm-action-panel > .hm-button { width: 100%; }
 
 /* ── ListingStatus (Figma: `listing form` → `listing status`, 0118) ── vertical, gap 4; status text/strong,
    details and shop update text/moderate, unsaved = Alert (block). */
-.zz-listing-status { display: flex; flex-direction: column; gap: 4px; }
-.zz-listing-status > p { margin: 0; }
-.zz-listing-status__status { color: var(--text-strong); }
-.zz-listing-status__details, .zz-listing-status__shop { color: var(--text-moderate); }
+.hm-listing-status { display: flex; flex-direction: column; gap: 4px; }
+.hm-listing-status > p { margin: 0; }
+.hm-listing-status__status { color: var(--text-strong); }
+.hm-listing-status__details, .hm-listing-status__shop { color: var(--text-moderate); }
 
 /* ── ListingLine (Figma: `listing form` → `listing line`) ──
    line: fields + sample, gap 8. fields: 8-column grid, column gap 16, row gap 8 (Figma grid auto layout, 0012).
    removable=false: artist 1–4, title 5–8. removable=true: artist 1–3, title 4–7, remove × in 8.
    Row 2: spelling under the artist, credit under the title. Sample: gap 16 (Figma `sample`). */
-.zz-listing-line { display: flex; align-items: flex-start; }                     /* Marker + body, gap 0 (Figma, wanted) */
-.zz-listing-line__body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
-.zz-listing-line__fields { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px 16px; align-items: start; }
-.zz-listing-line__fields > * { display: flex; flex-direction: column; min-width: 0; }   /* cells blockify their field, as direct grid items would */
-.zz-listing-line__artist   { grid-row: 1; grid-column: 1 / span 4; }
-.zz-listing-line__title    { grid-row: 1; grid-column: 5 / span 4; }
-.zz-listing-line__spelling { grid-row: 2; grid-column: 1 / span 4; }
-.zz-listing-line__credit   { grid-row: 2; grid-column: 5 / span 4; }
-.zz-listing-line[data-removable="true"] .zz-listing-line__artist   { grid-column: 1 / span 3; }
-.zz-listing-line[data-removable="true"] .zz-listing-line__title    { grid-column: 4 / span 4; }
-.zz-listing-line[data-removable="true"] .zz-listing-line__spelling { grid-column: 1 / span 3; }
-.zz-listing-line[data-removable="true"] .zz-listing-line__credit   { grid-column: 4 / span 4; }
-.zz-listing-line__remove   { grid-row: 1; grid-column: 8; align-items: flex-start; }
-.zz-listing-line__sample { display: flex; flex-direction: column; gap: 16px; }
+.hm-listing-line { display: flex; align-items: flex-start; }                     /* Marker + body, gap 0 (Figma, wanted) */
+.hm-listing-line__body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.hm-listing-line__fields { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px 16px; align-items: start; }
+.hm-listing-line__fields > * { display: flex; flex-direction: column; min-width: 0; }   /* cells blockify their field, as direct grid items would */
+.hm-listing-line__artist   { grid-row: 1; grid-column: 1 / span 4; }
+.hm-listing-line__title    { grid-row: 1; grid-column: 5 / span 4; }
+.hm-listing-line__spelling { grid-row: 2; grid-column: 1 / span 4; }
+.hm-listing-line__credit   { grid-row: 2; grid-column: 5 / span 4; }
+.hm-listing-line[data-removable="true"] .hm-listing-line__artist   { grid-column: 1 / span 3; }
+.hm-listing-line[data-removable="true"] .hm-listing-line__title    { grid-column: 4 / span 4; }
+.hm-listing-line[data-removable="true"] .hm-listing-line__spelling { grid-column: 1 / span 3; }
+.hm-listing-line[data-removable="true"] .hm-listing-line__credit   { grid-column: 4 / span 4; }
+.hm-listing-line__remove   { grid-row: 1; grid-column: 8; align-items: flex-start; }
+.hm-listing-line__sample { display: flex; flex-direction: column; gap: 16px; }
 @media (--mobile) {   /* not drawn: one column in source order, as the other admin rows */
-  .zz-listing-line__fields { grid-template-columns: minmax(0, 1fr); }
-  .zz-listing-line[data-removable] .zz-listing-line__fields > * { grid-row: auto; grid-column: auto; }
+  .hm-listing-line__fields { grid-template-columns: minmax(0, 1fr); }
+  .hm-listing-line[data-removable] .hm-listing-line__fields > * { grid-row: auto; grid-column: auto; }
 }
 
 /* ── shared: visually hidden, still read by assistive tech ───────────────── */
-.zz-visually-hidden {
+.hm-visually-hidden {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
 /* ── Tab suffix (Figma: _tab-sizes `suffix`, label container gap 4, same text style) ── */
-.zz-tab__suffix { display: inline; }
+.hm-tab__suffix { display: inline; }
 
 /* ── Dialog choices (Figma: dialog `choices`, under the body, content gap 8) ── */
-.zz-dialog__choices { display: flex; flex-direction: column; }
+.hm-dialog__choices { display: flex; flex-direction: column; }
 
 /* ── Radio (Figma: controls → radio, 2026-11-10) ───────────────────────────
    control 24 with the 18px icon centred, gap 8, label body/medium text/strong. Same mechanics as the checkbox. */
-.zz-radio { display: inline-flex; align-items: flex-start; gap: 8px; color: var(--text-strong); cursor: pointer; position: relative; }
-.zz-radio__control { position: absolute; width: 24px; height: 24px; margin: 0; opacity: 0; cursor: inherit; }
-.zz-radio__box { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex: none; color: var(--icon-strong); }
-.zz-radio__box svg { width: 18px; height: 18px; display: block; }
-.zz-radio__box svg:nth-child(2),
-.zz-radio__control:checked + .zz-radio__box svg:first-child { display: none; }
-.zz-radio__control:checked + .zz-radio__box svg:nth-child(2) { display: block; }
-.zz-radio__control:focus-visible + .zz-radio__box { outline: auto; }   /* browser ring: no border/focus token yet */
-.zz-radio--hide-label .zz-radio__label {
+.hm-radio { display: inline-flex; align-items: flex-start; gap: 8px; color: var(--text-strong); cursor: pointer; position: relative; }
+.hm-radio__control { position: absolute; width: 24px; height: 24px; margin: 0; opacity: 0; cursor: inherit; }
+.hm-radio__box { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex: none; color: var(--icon-strong); }
+.hm-radio__box svg { width: 18px; height: 18px; display: block; }
+.hm-radio__box svg:nth-child(2),
+.hm-radio__control:checked + .hm-radio__box svg:first-child { display: none; }
+.hm-radio__control:checked + .hm-radio__box svg:nth-child(2) { display: block; }
+.hm-radio__control:focus-visible + .hm-radio__box { outline: auto; }   /* browser ring: no border/focus token yet */
+.hm-radio--hide-label .hm-radio__label {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
-.zz-radio-group { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; }
-.zz-radio-group__legend { padding: 0; margin: 0 0 8px; }
+.hm-radio-group { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.hm-radio-group__legend { padding: 0; margin: 0 0 8px; }
 
 /* ── Filter / FilterBlock / Filters (Figma: page filters, 2026-11-10) ──────
    filter: box 16, gap 8, label body/small text/strong, count body/small text/moderate (4.6:1 on acid green, 0067).
    filter block: heading label/extra small, gap 16, options gap 8. filters: blocks gap 24, padding 0 8. */
-.zz-filter { display: inline-flex; align-items: center; gap: 8px; color: var(--text-strong); cursor: pointer; position: relative; }
-.zz-filter__control { position: absolute; left: 0; top: 50%; width: 16px; height: 16px; margin: -8px 0 0; opacity: 0; cursor: inherit; }
-.zz-filter__box { display: inline-flex; width: 16px; height: 16px; flex: none; color: var(--icon-strong); }
-.zz-filter__box svg { width: 100%; height: 100%; display: block; }
-.zz-filter__box svg:nth-child(2),
-.zz-filter__control:checked + .zz-filter__box svg:first-child { display: none; }
-.zz-filter__control:checked + .zz-filter__box svg:nth-child(2) { display: block; }
-.zz-filter__control:focus-visible + .zz-filter__box { outline: auto; }   /* browser ring: no border/focus token yet */
-.zz-filter__count { color: var(--text-moderate); }
-.zz-filter-block { display: flex; flex-direction: column; gap: 16px; margin: 0; padding: 0; border: 0; min-width: 0; }
-.zz-filter-block__label { padding: 0; margin: 0; float: left; width: 100%; }   /* float: lets the legend take part in the flex gap */
-.zz-filter-block__options { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; clear: both; }
-.zz-filters { display: flex; flex-direction: column; gap: 24px; padding: 0 8px; }
+.hm-filter { display: inline-flex; align-items: center; gap: 8px; color: var(--text-strong); cursor: pointer; position: relative; }
+.hm-filter__control { position: absolute; left: 0; top: 50%; width: 16px; height: 16px; margin: -8px 0 0; opacity: 0; cursor: inherit; }
+.hm-filter__box { display: inline-flex; width: 16px; height: 16px; flex: none; color: var(--icon-strong); }
+.hm-filter__box svg { width: 100%; height: 100%; display: block; }
+.hm-filter__box svg:nth-child(2),
+.hm-filter__control:checked + .hm-filter__box svg:first-child { display: none; }
+.hm-filter__control:checked + .hm-filter__box svg:nth-child(2) { display: block; }
+.hm-filter__control:focus-visible + .hm-filter__box { outline: auto; }   /* browser ring: no border/focus token yet */
+.hm-filter__count { color: var(--text-moderate); }
+.hm-filter-block { display: flex; flex-direction: column; gap: 16px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.hm-filter-block__label { padding: 0; margin: 0; float: left; width: 100%; }   /* float: lets the legend take part in the flex gap */
+.hm-filter-block__options { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; clear: both; }
+.hm-filters { display: flex; flex-direction: column; gap: 24px; padding: 0 8px; }
 
 /* filter device=mobile (Figma 2026-11-10, Gio): box 24, label + count body-medium (class body-medium--mobile),
    padding-y small → 40px row (Gio accepts < 44, design/open.md). The row is the <label>: all of it is the target. */
 @media (--mobile) {
-  .zz-filter[data-content="label"] { display: flex; width: 100%; box-sizing: border-box; padding: var(--small) 0; }
-  .zz-filter__box { width: 24px; height: 24px; }
-  .zz-filter__control { width: 24px; height: 24px; margin-top: -12px; }
+  .hm-filter[data-content="label"] { display: flex; width: 100%; box-sizing: border-box; padding: var(--small) 0; }
+  .hm-filter__box { width: 24px; height: 24px; }
+  .hm-filter__control { width: 24px; height: 24px; margin-top: -12px; }
 }
 
 /* ── Button suffix (Figma `_button-sizes` → suffix): same text style, label container gap 4 (0029) ── */
-.zz-button__suffix, .zz-button__prefix { display: inline; }
+.hm-button__suffix, .hm-button__prefix { display: inline; }
 
 /* ── IconButton: the hidden attribute wins over display:inline-flex ── */
-.zz-icon-button[hidden] { display: none; }
+.hm-icon-button[hidden] { display: none; }
 
 /* ── EntityChip size=large (Figma 2026-11-10, mobile): 44px, padding-left medium-small, label body-medium,
    remove target 44 × 44 with a 24px icon ── */
-.zz-entity-chip[data-size="large"] { height: 44px; padding-left: var(--medium-small); }
-.zz-entity-chip[data-size="large"] .zz-entity-chip__remove { width: 44px; height: 44px; }
-.zz-entity-chip[data-size="large"] .zz-entity-chip__remove svg { width: 24px; height: 24px; }
+.hm-entity-chip[data-size="large"] { height: 44px; padding-left: var(--medium-small); }
+.hm-entity-chip[data-size="large"] .hm-entity-chip__remove { width: 44px; height: 44px; }
+.hm-entity-chip[data-size="large"] .hm-entity-chip__remove svg { width: 24px; height: 24px; }
 
 /* ── FilterFacet (Figma `filter facet`): a row of the main level, opens the facet's level. Padding-y medium-small,
    gap small, 1px border-divider-strong at the bottom; label label-medium (uppercase), value body-small text-moderate
    (one line, ellipsis), chevron 24. Hover / pressed / focus not designed (design/open.md): browser focus ring. ── */
-.zz-filter-facet {
+.hm-filter-facet {
   display: flex; align-items: center; gap: var(--small);
   width: 100%; box-sizing: border-box; margin: 0;
   padding: var(--medium-small) 0;
@@ -1270,70 +1270,70 @@ a.zz-product-card__image { display: block; color: inherit; }
   background: transparent; color: var(--text-strong); font: inherit; text-align: left; cursor: pointer;
   appearance: none; -webkit-appearance: none;
 }
-.zz-filter-facet__label { flex: 1 1 auto; min-width: 0; text-transform: uppercase; }
-.zz-filter-facet__value { flex: 0 1 auto; min-width: 0; color: var(--text-moderate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.zz-filter-facet__chevron { display: inline-flex; flex: none; width: 24px; height: 24px; color: var(--icon-strong); }
-.zz-filter-facet__chevron svg { width: 100%; height: 100%; display: block; }
+.hm-filter-facet__label { flex: 1 1 auto; min-width: 0; text-transform: uppercase; }
+.hm-filter-facet__value { flex: 0 1 auto; min-width: 0; color: var(--text-moderate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hm-filter-facet__chevron { display: inline-flex; flex: none; width: 24px; height: 24px; color: var(--icon-strong); }
+.hm-filter-facet__chevron svg { width: 100%; height: 100%; display: block; }
 
 /* ── FiltersLayer (Figma `filters layer`, level main | facet): a full-height column on surface-accent.
    Bar: padding medium-small × page-margin-mobile, gap small, bottom border. Body: scrolls on its own, padding
    medium-small (top small on level=facet), gap medium-small. Actions: sticky at the bottom (they sit outside the
    scrolling body), padding small × page-margin-mobile, gap small, top border, surface-accent (Gio). ── */
-.zz-filters-layer { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; background: var(--surface-accent); color: var(--text-strong); }
-.zz-filters-layer [hidden] { display: none !important; }
-.zz-filters-layer__bar {
+.hm-filters-layer { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; background: var(--surface-accent); color: var(--text-strong); }
+.hm-filters-layer [hidden] { display: none !important; }
+.hm-filters-layer__bar {
   display: flex; align-items: center; gap: var(--small); flex: none;
   padding: var(--medium-small) var(--page-margin-mobile);
   border-bottom: 1px solid var(--border-divider-strong);
 }
-.zz-filters-layer__title { flex: 1 1 auto; min-width: 0; margin: 0; text-transform: uppercase; }
-.zz-filters-layer__body {
+.hm-filters-layer__title { flex: 1 1 auto; min-width: 0; margin: 0; text-transform: uppercase; }
+.hm-filters-layer__body {
   flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
   display: flex; flex-direction: column; gap: var(--medium-small);
   padding: var(--medium-small) var(--page-margin-mobile);
 }
-.zz-filters-layer[data-level="facet"] .zz-filters-layer__body { padding-top: var(--small); }
-.zz-filters-layer__applied { display: flex; flex-direction: column; gap: var(--small); }
-.zz-filters-layer__applied-label { margin: 0; text-transform: uppercase; }
-.zz-filters-layer__chips { display: flex; flex-wrap: wrap; gap: 4px; }   /* Figma: 4, as tag group (no token) */
-.zz-filters-layer__actions {
+.hm-filters-layer[data-level="facet"] .hm-filters-layer__body { padding-top: var(--small); }
+.hm-filters-layer__applied { display: flex; flex-direction: column; gap: var(--small); }
+.hm-filters-layer__applied-label { margin: 0; text-transform: uppercase; }
+.hm-filters-layer__chips { display: flex; flex-wrap: wrap; gap: 4px; }   /* Figma: 4, as tag group (no token) */
+.hm-filters-layer__actions {
   display: flex; gap: var(--small); flex: none;
   padding: var(--small) var(--page-margin-mobile);
   border-top: 1px solid var(--border-divider-strong);
   background: var(--surface-accent);
 }
-.zz-filters-layer__apply { flex: 1 1 auto; }
+.hm-filters-layer__apply { flex: 1 1 auto; }
 /* the facet level shows one FilterBlock: its heading is the bar title, options gap 0 (rows carry the padding) */
-.zz-filters-layer .zz-filter-block__options { gap: 0; align-items: stretch; }
+.hm-filters-layer .hm-filter-block__options { gap: 0; align-items: stretch; }
 
 /* ── MenuLayer / MenuGroup / MenuItem (Figma page `menu`, proposal 2026-11-12): the mobile menu. Same frame as
    FiltersLayer (bar, body scrolling on its own) without the actions. ── */
-.zz-menu-layer { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; background: var(--surface-accent); color: var(--text-strong); }
-.zz-menu-layer__bar {
+.hm-menu-layer { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; background: var(--surface-accent); color: var(--text-strong); }
+.hm-menu-layer__bar {
   display: flex; align-items: center; gap: var(--small); flex: none;
   padding: var(--medium-small) var(--page-margin-mobile);
   border-bottom: 1px solid var(--border-divider-strong);
 }
-.zz-menu-layer__title { flex: 1 1 auto; min-width: 0; margin: 0; text-transform: uppercase; }
-.zz-menu-layer__body {
+.hm-menu-layer__title { flex: 1 1 auto; min-width: 0; margin: 0; text-transform: uppercase; }
+.hm-menu-layer__body {
   flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
   display: flex; flex-direction: column; gap: 24px;   /* Figma: 24 literal, no token (design/open.md) */
   padding: var(--small) var(--page-margin-mobile) var(--medium-small);
 }
-.zz-menu-group { display: flex; flex-direction: column; }
-.zz-menu-item {
+.hm-menu-group { display: flex; flex-direction: column; }
+.hm-menu-item {
   display: flex; align-items: center; gap: var(--small);
   padding: var(--medium-small) var(--small);
   border-bottom: 1px solid var(--border-divider-strong);
   color: var(--text-strong); text-decoration: none;
 }
-.zz-menu-item[data-state="current"] { background-color: var(--tab-background-active); }
-button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-style: solid; border-color: var(--border-divider-strong); background: none; font: inherit; text-align: left; cursor: pointer; }   /* an action row (0089) */
-.zz-menu-item__label { flex: 1 1 auto; min-width: 0; text-transform: uppercase; }
-.zz-menu-item__detail { flex: 0 1 auto; min-width: 0; color: var(--text-moderate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.zz-menu-layer__legal { display: flex; flex-wrap: wrap; gap: var(--small) var(--medium-small); padding: 0 var(--small); }
-.zz-menu-layer__legal a { color: var(--text-strong); text-decoration: none; }
-.zz-menu-layer__legal a:hover { text-decoration: underline; }
+.hm-menu-item[data-state="current"] { background-color: var(--tab-background-active); }
+button.hm-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-style: solid; border-color: var(--border-divider-strong); background: none; font: inherit; text-align: left; cursor: pointer; }   /* an action row (0089) */
+.hm-menu-item__label { flex: 1 1 auto; min-width: 0; text-transform: uppercase; }
+.hm-menu-item__detail { flex: 0 1 auto; min-width: 0; color: var(--text-moderate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hm-menu-layer__legal { display: flex; flex-wrap: wrap; gap: var(--small) var(--medium-small); padding: 0 var(--small); }
+.hm-menu-layer__legal a { color: var(--text-strong); text-decoration: none; }
+.hm-menu-layer__legal a:hover { text-decoration: underline; }
 
 /* ── Footer (Figma page `footer`, decision 0077): border-top = the header border (1px border-divider-strong);
    main = newsletter + link columns, padding-y medium-small, gap medium-small; bottom = copyright + legal, padding-bottom
@@ -1341,70 +1341,70 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
    Mobile: stacked, links in two columns (Figma: wrap, (374 - 16) / 2), legal above the copyright. ── */
 /* padding-top `footer-gap` = the space above the border (Figma: the component's paddingTop, before the `border` layer;
    decision 0104): the footer reads as separate from the page on every page, desktop and mobile */
-.zz-footer { background: var(--surface-accent); color: var(--text-strong); padding-top: var(--footer-gap); }
-.zz-footer__main { border-top: 1px solid var(--border-divider-strong); display: flex; gap: var(--medium-small); padding: var(--medium-small) 0; }
-.zz-footer__main > * { flex: 1 1 0; min-width: 0; }
-.zz-footer__links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--medium-small); align-items: start; }
-.zz-footer__bottom { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--small) var(--medium-small); padding-bottom: var(--medium-small); }
-.zz-footer__copyright { margin: 0; }
-.zz-footer__legal { display: flex; flex-wrap: wrap; gap: var(--small) var(--medium-small); }
+.hm-footer { background: var(--surface-accent); color: var(--text-strong); padding-top: var(--footer-gap); }
+.hm-footer__main { border-top: 1px solid var(--border-divider-strong); display: flex; gap: var(--medium-small); padding: var(--medium-small) 0; }
+.hm-footer__main > * { flex: 1 1 0; min-width: 0; }
+.hm-footer__links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--medium-small); align-items: start; }
+.hm-footer__bottom { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--small) var(--medium-small); padding-bottom: var(--medium-small); }
+.hm-footer__copyright { margin: 0; }
+.hm-footer__legal { display: flex; flex-wrap: wrap; gap: var(--small) var(--medium-small); }
 /* links: as the menu legal row (text-strong, underline on hover). 16px lines 24px apart (gap small) = WCAG 2.5.8 by spacing */
-.zz-footer a { color: var(--text-strong); text-decoration: none; }
-@media (hover: hover) { .zz-footer a:hover { text-decoration: underline; } }
-.zz-footer-links__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--small); }
-.zz-footer-newsletter { display: flex; flex-direction: column; gap: var(--small); margin: 0; }
-.zz-footer-newsletter__row { display: flex; align-items: flex-end; gap: var(--small); }
-.zz-footer-newsletter__row[hidden] { display: none; }   /* after a signup the answer takes its place (decision 0103) */
-.zz-footer-newsletter__input { flex: 1 1 auto; min-width: 0; }
-.zz-footer-newsletter__note, .zz-footer-newsletter__status { margin: 0; }
+.hm-footer a { color: var(--text-strong); text-decoration: none; }
+@media (hover: hover) { .hm-footer a:hover { text-decoration: underline; } }
+.hm-footer-links__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--small); }
+.hm-footer-newsletter { display: flex; flex-direction: column; gap: var(--small); margin: 0; }
+.hm-footer-newsletter__row { display: flex; align-items: flex-end; gap: var(--small); }
+.hm-footer-newsletter__row[hidden] { display: none; }   /* after a signup the answer takes its place (decision 0103) */
+.hm-footer-newsletter__input { flex: 1 1 auto; min-width: 0; }
+.hm-footer-newsletter__note, .hm-footer-newsletter__status { margin: 0; }
 /* a link inside the note is told apart from the text by the underline, not by colour only (WCAG 1.4.1) */
-.zz-footer .zz-footer-newsletter__note a { text-decoration: underline; }
+.hm-footer .hm-footer-newsletter__note a { text-decoration: underline; }
 @media (--mobile) {
-  .zz-footer__main { flex-direction: column; }
-  .zz-footer__links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .zz-footer__bottom { flex-direction: column-reverse; }
+  .hm-footer__main { flex-direction: column; }
+  .hm-footer__links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hm-footer__bottom { flex-direction: column-reverse; }
 }
 
 /* ── PlpHeader (Figma `PLP header`, device=mobile): filters trigger and sort, space-between, padding-y small,
    1px border-divider-strong under ── */
-.zz-plp-header { display: flex; flex-direction: column; }
-.zz-plp-header__controls { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: var(--small) 0; }
-.zz-plp-header__rule { height: 1px; background: var(--border-divider-strong); }
+.hm-plp-header { display: flex; flex-direction: column; }
+.hm-plp-header__controls { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: var(--small) 0; }
+.hm-plp-header__rule { height: 1px; background: var(--border-divider-strong); }
 
 /* ── SelectButton: a native select invisible over a Button look (Figma: button + trailing chevron-down) ── */
-.zz-select-button { position: relative; }
-.zz-select-button[data-layout="fill"] { display: flex; width: 100%; }   /* Figma button layout=fill (desktop sort) */
-.zz-select-button__control {
+.hm-select-button { position: relative; }
+.hm-select-button[data-layout="fill"] { display: flex; width: 100%; }   /* Figma button layout=fill (desktop sort) */
+.hm-select-button__control {
   position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer;
   font-size: 16px;   /* iOS zooms into a focused select under 16px */
   appearance: none; -webkit-appearance: none;
 }
-.zz-select-button:has(.zz-select-button__control:focus-visible) { outline: auto; }   /* no border/focus token yet */
+.hm-select-button:has(.hm-select-button__control:focus-visible) { outline: auto; }   /* no border/focus token yet */
 /* 0081: a select matches :focus-visible after a mouse pick too; the page marks a pointer focus and the ring hides
    until a key is pressed. Focus stays on the select. */
-.zz-select-button[data-focus-source="pointer"]:has(.zz-select-button__control:focus-visible) { outline: none; }
+.hm-select-button[data-focus-source="pointer"]:has(.hm-select-button__control:focus-visible) { outline: none; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    Toast + ToastRegion (Figma: page `toast` → `toast` 2177:439; decision 0049)
    The look: surface-base (opaque, 0023), 1px border-divider-strong dashed [16,16] (0053), padding and gap medium-small,
    message body/medium text-strong, no radius, no shadow. Action = Button secondary small, dismiss = IconButton ×.
    Region: fixed at the top of the viewport (Gio, decision 0071; was the bottom in 0049), gutter-small below whatever
-   is docked there (--zz-toast-offset: the shop sets it to the visible part of its sticky header, so the toast follows
+   is docked there (--hm-toast-offset: the shop sets it to the visible part of its sticky header, so the toast follows
    the header as it slides away and back), or below the safe area (notch) when that is larger. Desktop: right-aligned
    at the page margin, 360 wide (Figma). Mobile: full width minus the page margins.
    ═══════════════════════════════════════════════════════════════════════ */
-.zz-toast-region {
+.hm-toast-region {
   position: fixed; z-index: 30;
   right: var(--page-margin-desktop);
-  top: calc(max(var(--zz-toast-offset, 0px), env(safe-area-inset-top, 0px)) + var(--gutter-small));
+  top: calc(max(var(--hm-toast-offset, 0px), env(safe-area-inset-top, 0px)) + var(--gutter-small));
   width: min(360px, calc(100vw - 2 * var(--page-margin-desktop)));
   pointer-events: none;   /* the empty region never blocks the page; the toast itself takes the pointer */
 }
 @media (--mobile) {
-  .zz-toast-region { left: var(--page-margin-mobile); right: var(--page-margin-mobile); width: auto; }
+  .hm-toast-region { left: var(--page-margin-mobile); right: var(--page-margin-mobile); width: auto; }
 }
-.zz-toast-region__slot:empty { display: none; }
-.zz-toast {
+.hm-toast-region__slot:empty { display: none; }
+.hm-toast {
   pointer-events: auto;
   display: flex; align-items: center; gap: var(--medium-small);
   padding: calc(var(--medium-small) + 1px); box-sizing: border-box; width: 100%;   /* + the 1px stroke, in layout (0014) */
@@ -1422,184 +1422,184 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
   background-size: 100% 1px, 100% 1px, 1px 100%, 1px 100%;
   background-position: 0 0, 0 100%, 0 0, 100% 0;
 }
-.zz-toast__message { flex: 1 1 auto; min-width: 0; margin: 0; }
-.zz-toast__action, .zz-toast__dismiss { flex: none; }
+.hm-toast__message { flex: 1 1 auto; min-width: 0; margin: 0; }
+.hm-toast__action, .hm-toast__dismiss { flex: none; }
 /* enter: fade + drop from above (the region is at the top, 0071). TODO motion: 150ms ease-out is the DS placeholder (no motion tokens); none with reduced motion */
-.zz-toast-region .zz-toast { animation: zz-toast-in 150ms ease-out; }
-@keyframes zz-toast-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .zz-toast-region .zz-toast { animation: none; } }
+.hm-toast-region .hm-toast { animation: hm-toast-in 150ms ease-out; }
+@keyframes hm-toast-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .hm-toast-region .hm-toast { animation: none; } }
 
 /* ── Trade (Figma page `Trade`, proposal 2026-11-12) ── */
-.zz-trade-note { display: flex; flex-direction: column; gap: var(--small); color: var(--text-strong); }
-.zz-trade-note__title, .zz-trade-note__signature { margin: 0; }
-.zz-trade-note__body p { margin: 0; }
-.zz-trade-note__signature { color: var(--text-moderate); }
-.zz-discogs-card { display: flex; flex-direction: column; gap: 4px; padding: var(--small); border: 1px solid var(--border-divider-strong); color: var(--text-strong); }
-.zz-discogs-card p { margin: 0; }
-.zz-discogs-card__label { color: var(--text-moderate); }
-.zz-discogs-card__link { color: inherit; text-decoration: underline; align-self: flex-start; }
-.zz-step { display: flex; gap: var(--medium-small); color: var(--text-strong); }
-.zz-step__number { flex: none; width: 24px; }
-.zz-step__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.zz-step__title, .zz-step__body { margin: 0; }
+.hm-trade-note { display: flex; flex-direction: column; gap: var(--small); color: var(--text-strong); }
+.hm-trade-note__title, .hm-trade-note__signature { margin: 0; }
+.hm-trade-note__body p { margin: 0; }
+.hm-trade-note__signature { color: var(--text-moderate); }
+.hm-discogs-card { display: flex; flex-direction: column; gap: 4px; padding: var(--small); border: 1px solid var(--border-divider-strong); color: var(--text-strong); }
+.hm-discogs-card p { margin: 0; }
+.hm-discogs-card__label { color: var(--text-moderate); }
+.hm-discogs-card__link { color: inherit; text-decoration: underline; align-self: flex-start; }
+.hm-step { display: flex; gap: var(--medium-small); color: var(--text-strong); }
+.hm-step__number { flex: none; width: 24px; }
+.hm-step__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.hm-step__title, .hm-step__body { margin: 0; }
 
 /* Discogs release picker (Figma page Trade: release option, release list, chosen release) */
-.zz-release-list { background: var(--surface-base); border: 1px solid var(--border-divider-strong); color: var(--text-strong); }
-.zz-release-list__options { margin: 0; padding: 0; list-style: none; }
-.zz-release-list__message, .zz-release-list__source { margin: 0; padding: var(--small); }
-.zz-release-list__source { color: var(--text-moderate); }
-.zz-release-option, .zz-chosen-release { display: flex; align-items: flex-start; gap: var(--small); padding: var(--small); color: var(--text-strong); }
-.zz-release-option { cursor: pointer; background: var(--surface-base); }
-.zz-release-option[data-highlighted="true"], .zz-release-option:hover { background: var(--surface-subtle); }
-.zz-release-option__thumb { flex: none; display: block; width: 40px; height: 40px; object-fit: cover; background: var(--surface-media); }
-.zz-release-option__text { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
-.zz-release-option__meta { color: var(--text-moderate); }
-.zz-chosen-release { border: 1px solid var(--border-divider-strong); }
-.zz-chosen-release__link { color: inherit; text-decoration: underline; align-self: flex-start; }
-.zz-chosen-release__change { flex: none; background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
+.hm-release-list { background: var(--surface-base); border: 1px solid var(--border-divider-strong); color: var(--text-strong); }
+.hm-release-list__options { margin: 0; padding: 0; list-style: none; }
+.hm-release-list__message, .hm-release-list__source { margin: 0; padding: var(--small); }
+.hm-release-list__source { color: var(--text-moderate); }
+.hm-release-option, .hm-chosen-release { display: flex; align-items: flex-start; gap: var(--small); padding: var(--small); color: var(--text-strong); }
+.hm-release-option { cursor: pointer; background: var(--surface-base); }
+.hm-release-option[data-highlighted="true"], .hm-release-option:hover { background: var(--surface-subtle); }
+.hm-release-option__thumb { flex: none; display: block; width: 40px; height: 40px; object-fit: cover; background: var(--surface-media); }
+.hm-release-option__text { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
+.hm-release-option__meta { color: var(--text-moderate); }
+.hm-chosen-release { border: 1px solid var(--border-divider-strong); }
+.hm-chosen-release__link { color: inherit; text-decoration: underline; align-self: flex-start; }
+.hm-chosen-release__change { flex: none; background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
 /* ProgressBar (Figma `progress bar`, 0091): 4px track, value grows with a short ease */
-.zz-progress-bar { position: relative; height: 4px; background: var(--surface-subtle); overflow: hidden; }
-.zz-progress-bar__value { height: 100%; background: var(--action-primary-background-default); transition: width 0.3s ease-out; }
-@media (prefers-reduced-motion: reduce) { .zz-progress-bar__value { transition: none; } }
+.hm-progress-bar { position: relative; height: 4px; background: var(--surface-subtle); overflow: hidden; }
+.hm-progress-bar__value { height: 100%; background: var(--action-primary-background-default); transition: width 0.3s ease-out; }
+@media (prefers-reduced-motion: reduce) { .hm-progress-bar__value { transition: none; } }
 /* BackLink (Figma `admin` → `back link`) */
 /* DiscogsLink (Figma BACKEND → Create › `discogs link`, 0150): same as the ChosenRelease Discogs link */
-.zz-discogs-link { color: inherit; text-decoration: underline; align-self: flex-start; }
-.zz-back-link { display: inline-block; color: var(--text-moderate); text-decoration: none; }
-.zz-back-link:hover { text-decoration: underline; }
+.hm-discogs-link { color: inherit; text-decoration: underline; align-self: flex-start; }
+.hm-back-link { display: inline-block; color: var(--text-moderate); text-decoration: none; }
+.hm-back-link:hover { text-decoration: underline; }
 
 /* ── AdminBar (Figma page `admin` → `admin bar`, decision 0089): desktop = section buttons + account, mobile = menu · title (no Create since 0125) ── */
-.zz-admin-bar__desktop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
-.zz-admin-bar__nav, .zz-admin-bar__account { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.zz-admin-bar__email { color: var(--text-moderate); }
-.zz-admin-bar__mobile { display: none; }
+.hm-admin-bar__desktop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.hm-admin-bar__nav, .hm-admin-bar__account { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.hm-admin-bar__email { color: var(--text-moderate); }
+.hm-admin-bar__mobile { display: none; }
 @media (--mobile) {
-  .zz-admin-bar__desktop { display: none; }
-  .zz-admin-bar__mobile {
+  .hm-admin-bar__desktop { display: none; }
+  .hm-admin-bar__mobile {
     display: flex; align-items: center; gap: var(--small);
     padding: var(--small) var(--page-margin-mobile);   /* Figma: 8 all round, like the shop mobile header */
     background: var(--surface-accent); border-bottom: 1px solid var(--border-divider-strong);
   }
-  .zz-admin-bar__title { flex: 1 1 auto; min-width: 0; margin: 0; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hm-admin-bar__title { flex: 1 1 auto; min-width: 0; margin: 0; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 /* ── ListingsHead (Figma BACKEND → Listings → `listings head`, decision 0125): title + Bulk create · Create listing; mobile = actions under the title ── */
 /* Stat (Figma BACKEND → Dashboard → `stat`, decision 0169) */
-.zz-stat { display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border-divider-strong); color: var(--text-strong); min-width: 0; }
-.zz-stat > p { margin: 0; overflow-wrap: anywhere; }
-.zz-stat__label, .zz-stat__note { color: var(--text-moderate); }
-.zz-stat__link { color: var(--text-strong); text-decoration: underline; align-self: flex-start; }
-.zz-listings-head { display: flex; align-items: center; gap: 16px; color: var(--text-strong); }
-.zz-listings-head__title { flex: 1 1 auto; min-width: 0; margin: 0; overflow-wrap: anywhere; }
-.zz-listings-head__actions { flex: none; display: flex; flex-wrap: wrap; gap: 16px; }
-@media (--mobile) { .zz-listings-head { flex-direction: column; align-items: flex-start; } }
+.hm-stat { display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border-divider-strong); color: var(--text-strong); min-width: 0; }
+.hm-stat > p { margin: 0; overflow-wrap: anywhere; }
+.hm-stat__label, .hm-stat__note { color: var(--text-moderate); }
+.hm-stat__link { color: var(--text-strong); text-decoration: underline; align-self: flex-start; }
+.hm-listings-head { display: flex; align-items: center; gap: 16px; color: var(--text-strong); }
+.hm-listings-head__title { flex: 1 1 auto; min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.hm-listings-head__actions { flex: none; display: flex; flex-wrap: wrap; gap: 16px; }
+@media (--mobile) { .hm-listings-head { flex-direction: column; align-items: flex-start; } }
 /* ── ListingsFilter (Figma BACKEND → Listings → `listings filter`, decision 0128): tabs + search ── */
-.zz-listings-filter { display: flex; align-items: center; gap: 16px; }
-.zz-listings-filter__tabs { flex: 1 1 auto; min-width: 0; }
-.zz-listings-filter__search { flex: 0 0 280px; min-width: 0; }
-.zz-listings-filter__search .zz-input { width: 100%; }
+.hm-listings-filter { display: flex; align-items: center; gap: 16px; }
+.hm-listings-filter__tabs { flex: 1 1 auto; min-width: 0; }
+.hm-listings-filter__search { flex: 0 0 280px; min-width: 0; }
+.hm-listings-filter__search .hm-input { width: 100%; }
 @media (--mobile) {
-  .zz-listings-filter { flex-direction: column; align-items: stretch; }
-  .zz-listings-filter__search { flex: none; }
+  .hm-listings-filter { flex-direction: column; align-items: stretch; }
+  .hm-listings-filter__search { flex: none; }
 }
 
 /* ── ListingRow (Figma page `admin` → `listing row`, decision 0089): an admin list row on mobile, MemoItem grammar ── */
-.zz-order-block { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; color: var(--text-strong); }
-.zz-order-block__title, .zz-order-block__body { margin: 0; }
-.zz-order-block__body { white-space: pre-line; overflow-wrap: anywhere; }
+.hm-order-block { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; color: var(--text-strong); }
+.hm-order-block__title, .hm-order-block__body { margin: 0; }
+.hm-order-block__body { white-space: pre-line; overflow-wrap: anywhere; }
 /* ── Admin Content (Figma BACKEND → Content, decision 0106) ── */
-.zz-content-group-head { display: flex; flex-direction: column; gap: 4px; color: var(--text-strong); }
-.zz-content-group-head > * { margin: 0; }
-.zz-content-group-head__help { color: var(--text-moderate); }
-.zz-content-row { display: flex; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
-.zz-content-row__text { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
-.zz-content-row__text > p { margin: 0; overflow-wrap: anywhere; }
-.zz-content-row__where { color: var(--text-moderate); }
-.zz-content-row > .zz-button { flex: none; }
-@media (--mobile) { .zz-content-row { flex-direction: column; align-items: flex-start; gap: 8px; } }
-.zz-content-editor-head { display: flex; flex-direction: column; gap: 8px; color: var(--text-strong); }
-.zz-content-editor-head > * { margin: 0; }
-.zz-content-editor-head__back { color: inherit; text-decoration: underline; align-self: flex-start; }
-.zz-content-editor-head__title-row { display: flex; align-items: center; gap: 16px; }
-.zz-content-editor-head__title-row > h1 { flex: 1 1 auto; margin: 0; min-width: 0; overflow-wrap: anywhere; }
-.zz-content-editor-head__actions { flex: none; display: flex; gap: 16px; }
-.zz-content-editor-head__where { color: var(--text-moderate); }
-@media (--mobile) { .zz-content-editor-head__actions { display: none; } }
-.zz-link-row { display: flex; align-items: flex-end; gap: 16px; }
-.zz-link-row__label { flex: 0 0 160px; min-width: 0; }
-.zz-link-row__link { flex: 1 1 auto; min-width: 0; }
-.zz-link-row .zz-input { width: 100%; }
-.zz-link-row > .zz-button { flex: none; }
-.zz-link-row[data-layout="stacked"] { flex-direction: column; align-items: stretch; gap: 8px; }
-.zz-link-row[data-layout="stacked"] > .zz-link-row__label { flex: none; }
-.zz-link-row[data-layout="stacked"] > .zz-button { align-self: flex-start; }
-@media (--mobile) { .zz-link-row { flex-direction: column; align-items: stretch; gap: 8px; } .zz-link-row > .zz-link-row__label { flex: none; } .zz-link-row > .zz-button { align-self: flex-start; } }
-.zz-section-row { display: flex; flex-direction: column; gap: 8px; }
-.zz-section-row .zz-input { width: 100%; }
+.hm-content-group-head { display: flex; flex-direction: column; gap: 4px; color: var(--text-strong); }
+.hm-content-group-head > * { margin: 0; }
+.hm-content-group-head__help { color: var(--text-moderate); }
+.hm-content-row { display: flex; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
+.hm-content-row__text { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
+.hm-content-row__text > p { margin: 0; overflow-wrap: anywhere; }
+.hm-content-row__where { color: var(--text-moderate); }
+.hm-content-row > .hm-button { flex: none; }
+@media (--mobile) { .hm-content-row { flex-direction: column; align-items: flex-start; gap: 8px; } }
+.hm-content-editor-head { display: flex; flex-direction: column; gap: 8px; color: var(--text-strong); }
+.hm-content-editor-head > * { margin: 0; }
+.hm-content-editor-head__back { color: inherit; text-decoration: underline; align-self: flex-start; }
+.hm-content-editor-head__title-row { display: flex; align-items: center; gap: 16px; }
+.hm-content-editor-head__title-row > h1 { flex: 1 1 auto; margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.hm-content-editor-head__actions { flex: none; display: flex; gap: 16px; }
+.hm-content-editor-head__where { color: var(--text-moderate); }
+@media (--mobile) { .hm-content-editor-head__actions { display: none; } }
+.hm-link-row { display: flex; align-items: flex-end; gap: 16px; }
+.hm-link-row__label { flex: 0 0 160px; min-width: 0; }
+.hm-link-row__link { flex: 1 1 auto; min-width: 0; }
+.hm-link-row .hm-input { width: 100%; }
+.hm-link-row > .hm-button { flex: none; }
+.hm-link-row[data-layout="stacked"] { flex-direction: column; align-items: stretch; gap: 8px; }
+.hm-link-row[data-layout="stacked"] > .hm-link-row__label { flex: none; }
+.hm-link-row[data-layout="stacked"] > .hm-button { align-self: flex-start; }
+@media (--mobile) { .hm-link-row { flex-direction: column; align-items: stretch; gap: 8px; } .hm-link-row > .hm-link-row__label { flex: none; } .hm-link-row > .hm-button { align-self: flex-start; } }
+.hm-section-row { display: flex; flex-direction: column; gap: 8px; }
+.hm-section-row .hm-input { width: 100%; }
 
-.zz-listing-row { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
-.zz-listing-row__select { flex: none; display: flex; }
+.hm-listing-row { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
+.hm-listing-row__select { flex: none; display: flex; }
 /* Thumbnail (Figma `product image` 40 × 40, decision 0123): the empty square is surface/media (0124) */
-.zz-thumbnail { flex: none; display: block; width: 40px; height: 40px; overflow: hidden; background: var(--surface-media); }
-.zz-thumbnail > img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.zz-listing-row__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.zz-listing-row__title { color: inherit; overflow-wrap: anywhere; }
-.zz-listing-row__meta, .zz-listing-row__price { margin: 0; }
-.zz-listing-row__meta { color: var(--text-moderate); }
-.zz-listing-row__price { flex: none; text-align: right; font-variant-numeric: tabular-nums; }
+.hm-thumbnail { flex: none; display: block; width: 40px; height: 40px; overflow: hidden; background: var(--surface-media); }
+.hm-thumbnail > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.hm-listing-row__text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.hm-listing-row__title { color: inherit; overflow-wrap: anywhere; }
+.hm-listing-row__meta, .hm-listing-row__price { margin: 0; }
+.hm-listing-row__meta { color: var(--text-moderate); }
+.hm-listing-row__price { flex: none; text-align: right; font-variant-numeric: tabular-nums; }
 
 /* ── OfferRow (Figma BACKEND → Offers → `offer row`, decision 0158) ── */
-.zz-offer-row { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
-.zz-offer-row .zz-offer-row__record { flex: 0 0 400px; padding: 0; border-bottom: 0; }
-.zz-offer-row__buyer { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
-.zz-offer-row__buyer p, .zz-offer-row__status { margin: 0; }
-.zz-offer-row__date { color: var(--text-moderate); }
-.zz-offer-row__actions { flex: none; display: flex; gap: 8px; }
-.zz-offer-row__status { flex: 0 0 195px; }
+.hm-offer-row { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border-divider-strong); color: var(--text-strong); }
+.hm-offer-row .hm-offer-row__record { flex: 0 0 400px; padding: 0; border-bottom: 0; }
+.hm-offer-row__buyer { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
+.hm-offer-row__buyer p, .hm-offer-row__status { margin: 0; }
+.hm-offer-row__date { color: var(--text-moderate); }
+.hm-offer-row__actions { flex: none; display: flex; gap: 8px; }
+.hm-offer-row__status { flex: 0 0 195px; }
 @media (--mobile) {
-  .zz-offer-row { flex-direction: column; }
-  .zz-offer-row .zz-offer-row__record { flex: none; align-self: stretch; }
-  .zz-offer-row__buyer { align-self: stretch; }
-  .zz-offer-row__status { flex: none; }
+  .hm-offer-row { flex-direction: column; }
+  .hm-offer-row .hm-offer-row__record { flex: none; align-self: stretch; }
+  .hm-offer-row__buyer { align-self: stretch; }
+  .hm-offer-row__status { flex: none; }
 }
 
 /* ── ActionBar (Figma page `admin` → `action bar`, decision 0089): form actions stuck to the bottom of the viewport ──
    surface/base, not the ActionPanel's surface/subtle: that one is translucent in the backend mode and the form
    scrolls under the bar (Gio 2026-11-15). */
-.zz-action-bar {
+.hm-action-bar {
   position: sticky; bottom: 0; z-index: 2;
   display: flex; flex-direction: column; gap: 8px;
   padding: var(--medium-small);
   background: var(--surface-base); border-top: 1px solid var(--border-divider-strong);
 }
-.zz-action-bar__actions { display: flex; gap: 8px; }
-.zz-action-bar__actions > .zz-button { flex: 1 1 0; min-width: 0; }
-.zz-action-bar__status:empty { display: none; }
+.hm-action-bar__actions { display: flex; gap: 8px; }
+.hm-action-bar__actions > .hm-button { flex: 1 1 0; min-width: 0; }
+.hm-action-bar__status:empty { display: none; }
 
 /* Touch targets (decision 0089, WCAG 2.5.5): on a coarse pointer, small Buttons (32) and checkboxes (24) get an
    invisible tap area of 44, without changing how they look. */
 @media (pointer: coarse) {
-  .zz-button[data-size="small"] { position: relative; }
-  .zz-button[data-size="small"]::after { content: ""; position: absolute; inset: -6px 0; }
-  .zz-checkbox::after { content: ""; position: absolute; inset: -10px; }
+  .hm-button[data-size="small"] { position: relative; }
+  .hm-button[data-size="small"]::after { content: ""; position: absolute; inset: -6px 0; }
+  .hm-checkbox::after { content: ""; position: absolute; inset: -10px; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
    Home (Figma page `Home`, Home v2 2026-11-18, decision 0120): section head, genre links, home intro, home newsletter,
    product tile, gallery counter, view toggle
    ═══════════════════════════════════════════════════════════════════════ */
-.zz-section-head { display: flex; flex-direction: column; gap: var(--small); }
-.zz-section-head__row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--small); }
-.zz-section-head__title { margin: 0; color: var(--text-strong); }
-.zz-section-head__meta { color: var(--text-moderate); }   /* Figma `meta text` "(12)": body/medium text/moderate, inline */
-.zz-section-head__actions { display: flex; gap: var(--small); flex: none; }
+.hm-section-head { display: flex; flex-direction: column; gap: var(--small); }
+.hm-section-head__row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--small); }
+.hm-section-head__title { margin: 0; color: var(--text-strong); }
+.hm-section-head__meta { color: var(--text-moderate); }   /* Figma `meta text` "(12)": body/medium text/moderate, inline */
+.hm-section-head__actions { display: flex; gap: var(--small); flex: none; }
 
 /* genre links: layout=row (genres wrap, "All" on its own line) | column (one genre per line); responsive = column on
    desktop, row on mobile (Gio 2026-11-18). Tags hug their label in both layouts. */
-.zz-genre-links { display: flex; flex-direction: column; align-items: flex-start; gap: var(--small); }
-.zz-genre-links__list { display: flex; flex-wrap: wrap; gap: var(--small); margin: 0; padding: 0; list-style: none; }
-.zz-genre-links[data-layout="column"] .zz-genre-links__list,
-.zz-genre-links[data-layout="responsive"] .zz-genre-links__list { flex-direction: column; align-items: flex-start; }
+.hm-genre-links { display: flex; flex-direction: column; align-items: flex-start; gap: var(--small); }
+.hm-genre-links__list { display: flex; flex-wrap: wrap; gap: var(--small); margin: 0; padding: 0; list-style: none; }
+.hm-genre-links[data-layout="column"] .hm-genre-links__list,
+.hm-genre-links[data-layout="responsive"] .hm-genre-links__list { flex-direction: column; align-items: flex-start; }
 @media (--mobile) {
-  .zz-genre-links[data-layout="responsive"] .zz-genre-links__list { flex-direction: row; }
+  .hm-genre-links[data-layout="responsive"] .hm-genre-links__list { flex-direction: row; }
 }
 
 /* collection card + home collections (decision 0174, Figma `collection card` / `home collections`): a box with the
@@ -1607,33 +1607,33 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
    The row (decision 0176): the cards share the full width, as many per row as fit at their minimum width (2 cards =
    halves, 3 = thirds…); a card that wraps keeps the column width, so the rows stay aligned. Minimum width: desktop
    200 (about 2:1 against the 96 height, a banner), mobile 144 (always 2 per row from a 320 screen, 3 from 448). */
-.zz-collection-card {
+.hm-collection-card {
   display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 96px;
   padding: var(--medium-small); border: 1px solid var(--border-divider-strong);
   color: var(--text-strong); text-align: center; text-decoration: none; overflow-wrap: break-word; hyphens: auto;   /* a long word breaks with a hyphen, never mid-word without one */
 }
-.zz-collection-card[data-state="hover"] { background: var(--surface-hover); }
-@media (hover: hover) { .zz-collection-card:hover { background: var(--surface-hover); } }
-.zz-collection-card:focus-visible { outline: auto; }   /* browser ring: no focus token yet (open.md) */
-.zz-home-collections { --zz-collection-min: 200px; }
-.zz-home-collections[data-device="mobile"] { --zz-collection-min: 144px; }
-.zz-home-collections__list {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--zz-collection-min)), 1fr));
+.hm-collection-card[data-state="hover"] { background: var(--surface-hover); }
+@media (hover: hover) { .hm-collection-card:hover { background: var(--surface-hover); } }
+.hm-collection-card:focus-visible { outline: auto; }   /* browser ring: no focus token yet (open.md) */
+.hm-home-collections { --hm-collection-min: 200px; }
+.hm-home-collections[data-device="mobile"] { --hm-collection-min: 144px; }
+.hm-home-collections__list {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--hm-collection-min)), 1fr));
   gap: var(--gutter-small); margin: 0; padding: 0; list-style: none;
 }
-.zz-home-collections__list > li { display: flex; min-width: 0; }
-.zz-home-collections__list .zz-collection-card { flex: 1 1 auto; min-width: 0; }
+.hm-home-collections__list > li { display: flex; min-width: 0; }
+.hm-home-collections__list .hm-collection-card { flex: 1 1 auto; min-width: 0; }
 @media (--mobile) {
-  .zz-home-collections[data-device="responsive"] { --zz-collection-min: 144px; }
+  .hm-home-collections[data-device="responsive"] { --hm-collection-min: 144px; }
 }
 
-.zz-home-intro { margin: 0; color: var(--text-strong); }
-.zz-home-intro a { color: inherit; text-decoration: underline; }
+.hm-home-intro { margin: 0; color: var(--text-strong); }
+.hm-home-intro a { color: inherit; text-decoration: underline; }
 
-/* home newsletter: 16 above and below the box; the box = the store name's dashed border (.zz-header__name: 1px
+/* home newsletter: 16 above and below the box; the box = the store name's dashed border (.hm-header__name: 1px
    divider/strong, 8 on / 8 off, drawn as four repeating gradients), padding medium-small, gap small */
-.zz-home-newsletter { padding: var(--medium-small) 0; }
-.zz-home-newsletter__box {
+.hm-home-newsletter { padding: var(--medium-small) 0; }
+.hm-home-newsletter__box {
   display: flex;
   flex-direction: column;
   gap: var(--small);
@@ -1652,63 +1652,63 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
   background-position: 0 0, 0 100%, 0 0, 100% 0;
   color: var(--text-strong);
 }
-.zz-home-newsletter .zz-footer-newsletter__note a { color: inherit; text-decoration: underline; }
+.hm-home-newsletter .hm-footer-newsletter__note a { color: inherit; text-decoration: underline; }
 /* the field row wraps under 200px of email (Figma footer newsletter, email minWidth 200) */
-.zz-home-newsletter .zz-footer-newsletter__row { flex-wrap: wrap; }
-.zz-home-newsletter .zz-footer-newsletter__input { min-width: 200px; }
+.hm-home-newsletter .hm-footer-newsletter__row { flex-wrap: wrap; }
+.hm-home-newsletter .hm-footer-newsletter__input { min-width: 200px; }
 
 /* product tile: media, title block, price row, button; gap small. Hover = surface/hover on the whole tile (as the
    product card, decision 0088), pointer devices only. */
-.zz-product-tile { display: flex; flex-direction: column; gap: var(--small); min-width: 0; color: var(--text-strong); }
-.zz-product-tile[data-state="hover"] { background: var(--surface-hover); }
+.hm-product-tile { display: flex; flex-direction: column; gap: var(--small); min-width: 0; color: var(--text-strong); }
+.hm-product-tile[data-state="hover"] { background: var(--surface-hover); }
 @media (hover: hover) {
-  .zz-product-tile:hover { background: var(--surface-hover); }
+  .hm-product-tile:hover { background: var(--surface-hover); }
 }
-.zz-product-tile p, .zz-product-tile h2, .zz-product-tile h3, .zz-product-tile h4 { margin: 0; }
-.zz-product-tile__media { position: relative; }
-.zz-product-tile__gallery { display: flex; gap: 1px; color: inherit; }   /* Figma: gallery itemSpacing 1 */
-.zz-product-tile__photo { flex: 0 0 100%; aspect-ratio: 1; overflow: hidden; background: var(--surface-media); }
-.zz-product-tile__photo > img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.zz-product-tile__counter { position: absolute; left: var(--small); bottom: var(--small); }
-.zz-product-tile__title-block { display: flex; flex-direction: column; }
+.hm-product-tile p, .hm-product-tile h2, .hm-product-tile h3, .hm-product-tile h4 { margin: 0; }
+.hm-product-tile__media { position: relative; }
+.hm-product-tile__gallery { display: flex; gap: 1px; color: inherit; }   /* Figma: gallery itemSpacing 1 */
+.hm-product-tile__photo { flex: 0 0 100%; aspect-ratio: 1; overflow: hidden; background: var(--surface-media); }
+.hm-product-tile__photo > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.hm-product-tile__counter { position: absolute; left: var(--small); bottom: var(--small); }
+.hm-product-tile__title-block { display: flex; flex-direction: column; }
 /* price row + button sit at the bottom of the tile: in a grid row every tile is as tall as the tallest one (grid
    stretch), so the buttons of a row line up whatever the title length (Gio 2026-11-18, decision 0120) */
-.zz-product-tile__title-block { margin-bottom: auto; }
-.zz-product-tile__name a, .zz-product-tile__release a { color: inherit; }
-.zz-product-tile__price-row { display: flex; align-items: center; justify-content: space-between; gap: var(--small); }
-.zz-product-tile__samples { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--small); }
-.zz-product-tile__action > .zz-button { width: 100%; box-sizing: border-box; }
+.hm-product-tile__title-block { margin-bottom: auto; }
+.hm-product-tile__name a, .hm-product-tile__release a { color: inherit; }
+.hm-product-tile__price-row { display: flex; align-items: center; justify-content: space-between; gap: var(--small); }
+.hm-product-tile__samples { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--small); }
+.hm-product-tile__action > .hm-button { width: 100%; box-sizing: border-box; }
 
 /* desktop: the cover only. mobile: every photo, swiped sideways and snapped, with the counter */
-.zz-product-tile[data-device="desktop"] .zz-product-tile__photo + .zz-product-tile__photo,
-.zz-product-tile[data-device="desktop"] .zz-product-tile__counter,
-.zz-product-tile[data-device="responsive"] .zz-product-tile__photo + .zz-product-tile__photo,
-.zz-product-tile[data-device="responsive"] .zz-product-tile__counter { display: none; }
-/* mobile swipe gallery = the PDP's (decision 0121): it bleeds into the page margins (--zz-gallery-bleed, set by the
+.hm-product-tile[data-device="desktop"] .hm-product-tile__photo + .hm-product-tile__photo,
+.hm-product-tile[data-device="desktop"] .hm-product-tile__counter,
+.hm-product-tile[data-device="responsive"] .hm-product-tile__photo + .hm-product-tile__photo,
+.hm-product-tile[data-device="responsive"] .hm-product-tile__counter { display: none; }
+/* mobile swipe gallery = the PDP's (decision 0121): it bleeds into the page margins (--hm-gallery-bleed, set by the
    page), each photo is medium-small narrower than the tile so the next one peeks in; a single photo fills the tile */
-.zz-product-tile[data-device="mobile"] .zz-product-tile__gallery {
+.hm-product-tile[data-device="mobile"] .hm-product-tile__gallery {
   overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
-  margin-inline: calc(-1 * var(--zz-gallery-bleed, 0px)); padding-inline: var(--zz-gallery-bleed, 0px); scroll-padding-inline: var(--zz-gallery-bleed, 0px);
+  margin-inline: calc(-1 * var(--hm-gallery-bleed, 0px)); padding-inline: var(--hm-gallery-bleed, 0px); scroll-padding-inline: var(--hm-gallery-bleed, 0px);
 }
-.zz-product-tile[data-device="mobile"] .zz-product-tile__photo { flex-basis: var(--zz-gallery-item-width); }
-.zz-product-tile[data-device="mobile"] .zz-product-tile__photo:only-child { flex-basis: 100%; }
-.zz-product-tile[data-device="mobile"] .zz-product-tile__gallery::-webkit-scrollbar { display: none; }
-.zz-product-tile[data-device="mobile"] .zz-product-tile__photo { scroll-snap-align: start; }
+.hm-product-tile[data-device="mobile"] .hm-product-tile__photo { flex-basis: var(--hm-gallery-item-width); }
+.hm-product-tile[data-device="mobile"] .hm-product-tile__photo:only-child { flex-basis: 100%; }
+.hm-product-tile[data-device="mobile"] .hm-product-tile__gallery::-webkit-scrollbar { display: none; }
+.hm-product-tile[data-device="mobile"] .hm-product-tile__photo { scroll-snap-align: start; }
 @media (--mobile) {
-  .zz-product-tile[data-device="responsive"] .zz-product-tile__photo + .zz-product-tile__photo { display: block; }
-  .zz-product-tile[data-device="responsive"] .zz-product-tile__counter { display: inline-flex; }
-  .zz-product-tile[data-device="responsive"] .zz-product-tile__gallery {
+  .hm-product-tile[data-device="responsive"] .hm-product-tile__photo + .hm-product-tile__photo { display: block; }
+  .hm-product-tile[data-device="responsive"] .hm-product-tile__counter { display: inline-flex; }
+  .hm-product-tile[data-device="responsive"] .hm-product-tile__gallery {
     overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
-    margin-inline: calc(-1 * var(--zz-gallery-bleed, 0px)); padding-inline: var(--zz-gallery-bleed, 0px); scroll-padding-inline: var(--zz-gallery-bleed, 0px);
+    margin-inline: calc(-1 * var(--hm-gallery-bleed, 0px)); padding-inline: var(--hm-gallery-bleed, 0px); scroll-padding-inline: var(--hm-gallery-bleed, 0px);
   }
-  .zz-product-tile[data-device="responsive"] .zz-product-tile__photo { flex-basis: var(--zz-gallery-item-width); }
-  .zz-product-tile[data-device="responsive"] .zz-product-tile__photo:only-child { flex-basis: 100%; }
-  .zz-product-tile[data-device="responsive"] .zz-product-tile__gallery::-webkit-scrollbar { display: none; }
-  .zz-product-tile[data-device="responsive"] .zz-product-tile__photo { scroll-snap-align: start; }
+  .hm-product-tile[data-device="responsive"] .hm-product-tile__photo { flex-basis: var(--hm-gallery-item-width); }
+  .hm-product-tile[data-device="responsive"] .hm-product-tile__photo:only-child { flex-basis: 100%; }
+  .hm-product-tile[data-device="responsive"] .hm-product-tile__gallery::-webkit-scrollbar { display: none; }
+  .hm-product-tile[data-device="responsive"] .hm-product-tile__photo { scroll-snap-align: start; }
 }
 
 /* gallery counter: tag anatomy (padding 4/8), body/extra-small text/strong on surface/accent */
-.zz-gallery-counter {
+.hm-gallery-counter {
   display: inline-flex;
   align-items: center;
   padding: 4px 8px;
@@ -1718,70 +1718,70 @@ button.zz-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 }
 
 /* ── FormSectionHead (Figma BACKEND → Create, `form section head`, Gio 2026-11-17) ── */
-.zz-form-section-head { margin: 0; color: var(--text-strong); }
+.hm-form-section-head { margin: 0; color: var(--text-strong); }
 
 /* ── Marker / PriceFields (Figma `marker`, `price fields`, Gio 2026-11-17) ── */
-.zz-marker {
+.hm-marker {
   flex: none; box-sizing: border-box; width: 48px; height: 48px; padding: 8px;
   display: inline-flex; align-items: center; justify-content: center;
   border: 1px solid var(--border-divider-strong); border-radius: 50%; color: var(--text-strong);
 }
-.zz-price-fields { display: flex; align-items: flex-start; }
-.zz-price-fields__row { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 16px; align-items: start; }
-.zz-price-fields__field { grid-column: span 2; display: flex; flex-direction: column; min-width: 0; }
-.zz-price-fields__note { grid-column: span 6; align-self: center; margin: 0; color: var(--text-strong); }
+.hm-price-fields { display: flex; align-items: flex-start; }
+.hm-price-fields__row { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.hm-price-fields__field { grid-column: span 2; display: flex; flex-direction: column; min-width: 0; }
+.hm-price-fields__note { grid-column: span 6; align-self: center; margin: 0; color: var(--text-strong); }
 @media (--mobile) {
-  .zz-price-fields__row { grid-template-columns: minmax(0, 1fr); }
-  .zz-price-fields__field,
-  .zz-price-fields__note { grid-column: auto; }
+  .hm-price-fields__row { grid-template-columns: minmax(0, 1fr); }
+  .hm-price-fields__field,
+  .hm-price-fields__note { grid-column: auto; }
 }
 
 /* ── LinkedInput (Figma BACKEND → Create → `custom title`, `title link bar`, `title link menu`; decision 0147) ── */
-.zz-linked-input { position: relative; }
+.hm-linked-input { position: relative; }
 /* the native input keeps caret, selection and editing; its text is drawn by the backdrop, links underlined */
-.zz-linked-input .zz-input__control { color: transparent; caret-color: var(--text-strong); }
-.zz-linked-input .zz-input__control::selection { color: transparent; background: var(--surface-subtle); }
-.zz-linked-input__backdrop { position: absolute; height: 20px; overflow: hidden; pointer-events: none; }
-.zz-linked-input__text { white-space: pre; color: var(--text-strong); }
-.zz-linked-input__link { text-decoration: underline; text-underline-offset: 3px; }
-.zz-linked-input__bar,
-.zz-linked-input__menu {
+.hm-linked-input .hm-input__control { color: transparent; caret-color: var(--text-strong); }
+.hm-linked-input .hm-input__control::selection { color: transparent; background: var(--surface-subtle); }
+.hm-linked-input__backdrop { position: absolute; height: 20px; overflow: hidden; pointer-events: none; }
+.hm-linked-input__text { white-space: pre; color: var(--text-strong); }
+.hm-linked-input__link { text-decoration: underline; text-underline-offset: 3px; }
+.hm-linked-input__bar,
+.hm-linked-input__menu {
   position: absolute; z-index: 10; top: calc(100% + 4px);
   box-sizing: border-box; max-width: 100%;
   background: var(--surface-base);   /* floats over the form: opaque in every mode, as the entity menu */
   border: 1px solid var(--border-divider-strong);
 }
-.zz-linked-input__bar { display: flex; gap: 4px; padding: 4px; }
-.zz-linked-input__menu { width: 320px; display: flex; flex-direction: column; }
-.zz-linked-input__search {
+.hm-linked-input__bar { display: flex; gap: 4px; padding: 4px; }
+.hm-linked-input__menu { width: 320px; display: flex; flex-direction: column; }
+.hm-linked-input__search {
   margin: 0; padding: 8px; border: 0; border-bottom: 1px solid var(--border-divider-strong); border-radius: 0;
   background: var(--surface-accent); color: var(--text-strong); font: inherit; appearance: none; -webkit-appearance: none;
 }
-.zz-linked-input__search::placeholder { color: var(--text-moderate); opacity: 1; }
-.zz-linked-input__options { margin: 0; padding: 0; list-style: none; max-height: 288px; overflow-y: auto; }
-.zz-linked-input__options .zz-entity-option[data-current="true"] .zz-entity-option__label { text-decoration: underline; text-underline-offset: 3px; }
+.hm-linked-input__search::placeholder { color: var(--text-moderate); opacity: 1; }
+.hm-linked-input__options { margin: 0; padding: 0; list-style: none; max-height: 288px; overflow-y: auto; }
+.hm-linked-input__options .hm-entity-option[data-current="true"] .hm-entity-option__label { text-decoration: underline; text-underline-offset: 3px; }
 
 /* ── Pagination (Figma page `pagination` → `pagination`, `_pagination gap`; decision 0179) ──────────────────────────
    Buttons in a row, gap small (Figma itemSpacing → small). Desktop is fluid (Gio 2026-11-24): pages and gaps share
    the width, Previous / Next hug their label. Mobile: every item a square as tall as the button (Figma 38 × 38),
    Previous / Next without label (the link keeps aria-label). Each item shows on its devices (data-device, from
    packages/pagination → items). Focus: the browser's ring (no focus token yet, design/open.md → Focus state). */
-.zz-pagination[hidden] { display: none; }
-.zz-pagination__list { display: flex; gap: var(--small); margin: 0; padding: 0; list-style: none; }
-.zz-pagination__item { display: flex; flex: 1 1 0; min-width: 0; }
-.zz-pagination__item[data-kind="previous"],
-.zz-pagination__item[data-kind="next"] { flex: none; }
-.zz-pagination__item .zz-button { flex: 1 1 auto; justify-content: center; }
-.zz-pagination__gap {
+.hm-pagination[hidden] { display: none; }
+.hm-pagination__list { display: flex; gap: var(--small); margin: 0; padding: 0; list-style: none; }
+.hm-pagination__item { display: flex; flex: 1 1 0; min-width: 0; }
+.hm-pagination__item[data-kind="previous"],
+.hm-pagination__item[data-kind="next"] { flex: none; }
+.hm-pagination__item .hm-button { flex: 1 1 auto; justify-content: center; }
+.hm-pagination__gap {
   display: flex; flex: 1 1 auto; align-items: center; justify-content: center;
   color: var(--text-strong);
 }
-.zz-pagination__item[data-device="mobile"] { display: none; }
+.hm-pagination__item[data-device="mobile"] { display: none; }
 @media (--mobile) {
-  .zz-pagination__item { flex: none; min-width: 38px; }   /* Figma: 38 × 38 = the medium button's height (0014) */
-  .zz-pagination__item .zz-button { padding-inline: 0; }
-  .zz-pagination__item[data-kind="previous"] .zz-button__label,
-  .zz-pagination__item[data-kind="next"] .zz-button__label { display: none; }
-  .zz-pagination__item[data-device="mobile"] { display: flex; }
-  .zz-pagination__item[data-device="desktop"] { display: none; }
+  .hm-pagination__item { flex: none; min-width: 38px; }   /* Figma: 38 × 38 = the medium button's height (0014) */
+  .hm-pagination__item .hm-button { padding-inline: 0; }
+  .hm-pagination__item[data-kind="previous"] .hm-button__label,
+  .hm-pagination__item[data-kind="next"] .hm-button__label { display: none; }
+  .hm-pagination__item[data-device="mobile"] { display: flex; }
+  .hm-pagination__item[data-device="desktop"] { display: none; }
 }

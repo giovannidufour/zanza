@@ -57,7 +57,7 @@ function Bag({ products, site, url, shipping, countries }) {
   const defaultCountry = countries.some((c) => c.code === DEFAULT_COUNTRY) ? DEFAULT_COUNTRY : (countries[0] || {}).code;
   // minimum order (decision 0072): in the shipping settings, but independent of the rates
   const minimum = shipping && shipping.min_order_cents > 0 ? shipping.min_order_cents : 0;
-  return h('div', { className: 'zz-page' },
+  return h('div', { className: 'hm-page' },
     h(SiteHeader, { site, url, current: 'bag' }),
     h('main', { className: 'bag-content', 'data-bag-page': '' },
       h('h1', { className: 'bag-content__title body-large' }, 'Your bag'),

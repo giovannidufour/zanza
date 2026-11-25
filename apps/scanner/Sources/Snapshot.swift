@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// `ZanzaScanner --snapshot out.png`: renders the window with sample names to a PNG and quits (design check, no scanner needed).
+/// `HighmuzikScanner --snapshot out.png`: renders the window with sample names to a PNG and quits (design check, no scanner needed).
 enum Snapshot {
     @MainActor static func runIfAsked() {
         let args = CommandLine.arguments
@@ -26,7 +26,7 @@ enum Snapshot {
     }
 }
 
-/// `ZanzaScanner --test-scan <folder> <centerX mm> <centerY mm>`: real Preview + Scan with the scanner, files in <folder>, then quits.
+/// `HighmuzikScanner --test-scan <folder> <centerX mm> <centerY mm>`: real Preview + Scan with the scanner, files in <folder>, then quits.
 enum TestScan {
     @MainActor static func runIfAsked() {
         let a = CommandLine.arguments
@@ -65,7 +65,7 @@ enum TestScan {
     }
 }
 
-/// `ZanzaScanner --glass out.png preview.png`: draws the GlassView alone (turned, with the aids) and quits.
+/// `HighmuzikScanner --glass out.png preview.png`: draws the GlassView alone (turned, with the aids) and quits.
 enum GlassSnapshot {
     @MainActor static func runIfAsked() {
         let a = CommandLine.arguments

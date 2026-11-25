@@ -6,7 +6,7 @@ html, body { margin: 0; padding: 0; }
 html { background: var(--surface-accent); }
 
 /* page shell: surface-accent + horizontal page-margin (Figma: PDP - desktop 1024 / mobile 375, auto layout fill) */
-.zz-page {
+.hm-page {
   min-height: 100vh;
   margin: 0;
   background: var(--surface-accent);
@@ -21,7 +21,7 @@ html { background: var(--surface-accent); }
 /* the site footer (packages/ui Footer, decision 0076): after the content, pushed to the bottom of a short page */
 .site-footer { margin-top: auto; }
 /* breakpoint: `--mobile` from packages/ui/tokens.json → breakpoint (expanded at build time) */
-@media (--mobile) { .zz-page { padding: 0 var(--page-margin-mobile); } }
+@media (--mobile) { .hm-page { padding: 0 var(--page-margin-mobile); } }
 
 /* site header: scrolls away on scroll down, reappears sticky on scroll up (offset set by scripts/site.js).
    Background comes from the Header component (Figma: surface/accent). */
@@ -58,7 +58,7 @@ html { background: var(--surface-accent); }
 body[data-player-open] { padding-bottom: var(--site-player-height, 0px); }
 /* toasts (packages/ui ToastRegion, decisions 0049, 0071) sit gutter-small below the visible part of the sticky header
    (--site-header-visible, set by scripts/site.js): they move 1:1 with it on scroll down and follow its animated reveal */
-.site-toasts { --zz-toast-offset: var(--site-header-visible, 0px); }
+.site-toasts { --hm-toast-offset: var(--site-header-visible, 0px); }
 html[data-header-revealing] .site-toasts { transition: top 200ms ease-out; }
 @media (prefers-reduced-motion: reduce) { html[data-header-revealing] .site-toasts { transition: none; } }
 

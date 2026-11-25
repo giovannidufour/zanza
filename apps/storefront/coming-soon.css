@@ -5,7 +5,7 @@
    is the header row's own) */
 .coming-soon { gap: var(--medium-small); padding-bottom: var(--medium-small); }
 /* Figma: the store name stands alone, no rule under it (the divider is under the title) */
-.coming-soon__header .zz-header__rule { display: none; }
+.coming-soon__header .hm-header__rule { display: none; }
 
 /* Figma `intro`: half the page on desktop (503 of 1008 = 6 of 12 columns, gutter-small), full width on mobile */
 .coming-soon__intro {

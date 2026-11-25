@@ -1,7 +1,7 @@
 /* packages/content/content.js — the texts Gio edits in the admin (page Content, #content; decision 0106).
    ONE description of every editable block, for the two places that need it: the admin (the Content list and its
    editors) and the shop build (apps/storefront/build.js, which puts the texts into the pages). No dependencies, no DOM.
-   CommonJS module (builds) and classic script (window.ZanzaContent, the admin: apps/admin/build.js serialises the
+   CommonJS module (builds) and classic script (window.HighmuzikContent, the admin: apps/admin/build.js serialises the
    blocks and their defaults into it).
 
    Model (public.site_texts, migration 0025): one row per block, `key` + `value` (an object of the block's fields).
@@ -20,7 +20,7 @@
    `path`: the shop page that shows the block (View on shop). `shows`: 'identity-on' | 'identity-off' | 'trade' = when the shop shows the block (Settings → Who I am / Trade). */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.ZanzaContent = factory();
+  else root.HighmuzikContent = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 

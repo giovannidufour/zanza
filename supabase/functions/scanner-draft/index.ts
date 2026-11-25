@@ -12,7 +12,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import "./listing-draft.js";
 
 // deno-lint-ignore no-explicit-any
-const ListingDraft = (globalThis as any).ZanzaListingDraft;
+const ListingDraft = (globalThis as any).HighmuzikListingDraft;
 const headers = {
   "Access-Control-Allow-Origin": "*",   // a native app sends no Origin; the session token is what protects it
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",

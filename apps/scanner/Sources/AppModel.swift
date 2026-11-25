@@ -41,16 +41,16 @@ final class AppModel: ObservableObject {
         didSet { UserDefaults.standard.set(pushed, forKey: "pushed") }
     }
     @Published var wavFolder: URL = UserDefaults.standard.url(forKey: "wavFolder")
-        ?? FileManager.default.urls(for: .musicDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza samples/WAV") {
+        ?? FileManager.default.urls(for: .musicDirectory, in: .userDomainMask)[0].appendingPathComponent("HIGHMUZIK samples/WAV") {
         didSet { UserDefaults.standard.set(wavFolder, forKey: "wavFolder"); refreshDisk(); scheduleSync() }
     }
     @Published var mp3Folder: URL = UserDefaults.standard.url(forKey: "mp3Folder")
-        ?? FileManager.default.urls(for: .musicDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza samples/MP3") {
+        ?? FileManager.default.urls(for: .musicDirectory, in: .userDomainMask)[0].appendingPathComponent("HIGHMUZIK samples/MP3") {
         didSet { UserDefaults.standard.set(mp3Folder, forKey: "mp3Folder"); refreshDisk(); scheduleSync() }
     }
     /// Square videos of the clips with Video ticked (0177)
     @Published var videoFolder: URL = UserDefaults.standard.url(forKey: "videoFolder")
-        ?? FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza videos") {
+        ?? FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask)[0].appendingPathComponent("HIGHMUZIK videos") {
         didSet { UserDefaults.standard.set(videoFolder, forKey: "videoFolder"); scheduleSync() }
     }
 
@@ -71,12 +71,12 @@ final class AppModel: ObservableObject {
         didSet { UserDefaults.standard.set(format.rawValue, forKey: "format") }
     }
     @Published var folder: URL = UserDefaults.standard.url(forKey: "folder")
-        ?? FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza scans") {
+        ?? FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask)[0].appendingPathComponent("HIGHMUZIK scans") {
         didSet { UserDefaults.standard.set(folder, forKey: "folder"); refreshDisk() }
     }
     /// Where the whole-record originals are archived
     @Published var originalsFolder: URL = UserDefaults.standard.url(forKey: "originalsFolder")
-        ?? FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza scans/Originals") {
+        ?? FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask)[0].appendingPathComponent("HIGHMUZIK scans/Originals") {
         didSet { UserDefaults.standard.set(originalsFolder, forKey: "originalsFolder") }
     }
 

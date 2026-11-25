@@ -72,12 +72,12 @@ h1, h2, p { margin: 0; }
 .admin-table a { color: inherit; }
 /* Figma BACKEND → Listings (2026-11-10): first column = row selection (checkbox label=false), price right-aligned */
 .admin-table .select { width: 24px; }
-.admin-table .select .zz-checkbox { display: flex; }
+.admin-table .select .hm-checkbox { display: flex; }
 .admin-table .thumb { width: 40px; }   /* Figma: `product image` 40 × 40 column after the checkbox (decision 0123) */
-.admin-table .thumb .zz-thumbnail { display: block; }
+.admin-table .thumb .hm-thumbnail { display: block; }
 .admin-table .price { text-align: right; }
 .admin-table .handle { width: 24px; }   /* Figma `listings table row` → `drag handle` 24, first column (decision 0129) */
-.admin-table .handle .zz-drag-handle { display: flex; }
+.admin-table .handle .hm-drag-handle { display: flex; }
 /* columns (Figma `listings table row`, decision 0163): fixed widths as in Figma, Record takes the rest; genre on one line */
 .admin-table .status { width: 112px; } .admin-table .section { width: 72px; } .admin-table .price { width: 72px; }
 .admin-table .format { width: 48px; } .admin-table .year { width: 48px; } .admin-table .grading { width: 96px; } .admin-table .photos { width: 56px; } .admin-table .samples { width: 64px; }
@@ -113,15 +113,15 @@ h1, h2, p { margin: 0; }
 @media (--mobile) {
   /* Figma page `admin` (decision 0089): the AdminBar bleeds to the screen edges, the page content keeps 16 */
   .admin { padding: 0 16px 16px; }
-  .admin > .zz-admin-bar { margin: 0 -16px; }
+  .admin > .hm-admin-bar { margin: 0 -16px; }
   /* status tabs: one row that scrolls sideways (the last tab is cut at the edge, so it reads as more) */
-  .admin .zz-tabs { overflow-x: auto; margin-right: -16px; padding-right: 16px; scrollbar-width: none; }
-  .admin .zz-tabs > * { flex: none; }
+  .admin .hm-tabs { overflow-x: auto; margin-right: -16px; padding-right: 16px; scrollbar-width: none; }
+  .admin .hm-tabs > * { flex: none; }
   .admin-page { grid-template-columns: minmax(0, 1fr); }
   .admin-main, .admin-side { grid-column: auto; }
   /* the side (SKU, status, preview) follows the form; the actions are in the ActionBar at the bottom */
-  .admin-page > .zz-action-bar { grid-column: 1 / -1; margin: 0 -16px -16px; }
-  html:has(.zz-action-bar) { scroll-padding-bottom: 88px; }   /* the bar (16 + 38 + 16 + 1) + a gap: a focused field is never under it */
+  .admin-page > .hm-action-bar { grid-column: 1 / -1; margin: 0 -16px -16px; }
+  html:has(.hm-action-bar) { scroll-padding-bottom: 88px; }   /* the bar (16 + 38 + 16 + 1) + a gap: a focused field is never under it */
   /* bulk bar: after the rows; while something is selected it stays at the bottom of the viewport (Figma `bulk bar`) */
   .admin-bulk { min-height: 0; padding: 0; background: none; }
   .admin-bulk:not(:has(.admin-bulk__actions)) .admin-bulk__count { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -151,7 +151,7 @@ h1, h2, p { margin: 0; }
   background: var(--surface-accent); color: var(--text-strong);
   overflow: hidden;
 }
-.admin-preview__shop .zz-gallery { --zz-gallery-bleed: var(--page-margin-mobile); }
+.admin-preview__shop .hm-gallery { --hm-gallery-bleed: var(--page-margin-mobile); }
 
 /* Figma BACKEND → Attributes (2123:2053, decision 0034): list = Listings grammar + a toolbar (search fill, button hug,
    gap 16); entity page = the Create layout (main 8 + side 4) but in a 1024 frame, like Listings. */
@@ -180,7 +180,7 @@ h1, h2, p { margin: 0; }
 .admin-shipping__section { display: flex; flex-direction: column; gap: 16px; }
 .admin-shipping__problems { margin: 0; padding-left: 20px; }
 .admin-shipping__table { table-layout: fixed; }
-.admin-shipping__table .zz-input { width: 100%; min-width: 0; }
+.admin-shipping__table .hm-input { width: 100%; min-width: 0; }
 .admin-shipping__w-name { width: 240px; }
 .admin-shipping__w-select { width: 180px; }
 .admin-shipping__w-weight { width: 200px; }
@@ -189,7 +189,7 @@ h1, h2, p { margin: 0; }
 .admin-shipping__actions { width: 88px; white-space: nowrap; text-align: right; }
 .admin-shipping__minimum { display: flex; align-items: center; }   /* Figma `minimum order` row: label column 280, field 200 */
 .admin-shipping__minimum > label { width: 280px; }
-.admin-shipping__minimum > .zz-input { width: 200px; }
+.admin-shipping__minimum > .hm-input { width: 200px; }
 .admin-shipping__check { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
 .admin-shipping__check > :first-child { width: 240px; }
 .admin-shipping__check > :last-child { width: 400px; max-width: 100%; }
@@ -220,7 +220,7 @@ h1, h2, p { margin: 0; }
   .admin-shipping__table td:empty { display: none; }
   .admin-shipping__table td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 4px; color: var(--text-moderate); }
   .admin-shipping__minimum { flex-direction: column; align-items: stretch; gap: 4px; }
-  .admin-shipping__minimum > label, .admin-shipping__minimum > .zz-input, .admin-shipping__check > :first-child { width: auto; }
+  .admin-shipping__minimum > label, .admin-shipping__minimum > .hm-input, .admin-shipping__check > :first-child { width: auto; }
 }
 
 /* Orders (Figma BACKEND → Orders, decision 0100): order page = the Create layout (main + side); details in two
@@ -245,13 +245,13 @@ h1, h2, p { margin: 0; }
 .admin-player[data-open] { transform: none; visibility: visible; transition: transform 200ms ease-out; }
 @media (prefers-reduced-motion: reduce) { .admin-player, .admin-player[data-open] { transition: none; } }
 body[data-player-open] { padding-bottom: var(--admin-player-height, 0px); }
-body[data-player-open] .zz-action-bar { bottom: var(--admin-player-height, 0px); }
+body[data-player-open] .hm-action-bar { bottom: var(--admin-player-height, 0px); }
 /* backend theme: surface/accent is black-a4 (translucent), so the player gets the admin's bar ground, like the
    ActionBar and the bulk bar (decision 0099: bars and dialogs stay surface/base) */
-.admin-player .zz-player { background: var(--surface-base); }
+.admin-player .hm-player { background: var(--surface-base); }
 
 /* Back to the list, above the title on Edit listing */
-.admin-main > .zz-back-link { margin-bottom: 8px; }
+.admin-main > .hm-back-link { margin-bottom: 8px; }
 
 /* Figma BACKEND → Dashboard (decision 0169): sections 40 apart; a section = head (title, period tabs) + stats, gap 16.
    Stats: 4 columns, gap 24 (desktop frame 976 = 4 × 226 + 3 × 24); one column, gap 16, on mobile. */
@@ -263,7 +263,7 @@ body[data-player-open] .zz-action-bar { bottom: var(--admin-player-height, 0px);
 .admin-dashboard__stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; align-items: start; }
 @media (--mobile) {
   .admin-dashboard__head { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; }
-  .admin-dashboard__head > .zz-tabs { align-self: stretch; }   /* the tabs scroll sideways, as on the other admin pages */
+  .admin-dashboard__head > .hm-tabs { align-self: stretch; }   /* the tabs scroll sideways, as on the other admin pages */
   .admin-dashboard__stats { grid-template-columns: minmax(0, 1fr); gap: 16px; }
 }
 /* Collections (Figma BACKEND → Collections, decision 0174): the support line beside New collection; table columns as

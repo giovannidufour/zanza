@@ -20,8 +20,8 @@
 /* Figma `main`: a column, gap medium-small (16); details: gap 24 (a literal in Figma, no token) */
 .account-signin, .account-stack, .account-main { display: flex; flex-direction: column; align-items: flex-start; gap: var(--medium-small); }
 .account-content--details .account-main { gap: 24px; }
-.account-signin > .zz-divider, .account-stack > .zz-divider, .account-main > .zz-divider { align-self: stretch; }
-.account-stack, .account-stack .zz-input, .account-list { align-self: stretch; }
+.account-signin > .hm-divider, .account-stack > .hm-divider, .account-main > .hm-divider { align-self: stretch; }
+.account-stack, .account-stack .hm-input, .account-list { align-self: stretch; }
 .account-fill { align-self: stretch; }                          /* Figma: Send code / Sign in, layout fill */
 .account-hug { align-self: flex-start; }
 .account-actions { display: flex; flex-wrap: wrap; gap: var(--small); }   /* Figma `other actions`: gap 8, wrap */
@@ -48,7 +48,7 @@
 .account-order-heading { display: flex; flex-direction: column; }
 .account-aside { display: flex; flex-direction: column; gap: var(--medium-small); }
 .account-aside__block { display: flex; flex-direction: column; align-items: flex-start; gap: var(--small); }
-.account-aside__block > .zz-divider { align-self: stretch; }
+.account-aside__block > .hm-divider { align-self: stretch; }
 .account-totals { display: flex; flex-direction: column; gap: var(--small); margin: 0; align-self: stretch; }
 .account-totals__row { display: flex; justify-content: space-between; gap: var(--small); white-space: nowrap; }
 .account-totals__row dt, .account-totals__row dd { margin: 0; }
@@ -56,7 +56,7 @@
 /* details: blocks of divider, title, text, button; gap 8 (Figma) */
 .account-details { display: contents; }
 .account-details__block { display: flex; flex-direction: column; align-items: flex-start; gap: var(--small); align-self: stretch; }
-.account-details__block > .zz-divider, .account-details > .zz-divider { align-self: stretch; }
+.account-details__block > .hm-divider, .account-details > .hm-divider { align-self: stretch; }
 
 @media (--mobile) {
   /* Figma: Account - mobile, one column; sign in buttons fill, secondary actions of order / details fill */

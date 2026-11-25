@@ -5,9 +5,9 @@ import Security
 /// email) and read drafts and file names from the Edge Function `scan-targets`. Read only.
 /// Config comes from Info.plist, filled by build.sh from apps/storefront/.supabase.env and site.json (never committed).
 enum Config {
-    static let supabaseURL = (Bundle.main.object(forInfoDictionaryKey: "ZanzaSupabaseURL") as? String) ?? ""
-    static let supabaseKey = (Bundle.main.object(forInfoDictionaryKey: "ZanzaSupabaseKey") as? String) ?? ""
-    static let mediaBaseURL = (Bundle.main.object(forInfoDictionaryKey: "ZanzaMediaBaseURL") as? String) ?? ""
+    static let supabaseURL = (Bundle.main.object(forInfoDictionaryKey: "HighmuzikSupabaseURL") as? String) ?? ""
+    static let supabaseKey = (Bundle.main.object(forInfoDictionaryKey: "HighmuzikSupabaseKey") as? String) ?? ""
+    static let mediaBaseURL = (Bundle.main.object(forInfoDictionaryKey: "HighmuzikMediaBaseURL") as? String) ?? ""
     static var configured: Bool { !supabaseURL.isEmpty && !supabaseKey.isEmpty }
 }
 
@@ -219,7 +219,7 @@ final class Backend {
 /// The refresh token, in the login Keychain
 enum Keychain {
     private static let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
-                                               kSecAttrService as String: "xyz.gio-d.zanza.scanner",
+                                               kSecAttrService as String: "com.highmuzik.scanner",
                                                kSecAttrAccount as String: "supabase-refresh-token"]
     static func save(_ value: String) {
         delete()

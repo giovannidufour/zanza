@@ -1,7 +1,7 @@
 /* packages/file-names/file-names.js — the file names of a listing's scans and clips (decision 0136).
    ONE rule for every place that names files: the admin (Edit listing → File names) and the Edge Function
    scan-targets that the macOS Scanner reads (decision 0138). The Scanner never builds a name itself.
-   No dependencies, no DOM. CommonJS (build, tests), classic script (window.ZanzaFileNames), Deno via globalThis.
+   No dependencies, no DOM. CommonJS (build, tests), classic script (window.HighmuzikFileNames), Deno via globalThis.
 
    name  = <sku>_<role>_<slug> (+ the extension the file already has)
    role  = 1 label A, 2 label B, 3 other photos (then 4, 5… in gallery order); a1, b1… = the Discogs position of a
@@ -13,7 +13,7 @@
    positions = the Discogs positions by line ("A1", "B"…), [] = none, null = not read yet (clip rows left out). */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.ZanzaFileNames = factory();
+  else root.HighmuzikFileNames = factory();
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 

@@ -94,10 +94,10 @@ function Home({ products, site, url, collections = [], now = Date.now() }) {
     h(Z.FooterNewsletter, { id: 'home-newsletter', action: nl.action, endpoint: nl.endpoint || undefined, label: 'Email', hideLabel: true,
       note: ['Get them in your inbox as they’re listed. ', h('a', { key: 'p', href: url('/privacy/') }, 'Privacy')] })) : null;
 
-  return h('div', { className: 'zz-page' },
+  return h('div', { className: 'hm-page' },
     h(SiteHeader, { site, url, current: 'home' }),
     h('main', { className: 'home-content', 'data-view': 'grid' },
-      h('h1', { className: 'zz-visually-hidden' }, site.storeName),
+      h('h1', { className: 'hm-visually-hidden' }, site.storeName),
       h('div', { className: 'home-intro' },
         h(Z.HomeIntro, null, intro, nl.action ? h(React.Fragment, null, ' ', h('a', { href: '#newsletter' }, 'Subscribe to newsletter')) : null)),
       collections.length ? h(Z.HomeCollections, { className: 'home-collections', collections }) : null,

@@ -19,7 +19,7 @@
     var email = form.querySelector('input[type="email"]');
     var trap = form.querySelector('input[name="website"]');
     var status = form.querySelector('[data-newsletter-status]');
-    var row = form.querySelector('.zz-footer-newsletter__row');
+    var row = form.querySelector('.hm-footer-newsletter__row');
     var button = form.querySelector('button[type="submit"]');
     if (!email || !email.value.trim() || !email.checkValidity()) {
       show(status, 'Enter a valid email address.');
@@ -45,7 +45,7 @@
       }
       if (!res.ok) { native(); return; }
       // analytics (decision 0131): only where the shop loads it (not the coming-soon page); never the address
-      if (window.ZanzaAnalytics) window.ZanzaAnalytics.track('newsletter_signup', { source: location.pathname });
+      if (window.HighmuzikAnalytics) window.HighmuzikAnalytics.track('newsletter_signup', { source: location.pathname });
       if (row) row.hidden = true;
       show(status, 'Almost done: we sent a link to ' + email.value.trim() + '. Click it to confirm.');
       status.focus();   // the button is gone: keep focus where the answer is
