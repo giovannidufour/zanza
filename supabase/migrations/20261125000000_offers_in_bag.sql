@@ -74,7 +74,7 @@ begin
          and o.status = 'accepted' and o.expires_at > now()
          and l.status = 'reserved' and l.reserved_until = o.expires_at
        order by o.listing_id, o.decided_at desc),
-    rows as (
+    picked as (
       select l.id, l.slug, public.listing_name(l.id) as name,
              coalesce(f.amount_cents, l.price_cents) as price_cents, r.format, l.weight_g, l.photo_keys[1] as photo_key,
              f.id as offer_id
@@ -84,8 +84,8 @@ begin
          and (f.id is not null
               or (l.price_cents is not null and public.effective_status(l.status, l.reserved_until) = 'available')))
     select x.id, x.slug, x.name, x.price_cents, x.format, x.weight_g, x.photo_key, x.offer_id
-      from rows x
-     where (select count(*) from rows) = (select count(distinct y) from unnest(p_ids) y)
+      from picked x
+     where (select count(*) from picked) = (select count(distinct y) from unnest(p_ids) y)
      order by array_position(p_ids, x.id);
 end
 $$;
