@@ -17,7 +17,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import "./shipping.js";
 
 // deno-lint-ignore no-explicit-any
-const Shipping = (globalThis as any).ZanzaShipping;
+const Shipping = (globalThis as any).HighmuzikShipping;
 const env = (k: string) => Deno.env.get(k) ?? "";
 const clip = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 const euro = (cents: number) => `€${(cents / 100).toFixed(2).replace(/\.00$/, "")}`;
@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
   try { b = await req.json(); } catch { return json({ error: "Bad request." }, 400); }
   const db = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), { auth: { persistSession: false } });
   const pub = createClient(env("SUPABASE_URL"), env("SUPABASE_ANON_KEY"), { auth: { persistSession: false } });
-  const store = env("STORE_NAME") || "rythem-works";
+  const store = env("STORE_NAME") || "HIGHMUZIK";
   const shop = (env("SHOP_URL") || origin).replace(/\/$/, "");
 
   // ── a new offer ──────────────────────────────────────────────────────────

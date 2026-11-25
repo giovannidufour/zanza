@@ -1,7 +1,7 @@
 /* apps/storefront/scripts/account.js - the customer account (decision 0101). ASCII only, no framework.
 
    - Session: Supabase Auth over plain fetch (no supabase-js): email -> 6-digit code (POST /auth/v1/otp, then
-     /auth/v1/verify type=email). The session (access + refresh token) lives in localStorage ('zanza-session') and is
+     /auth/v1/verify type=email). The session (access + refresh token) lives in localStorage ('highmuzik-session') and is
      refreshed when it is about to expire. A sign-in link in the email also works: it lands on /account/ with the
      tokens in the URL fragment.
    - The code request answers the same whether or not the email has orders: the Auth hook (migration 0022) refuses an
@@ -10,18 +10,18 @@
      from the <template>s of pages/account.js (packages/ui OrderRow, OrderItem, PlayerButton).
    - Pages: /account/ (orders), /account/order/?id=<order id>, /account/details/ (email, sign out, download my data,
      delete account). On every page the menu's Account detail shows the signed-in email.
-   scripts/site.js calls ZanzaAccount.init() on load and after each soft navigation. */
+   scripts/site.js calls HighmuzikAccount.init() on load and after each soft navigation. */
 (function () {
   'use strict';
-  var KEY = 'zanza-session';
+  var KEY = 'highmuzik-session';
   var RESEND_AFTER = 60;   // seconds (Figma note: new code after 60 s; Supabase's own limit is the same)
   var STATUS = { paid: 'Paid, packing', shipped: 'Shipped', refunded: 'Refunded', cancelled: 'Cancelled' };
   var PACKING = 'I pack every record by hand and post orders at least once a week, usually on Wednesday. You get the tracking number by email when it ships.';   // = /checkout/thanks/
   var WRONG_CODE = 'This code is wrong or has expired. Try again or send a new one.';
 
   function config() {
-    var u = document.querySelector('meta[name="zz-supabase-url"]');
-    var k = document.querySelector('meta[name="zz-supabase-key"]');
+    var u = document.querySelector('meta[name="hm-supabase-url"]');
+    var k = document.querySelector('meta[name="hm-supabase-key"]');
     return u && k ? { url: u.content, key: k.content } : null;
   }
   function readSession() {
@@ -102,13 +102,13 @@
   function clone(attr) { var t = q('template[' + attr + ']'); return t ? t.content.firstElementChild.cloneNode(true) : null; }
 
   function fieldError(input, text) {
-    var field = input.closest('.zz-input') || input.parentNode;
+    var field = input.closest('.hm-input') || input.parentNode;
     var id = input.id + '-support';
     var support = document.getElementById(id);
     if (text) {
       if (!support) {
         support = document.createElement('p');
-        support.id = id; support.className = 'zz-input__support body-small';
+        support.id = id; support.className = 'hm-input__support body-small';
         field.appendChild(support);
       }
       support.textContent = text;
@@ -184,7 +184,7 @@
       if (wait > 0) { fieldError(codeInput, 'You can ask for a new code in ' + wait + ' seconds.'); codeInput.focus(); return; }
       send(emailInput.value.trim()).then(function (err) {
         fieldError(codeInput, err);
-        if (!err && window.ZanzaToast) window.ZanzaToast.show({ message: 'New code sent.' });
+        if (!err && window.HighmuzikToast) window.HighmuzikToast.show({ message: 'New code sent.' });
         codeInput.focus();
       });
     });
@@ -221,17 +221,17 @@
     page.root.querySelectorAll('[data-account-email-text]').forEach(function (el) { el.textContent = data.email; });
     orders.forEach(function (o) {
       var li = clone('data-account-row-template');
-      var a = li.querySelector('.zz-order-row');
+      var a = li.querySelector('.hm-order-row');
       var n = (o.items || []).length;
       var status = STATUS[o.status] || o.status;
       a.href = base() + '/account/order/?id=' + encodeURIComponent(o.id);
       a.setAttribute('aria-label', 'Order ' + o.ref + ', ' + date(o.created_at) + ', ' + status.toLowerCase() + ', ' + price(o.total_cents));
       fillImage(a, cover(o));
-      a.querySelector('.zz-order-row__title').textContent = 'Order ' + o.ref;
-      a.querySelector('.zz-order-row__date').textContent = date(o.created_at);
-      a.querySelector('.zz-order-row__count').textContent = records(n);
-      a.querySelector('.zz-order-row__status').textContent = 'Status: ' + status;
-      a.querySelector('.zz-order-row__total').textContent = price(o.total_cents);
+      a.querySelector('.hm-order-row__title').textContent = 'Order ' + o.ref;
+      a.querySelector('.hm-order-row__date').textContent = date(o.created_at);
+      a.querySelector('.hm-order-row__count').textContent = records(n);
+      a.querySelector('.hm-order-row__status').textContent = 'Status: ' + status;
+      a.querySelector('.hm-order-row__total').textContent = price(o.total_cents);
       list.appendChild(li);
     });
   }
@@ -239,26 +239,26 @@
   function itemElement(it) {
     var s = it.snapshot || {};
     var li = clone('data-account-item-template');
-    var art = li.querySelector('.zz-bag-item');
+    var art = li.querySelector('.hm-bag-item');
     var href = s.slug ? base() + '/products/' + s.slug + '/' : '';
     var name = s.name || 'Record';
     fillImage(art, media(s.cover_key));
-    var heading = art.querySelector('.zz-bag-item__name');
-    if (href) { var a = document.createElement('a'); a.className = 'zz-bag-item__link'; a.href = href; a.textContent = name; heading.textContent = ''; heading.appendChild(a); }
+    var heading = art.querySelector('.hm-bag-item__name');
+    if (href) { var a = document.createElement('a'); a.className = 'hm-bag-item__link'; a.href = href; a.textContent = name; heading.textContent = ''; heading.appendChild(a); }
     else heading.textContent = name;
-    var info = releaseInfo(s), rel = art.querySelector('.zz-bag-item__release');
+    var info = releaseInfo(s), rel = art.querySelector('.hm-bag-item__release');
     if (info) rel.textContent = info; else rel.parentNode.removeChild(rel);
     var g = grading(s);
-    var lines = art.querySelectorAll('.zz-bag-item__description > p');
+    var lines = art.querySelectorAll('.hm-bag-item__description > p');
     for (var i = 0; i < lines.length; i++) { if (g[i]) lines[i].textContent = g[i]; else lines[i].parentNode.removeChild(lines[i]); }
-    art.querySelector('.zz-bag-item__price').textContent = price(it.price_cents);
-    var samples = art.querySelector('.zz-bag-item__samples');
+    art.querySelector('.hm-bag-item__price').textContent = price(it.price_cents);
+    var samples = art.querySelector('.hm-bag-item__samples');
     samples.textContent = '';
     (s.samples || []).forEach(function (smp, k) {
       var t = q('template[data-account-sample-template]');
       var btn = t.content.firstElementChild.cloneNode(true);
       var src = media(smp.audio_key);
-      var label = btn.querySelector('.zz-player-button__label') || btn.lastChild;
+      var label = btn.querySelector('.hm-player-button__label') || btn.lastChild;
       if (label) label.textContent = String(k + 1);
       btn.setAttribute('aria-label', name + ', sample ' + (k + 1) + ': ' + (smp.title || ''));
       if (src) btn.setAttribute('data-sample-src', src); else btn.disabled = true;
@@ -313,7 +313,7 @@
     q('[data-account-sign-out]').addEventListener('click', function () {
       call('/auth/v1/logout?scope=local', { token: s.access_token }).catch(function () {});
       writeSession(null); renderMenu(null);
-      if (window.ZanzaToast) window.ZanzaToast.show({ message: 'Signed out.' });
+      if (window.HighmuzikToast) window.HighmuzikToast.show({ message: 'Signed out.' });
       showSignIn();
     });
     q('[data-account-download]').addEventListener('click', function () {
@@ -327,7 +327,7 @@
     var dialog = document.querySelector('[data-account-delete-dialog]');
     var opener = q('[data-account-delete]');
     if (!dialog || !dialog.showModal) { opener.hidden = true; return; }
-    var confirm = dialog.querySelector('.zz-dialog__actions .zz-button:not([data-dialog-cancel])');
+    var confirm = dialog.querySelector('.hm-dialog__actions .hm-button:not([data-dialog-cancel])');
     var cancel = dialog.querySelector('[data-dialog-cancel]');
     var deleting = false;
     function close() { if (dialog.open) dialog.close(); opener.focus(); }
@@ -344,7 +344,7 @@
         if (!r.ok) { dialog.close(); message('Your account could not be deleted. Write to us and we will do it.'); return; }
         dialog.close();
         writeSession(null); renderMenu(null);
-        if (window.ZanzaToast) window.ZanzaToast.show({ message: 'Account deleted.' });
+        if (window.HighmuzikToast) window.HighmuzikToast.show({ message: 'Account deleted.' });
         showSignIn();
       }, function () { deleting = false; confirm.removeAttribute('aria-busy'); dialog.close(); message('No connection. Check it and try again.'); });
     });
@@ -388,5 +388,5 @@
     });
   }
 
-  window.ZanzaAccount = { init: init };
+  window.HighmuzikAccount = { init: init };
 })();

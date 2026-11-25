@@ -1,6 +1,6 @@
 /* packages/collections/collections.js — which records are in a collection (decision 0174, migration 0038).
    ONE rule for the shop build (the home cards and /collections/<slug>/) and the admin (Collections: the records
-   column and the list's summary). No dependencies, no DOM. CommonJS (build, tests), classic script (window.ZanzaCollections).
+   column and the list's summary). No dependencies, no DOM. CommonJS (build, tests), classic script (window.HighmuzikCollections).
 
    collection = { years: ['1960s', '1983'], genres: ['Roots'], tags: ['Digi'] }   (genre / tag NAMES: callers resolve
                 the ids of public.collections with the genres and tags tables; an id that is gone is simply left out)
@@ -11,7 +11,7 @@
    its decade only (year_precision 'decade', "1980s", decision 0082) matches its decade, never an exact year. */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.ZanzaCollections = factory();
+  else root.HighmuzikCollections = factory();
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 

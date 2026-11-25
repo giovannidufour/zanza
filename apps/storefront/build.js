@@ -67,7 +67,7 @@ const analytics = site.analytics && site.analytics.key ? site.analytics : null;
 const posthogJs = analytics ? fs.readFileSync(require.resolve('posthog-js/dist/array.js')) : null;
 const analyticsJs = analytics ? fs.readFileSync(path.join(APP, 'scripts/analytics.js')) : null;
 const analyticsTags = analytics ? [
-  `<script>window.ZanzaAnalyticsConfig=${JSON.stringify({ key: analytics.key, host: analytics.host })}</script>`,
+  `<script>window.HighmuzikAnalyticsConfig=${JSON.stringify({ key: analytics.key, host: analytics.host })}</script>`,
   `<script src="${url(`/js/posthog.js?v=${hashOf(posthogJs)}`)}" defer></script>`,
   `<script src="${url(`/js/analytics.js?v=${hashOf(analyticsJs)}`)}" defer></script>`
 ].join('\n') + '\n' : '';
@@ -84,7 +84,7 @@ const Home = require('./pages/home.js');
 const Account = require('./pages/account.js');
 const Z = require(path.join(UI, 'components.js'));
 
-// the site player: one per page, outside .zz-page, so the soft navigation in site.js keeps it (and the audio) alive.
+// the site player: one per page, outside .hm-page, so the soft navigation in site.js keeps it (and the audio) alive.
 // Empty and closed at load; site.js fills it when a sample is played.
 const playerHtml = renderToStaticMarkup(React.createElement(Z.Player, {
   className: 'site-player',
@@ -95,10 +95,10 @@ const playerHtml = renderToStaticMarkup(React.createElement(Z.Player, {
     React.createElement(Z.Button, { hierarchy: 'secondary', size: 'small', className: 'site-player__view', href: url('/') }, 'View'))
 }));
 
-// the toast region (decision 0049): one per page, outside .zz-page like the player, so a toast survives soft navigation
+// the toast region (decision 0049): one per page, outside .hm-page like the player, so a toast survives soft navigation
 const toastRegionHtml = renderToStaticMarkup(React.createElement(Z.ToastRegion, { className: 'site-toasts' }));
 
-// "Notify me" on a reserved copy (proposal, design/open.md; migration 0016): one dialog per page, outside .zz-page like
+// "Notify me" on a reserved copy (proposal, design/open.md; migration 0016): one dialog per page, outside .hm-page like
 // the toasts; scripts/site.js opens it from any Reserved button with that copy's id and sends the email to Supabase
 const notifyDialogHtml = renderToStaticMarkup(React.createElement(Z.Dialog, {
   open: false, className: 'site-notify', 'data-notify-dialog': '', title: 'Reserved', confirmLabel: 'Notify me',
@@ -107,7 +107,7 @@ const notifyDialogHtml = renderToStaticMarkup(React.createElement(Z.Dialog, {
     placeholder: 'name@example.com', supportText: 'One email, only for this record. Then we delete your address.', 'data-notify-email': '' })
 }, 'Someone is checking out this record. If they don\u2019t buy it, it\u2019s back within 30 minutes. Leave your email and we\u2019ll tell you.'));
 
-// the newsletter dialog (Figma `newsletter dialog`, decision 0121): once per page, outside .zz-page like the other
+// the newsletter dialog (Figma `newsletter dialog`, decision 0121): once per page, outside .hm-page like the other
 // dialogs; scripts/site.js opens it from any link or button that points to the newsletter (href …#newsletter or
 // data-newsletter-open). No signup configured = no dialog, and those links fall back to the page's own box.
 const newsletterDialogHtml = () => {
@@ -119,21 +119,21 @@ const newsletterDialogHtml = () => {
 };
 
 // the tick of "In bag" (decision 0058): scripts/site.js clones it into the Button's leading icon slot
-const tickTemplate = `<template id="zz-icon-tick">${renderToStaticMarkup(React.createElement('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, React.createElement(Z.TickLargeThinIcon)))}</template>`;
+const tickTemplate = `<template id="hm-icon-tick">${renderToStaticMarkup(React.createElement('span', { className: 'hm-button__icon', 'aria-hidden': 'true' }, React.createElement(Z.TickLargeThinIcon)))}</template>`;
 // the envelope of "(Reserved) Notify me" (copy held by a checkout, decision 0065): trailing slot, cloned by scripts/site.js
-const envelopeTemplate = `<template id="zz-icon-envelope">${renderToStaticMarkup(React.createElement('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, React.createElement(Z.EnvelopeIcon)))}</template>`;
+const envelopeTemplate = `<template id="hm-icon-envelope">${renderToStaticMarkup(React.createElement('span', { className: 'hm-button__icon', 'aria-hidden': 'true' }, React.createElement(Z.EnvelopeIcon)))}</template>`;
 // live status (_context/backend.md → Stato dal vivo): with Supabase as the source, the page carries the project URL and
 // the publishable key (public by design, read-only through RLS) so scripts/site.js can read listing_availability
 let liveMeta = '';
 
 
-// the site footer (decision 0076): the same on every shop page, the last child of .zz-page (after <main>), so the soft
+// the site footer (decision 0076): the same on every shop page, the last child of .hm-page (after <main>), so the soft
 // navigation in site.js swaps it with the page. Rendered once here instead of in every page module.
 // Rendered on first use, once the settings are loaded (the footer follows the trade switch).
 // newsletter: false = the footer without its signup (the home has its own, decision 0120)
 const footerCache = {};
 const footerHtml = (newsletter = true) => footerCache[newsletter] || (footerCache[newsletter] = renderToStaticMarkup(React.createElement(require('./pages/shell.js').SiteFooter, { site, url, newsletter })));
-const withFooter = (body, newsletter) => (body.startsWith('<div class="zz-page"') && body.endsWith('</div>') ? body.slice(0, -6) + footerHtml(newsletter) + '</div>' : body);
+const withFooter = (body, newsletter) => (body.startsWith('<div class="hm-page"') && body.endsWith('</div>') ? body.slice(0, -6) + footerHtml(newsletter) + '</div>' : body);
 
 // Favicon = the logo illustration (decision 0097) on a ground that names the environment (decision 0127, Figma
 // component `favicon` on page assets): live = white, staging = acid-green. One build serves both hosts (the same Pages
@@ -150,8 +150,8 @@ const faviconLinks = [
   `<script>if(${JSON.stringify(site.liveHosts || [])}.indexOf(location.hostname)<0){var f=${JSON.stringify({ svg: url(faviconStaging.svg), png: url(faviconStaging.png), touch: url(faviconStaging.touch) })};document.querySelectorAll('link[data-favicon]').forEach(function(l){l.href=f[l.dataset.favicon]})}</script>`
 ].join('\n');
 
-// template: the page type analytics groups by (decision 0131), written on .zz-page so soft navigation carries it
-const withTemplate = (body, template) => body.replace('<div class="zz-page"', `<div class="zz-page" data-template="${template}"`);
+// template: the page type analytics groups by (decision 0131), written on .hm-page so soft navigation carries it
+const withTemplate = (body, template) => body.replace('<div class="hm-page"', `<div class="hm-page" data-template="${template}"`);
 function page({ title: t, body, footerNewsletter = true, template }) {
   if (!template) throw new Error(`page "${t}" has no analytics template`);
   return `<!doctype html>
@@ -239,7 +239,7 @@ const products = site.tradeEnabled ? loaded.products : loaded.products.filter(p 
 console.log(`products: ${products.length} from ${source} · trade ${site.tradeEnabled ? 'on' : 'off'} · wantlist ${site.wantlistEnabled ? 'on' : 'off'}`);
 if (source === 'supabase') {
   const env = readEnv();
-  liveMeta = `<meta name="zz-supabase-url" content="${escape(env.SUPABASE_URL.replace(/\/$/, ''))}">\n<meta name="zz-supabase-key" content="${escape(env.SUPABASE_PUBLISHABLE_KEY)}">\n`;
+  liveMeta = `<meta name="hm-supabase-url" content="${escape(env.SUPABASE_URL.replace(/\/$/, ''))}">\n<meta name="hm-supabase-key" content="${escape(env.SUPABASE_PUBLISHABLE_KEY)}">\n`;
 }
 // shipping config from the same source as the products (null = not set up: the bag says "Calculated at checkout")
 const shipping = source === 'supabase' ? await shippingData.fromSupabase(readEnv()) : shippingData.fromJson();

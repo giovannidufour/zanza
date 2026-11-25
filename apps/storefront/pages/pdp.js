@@ -25,7 +25,7 @@ function breadcrumbItems(product, url) {
 function Pdp({ product, related = [], site, url }) {
   const { listing, release, copy, samples } = product;
   const trade = listing.section === 'trade';
-  return h('div', { className: 'zz-page' },
+  return h('div', { className: 'hm-page' },
     h(SiteHeader, { site, url, section: listing.section }),
     h(Z.Breadcrumbs, { items: breadcrumbItems(product, url) }),
 

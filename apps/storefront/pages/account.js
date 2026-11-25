@@ -117,7 +117,7 @@ function Templates() {
 }
 
 function Account({ site, url, view }) {
-  return h('div', { className: 'zz-page' },
+  return h('div', { className: 'hm-page' },
     h(SiteHeader, { site, url, current: 'account' }),
     h('main', { className: `account-content account-content--${view}`, 'data-account-page': view,
         'data-media-base': (site.mediaBaseUrl || '').replace(/\/$/, ''), 'data-base-path': url(''), 'data-shop-name': site.storeName },

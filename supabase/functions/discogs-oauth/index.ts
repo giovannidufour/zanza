@@ -10,7 +10,7 @@
 // Called by the browser: deploy with Verify JWT OFF; abuse limits = allowed origins (as discogs-search), POST only,
 // whitelisted paths, at most MAX_SIGN URLs per call.
 // Secrets (Supabase → Edge Functions → Secrets): DISCOGS_CONSUMER_KEY, DISCOGS_CONSUMER_SECRET (the Discogs app
-// "rythem-works", Gio's developer settings), SHOP_URL; optional ALLOWED_ORIGINS. SUPABASE_URL / SUPABASE_ANON_KEY are
+// "HIGHMUZIK", Gio's developer settings), SHOP_URL; optional ALLOWED_ORIGINS. SUPABASE_URL / SUPABASE_ANON_KEY are
 // set by Supabase (the wantlist switch, shop_settings).
 const env = (k: string) => Deno.env.get(k) ?? "";
 const USER_AGENT = "rythem-works/1.0 +https://rythem-works.com";

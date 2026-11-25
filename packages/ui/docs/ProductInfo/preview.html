@@ -21,7 +21,7 @@
 <div id="root"></div>
 <script>
 (function () {
-  var React = window.React, ReactDOM = window.ReactDOM, Z = window.Zanza;
+  var React = window.React, ReactDOM = window.ReactDOM, Z = window.Highmuzik;
   var h = React.createElement, useState = React.useState;
   function Select(p) { return h('div', { className: 'ctl' }, h('label', { htmlFor: p.id }, p.label), h('select', { id: p.id, value: p.value, onChange: function (e) { p.onChange(e.target.value); } }, p.options.map(function (o) { return h('option', { key: o, value: o }, o); }))); }
   function Check(p) { return h('div', { className: 'ctl' }, h('label', { htmlFor: p.id }, p.label), h('input', { id: p.id, type: 'checkbox', checked: p.value, onChange: function (e) { p.onChange(e.target.checked); } })); }

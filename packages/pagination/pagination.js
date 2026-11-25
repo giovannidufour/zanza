@@ -1,7 +1,7 @@
 /* packages/pagination/pagination.js — which page numbers a PLP pagination shows (decision 0179, Figma page
    `pagination`, set `pagination`). ONE calculation for the build (apps/storefront/pages/plp.js → packages/ui
    Pagination) and the browser (scripts/site.js re-draws it after every filter / sort / page change). No dependencies,
-   no DOM. Works as a CommonJS module and as a classic script (window.ZanzaPagination).
+   no DOM. Works as a CommonJS module and as a classic script (window.HighmuzikPagination).
 
    Rules (Gio 2026-11-24, Figma proposal accepted):
    · always the first and the last page, the current one and its neighbours: `siblings` = 1 on desktop, 0 on mobile
@@ -10,7 +10,7 @@
    · Previous / Next exist only when there is a page to go to (never disabled: disabled = sold out, struck label) */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.ZanzaPagination = factory();
+  else root.HighmuzikPagination = factory();
 }(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 

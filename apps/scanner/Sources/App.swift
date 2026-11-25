@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct ZanzaScannerApp: App {
+struct HighmuzikScannerApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var model = AppModel()
 

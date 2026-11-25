@@ -108,7 +108,7 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - `tab`: single-value `hierarchy`, unused `layout` variant.
 - `tag group / orientation=vertical` is not vertical · `tag item` gap 8 with one child.
 - `product info`: 8 text nodes with hardcoded `#000000` → `text/strong` · placeholder name "Artist 1 - Title 1 / Artist 2 - Title 2" needs a data model for split releases.
-- `product card`: all 10 text nodes have unbound fills (`#000000`) → `text/strong` · button description says "Codice: .cw-button · ui_button()": not Zanza names (`zz-`, React `Button`), looks copied from another project → rewrite (the `product image` one was rewritten with 0086).
+- `product card`: all 10 text nodes have unbound fills (`#000000`) → `text/strong` · button description says "Codice: .cw-button · ui_button()": not Zanza names (`hm-`, React `Button`), looks copied from another project → rewrite (the `product image` one was rewritten with 0086).
 - `you may also like`: padding 8 and gaps 8 literal (→ `small` / `gutter/small`?) · name vs title: component "you may also like", copy "More for sale:" → rename the component `related products` (code: `RelatedProducts`) · mobile variant width 375 hug vs desktop fill: make both fill · a loose instance (2061:18468) sits on the PDP page outside any frame: delete if it's a leftover.
 - `PDP - mobile` › `pdp content`: padding-bottom 24 literal, no token for 24 (scale has 8 / 16) → add one (e.g. `medium`) or use 16.
 - `PLP - desktop`: content frame named `pdp content`, list frame `Frame 46`, card instances `Frame 43/44/45` → `plp content`, `product list`, `product card`.

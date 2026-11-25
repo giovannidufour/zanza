@@ -1,11 +1,11 @@
-/* @ds-bundle: {"format":4,"namespace":"Zanza","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"OrderItem"},{"name":"OrderRow"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"ProductReturnCard"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"Step"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"},{"name":"DiscogsLink"},{"name":"FormSectionHead"},{"name":"Marker"},{"name":"PriceFields"},{"name":"ListingStatus"},{"name":"SectionHead"},{"name":"GenreLinks"},{"name":"HomeIntro"},{"name":"HomeNewsletter"},{"name":"ProductTile"},{"name":"GalleryCounter"},{"name":"ViewToggle"},{"name":"NewsletterDialog"}]} */
-/* packages/ui/components.js — the ONE implementation of the rythem-works components.
+/* @ds-bundle: {"format":4,"namespace":"Highmuzik","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"OrderItem"},{"name":"OrderRow"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"ProductReturnCard"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"Step"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"},{"name":"DiscogsLink"},{"name":"FormSectionHead"},{"name":"Marker"},{"name":"PriceFields"},{"name":"ListingStatus"},{"name":"SectionHead"},{"name":"GenreLinks"},{"name":"HomeIntro"},{"name":"HomeNewsletter"},{"name":"ProductTile"},{"name":"GalleryCounter"},{"name":"ViewToggle"},{"name":"NewsletterDialog"}]} */
+/* packages/ui/components.js — the ONE implementation of the HIGHMUZIK components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
-   and as a classic script (window.Zanza) for the design-system artifact.
+   and as a classic script (window.Highmuzik) for the design-system artifact.
    Every visual value is a token from tokens.css or a dimension that is hardcoded in Figma. */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory(require('react'));
-  else root.Zanza = factory(root.React);
+  else root.Highmuzik = factory(root.React);
 })(typeof self !== 'undefined' ? self : this, function (React) {
   'use strict';
   var h = React.createElement;
@@ -38,18 +38,18 @@
     'icon-chevron-left-small-thin': [24, 24, '<path transform="translate(9 6)" d="M 6 0 L 0 6 L 6 12" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>'],
     'icon-chevron-right-small-thin': [24, 24, '<path transform="translate(9 6)" d="M 0 0 L 6 6 L 0 12" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>'],
     'icon-clock-counter-clockwise': [24, 24, '<path transform="translate(11.889 6.875)" d="M 0 0 L 0 5.121 L 5.121 5.121" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/><path transform="translate(3.555 16.326)" d="M 0.622 4.948 L 0 0 L 4.858 1.354" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/><path transform="translate(2.5 2.612)" d="M 1.056 13.714 C 2.113 15.752 3.881 17.331 6.024 18.154 C 8.167 18.976 10.537 18.985 12.687 18.179 C 14.836 17.372 16.615 15.806 17.688 13.777 C 18.761 11.747 19.053 9.395 18.509 7.164 C 17.966 4.934 16.623 2.98 14.737 1.673 C 12.85 0.365 10.55 -0.207 8.27 0.067 C 5.991 0.34 3.891 1.439 2.367 3.156 C 0.843 4.873 0.001 7.089 0 9.384" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/>'],
-    'icon-envelope': [24, 24, '<path transform="translate(1 0.875)" d="M 22 0 L 11 13 L 0 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><defs><clipPath id="zz-icon-envelope-clip"><path transform="translate(0 0)" d="M0 0H24V24H0Z"/></clipPath></defs><path transform="translate(0 0)" d="M0 0H24V24H0Z" clip-path="url(#zz-icon-envelope-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>'],
-    'icon-magnifying-glass': [24, 24, '<path transform="translate(17.256 17.25)" d="M 6 6 L 0 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="square" stroke-linejoin="round"/><defs><clipPath id="zz-icon-search-clip"><path d="M0 10A10 10 0 1 0 20 10A10 10 0 1 0 0 10Z"/></clipPath></defs><path d="M0 10A10 10 0 1 0 20 10A10 10 0 1 0 0 10Z" clip-path="url(#zz-icon-search-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>'],
+    'icon-envelope': [24, 24, '<path transform="translate(1 0.875)" d="M 22 0 L 11 13 L 0 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><defs><clipPath id="hm-icon-envelope-clip"><path transform="translate(0 0)" d="M0 0H24V24H0Z"/></clipPath></defs><path transform="translate(0 0)" d="M0 0H24V24H0Z" clip-path="url(#hm-icon-envelope-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>'],
+    'icon-magnifying-glass': [24, 24, '<path transform="translate(17.256 17.25)" d="M 6 6 L 0 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="square" stroke-linejoin="round"/><defs><clipPath id="hm-icon-search-clip"><path d="M0 10A10 10 0 1 0 20 10A10 10 0 1 0 0 10Z"/></clipPath></defs><path d="M0 10A10 10 0 1 0 20 10A10 10 0 1 0 0 10Z" clip-path="url(#hm-icon-search-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>'],
     'icon-pause': [24, 24, '<path d="M8.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M15.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
     'icon-play': [24, 24, '<path d="M 0 24 L 24 12 L 0 0 Z" fill="currentColor"/>'],
     'icon-plus-small-thin': [24, 24, '<path d="M12 7V17" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 12H7" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>'],
-    'icon-radio-dot': [18, 18, '<defs><clipPath id="zz-icon-radio-dot-clip"><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z"/></clipPath></defs><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z" clip-path="url(#zz-icon-radio-dot-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M3 9A6 6 0 1 0 15 9A6 6 0 1 0 3 9Z" fill="currentColor"/>'],
-    'icon-radio-empty': [18, 18, '<defs><clipPath id="zz-icon-radio-empty-clip"><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z"/></clipPath></defs><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z" clip-path="url(#zz-icon-radio-empty-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>'],
-    'icon-skip-back': [24, 24, '<defs><clipPath id="zz-icon-prev-clip"><path transform="translate(0 0)" d="M 24 24 L 0 12 L 24 0 Z"/></clipPath></defs><path transform="translate(0 0)" d="M 24 24 L 0 12 L 24 0 Z" clip-path="url(#zz-icon-prev-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M0.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
-    'icon-skip-forward': [24, 24, '<defs><clipPath id="zz-icon-next-clip"><path transform="translate(0 0)" d="M 0 24 L 24 12 L 0 0 Z"/></clipPath></defs><path transform="translate(0 0)" d="M 0 24 L 24 12 L 0 0 Z" clip-path="url(#zz-icon-next-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M23.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
-    'icon-square': [24, 24, '<defs><clipPath id="zz-icon-square-clip"><path d="M0 0H24V24H0Z"/></clipPath></defs><path d="M0 0H24V24H0Z" clip-path="url(#zz-icon-square-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>'],
-    'icon-square-minus': [24, 24, '<defs><clipPath id="zz-icon-square-minus-clip"><path d="M0 0H24V24H0Z"/></clipPath></defs><path d="M0 0H24V24H0Z" clip-path="url(#zz-icon-square-minus-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M5 12H19" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
-    'icon-square-tick': [24, 24, '<defs><clipPath id="zz-icon-square-tick-clip"><path d="M0 0H24V24H0Z"/></clipPath></defs><path d="M0 0H24V24H0Z" clip-path="url(#zz-icon-square-tick-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path transform="translate(4 4)" d="M 0 9.032 L 4.889 14 L 16 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
+    'icon-radio-dot': [18, 18, '<defs><clipPath id="hm-icon-radio-dot-clip"><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z"/></clipPath></defs><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z" clip-path="url(#hm-icon-radio-dot-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M3 9A6 6 0 1 0 15 9A6 6 0 1 0 3 9Z" fill="currentColor"/>'],
+    'icon-radio-empty': [18, 18, '<defs><clipPath id="hm-icon-radio-empty-clip"><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z"/></clipPath></defs><path transform="translate(0 0)" d="M0 9A9 9 0 1 0 18 9A9 9 0 1 0 0 9Z" clip-path="url(#hm-icon-radio-empty-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>'],
+    'icon-skip-back': [24, 24, '<defs><clipPath id="hm-icon-prev-clip"><path transform="translate(0 0)" d="M 24 24 L 0 12 L 24 0 Z"/></clipPath></defs><path transform="translate(0 0)" d="M 24 24 L 0 12 L 24 0 Z" clip-path="url(#hm-icon-prev-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M0.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
+    'icon-skip-forward': [24, 24, '<defs><clipPath id="hm-icon-next-clip"><path transform="translate(0 0)" d="M 0 24 L 24 12 L 0 0 Z"/></clipPath></defs><path transform="translate(0 0)" d="M 0 24 L 24 12 L 0 0 Z" clip-path="url(#hm-icon-next-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M23.5 0V24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
+    'icon-square': [24, 24, '<defs><clipPath id="hm-icon-square-clip"><path d="M0 0H24V24H0Z"/></clipPath></defs><path d="M0 0H24V24H0Z" clip-path="url(#hm-icon-square-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/>'],
+    'icon-square-minus': [24, 24, '<defs><clipPath id="hm-icon-square-minus-clip"><path d="M0 0H24V24H0Z"/></clipPath></defs><path d="M0 0H24V24H0Z" clip-path="url(#hm-icon-square-minus-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path d="M5 12H19" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
+    'icon-square-tick': [24, 24, '<defs><clipPath id="hm-icon-square-tick-clip"><path d="M0 0H24V24H0Z"/></clipPath></defs><path d="M0 0H24V24H0Z" clip-path="url(#hm-icon-square-tick-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path transform="translate(4 4)" d="M 0 9.032 L 4.889 14 L 16 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
     'icon-tick-large-thin': [24, 24, '<path transform="translate(3 5)" d="M 0 8.667 L 4.5 13 L 18 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/>'],
     'icon-x': [24, 24, '<path transform="matrix(0.707 0.707 -0.707 0.707 0.023 0.977)" d="M0 0L32.52 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path transform="matrix(-0.707 0.707 -0.707 -0.707 23.014 0.023)" d="M0 0L32.52 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
     'icon-x-thin': [24, 24, '<path transform="matrix(0.707 -0.707 0.707 0.707 5.429 5.429)" d="M 0 0 L 0 20" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/><path transform="matrix(0.707 -0.707 0.707 0.707 5.429 19.571)" d="M 20 0 L 0 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>']
@@ -67,7 +67,7 @@
     var disabled = !!props.disabled || props.state === 'disabled';
     var isLink = !!props.href;   // href → a link styled as a button (navigation, e.g. Player "View")
     var attrs = Object.assign(isLink ? {} : { type: props.type || 'button', disabled: disabled }, {
-      className: cx('zz-button', props.className),
+      className: cx('hm-button', props.className),
       'data-hierarchy': hierarchy,
       'data-size': size
     }, omit(props, ['hierarchy', 'size', 'disabled', 'leadingIcon', 'trailingIcon', 'children', 'state', 'className', 'type', 'suffix', 'prefix']));
@@ -80,16 +80,16 @@
     var hasLabel = props.children !== undefined && props.children !== null && props.children !== false;
     var typeClass = (size === 'small' || size === 'extra-small') ? 'label-extra-small' : 'label-medium';   // Figma text style per size
     return h(isLink ? 'a' : 'button', attrs,
-      props.leadingIcon ? h('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, props.leadingIcon) : null,
+      props.leadingIcon ? h('span', { className: 'hm-button__icon', 'aria-hidden': 'true' }, props.leadingIcon) : null,
       // Figma `suffix` (label container gap 4, same text style): a count next to the label (0029)
       // Figma `prefix` (label container, gap 4, same text style): a word before the label, e.g. "(Reserved)" (0065)
-      hasLabel ? h('span', { className: cx('zz-button__label', typeClass) },
+      hasLabel ? h('span', { className: cx('hm-button__label', typeClass) },
         props.prefix !== undefined && props.prefix !== null && props.prefix !== false
-          ? h('span', { className: 'zz-button__prefix' }, props.prefix) : null,
+          ? h('span', { className: 'hm-button__prefix' }, props.prefix) : null,
         props.children,
         props.suffix !== undefined && props.suffix !== null && props.suffix !== false
-          ? h('span', { className: 'zz-button__suffix' }, props.suffix) : null) : null,
-      props.trailingIcon ? h('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, props.trailingIcon) : null);
+          ? h('span', { className: 'hm-button__suffix' }, props.suffix) : null) : null,
+      props.trailingIcon ? h('span', { className: 'hm-button__icon', 'aria-hidden': 'true' }, props.trailingIcon) : null);
   }
 
   /* ── Pagination ─────────────────────────────────────────────────────────
@@ -104,13 +104,13 @@
     var href = props.href || function (n) { return '?page=' + n; };
     var devicesOf = function (it) { return it.devices && it.devices.length === 1 ? it.devices[0] : undefined; };
     var li = function (it, i, child) {
-      return h('li', { key: i, className: 'zz-pagination__item', 'data-kind': it.kind, 'data-device': devicesOf(it),
+      return h('li', { key: i, className: 'hm-pagination__item', 'data-kind': it.kind, 'data-device': devicesOf(it),
         'aria-hidden': it.kind === 'gap' ? 'true' : undefined }, child);
     };
     return h('nav', Object.assign({ 'aria-label': 'Pages' }, omit(props, ['items', 'href', 'className']), {
-      className: cx('zz-pagination', props.className) }),
-      h('ul', { className: 'zz-pagination__list' }, (props.items || []).map(function (it, i) {
-        if (it.kind === 'gap') return li(it, i, h('span', { className: 'zz-pagination__gap label-medium' }, '\u2026'));
+      className: cx('hm-pagination', props.className) }),
+      h('ul', { className: 'hm-pagination__list' }, (props.items || []).map(function (it, i) {
+        if (it.kind === 'gap') return li(it, i, h('span', { className: 'hm-pagination__gap label-medium' }, '\u2026'));
         if (it.kind === 'previous' || it.kind === 'next') {
           var prev = it.kind === 'previous';
           return li(it, i, h(Button, { hierarchy: 'secondary', href: href(it.page), rel: prev ? 'prev' : 'next',
@@ -147,7 +147,7 @@
       h(props.as || 'div', Object.assign({
         ref: listRef,
         role: props.as ? undefined : 'tablist',   // as="nav" → section navigation, no tablist semantics
-        className: cx('zz-tabs', props.className),
+        className: cx('hm-tabs', props.className),
         onKeyDown: props.as ? undefined : onKeyDown
       }, omit(props, ['value', 'onValueChange', 'children', 'className', 'as'])), props.children));
   }
@@ -158,7 +158,7 @@
     // href → the tab is site navigation (a link, aria-current), not an in-page tab (role=tab, aria-selected)
     var tag = props.href ? 'a' : 'button';
     var attrs = Object.assign({
-      className: cx('zz-tab', props.className),
+      className: cx('hm-tab', props.className),
       'data-value': props.value,
       onClick: function (e) {
         if (ctx.onValueChange) ctx.onValueChange(props.value);
@@ -179,11 +179,11 @@
     }
     if (props.state && props.state !== 'default') attrs['data-state'] = props.state;
     return h(tag, attrs,
-      props.leadingIcon ? h('span', { className: 'zz-tab__icon', 'aria-hidden': 'true' }, props.leadingIcon) : null,
+      props.leadingIcon ? h('span', { className: 'hm-tab__icon', 'aria-hidden': 'true' }, props.leadingIcon) : null,
       // Figma `_tab-sizes` label container: label + `suffix` (e.g. a count, "Artists 64"), gap 4, same text style
-      h('span', { className: cx('zz-tab__label', xs ? 'label-extra-small' : 'label-medium') }, h('span', null, props.children),
-        props.suffix !== undefined && props.suffix !== null && props.suffix !== false ? h('span', { className: 'zz-tab__suffix' }, props.suffix) : null),
-      props.trailingIcon ? h('span', { className: 'zz-tab__icon', 'aria-hidden': 'true' }, props.trailingIcon) : null);
+      h('span', { className: cx('hm-tab__label', xs ? 'label-extra-small' : 'label-medium') }, h('span', null, props.children),
+        props.suffix !== undefined && props.suffix !== null && props.suffix !== false ? h('span', { className: 'hm-tab__suffix' }, props.suffix) : null),
+      props.trailingIcon ? h('span', { className: 'hm-tab__icon', 'aria-hidden': 'true' }, props.trailingIcon) : null);
   }
 
   /* ── Header ─────────────────────────────────────────────────────────────
@@ -200,35 +200,35 @@
     // alt=""). Without homeHref the same pair sits in a plain div. On the home page the link stays clickable: the
     // storefront reloads the page (scripts/site.js, soft navigation).
     var homeTag = props.homeHref ? 'a' : 'div';
-    var homeAttrs = { className: 'zz-header__home' };
+    var homeAttrs = { className: 'hm-header__home' };
     if (props.homeHref) homeAttrs.href = props.homeHref;
-    var nameAttrs = { className: 'zz-header__name label-medium' };
+    var nameAttrs = { className: 'hm-header__name label-medium' };
     // Figma `store name` state=active (2026-11-14): on the home page the store name is lit like the tab of the current section
     if (props.homeCurrent) { nameAttrs['data-state'] = 'active'; if (props.homeHref) homeAttrs['aria-current'] = 'page'; }
 
     return h('header', Object.assign({
-      className: cx('zz-header', props.className),
+      className: cx('hm-header', props.className),
       'data-device': device
     }, omit(props, ['device', 'logo', 'storeName', 'homeHref', 'homeCurrent', 'tabs', 'actions', 'search', 'searchHref', 'searchLabel', 'onMenuClick', 'menuLabel', 'menuProps', 'className', 'children'])),
-      h('div', { className: 'zz-header__row' },
-        h('div', { className: 'zz-header__leading' },
-          showMenu ? h(Button, Object.assign({ className: 'zz-header__menu', hierarchy: 'secondary', leadingIcon: h(HamburgerIcon), 'aria-label': props.menuLabel || 'Menu', onClick: props.onMenuClick }, props.menuProps)) : null,
+      h('div', { className: 'hm-header__row' },
+        h('div', { className: 'hm-header__leading' },
+          showMenu ? h(Button, Object.assign({ className: 'hm-header__menu', hierarchy: 'secondary', leadingIcon: h(HamburgerIcon), 'aria-label': props.menuLabel || 'Menu', onClick: props.onMenuClick }, props.menuProps)) : null,
           (props.logo || props.storeName) ? h(homeTag, homeAttrs,
-            props.logo ? h('span', { className: 'zz-header__logo' }, props.logo) : null,
+            props.logo ? h('span', { className: 'hm-header__logo' }, props.logo) : null,
             // Figma `store name` logo=true (2026-11-15, decision 0094): when the header has no room for the big logo
             // (data-logo="hidden"), the same logo shows 36px inside the store name; CSS switches between the two.
             props.storeName ? h('span', nameAttrs,
-              props.logo ? h('span', { className: 'zz-header__name-logo', 'aria-hidden': 'true' }, props.logo) : null,
+              props.logo ? h('span', { className: 'hm-header__name-logo', 'aria-hidden': 'true' }, props.logo) : null,
               props.storeName) : null) : null),
-        showTabs ? h('div', { className: 'zz-header__tabs' }, props.tabs) : null,
-        (props.actions || hasSearch) ? h('div', { className: 'zz-header__trailing' },
+        showTabs ? h('div', { className: 'hm-header__tabs' }, props.tabs) : null,
+        (props.actions || hasSearch) ? h('div', { className: 'hm-header__trailing' },
           // Figma boolean `search` (2026-11-12): desktop = the search field (input type=search, 280 wide) before the
           // actions; mobile = a secondary icon Button (magnifier, like the hamburger) that leads to the search page
-          hasSearch && device !== 'mobile' && props.search ? h('div', { className: 'zz-header__search' }, props.search) : null,
-          hasSearch && device !== 'desktop' && props.searchHref ? h(Button, { className: 'zz-header__search-link', hierarchy: 'secondary',
+          hasSearch && device !== 'mobile' && props.search ? h('div', { className: 'hm-header__search' }, props.search) : null,
+          hasSearch && device !== 'desktop' && props.searchHref ? h(Button, { className: 'hm-header__search-link', hierarchy: 'secondary',
             href: props.searchHref, leadingIcon: h(SearchIcon), 'aria-label': props.searchLabel || 'Search' }) : null,
           props.actions) : null),
-      h('div', { className: 'zz-header__rule', role: 'presentation' }));
+      h('div', { className: 'hm-header__rule', role: 'presentation' }));
   }
 
   /* ── Breadcrumbs ────────────────────────────────────────────────────────
@@ -243,18 +243,18 @@
       var last = i === items.length - 1;
       var label = typeof it === 'string' ? it : it.label;
       var href = typeof it === 'string' ? null : it.href;
-      return h('li', { key: i, className: 'zz-breadcrumbs__item' },
-        i > 0 ? h('span', { className: 'zz-breadcrumbs__sep', 'aria-hidden': 'true' }, '/') : null,
+      return h('li', { key: i, className: 'hm-breadcrumbs__item' },
+        i > 0 ? h('span', { className: 'hm-breadcrumbs__sep', 'aria-hidden': 'true' }, '/') : null,
         href
           ? h('a', { href: href }, label)
           : h('span', last ? { 'aria-current': 'page' } : null, label));
     });
     return h('nav', Object.assign({
-      className: cx('zz-breadcrumbs', props.className),
+      className: cx('hm-breadcrumbs', props.className),
       'aria-label': props['aria-label'] || 'Breadcrumb'
     }, omit(props, ['items', 'className', 'aria-label'])),
-      h('ol', { className: 'zz-breadcrumbs__list body-medium' }, nodes),
-      h('div', { className: 'zz-breadcrumbs__rule', role: 'presentation' }));
+      h('ol', { className: 'hm-breadcrumbs__list body-medium' }, nodes),
+      h('div', { className: 'hm-breadcrumbs__rule', role: 'presentation' }));
   }
 
   /* ── ActiveFilter ───────────────────────────────────────────────────────
@@ -264,12 +264,12 @@
      breadcrumbs' frame. A labelled group, not a nav: it is not a path. Render nothing (or hide it) when no filter is active. */
   function ActiveFilter(props) {
     return h('div', Object.assign({
-      className: cx('zz-active-filter', props.className),
+      className: cx('hm-active-filter', props.className),
       role: 'group',
       'aria-label': props['aria-label'] || 'Active filter'
     }, omit(props, ['className', 'aria-label', 'children'])),
-      h('div', { className: 'zz-active-filter__row' }, props.children),
-      h('div', { className: 'zz-active-filter__rule', role: 'presentation' }));
+      h('div', { className: 'hm-active-filter__row' }, props.children),
+      h('div', { className: 'hm-active-filter__rule', role: 'presentation' }));
   }
 
   /* ── Tag / TagGroup ─────────────────────────────────────────────────────
@@ -279,17 +279,17 @@
     var size = props.size || 'small';
     // href: the tag is a link (shop: the PLP filtered by it). Interaction states not designed yet (Gio 2026-11-10: ignore for now).
     return h(props.href ? 'a' : 'span', Object.assign({
-      className: cx('zz-tag', props.className),
+      className: cx('hm-tag', props.className),
       'data-size': size
     }, omit(props, ['size', 'children', 'className', '_typeClass'])),
-      h('span', { className: cx('zz-tag__label', props._typeClass || TAG_TYPE[size]) }, props.children));
+      h('span', { className: cx('hm-tag__label', props._typeClass || TAG_TYPE[size]) }, props.children));
   }
 
   function TagGroup(props) {
     return h('ul', Object.assign({
-      className: cx('zz-tag-group', props.className)
+      className: cx('hm-tag-group', props.className)
     }, omit(props, ['children', 'className'])),
-      React.Children.map(props.children, function (c, i) { return c ? h('li', { key: i, className: 'zz-tag-group__item' }, c) : null; }));
+      React.Children.map(props.children, function (c, i) { return c ? h('li', { key: i, className: 'hm-tag-group__item' }, c) : null; }));
   }
 
   /* ── PlayerButton ───────────────────────────────────────────────────────
@@ -299,15 +299,15 @@
   /* Figma: `_player button-icon` (building block, state default | playing): the 24px play/pause icon.
      Internal, like the `_` component in Figma: PlayerButton exposes its state as the nested `playing` prop. */
   function PlayerButtonIcon(props) {
-    return h('span', { className: 'zz-player-button__icon', 'aria-hidden': 'true' },
+    return h('span', { className: 'hm-player-button__icon', 'aria-hidden': 'true' },
       h(PlayPauseIcons));
   }
   /* Both icons are always in the markup; CSS shows one from the nearest [data-playing] ancestor.
      So a static page (no React at runtime) can switch play ↔ pause by flipping one attribute. */
   function PlayPauseIcons() {
     return h(React.Fragment, null,
-      h('span', { className: 'zz-icon-play' }, h(PlayIcon)),
-      h('span', { className: 'zz-icon-pause' }, h(PauseIcon)));
+      h('span', { className: 'hm-icon-play' }, h(PlayIcon)),
+      h('span', { className: 'hm-icon-pause' }, h(PauseIcon)));
   }
   /* Figma: `player button` (state default | hover | pressed | disabled) + nested exposed `_player button-icon`.
      Interaction states come from :hover / :active / :disabled; `state` pins one for documentation only. */
@@ -316,7 +316,7 @@
     var disabled = !!props.disabled || props.state === 'disabled';
     var attrs = Object.assign({
       type: 'button',
-      className: cx('zz-player-button', props.className),
+      className: cx('hm-player-button', props.className),
       'data-playing': playing ? 'true' : 'false',
       'aria-pressed': playing ? 'true' : 'false',
       disabled: disabled
@@ -324,7 +324,7 @@
     if (props.state && props.state !== 'default') attrs['data-state'] = props.state;
     return h('button', attrs,
       h(PlayerButtonIcon, { playing: playing }),
-      h('span', { className: 'zz-player-button__label body-medium' }, props.children));
+      h('span', { className: 'hm-player-button__label body-medium' }, props.children));
   }
 
   /* ── IconButton ─────────────────────────────────────────────────────────
@@ -336,12 +336,12 @@
     var disabled = !!props.disabled || props.state === 'disabled';
     var attrs = Object.assign({
       type: 'button',
-      className: cx('zz-icon-button', props.className),
+      className: cx('hm-icon-button', props.className),
       disabled: disabled
     }, omit(props, ['icon', 'disabled', 'state', 'children', 'className']));
     if (props.state && props.state !== 'default') attrs['data-state'] = props.state;
     return h('button', attrs,
-      h('span', { className: 'zz-icon-button__icon', 'aria-hidden': 'true' }, props.icon || h(PlayIcon)));
+      h('span', { className: 'hm-icon-button__icon', 'aria-hidden': 'true' }, props.icon || h(PlayIcon)));
   }
 
   /* ── Player ─────────────────────────────────────────────────────────────
@@ -357,39 +357,39 @@
      Internal (0008): Player exposes its state as `playing`. Previous/next are disabled at the ends of the queue. */
   function PlayerControls(props) {
     var index = props.index || 1, total = props.total || 1;
-    return h('div', { className: 'zz-player__controls' },
-      h('span', { className: 'zz-player__position body-medium', 'aria-hidden': 'true' }, index + ' of ' + total),
-      h('div', { className: 'zz-player__transport' },
-        h(IconButton, { className: 'zz-player__previous', icon: h(PreviousIcon), 'aria-label': 'Previous sample', disabled: index <= 1, onClick: props.onPrevious }),
-        h(IconButton, { className: 'zz-player__toggle', icon: h(PlayPauseIcons), 'aria-label': props.playing ? 'Pause' : 'Play', onClick: props.onTogglePlay }),
-        h(IconButton, { className: 'zz-player__next', icon: h(NextIcon), 'aria-label': 'Next sample', disabled: index >= total, onClick: props.onNext })));
+    return h('div', { className: 'hm-player__controls' },
+      h('span', { className: 'hm-player__position body-medium', 'aria-hidden': 'true' }, index + ' of ' + total),
+      h('div', { className: 'hm-player__transport' },
+        h(IconButton, { className: 'hm-player__previous', icon: h(PreviousIcon), 'aria-label': 'Previous sample', disabled: index <= 1, onClick: props.onPrevious }),
+        h(IconButton, { className: 'hm-player__toggle', icon: h(PlayPauseIcons), 'aria-label': props.playing ? 'Pause' : 'Play', onClick: props.onTogglePlay }),
+        h(IconButton, { className: 'hm-player__next', icon: h(NextIcon), 'aria-label': 'Next sample', disabled: index >= total, onClick: props.onNext })));
   }
   function Player(props) {
     var device = props.device || 'responsive';
     var img = props.image || {};
     return h('section', Object.assign({
-      className: cx('zz-player', props.className),
+      className: cx('hm-player', props.className),
       'data-device': device,
       'data-playing': props.playing ? 'true' : 'false',
       'aria-label': props['aria-label'] || 'Player'
     }, omit(props, ['device', 'image', 'sampleTitle', 'productName', 'index', 'total', 'playing', 'src',
                     'actions', 'onPrevious', 'onNext', 'onTogglePlay', 'onClose', 'audioRef', 'className', 'aria-label'])),
       // Figma: `now playing` — image 48 + title row (sample number · sample title / product name)
-      h('div', { className: 'zz-player__now' },
-        h('div', { className: 'zz-player__image' }, img.src ? h('img', { src: img.src, srcSet: img.srcSet, sizes: img.srcSet ? img.sizes || '48px' : undefined, alt: img.alt || '', width: 48, height: 48 }) : null),
-        h('p', { className: 'zz-player__title body-medium', 'aria-live': 'polite' },
+      h('div', { className: 'hm-player__now' },
+        h('div', { className: 'hm-player__image' }, img.src ? h('img', { src: img.src, srcSet: img.srcSet, sizes: img.srcSet ? img.sizes || '48px' : undefined, alt: img.alt || '', width: 48, height: 48 }) : null),
+        h('p', { className: 'hm-player__title body-medium', 'aria-live': 'polite' },
           // sample number = position of the sample in the queue, as on the sample buttons (decision 0056)
-          h('span', { className: 'zz-player__number' }, props.index || 1),
-          h('span', { className: 'zz-player__names' },
-            h('span', { className: 'zz-player__sample' }, props.sampleTitle),
-            h('span', { className: 'zz-player__product' }, props.productName)))),
-      props.actions ? h('div', { className: 'zz-player__actions' }, props.actions) : null,
+          h('span', { className: 'hm-player__number' }, props.index || 1),
+          h('span', { className: 'hm-player__names' },
+            h('span', { className: 'hm-player__sample' }, props.sampleTitle),
+            h('span', { className: 'hm-player__product' }, props.productName)))),
+      props.actions ? h('div', { className: 'hm-player__actions' }, props.actions) : null,
       h(PlayerControls, { index: props.index, total: props.total, playing: props.playing,
         onPrevious: props.onPrevious, onNext: props.onNext, onTogglePlay: props.onTogglePlay }),
       // Figma: `native player` slot — the browser's own audio controls (seek, time, volume)
-      h('div', { className: 'zz-player__native' },
-        h('audio', { className: 'zz-player__audio', controls: true, preload: 'none', src: props.src || undefined, ref: props.audioRef })),
-      h(IconButton, { className: 'zz-player__close', icon: h(CloseIcon), 'aria-label': 'Close player', onClick: props.onClose }));
+      h('div', { className: 'hm-player__native' },
+        h('audio', { className: 'hm-player__audio', controls: true, preload: 'none', src: props.src || undefined, ref: props.audioRef })),
+      h(IconButton, { className: 'hm-player__close', icon: h(CloseIcon), 'aria-label': 'Close player', onClick: props.onClose }));
   }
 
   /* ── ProductInfo ────────────────────────────────────────────────────────
@@ -401,24 +401,24 @@
     var device = props.device || 'responsive';
     var headType = device === 'desktop' ? 'body-extra-large' : device === 'mobile' ? 'body-large' : 'body-extra-large body-large--mobile';
     return h('section', Object.assign({
-      className: cx('zz-product-info', props.className),
+      className: cx('hm-product-info', props.className),
       'data-device': device
     }, omit(props, ['device', 'title', 'price', 'releaseInfo', 'tags', 'description', 'grading', 'cover', 'conditions', 'samples', 'headingLevel', 'className', 'children'])),
-      h('div', { className: 'zz-product-info__details' },
-        h('div', { className: 'zz-product-info__title-block' },
-          h('div', { className: 'zz-product-info__title-row' },
-            h('h' + (props.headingLevel || 1), { className: cx('zz-product-info__name', headType) }, props.title),
-            props.price != null ? h('p', { className: cx('zz-product-info__price', headType) }, props.price) : null),
-          props.releaseInfo ? h('p', { className: cx('zz-product-info__release', headType) }, props.releaseInfo) : null),
-        props.tags ? h('div', { className: 'zz-product-info__tags' }, props.tags) : null,
+      h('div', { className: 'hm-product-info__details' },
+        h('div', { className: 'hm-product-info__title-block' },
+          h('div', { className: 'hm-product-info__title-row' },
+            h('h' + (props.headingLevel || 1), { className: cx('hm-product-info__name', headType) }, props.title),
+            props.price != null ? h('p', { className: cx('hm-product-info__price', headType) }, props.price) : null),
+          props.releaseInfo ? h('p', { className: cx('hm-product-info__release', headType) }, props.releaseInfo) : null),
+        props.tags ? h('div', { className: 'hm-product-info__tags' }, props.tags) : null,
         (props.description || props.grading || props.cover || props.conditions)
-          ? h('div', { className: 'zz-product-info__description-block' },
-              props.description ? h('p', { className: 'zz-product-info__description body-medium' }, props.description) : null,
-              props.grading ? h('p', { className: 'zz-product-info__grading body-medium' }, props.grading) : null,
-              props.cover ? h('p', { className: 'zz-product-info__cover body-medium' }, props.cover) : null,
-              props.conditions ? h('p', { className: 'zz-product-info__conditions body-medium' }, props.conditions) : null)
+          ? h('div', { className: 'hm-product-info__description-block' },
+              props.description ? h('p', { className: 'hm-product-info__description body-medium' }, props.description) : null,
+              props.grading ? h('p', { className: 'hm-product-info__grading body-medium' }, props.grading) : null,
+              props.cover ? h('p', { className: 'hm-product-info__cover body-medium' }, props.cover) : null,
+              props.conditions ? h('p', { className: 'hm-product-info__conditions body-medium' }, props.conditions) : null)
           : null),
-      props.samples ? h('div', { className: 'zz-product-info__samples' }, props.samples) : null);
+      props.samples ? h('div', { className: 'hm-product-info__samples' }, props.samples) : null);
   }
 
   /* ── ProductCard ────────────────────────────────────────────────────────
@@ -434,7 +434,7 @@
     mobile:     { head: 'body-medium', meta: 'body-small', tag: 'small' },
     responsive: { head: 'body-large body-medium--mobile', meta: 'body-medium body-small--mobile', tag: 'large', tagType: 'body-medium body-extra-small--mobile' }
   };
-  var useId = React.useId || function () { return React.useRef('zz-' + Math.random().toString(36).slice(2, 8)).current; };
+  var useId = React.useId || function () { return React.useRef('hm-' + Math.random().toString(36).slice(2, 8)).current; };
   function ProductCard(props) {
     var device = props.device || 'responsive';
     var t = CARD_TYPE[device];
@@ -446,7 +446,7 @@
         key: d,
         hierarchy: 'secondary',
         size: d === 'mobile' ? 'small' : 'medium',
-        className: 'zz-product-card__add',
+        className: 'hm-product-card__add',
         'data-device': d,
         href: props.addHref,   // trade listings: a link to the offer page ("Make an offer"), not a bag button
         onClick: props.onAdd,
@@ -454,30 +454,30 @@
       }, d === 'mobile' ? (props.addLabelShort || 'Add') : (props.addLabel || 'Add to bag'));
     }
     return h('article', Object.assign({
-      className: cx('zz-product-card', props.className),
+      className: cx('hm-product-card', props.className),
       'data-device': device,
       'data-state': props.state && props.state !== 'default' ? props.state : undefined,   // doc-only pin (0009)
       'aria-labelledby': titleId
     }, omit(props, ['device', 'state', 'image', 'href', 'title', 'releaseInfo', 'price', 'description', 'grading', 'cover', 'conditions', 'tags', 'samples',
                     'onAdd', 'addHref', 'addLabel', 'addLabelShort', 'headingLevel', 'className', 'children'])),
       // href: the cover becomes the link to the product page (no visual change; the link style is not designed yet)
-      h(props.href ? 'a' : 'div', props.href ? { className: 'zz-product-card__image', href: props.href, 'aria-labelledby': titleId } : { className: 'zz-product-card__image' },
+      h(props.href ? 'a' : 'div', props.href ? { className: 'hm-product-card__image', href: props.href, 'aria-labelledby': titleId } : { className: 'hm-product-card__image' },
         img && img.src ? h('img', { src: img.src, srcSet: img.srcSet, sizes: img.srcSet ? img.sizes : undefined, alt: img.alt || '', loading: 'lazy' }) : null),
-      h('div', { className: 'zz-product-card__info' },
-        h('div', { className: 'zz-product-card__title-block' },
-          h('h' + (props.headingLevel || 2), { id: titleId, className: cx('zz-product-card__name', t.head) }, props.title),
-          props.releaseInfo ? h('p', { className: cx('zz-product-card__release', t.head) }, props.releaseInfo) : null),
-        tags.length ? h(TagGroup, { className: 'zz-product-card__tags' },
+      h('div', { className: 'hm-product-card__info' },
+        h('div', { className: 'hm-product-card__title-block' },
+          h('h' + (props.headingLevel || 2), { id: titleId, className: cx('hm-product-card__name', t.head) }, props.title),
+          props.releaseInfo ? h('p', { className: cx('hm-product-card__release', t.head) }, props.releaseInfo) : null),
+        tags.length ? h(TagGroup, { className: 'hm-product-card__tags' },
           tags.map(function (tag, i) {
             var o = typeof tag === 'string' ? { label: tag } : tag;
             return h(Tag, { key: i, size: t.tag, _typeClass: t.tagType, href: o.href }, o.label);
           })) : null,
-        props.samples ? h('div', { className: 'zz-product-card__samples' }, props.samples) : null),
-      h('div', { className: 'zz-product-card__purchase' },
+        props.samples ? h('div', { className: 'hm-product-card__samples' }, props.samples) : null),
+      h('div', { className: 'hm-product-card__purchase' },
         device === 'responsive' ? [addButton('desktop'), addButton('mobile')] : addButton(device),
-        props.price != null ? h('p', { className: cx('zz-product-card__price', t.head) }, props.price) : null),
+        props.price != null ? h('p', { className: cx('hm-product-card__price', t.head) }, props.price) : null),
       (props.description || props.grading || props.cover || props.conditions)
-        ? h('div', { className: 'zz-product-card__description' },
+        ? h('div', { className: 'hm-product-card__description' },
             props.description ? h('p', { className: t.meta }, props.description) : null,
             props.grading ? h('p', { className: t.meta }, props.grading) : null,
             props.cover ? h('p', { className: t.meta }, props.cover) : null,
@@ -511,34 +511,34 @@
     var status = props.status === 'sold' ? 'sold' : (props.status === 'reserved' || props.status === 'unavailable') ? 'reserved' : 'available';
     var unavailable = status !== 'available';
     return h('article', Object.assign({
-      className: cx('zz-bag-item', props.className),
+      className: cx('hm-bag-item', props.className),
       'data-device': device,
       'data-status': status,
       'aria-labelledby': titleId
     }, omit(props, ['device', 'status', 'notice', 'image', 'href', 'title', 'releaseInfo', 'price', 'grading', 'cover', 'conditions',
                     'samples', 'onRemove', 'removeLabel', 'headingLevel', 'className', 'children'])),
-      h(props.href ? 'a' : 'div', props.href ? { className: 'zz-bag-item__image', href: props.href, tabIndex: -1, 'aria-hidden': 'true' } : { className: 'zz-bag-item__image' },
+      h(props.href ? 'a' : 'div', props.href ? { className: 'hm-bag-item__image', href: props.href, tabIndex: -1, 'aria-hidden': 'true' } : { className: 'hm-bag-item__image' },
         img && img.src ? h('img', { src: img.src, srcSet: img.srcSet, sizes: img.srcSet ? img.sizes || '96px' : undefined, alt: img.alt || '', loading: 'lazy' }) : null),
-      h('div', { className: 'zz-bag-item__info' },
-        h('div', { className: 'zz-bag-item__title-block' },
-          h('h' + (props.headingLevel || 2), { id: titleId, className: cx('zz-bag-item__name', t.head) },
-            props.href ? h('a', { className: 'zz-bag-item__link', href: props.href }, props.title) : props.title),
-          props.releaseInfo ? h('p', { className: cx('zz-bag-item__release', t.head) }, props.releaseInfo) : null),
+      h('div', { className: 'hm-bag-item__info' },
+        h('div', { className: 'hm-bag-item__title-block' },
+          h('h' + (props.headingLevel || 2), { id: titleId, className: cx('hm-bag-item__name', t.head) },
+            props.href ? h('a', { className: 'hm-bag-item__link', href: props.href }, props.title) : props.title),
+          props.releaseInfo ? h('p', { className: cx('hm-bag-item__release', t.head) }, props.releaseInfo) : null),
         (props.grading || props.cover || props.conditions)
-          ? h('div', { className: 'zz-bag-item__description' },
+          ? h('div', { className: 'hm-bag-item__description' },
               props.grading ? h('p', { className: t.meta }, props.grading) : null,
               props.cover ? h('p', { className: t.meta }, props.cover) : null,
               props.conditions ? h('p', { className: t.meta }, props.conditions) : null)
           : null,
-        props.samples ? h('div', { className: 'zz-bag-item__samples' }, props.samples) : null),
-      h('div', { className: 'zz-bag-item__purchase' },
+        props.samples ? h('div', { className: 'hm-bag-item__samples' }, props.samples) : null),
+      h('div', { className: 'hm-bag-item__purchase' },
         unavailable
-          ? h('p', { className: cx('zz-bag-item__price', t.head) },
-              h(Alert, { layout: 'inline', className: 'zz-bag-item__status' }, props.notice || (status === 'sold' ? 'SOLD OUT' : 'RESERVED')),
-              h('span', { className: 'zz-visually-hidden' }, ', not in your order, '),
+          ? h('p', { className: cx('hm-bag-item__price', t.head) },
+              h(Alert, { layout: 'inline', className: 'hm-bag-item__status' }, props.notice || (status === 'sold' ? 'SOLD OUT' : 'RESERVED')),
+              h('span', { className: 'hm-visually-hidden' }, ', not in your order, '),
               props.price != null ? h('s', null, props.price) : null)
-          : status === 'available' && props.price != null ? h('p', { className: cx('zz-bag-item__price', t.head) }, props.price) : null,
-        removable ? h(Button, { hierarchy: 'secondary', size: 'small', className: 'zz-bag-item__remove', onClick: props.onRemove, 'aria-describedby': titleId },
+          : status === 'available' && props.price != null ? h('p', { className: cx('hm-bag-item__price', t.head) }, props.price) : null,
+        removable ? h(Button, { hierarchy: 'secondary', size: 'small', className: 'hm-bag-item__remove', onClick: props.onRemove, 'aria-describedby': titleId },
           props.removeLabel || 'Remove') : null));
   }
 
@@ -553,24 +553,24 @@
     var t = CARD_TYPE[device];
     var img = props.image;
     return h('a', Object.assign({
-      className: cx('zz-order-row', props.className),
+      className: cx('hm-order-row', props.className),
       'data-device': device,
       href: props.href,
       'aria-label': props.label
     }, omit(props, ['device', 'image', 'href', 'label', 'title', 'date', 'count', 'status', 'total', 'viewLabel', 'className', 'children'])),
-      h('span', { className: 'zz-bag-item__image zz-order-row__image' },
+      h('span', { className: 'hm-bag-item__image hm-order-row__image' },
         img && img.src ? h('img', { src: img.src, srcSet: img.srcSet, sizes: img.srcSet ? img.sizes || '96px' : undefined, alt: '', loading: 'lazy' }) : null),
-      h('span', { className: 'zz-bag-item__info' },
-        h('span', { className: 'zz-bag-item__title-block' },
-          h('span', { className: cx('zz-order-row__title', t.head) }, props.title),
-          props.date ? h('span', { className: cx('zz-order-row__date', t.head) }, props.date) : null),
-        h('span', { className: 'zz-bag-item__description' },
-          props.count ? h('span', { className: cx('zz-order-row__count', t.meta) }, props.count) : null,
-          props.status ? h('span', { className: cx('zz-order-row__status', t.meta) }, props.status) : null)),
-      h('span', { className: 'zz-bag-item__purchase' },
-        h('span', { className: cx('zz-order-row__total', t.head) }, props.total),
-        h('span', { className: 'zz-button zz-order-row__view', 'data-hierarchy': 'secondary', 'data-size': 'small', 'aria-hidden': 'true' },
-          h('span', { className: 'zz-button__label label-extra-small' }, props.viewLabel || 'View'))));
+      h('span', { className: 'hm-bag-item__info' },
+        h('span', { className: 'hm-bag-item__title-block' },
+          h('span', { className: cx('hm-order-row__title', t.head) }, props.title),
+          props.date ? h('span', { className: cx('hm-order-row__date', t.head) }, props.date) : null),
+        h('span', { className: 'hm-bag-item__description' },
+          props.count ? h('span', { className: cx('hm-order-row__count', t.meta) }, props.count) : null,
+          props.status ? h('span', { className: cx('hm-order-row__status', t.meta) }, props.status) : null)),
+      h('span', { className: 'hm-bag-item__purchase' },
+        h('span', { className: cx('hm-order-row__total', t.head) }, props.total),
+        h('span', { className: 'hm-button hm-order-row__view', 'data-hierarchy': 'secondary', 'data-size': 'small', 'aria-hidden': 'true' },
+          h('span', { className: 'hm-button__label label-extra-small' }, props.viewLabel || 'View'))));
   }
 
   /* ── BagSummary ─────────────────────────────────────────────────────────
@@ -584,30 +584,30 @@
   function BagSummary(props) {
     var hasTotal = props.total !== undefined && props.total !== null;
     return h('section', Object.assign({
-      className: cx('zz-bag-summary', props.className),
+      className: cx('hm-bag-summary', props.className),
       'aria-label': props['aria-label'] || 'Summary'
     }, omit(props, ['subtotalLabel', 'subtotal', 'shippingLabel', 'shipping', 'totalLabel', 'total', 'shipTo', 'checkoutLabel', 'onCheckout', 'checkoutDisabled', 'checkoutProps', 'note', 'soldOutNote', 'soldOutNoteProps', 'minimumNote', 'minimumNoteProps', 'className', 'children', 'aria-label'])),
       h(Divider),
-      props.shipTo ? h('div', { className: 'zz-bag-summary__ship-to' }, props.shipTo) : null,
-      h('dl', { className: 'zz-bag-summary__rows' },
-        h('div', { className: 'zz-bag-summary__row' },
+      props.shipTo ? h('div', { className: 'hm-bag-summary__ship-to' }, props.shipTo) : null,
+      h('dl', { className: 'hm-bag-summary__rows' },
+        h('div', { className: 'hm-bag-summary__row' },
           h('dt', { className: 'body-medium' }, props.subtotalLabel || 'Subtotal'),
           h('dd', { className: 'body-medium' }, props.subtotal)),
-        h('div', { className: 'zz-bag-summary__row' },
+        h('div', { className: 'hm-bag-summary__row' },
           h('dt', { className: 'body-medium' }, props.shippingLabel || 'Shipping'),
           h('dd', { className: 'body-medium' }, props.shipping || 'Calculated at checkout')),
-        hasTotal ? h('div', { className: 'zz-bag-summary__row' },
+        hasTotal ? h('div', { className: 'hm-bag-summary__row' },
           h('dt', { className: 'body-medium' }, props.totalLabel || 'Total'),
           h('dd', { className: 'body-medium' }, props.total)) : null),
       props.soldOutNote || props.soldOutNoteProps
-        ? h(Alert, Object.assign({}, props.soldOutNoteProps || {}, { className: 'zz-bag-summary__sold-out' }), props.soldOutNote)
+        ? h(Alert, Object.assign({}, props.soldOutNoteProps || {}, { className: 'hm-bag-summary__sold-out' }), props.soldOutNote)
         : null,
       props.minimumNote || props.minimumNoteProps
-        ? h(Alert, Object.assign({}, props.minimumNoteProps || {}, { className: 'zz-bag-summary__minimum' }), props.minimumNote)
+        ? h(Alert, Object.assign({}, props.minimumNoteProps || {}, { className: 'hm-bag-summary__minimum' }), props.minimumNote)
         : null,
-      h(Button, Object.assign({ hierarchy: 'primary', size: 'large', className: 'zz-bag-summary__checkout', onClick: props.onCheckout, disabled: !!props.checkoutDisabled },
+      h(Button, Object.assign({ hierarchy: 'primary', size: 'large', className: 'hm-bag-summary__checkout', onClick: props.onCheckout, disabled: !!props.checkoutDisabled },
         props.checkoutProps || {}), props.checkoutLabel || 'Checkout'),
-      props.note ? h('p', { className: 'zz-bag-summary__note body-small' }, props.note) : null);
+      props.note ? h('p', { className: 'hm-bag-summary__note body-small' }, props.note) : null);
   }
 
   /* ── RelatedProducts ────────────────────────────────────────────────────
@@ -618,13 +618,13 @@
   function RelatedProducts(props) {
     var titleId = useId();
     return h('section', Object.assign({
-      className: cx('zz-related-products', props.className),
+      className: cx('hm-related-products', props.className),
       'aria-labelledby': titleId
     }, omit(props, ['title', 'headingLevel', 'className', 'children', 'action'])),
-      h('h' + (props.headingLevel || 2), { id: titleId, className: 'zz-related-products__title body-medium' }, props.title),
-      h('div', { className: 'zz-related-products__list' }, props.children),
+      h('h' + (props.headingLevel || 2), { id: titleId, className: 'hm-related-products__title body-medium' }, props.title),
+      h('div', { className: 'hm-related-products__list' }, props.children),
       // Figma `view all` (boolean, decision 0119): full-width action at the end, inside the container
-      props.action ? h('div', { className: 'zz-related-products__action' }, props.action) : null);
+      props.action ? h('div', { className: 'hm-related-products__action' }, props.action) : null);
   }
 
   /* ── ProductReturnCard ──────────────────────────────────────────────────
@@ -634,14 +634,14 @@
      surface/accent; hover adds surface/hover over it (stays opaque). The accessible name comes from aria-label. */
   function ProductReturnCard(props) {
     var image = props.image;
-    return h('button', Object.assign({ type: 'button', className: cx('zz-return-card', props.className),
+    return h('button', Object.assign({ type: 'button', className: cx('hm-return-card', props.className),
       'data-state': props.state && props.state !== 'default' ? props.state : undefined
     }, omit(props, ['image', 'name', 'price', 'className', 'state'])),
-      h('span', { className: 'zz-return-card__cover' }, image && image.src ? h('img', { src: image.src, alt: image.alt || '' }) : null),
-      h('span', { className: 'zz-return-card__text' },
-        h('span', { className: 'zz-return-card__name body-small' }, props.name),
-        props.price != null ? h('span', { className: 'zz-return-card__price body-small' }, props.price) : null),
-      h('span', { className: 'zz-return-card__icon', 'aria-hidden': 'true' }, icon('icon-chevron-up-small-thin')));
+      h('span', { className: 'hm-return-card__cover' }, image && image.src ? h('img', { src: image.src, alt: image.alt || '' }) : null),
+      h('span', { className: 'hm-return-card__text' },
+        h('span', { className: 'hm-return-card__name body-small' }, props.name),
+        props.price != null ? h('span', { className: 'hm-return-card__price body-small' }, props.price) : null),
+      h('span', { className: 'hm-return-card__icon', 'aria-hidden': 'true' }, icon('icon-chevron-up-small-thin')));
   }
 
   /* ── Gallery ────────────────────────────────────────────────────────────
@@ -652,14 +652,14 @@
     var images = props.images || [];
     var device = props.device || 'responsive';
     return h('div', Object.assign({
-      className: cx('zz-gallery', props.className),
+      className: cx('hm-gallery', props.className),
       'data-device': device,
       role: 'group',
       tabIndex: 0,
       'aria-label': props['aria-label'] || 'Product images'
     }, omit(props, ['images', 'device', 'className', 'aria-label'])),
       images.map(function (img, i) {
-        return h('div', { key: i, className: 'zz-gallery__item' },
+        return h('div', { key: i, className: 'hm-gallery__item' },
           img && img.src ? h('img', { src: img.src, srcSet: img.srcSet, sizes: img.srcSet ? img.sizes : undefined, alt: img.alt || '', loading: i === 0 ? 'eager' : 'lazy' }) : null);
       }));
   }
@@ -674,7 +674,7 @@
 
   var idCounter = 0;
   function useStableId(given) {   // React 18 useId when available (SSR-safe), else a counter
-    var auto = React.useId ? React.useId() : React.useState(function () { return 'zz-' + (++idCounter); })[0];
+    var auto = React.useId ? React.useId() : React.useState(function () { return 'hm-' + (++idCounter); })[0];
     return given || auto;
   }
 
@@ -699,16 +699,16 @@
     var isSearch = variant === 'search';
     var leading = props.leadingIcon !== undefined ? props.leadingIcon : null;
     var trailing = props.trailingIcon !== undefined ? props.trailingIcon : (variant === 'select' ? h(ChevronDownIcon) : isSearch ? h(SearchIcon) : null);
-    var clearBtn = isSearch && props.clearLabel ? h('button', { type: 'button', className: 'zz-input__action zz-input__clear',
+    var clearBtn = isSearch && props.clearLabel ? h('button', { type: 'button', className: 'hm-input__action hm-input__clear',
       'aria-label': props.clearLabel, onClick: props.onClear }, h(XThinIcon)) : null;
-    var submitBtn = isSearch && props.submitLabel ? h('button', { type: 'submit', className: 'zz-input__action zz-input__submit',
+    var submitBtn = isSearch && props.submitLabel ? h('button', { type: 'submit', className: 'hm-input__action hm-input__submit',
       'aria-label': props.submitLabel }, trailing) : null;
     var own = ['variant', 'size', 'label', 'optional', 'optionalLabel', 'supportText', 'error', 'prefix', 'suffix',
                'leadingIcon', 'trailingIcon', 'className', 'style', 'id', 'children', 'placeholder', 'readOnly',
                'clearLabel', 'onClear', 'submitLabel'];
     var controlAttrs = Object.assign({
       id: id,
-      className: 'zz-input__control body-medium',
+      className: 'hm-input__control body-medium',
       'aria-invalid': hasError ? 'true' : undefined,
       'aria-describedby': support ? supportId : undefined
     }, omit(props, own));
@@ -726,25 +726,25 @@
         { placeholder: props.placeholder, readOnly: locked }));
     }
     return h('div', {
-      className: cx('zz-input', props.className),
+      className: cx('hm-input', props.className),
       style: props.style,
       'data-variant': variant,
       'data-size': size,
       'data-invalid': hasError ? 'true' : undefined,
       'data-locked': locked ? 'true' : undefined
     },
-      (props.label || props.optional) ? h('label', { className: 'zz-input__top', htmlFor: id },
-        h('span', { className: 'zz-input__label body-small' }, props.label),
+      (props.label || props.optional) ? h('label', { className: 'hm-input__top', htmlFor: id },
+        h('span', { className: 'hm-input__label body-small' }, props.label),
         props.optional ? ' ' : null,   // whitespace between the two names (not rendered in the flex row)
-        props.optional ? h('span', { className: 'zz-input__optional body-small' }, props.optionalLabel || 'Optional') : null) : null,
-      h('div', { className: 'zz-input__field' },
+        props.optional ? h('span', { className: 'hm-input__optional body-small' }, props.optionalLabel || 'Optional') : null) : null,
+      h('div', { className: 'hm-input__field' },
         clearBtn,
-        leading ? h('span', { className: 'zz-input__icon', 'aria-hidden': 'true' }, leading) : null,
-        props.prefix ? h('span', { className: 'zz-input__affix body-medium', 'aria-hidden': 'true' }, props.prefix) : null,
+        leading ? h('span', { className: 'hm-input__icon', 'aria-hidden': 'true' }, leading) : null,
+        props.prefix ? h('span', { className: 'hm-input__affix body-medium', 'aria-hidden': 'true' }, props.prefix) : null,
         control,
-        props.suffix ? h('span', { className: 'zz-input__affix body-medium', 'aria-hidden': 'true' }, props.suffix) : null,
-        submitBtn || (trailing ? h('span', { className: 'zz-input__icon zz-input__icon--trailing', 'aria-hidden': 'true' }, trailing) : null)),
-      support ? h('p', { id: supportId, className: 'zz-input__support body-small' }, support) : null);
+        props.suffix ? h('span', { className: 'hm-input__affix body-medium', 'aria-hidden': 'true' }, props.suffix) : null,
+        submitBtn || (trailing ? h('span', { className: 'hm-input__icon hm-input__icon--trailing', 'aria-hidden': 'true' }, trailing) : null)),
+      support ? h('p', { id: supportId, className: 'hm-input__support body-small' }, support) : null);
   }
 
   /* ── DropZone ───────────────────────────────────────────────────────────
@@ -758,7 +758,7 @@
       if (files.length && props.onFiles) props.onFiles(files);
     }
     return h('div', Object.assign({
-      className: cx('zz-drop-zone', props.className),
+      className: cx('hm-drop-zone', props.className),
       onDragOver: function (e) { if (!props.disabled) e.preventDefault(); },
       onDrop: function (e) { e.preventDefault(); if (!props.disabled) pick(e.dataTransfer.files); }
     }, omit(props, ['label', 'accept', 'multiple', 'onFiles', 'disabled', 'className', 'name'])),
@@ -838,7 +838,7 @@
       });
       tops.current = next;
       if (focusKey.current !== null) {
-        var handle = list.querySelector('[data-key="' + focusKey.current + '"] ' + (opts.handleSelector || '.zz-drag-handle'));
+        var handle = list.querySelector('[data-key="' + focusKey.current + '"] ' + (opts.handleSelector || '.hm-drag-handle'));
         focusKey.current = null;
         if (handle && document.activeElement !== handle) handle.focus();
       }
@@ -927,26 +927,26 @@
       if (e.key === 'ArrowDown' && props.index < props.count - 1) { e.preventDefault(); props.onMove(props.index, props.index + 1); }
     }
     return h('button', Object.assign({ type: 'button' }, omit(props, ['index', 'count', 'onMove', 'name', 'className', 'label']), {
-      className: cx('zz-drag-handle', props.className),
+      className: cx('hm-drag-handle', props.className),
       'aria-label': props.label || ('Move ' + (props.name || 'item') + ', position ' + (props.index + 1) + ' of ' + props.count + ' (arrow up / down)'),
       onKeyDown: props.onMove ? onKey : undefined
-    }), h('span', { className: 'zz-drag-handle__icon', 'aria-hidden': 'true' }, h(DragHandleIcon)));
+    }), h('span', { className: 'hm-drag-handle__icon', 'aria-hidden': 'true' }, h(DragHandleIcon)));
   }
 
   function FileList(props) {
     var items = React.Children.toArray(props.children);
     var move = props.onMove;
-    var d = useDragOrder({ count: items.length, onMove: move, handleSelector: '.zz-file-item__handle',
+    var d = useDragOrder({ count: items.length, onMove: move, handleSelector: '.hm-file-item__handle',
       keyOf: function (i) { return items[i].key || i; },
       nameOf: function (i) { var c = items[i]; return c && c.props && c.props.name; } });
     return h(React.Fragment, null,
-      h('ol', Object.assign({ className: cx('zz-file-list', props.className) }, d.listProps, omit(props, ['onMove', 'children', 'className'])),
+      h('ol', Object.assign({ className: cx('hm-file-list', props.className) }, d.listProps, omit(props, ['onMove', 'children', 'className'])),
         items.map(function (child, i) {
           var s = d.slot(i);
-          return h('li', Object.assign({ className: 'zz-file-list__item' }, d.rowProps(i)),
+          return h('li', Object.assign({ className: 'hm-file-list__item' }, d.rowProps(i)),
             h(FileListContext.Provider, { value: { index: s.pos, count: items.length, move: d.keyboardMove } }, child));
         })),
-      move ? h('span', { className: 'zz-file-list__status', role: 'status', 'aria-live': 'polite' }, d.live) : null);
+      move ? h('span', { className: 'hm-file-list__status', role: 'status', 'aria-live': 'polite' }, d.live) : null);
   }
 
   function FileItem(props) {
@@ -955,24 +955,24 @@
     var name = props.name;
     var playable = !!props.onTogglePlay;
     var hasBody = !!props.children;
-    var remove = props.onRemove ? h(IconButton, { className: 'zz-file-item__remove', icon: h(CloseIcon), 'aria-label': props.removeLabel || ('Remove ' + name), onClick: props.onRemove }) : null;
+    var remove = props.onRemove ? h(IconButton, { className: 'hm-file-item__remove', icon: h(CloseIcon), 'aria-label': props.removeLabel || ('Remove ' + name), onClick: props.onRemove }) : null;
     return h('div', Object.assign({
-      className: cx('zz-file-item', props.className),
+      className: cx('hm-file-item', props.className),
       'data-media': props.image ? 'image' : (playable ? 'audio' : undefined),
       'data-body': hasBody ? 'true' : undefined
     }, omit(props, ['name', 'position', 'image', 'featured', 'featuredLabel', 'playing', 'onTogglePlay', 'onRemove', 'removeLabel', 'reorderLabel', 'className', 'children'])),
-      ctx.move ? h(DragHandle, { className: 'zz-file-item__handle', index: ctx.index, count: ctx.count, onMove: ctx.move, name: name, label: props.reorderLabel }) : null,
+      ctx.move ? h(DragHandle, { className: 'hm-file-item__handle', index: ctx.index, count: ctx.count, onMove: ctx.move, name: name, label: props.reorderLabel }) : null,
       // with children (e.g. the sample title Input, Figma `sample row` 2095:20507): a full-width column,
       // `file row` (content + remove, gap 16) above the children (gap 16)
-      h(hasBody ? 'div' : React.Fragment, hasBody ? { className: 'zz-file-item__body' } : null,
-      h(hasBody ? 'div' : React.Fragment, hasBody ? { className: 'zz-file-item__row' } : null,
-      h('div', { className: 'zz-file-item__content' },
-        props.image ? h('span', { className: 'zz-file-item__thumb' }, props.image.src ? h('img', { src: props.image.src, alt: props.image.alt || '' }) : null) : null,
+      h(hasBody ? 'div' : React.Fragment, hasBody ? { className: 'hm-file-item__body' } : null,
+      h(hasBody ? 'div' : React.Fragment, hasBody ? { className: 'hm-file-item__row' } : null,
+      h('div', { className: 'hm-file-item__content' },
+        props.image ? h('span', { className: 'hm-file-item__thumb' }, props.image.src ? h('img', { src: props.image.src, alt: props.image.alt || '' }) : null) : null,
         playable ? h(IconButton, { 'data-playing': props.playing ? 'true' : 'false', 'aria-pressed': !!props.playing, 'aria-label': (props.playing ? 'Pause ' : 'Play ') + name,
           icon: h(PlayPauseIcons), onClick: props.onTogglePlay }) : null,
-        h('span', { className: 'zz-file-item__position body-medium' }, position),
-        h('span', { className: 'zz-file-item__name body-medium' }, name),
-        props.featured ? h('span', { className: 'zz-file-item__featured body-medium' }, props.featuredLabel || '(featured)') : null),
+        h('span', { className: 'hm-file-item__position body-medium' }, position),
+        h('span', { className: 'hm-file-item__name body-medium' }, name),
+        props.featured ? h('span', { className: 'hm-file-item__featured body-medium' }, props.featuredLabel || '(featured)') : null),
       hasBody ? remove : null),
       props.children || null),
       hasBody ? null : remove);
@@ -989,14 +989,14 @@
   function Alert(props) {
     var inline = props.layout === 'inline';
     return h(inline ? 'span' : 'p', Object.assign({}, omit(props, ['className', 'children', 'layout']),
-      { className: cx('zz-alert body-small', props.className), 'data-layout': inline ? 'inline' : 'block' }), props.children);
+      { className: cx('hm-alert body-small', props.className), 'data-layout': inline ? 'inline' : 'block' }), props.children);
   }
 
   /* ── Divider ────────────────────────────────────────────────────────────
      Figma: page `divider` → `divider` (2026-11-10): 1px, border/divider/strong, fills its container. Between the sections
      of the admin form. A native <hr> (a thematic break for screen readers). */
   function Divider(props) {
-    return h('hr', Object.assign({}, omit(props, ['className']), { className: cx('zz-divider', props.className) }));
+    return h('hr', Object.assign({}, omit(props, ['className']), { className: cx('hm-divider', props.className) }));
   }
 
 
@@ -1006,18 +1006,18 @@
        handle body/large, stats body/medium, link body/medium underlined (boolean `link`).
      Step: `step` (was `trade step`, decision 0152) — number label/large (24 wide) + title label/medium + body body/medium; gap 16 (medium-small), text gap 4. */
   function TradeNote(props) {
-    return h('div', Object.assign({}, omit(props, ['title', 'signature', 'className', 'children', 'headingLevel']), { className: cx('zz-trade-note', props.className) }),
-      h('h' + (props.headingLevel || 2), { className: 'zz-trade-note__title label-small' }, props.title || 'Why it’s not for sale'),
-      h('div', { className: 'zz-trade-note__body body-medium' }, props.children),
-      props.signature ? h('p', { className: 'zz-trade-note__signature body-small' }, props.signature) : null);
+    return h('div', Object.assign({}, omit(props, ['title', 'signature', 'className', 'children', 'headingLevel']), { className: cx('hm-trade-note', props.className) }),
+      h('h' + (props.headingLevel || 2), { className: 'hm-trade-note__title label-small' }, props.title || 'Why it’s not for sale'),
+      h('div', { className: 'hm-trade-note__body body-medium' }, props.children),
+      props.signature ? h('p', { className: 'hm-trade-note__signature body-small' }, props.signature) : null);
   }
   function DiscogsCard(props) {
-    return h('div', Object.assign({}, omit(props, ['label', 'handle', 'stats', 'href', 'linkLabel', 'className']), { className: cx('zz-discogs-card', props.className) }),
-      h('p', { className: 'zz-discogs-card__label body-small' }, props.label || 'On Discogs'),
-      h('p', { className: 'zz-discogs-card__handle body-large' }, props.handle),
-      props.stats ? h('p', { className: 'zz-discogs-card__stats body-medium' }, props.stats) : null,
-      props.href ? h('a', { className: 'zz-discogs-card__link body-medium', href: props.href, target: '_blank', rel: 'noopener' },
-        props.linkLabel || 'View profile', h('span', { 'aria-hidden': 'true' }, ' ↗'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')) : null);
+    return h('div', Object.assign({}, omit(props, ['label', 'handle', 'stats', 'href', 'linkLabel', 'className']), { className: cx('hm-discogs-card', props.className) }),
+      h('p', { className: 'hm-discogs-card__label body-small' }, props.label || 'On Discogs'),
+      h('p', { className: 'hm-discogs-card__handle body-large' }, props.handle),
+      props.stats ? h('p', { className: 'hm-discogs-card__stats body-medium' }, props.stats) : null,
+      props.href ? h('a', { className: 'hm-discogs-card__link body-medium', href: props.href, target: '_blank', rel: 'noopener' },
+        props.linkLabel || 'View profile', h('span', { 'aria-hidden': 'true' }, ' ↗'), h('span', { className: 'hm-visually-hidden' }, ' (opens in a new tab)')) : null);
   }
   /* ── Discogs release picker (Figma page `Trade`: `release option`, `release list`, `chosen release`, `which record`) ──
      The "Which record" field of the offer form. These render the markup; apps/storefront/scripts/site.js builds the same
@@ -1029,37 +1029,37 @@
   function ReleaseOption(props) {
     return h('li', Object.assign({ role: 'option', 'aria-selected': props.highlighted ? 'true' : 'false' },
       omit(props, ['title', 'meta', 'thumb', 'highlighted', 'className']),
-      { className: cx('zz-release-option', props.className), 'data-highlighted': props.highlighted ? 'true' : undefined }),
-      props.thumb ? h('img', { className: 'zz-release-option__thumb', src: props.thumb, alt: '', width: 40, height: 40, loading: 'lazy' })
-        : h('span', { className: 'zz-release-option__thumb', 'aria-hidden': 'true' }),
-      h('span', { className: 'zz-release-option__text' },
-        h('span', { className: 'zz-release-option__title body-medium' }, props.title),
-        props.meta ? h('span', { className: 'zz-release-option__meta body-small' }, props.meta) : null));
+      { className: cx('hm-release-option', props.className), 'data-highlighted': props.highlighted ? 'true' : undefined }),
+      props.thumb ? h('img', { className: 'hm-release-option__thumb', src: props.thumb, alt: '', width: 40, height: 40, loading: 'lazy' })
+        : h('span', { className: 'hm-release-option__thumb', 'aria-hidden': 'true' }),
+      h('span', { className: 'hm-release-option__text' },
+        h('span', { className: 'hm-release-option__title body-medium' }, props.title),
+        props.meta ? h('span', { className: 'hm-release-option__meta body-small' }, props.meta) : null));
   }
   function ReleaseList(props) {
     return h('div', Object.assign({}, omit(props, ['listId', 'label', 'message', 'source', 'className', 'children']),
-      { className: cx('zz-release-list', props.className) }),
-      props.message ? h('p', { className: 'zz-release-list__message body-small' }, props.message)
-        : h('ul', { className: 'zz-release-list__options', role: 'listbox', id: props.listId, 'aria-label': props.label }, props.children),
-      h('p', { className: 'zz-release-list__source body-small' }, props.source || 'Data from Discogs'));
+      { className: cx('hm-release-list', props.className) }),
+      props.message ? h('p', { className: 'hm-release-list__message body-small' }, props.message)
+        : h('ul', { className: 'hm-release-list__options', role: 'listbox', id: props.listId, 'aria-label': props.label }, props.children),
+      h('p', { className: 'hm-release-list__source body-small' }, props.source || 'Data from Discogs'));
   }
   function ChosenRelease(props) {
     return h('div', Object.assign({}, omit(props, ['title', 'meta', 'thumb', 'href', 'linkLabel', 'changeLabel', 'onChange', 'className']),
-      { className: cx('zz-chosen-release', props.className) }),
-      props.thumb ? h('img', { className: 'zz-release-option__thumb', src: props.thumb, alt: '', width: 40, height: 40 })
-        : h('span', { className: 'zz-release-option__thumb', 'aria-hidden': 'true' }),
-      h('span', { className: 'zz-release-option__text' },
-        h('span', { className: 'zz-release-option__title body-medium' }, props.title),
-        props.meta ? h('span', { className: 'zz-release-option__meta body-small' }, props.meta) : null,
-        props.href ? h('a', { className: 'zz-chosen-release__link body-small', href: props.href, target: '_blank', rel: 'noopener' },
-          props.linkLabel || 'On Discogs', h('span', { 'aria-hidden': 'true' }, ' ↗'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')) : null),
-      h('button', { type: 'button', className: 'zz-chosen-release__change body-small', onClick: props.onChange }, props.changeLabel || 'Change'));
+      { className: cx('hm-chosen-release', props.className) }),
+      props.thumb ? h('img', { className: 'hm-release-option__thumb', src: props.thumb, alt: '', width: 40, height: 40 })
+        : h('span', { className: 'hm-release-option__thumb', 'aria-hidden': 'true' }),
+      h('span', { className: 'hm-release-option__text' },
+        h('span', { className: 'hm-release-option__title body-medium' }, props.title),
+        props.meta ? h('span', { className: 'hm-release-option__meta body-small' }, props.meta) : null,
+        props.href ? h('a', { className: 'hm-chosen-release__link body-small', href: props.href, target: '_blank', rel: 'noopener' },
+          props.linkLabel || 'On Discogs', h('span', { 'aria-hidden': 'true' }, ' ↗'), h('span', { className: 'hm-visually-hidden' }, ' (opens in a new tab)')) : null),
+      h('button', { type: 'button', className: 'hm-chosen-release__change body-small', onClick: props.onChange }, props.changeLabel || 'Change'));
   }
   /* BackLink (Figma `admin` → `back link`): a text link back to a list, above a detail/edit page title. An <a>,
      body/small text/moderate, "← " + label; hover underlines. Used by Edit listing (→ the matching Listings tab). */
   function BackLink(props) {
     return h('a', Object.assign({}, omit(props, ['href', 'label', 'className']),
-      { className: cx('zz-back-link body-small', props.className), href: props.href }),
+      { className: cx('hm-back-link body-small', props.className), href: props.href }),
       '\u2190 ', props.label);
   }
   /* DiscogsLink (Figma BACKEND → Create › `discogs link`, decision 0150): the Discogs release a listing is matched to,
@@ -1067,8 +1067,8 @@
      text colour inherited (text/strong). Screen readers also hear "(opens in a new tab)". */
   function DiscogsLink(props) {
     return h('a', Object.assign({}, omit(props, ['href', 'label', 'className']),
-      { className: cx('zz-discogs-link body-small', props.className), href: props.href, target: '_blank', rel: 'noopener' }),
-      props.label || 'On Discogs', h('span', { 'aria-hidden': 'true' }, ' \u2197'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)'));
+      { className: cx('hm-discogs-link body-small', props.className), href: props.href, target: '_blank', rel: 'noopener' }),
+      props.label || 'On Discogs', h('span', { 'aria-hidden': 'true' }, ' \u2197'), h('span', { className: 'hm-visually-hidden' }, ' (opens in a new tab)'));
   }
   /* ── Admin Content (Figma BACKEND → Content, decision 0106) ──
      ContentGroupHead (`content group head`): heading label/medium + help body/small text/moderate, gap 4.
@@ -1083,37 +1083,37 @@
      SectionRow (`section row`): heading Input + text Input (text area) + Remove, gap 8. Also the steps of How trading works. */
   function ContentGroupHead(props) {
     var Tag = 'h' + (props.headingLevel || 2);
-    return h('div', Object.assign({}, omit(props, ['heading', 'help', 'headingLevel', 'className']), { className: cx('zz-content-group-head', props.className) }),
+    return h('div', Object.assign({}, omit(props, ['heading', 'help', 'headingLevel', 'className']), { className: cx('hm-content-group-head', props.className) }),
       h(Tag, { className: 'label-medium', id: props.headingId }, props.heading),
-      props.help ? h('p', { className: 'zz-content-group-head__help body-small' }, props.help) : null);
+      props.help ? h('p', { className: 'hm-content-group-head__help body-small' }, props.help) : null);
   }
   function ContentRow(props) {
     var name = typeof props.title === 'string' ? props.title : 'text';
-    return h('li', Object.assign({}, omit(props, ['title', 'where', 'edited', 'condition', 'href', 'editLabel', 'className']), { className: cx('zz-content-row', props.className) }),
-      h('div', { className: 'zz-content-row__text' },
+    return h('li', Object.assign({}, omit(props, ['title', 'where', 'edited', 'condition', 'href', 'editLabel', 'className']), { className: cx('hm-content-row', props.className) }),
+      h('div', { className: 'hm-content-row__text' },
         h('p', { className: 'body-medium' }, props.title),
-        props.where ? h('p', { className: 'zz-content-row__where body-small' }, props.where) : null,
+        props.where ? h('p', { className: 'hm-content-row__where body-small' }, props.where) : null,
         props.edited ? h('p', { className: 'body-small' }, props.edited) : null,
         props.condition ? h('p', { className: 'body-small' }, props.condition) : null),
       h(Button, { hierarchy: 'secondary', size: 'small', href: props.href, 'aria-label': (props.editLabel || 'Edit') + ': ' + name }, props.editLabel || 'Edit'));
   }
   function ContentEditorHead(props) {
-    return h('div', Object.assign({}, omit(props, ['backHref', 'backLabel', 'title', 'where', 'actions', 'className']), { className: cx('zz-content-editor-head', props.className) }),
-      h('a', { className: 'zz-content-editor-head__back body-small', href: props.backHref }, '\u2190 ', props.backLabel || 'Content'),
-      h('div', { className: 'zz-content-editor-head__title-row' },
+    return h('div', Object.assign({}, omit(props, ['backHref', 'backLabel', 'title', 'where', 'actions', 'className']), { className: cx('hm-content-editor-head', props.className) }),
+      h('a', { className: 'hm-content-editor-head__back body-small', href: props.backHref }, '\u2190 ', props.backLabel || 'Content'),
+      h('div', { className: 'hm-content-editor-head__title-row' },
         h('h1', { className: 'label-extra-large' }, props.title),
-        props.actions ? h('div', { className: 'zz-content-editor-head__actions' }, props.actions) : null),
-      props.where ? h('p', { className: 'zz-content-editor-head__where body-small' }, props.where) : null);
+        props.actions ? h('div', { className: 'hm-content-editor-head__actions' }, props.actions) : null),
+      props.where ? h('p', { className: 'hm-content-editor-head__where body-small' }, props.where) : null);
   }
   function LinkRow(props) {
     return h('div', Object.assign({}, omit(props, ['label', 'link', 'onRemove', 'removeLabel', 'layout', 'className']),
-      { className: cx('zz-link-row', props.className), 'data-layout': props.layout || 'inline' }),
-      h('div', { className: 'zz-link-row__label' }, props.label),
-      h('div', { className: 'zz-link-row__link' }, props.link),
+      { className: cx('hm-link-row', props.className), 'data-layout': props.layout || 'inline' }),
+      h('div', { className: 'hm-link-row__label' }, props.label),
+      h('div', { className: 'hm-link-row__link' }, props.link),
       props.onRemove ? h(Button, { hierarchy: 'secondary', size: 'small', type: 'button', onClick: props.onRemove }, props.removeLabel || 'Remove') : null);
   }
   function SectionRow(props) {
-    return h('div', Object.assign({}, omit(props, ['heading', 'text', 'onRemove', 'removeLabel', 'className']), { className: cx('zz-section-row', props.className) }),
+    return h('div', Object.assign({}, omit(props, ['heading', 'text', 'onRemove', 'removeLabel', 'className']), { className: cx('hm-section-row', props.className) }),
       props.heading, props.text,
       props.onRemove ? h('div', null, h(Button, { hierarchy: 'secondary', size: 'small', type: 'button', onClick: props.onRemove }, props.removeLabel || 'Remove')) : null);
   }
@@ -1123,8 +1123,8 @@
   function ProgressBar(props) {
     var v = Math.max(0, Math.min(100, Math.round(Number(props.value) || 0)));
     return h('div', Object.assign({ role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': v },
-      omit(props, ['value', 'className']), { className: cx('zz-progress-bar', props.className) }),
-      h('div', { className: 'zz-progress-bar__value', style: { width: v + '%' } }));
+      omit(props, ['value', 'className']), { className: cx('hm-progress-bar', props.className) }),
+      h('div', { className: 'hm-progress-bar__value', style: { width: v + '%' } }));
   }
   /* ── AdminBar (Figma page `admin` → `admin bar`, device=desktop | mobile, decision 0089) ──
      One responsive markup. desktop: section Buttons (secondary small, state=active = the section you are on, 0045)
@@ -1136,28 +1136,28 @@
   function AdminBar(props) {
     var items = props.items || [];
     return h('header', Object.assign({}, omit(props, ['items', 'title', 'email', 'onSignOut', 'signOutLabel',
-      'onMenuClick', 'menuLabel', 'menuProps', 'navLabel', 'className']), { className: cx('zz-admin-bar', props.className) }),
-      h('div', { className: 'zz-admin-bar__desktop' },
-        h('nav', { className: 'zz-admin-bar__nav', 'aria-label': props.navLabel || 'Admin' },
+      'onMenuClick', 'menuLabel', 'menuProps', 'navLabel', 'className']), { className: cx('hm-admin-bar', props.className) }),
+      h('div', { className: 'hm-admin-bar__desktop' },
+        h('nav', { className: 'hm-admin-bar__nav', 'aria-label': props.navLabel || 'Admin' },
           items.map(function (it) {
             return h(Button, { key: it.href, hierarchy: 'secondary', size: 'small', href: it.href, state: it.current ? 'active' : undefined }, it.label);
           })),
-        h('div', { className: 'zz-admin-bar__account' },
-          props.email ? h('span', { className: 'zz-admin-bar__email body-small' }, props.email) : null,
+        h('div', { className: 'hm-admin-bar__account' },
+          props.email ? h('span', { className: 'hm-admin-bar__email body-small' }, props.email) : null,
           props.onSignOut ? h(Button, { hierarchy: 'secondary', size: 'small', onClick: props.onSignOut }, props.signOutLabel || 'Sign out') : null)),
-      h('div', { className: 'zz-admin-bar__mobile' },
-        h(Button, Object.assign({ className: 'zz-admin-bar__menu', hierarchy: 'secondary', leadingIcon: h(HamburgerIcon),
+      h('div', { className: 'hm-admin-bar__mobile' },
+        h(Button, Object.assign({ className: 'hm-admin-bar__menu', hierarchy: 'secondary', leadingIcon: h(HamburgerIcon),
           'aria-label': props.menuLabel || 'Menu', onClick: props.onMenuClick }, props.menuProps)),
-        h('p', { className: 'zz-admin-bar__title label-medium' }, props.title || 'Store admin')));
+        h('p', { className: 'hm-admin-bar__title label-medium' }, props.title || 'Store admin')));
   }
   /* ── ListingsHead (Figma BACKEND → Listings → `listings head`, device=desktop | mobile, decision 0125) ──
      The Listings page title (h1 label-extra-large, the `admin page title`) + Create listing (primary, a link);
      Bulk create removed (decision 0172). Desktop: one row, actions on the right, centred.
      Mobile (--mobile): the actions go under the title, gap 16 (the uppercase labels do not fit beside it at 343). */
   function ListingsHead(props) {
-    return h('div', Object.assign({}, omit(props, ['title', 'createHref', 'createLabel', 'className']), { className: cx('zz-listings-head', props.className) }),
-      h('h1', { className: 'zz-listings-head__title label-extra-large' }, props.title || 'Listings'),
-      h('div', { className: 'zz-listings-head__actions' },
+    return h('div', Object.assign({}, omit(props, ['title', 'createHref', 'createLabel', 'className']), { className: cx('hm-listings-head', props.className) }),
+      h('h1', { className: 'hm-listings-head__title label-extra-large' }, props.title || 'Listings'),
+      h('div', { className: 'hm-listings-head__actions' },
         props.createHref ? h(Button, { hierarchy: 'primary', href: props.createHref }, props.createLabel || 'Create listing') : null));
   }
   /* ── Stat (Figma BACKEND → Dashboard → `stat`, decision 0169) ──────────────
@@ -1165,26 +1165,26 @@
      value (label/extra-large), optional note (body/small, moderate) and optional link (body/small, underlined).
      Figma booleans `note` / `link` = the props being set. */
   function Stat(props) {
-    return h('div', Object.assign({}, omit(props, ['label', 'value', 'note', 'href', 'linkLabel', 'className']), { className: cx('zz-stat', props.className) }),
-      h('p', { className: 'zz-stat__label body-small' }, props.label),
-      h('p', { className: 'zz-stat__value label-extra-large' }, props.value),
-      props.note ? h('p', { className: 'zz-stat__note body-small' }, props.note) : null,
-      props.href ? h('a', { className: 'zz-stat__link body-small', href: props.href }, props.linkLabel || 'View') : null);
+    return h('div', Object.assign({}, omit(props, ['label', 'value', 'note', 'href', 'linkLabel', 'className']), { className: cx('hm-stat', props.className) }),
+      h('p', { className: 'hm-stat__label body-small' }, props.label),
+      h('p', { className: 'hm-stat__value label-extra-large' }, props.value),
+      props.note ? h('p', { className: 'hm-stat__note body-small' }, props.note) : null,
+      props.href ? h('a', { className: 'hm-stat__link body-small', href: props.href }, props.linkLabel || 'View') : null);
   }
   /* ── ListingsFilter (Figma BACKEND → Listings → `listings filter`, device=desktop | mobile, decision 0128) ──
      The status tabs of the Listings page (Live · Drafts · Sold · Archived, a <Tabs>) + the search field that filters
      the rows (an <Input variant="search">). Desktop: one row, tabs left, search 280 right, centred, gap 16.
      Mobile (--mobile): the tabs (they scroll sideways) then the search full width, gap 16. */
   function ListingsFilter(props) {
-    return h('div', Object.assign({}, omit(props, ['tabs', 'search', 'className']), { className: cx('zz-listings-filter', props.className) }),
-      h('div', { className: 'zz-listings-filter__tabs' }, props.tabs),
-      props.search ? h('div', { className: 'zz-listings-filter__search' }, props.search) : null);
+    return h('div', Object.assign({}, omit(props, ['tabs', 'search', 'className']), { className: cx('hm-listings-filter', props.className) }),
+      h('div', { className: 'hm-listings-filter__tabs' }, props.tabs),
+      props.search ? h('div', { className: 'hm-listings-filter__search' }, props.search) : null);
   }
   /* ── Thumbnail (Figma `product image` (page `media`) at 40 × 40, decision 0123) ──
      The record's photo in an admin list (ListingRow, the Listings table). Decorative: the row's title names the record,
      so alt is empty and the box is hidden from screen readers. No photo → the empty square (surface/media). */
   function Thumbnail(props) {
-    return h('span', Object.assign({}, omit(props, ['src', 'srcSet', 'sizes', 'alt', 'className']), { className: cx('zz-thumbnail', props.className), 'aria-hidden': props.alt ? undefined : 'true' }),
+    return h('span', Object.assign({}, omit(props, ['src', 'srcSet', 'sizes', 'alt', 'className']), { className: cx('hm-thumbnail', props.className), 'aria-hidden': props.alt ? undefined : 'true' }),
       props.src ? h('img', { src: props.src, srcSet: props.srcSet, sizes: props.srcSet ? props.sizes || '40px' : undefined, alt: props.alt || '',
         width: 40, height: 40, loading: 'lazy', decoding: 'async' }) : null);
   }
@@ -1193,15 +1193,15 @@
      select (a Checkbox, label hidden) · text (title link body/small underlined, meta body/small text/moderate, gap 4)
      · price (body/small, right). Padding 16 top/bottom, gap 16, bottom border divider/strong. */
   function ListingRow(props) {
-    return h(props.as || 'li', Object.assign({}, omit(props, ['as', 'handle', 'select', 'image', 'title', 'href', 'meta', 'price', 'className']), { className: cx('zz-listing-row', props.className) }),
+    return h(props.as || 'li', Object.assign({}, omit(props, ['as', 'handle', 'select', 'image', 'title', 'href', 'meta', 'price', 'className']), { className: cx('hm-listing-row', props.className) }),
       props.handle || null,   // Figma boolean `handle` (decision 0129): a DragHandle, first
-      props.select ? h('div', { className: 'zz-listing-row__select' }, props.select) : null,
+      props.select ? h('div', { className: 'hm-listing-row__select' }, props.select) : null,
       // Figma boolean `show thumbnail` (decision 0123): an `image` object, even without src (= the empty square)
-      props.image ? h(Thumbnail, Object.assign({ className: 'zz-listing-row__thumb' }, props.image)) : null,
-      h('div', { className: 'zz-listing-row__text' },
-        h('a', { className: 'zz-listing-row__title body-small', href: props.href }, props.title),
-        props.meta ? h('p', { className: 'zz-listing-row__meta body-small' }, props.meta) : null),
-      props.price ? h('p', { className: 'zz-listing-row__price body-small' }, props.price) : null);
+      props.image ? h(Thumbnail, Object.assign({ className: 'hm-listing-row__thumb' }, props.image)) : null,
+      h('div', { className: 'hm-listing-row__text' },
+        h('a', { className: 'hm-listing-row__title body-small', href: props.href }, props.title),
+        props.meta ? h('p', { className: 'hm-listing-row__meta body-small' }, props.meta) : null),
+      props.price ? h('p', { className: 'hm-listing-row__price body-small' }, props.price) : null);
   }
   /* ── OfferRow (Figma BACKEND → Offers → `offer row`, device=desktop | mobile, state=new | decided; decision 0158) ──
      One offer in admin → Offers. record = a ListingRow (price = the offer) without its own padding and border ·
@@ -1210,14 +1210,14 @@
      divider/strong. desktop: in a row, record 400; mobile: stacked. Booleans: `show note` (on). */
   function OfferRow(props) {
     var r = props.record || {};
-    return h('li', Object.assign({}, omit(props, ['record', 'buyer', 'note', 'date', 'actions', 'status', 'className']), { className: cx('zz-offer-row', props.className) }),
-      h(ListingRow, { as: 'div', className: 'zz-offer-row__record', image: r.image, title: r.title, href: r.href, meta: r.meta, price: r.price }),
-      h('div', { className: 'zz-offer-row__buyer body-small' },
+    return h('li', Object.assign({}, omit(props, ['record', 'buyer', 'note', 'date', 'actions', 'status', 'className']), { className: cx('hm-offer-row', props.className) }),
+      h(ListingRow, { as: 'div', className: 'hm-offer-row__record', image: r.image, title: r.title, href: r.href, meta: r.meta, price: r.price }),
+      h('div', { className: 'hm-offer-row__buyer body-small' },
         h('p', null, props.buyer),
-        props.note ? h('p', { className: 'zz-offer-row__note' }, props.note) : null,
-        props.date ? h('p', { className: 'zz-offer-row__date' }, props.date) : null),
-      props.actions ? h('div', { className: 'zz-offer-row__actions' }, props.actions)
-        : props.status ? h('p', { className: 'zz-offer-row__status body-small' }, props.status) : null);
+        props.note ? h('p', { className: 'hm-offer-row__note' }, props.note) : null,
+        props.date ? h('p', { className: 'hm-offer-row__date' }, props.date) : null),
+      props.actions ? h('div', { className: 'hm-offer-row__actions' }, props.actions)
+        : props.status ? h('p', { className: 'hm-offer-row__status body-small' }, props.status) : null);
   }
   /* ── ActionBar (Figma page `admin` → `action bar`, decision 0089) ──
      The ActionPanel buttons of a form on mobile, in a bar that stays at the bottom of the viewport (position: sticky,
@@ -1225,32 +1225,32 @@
      padding medium-small, buttons side by side, gap 8. `children` = the Buttons (primary first); `status` = an optional
      line above them (the save result: it must be visible where the button was pressed). */
   function ActionBar(props) {
-    return h('div', Object.assign({}, omit(props, ['className', 'children', 'status']), { className: cx('zz-action-bar', props.className) }),
-      props.status ? h('div', { className: 'zz-action-bar__status' }, props.status) : null,
-      h('div', { className: 'zz-action-bar__actions' }, props.children));
+    return h('div', Object.assign({}, omit(props, ['className', 'children', 'status']), { className: cx('hm-action-bar', props.className) }),
+      props.status ? h('div', { className: 'hm-action-bar__status' }, props.status) : null,
+      h('div', { className: 'hm-action-bar__actions' }, props.children));
   }
   /* ── OrderBlock (Figma page `Orders` (BACKEND) → `order block`, decision 0100) ──
      One block of the admin order page: title (label/medium) · body (body/small, line breaks kept: an address, the
      totals) · an optional action (a Button, hug). Vertical, gap 8. Booleans: `action` (on). */
   function OrderBlock(props) {
-    return h('section', Object.assign({}, omit(props, ['title', 'children', 'action', 'className']), { className: cx('zz-order-block', props.className) }),
-      h('h2', { className: 'zz-order-block__title label-medium' }, props.title),
-      h('p', { className: 'zz-order-block__body body-small' }, props.children),
-      props.action ? h('div', { className: 'zz-order-block__action' }, props.action) : null);
+    return h('section', Object.assign({}, omit(props, ['title', 'children', 'action', 'className']), { className: cx('hm-order-block', props.className) }),
+      h('h2', { className: 'hm-order-block__title label-medium' }, props.title),
+      h('p', { className: 'hm-order-block__body body-small' }, props.children),
+      props.action ? h('div', { className: 'hm-order-block__action' }, props.action) : null);
   }
   function Step(props) {
-    return h('li', Object.assign({}, omit(props, ['number', 'title', 'className', 'children']), { className: cx('zz-step', props.className) }),
-      h('span', { className: 'zz-step__number label-large', 'aria-hidden': 'true' }, props.number),
-      h('div', { className: 'zz-step__text' },
-        h('h3', { className: 'zz-step__title label-medium' }, props.title),
-        h('p', { className: 'zz-step__body body-medium' }, props.children)));
+    return h('li', Object.assign({}, omit(props, ['number', 'title', 'className', 'children']), { className: cx('hm-step', props.className) }),
+      h('span', { className: 'hm-step__number label-large', 'aria-hidden': 'true' }, props.number),
+      h('div', { className: 'hm-step__text' },
+        h('h3', { className: 'hm-step__title label-medium' }, props.title),
+        h('p', { className: 'hm-step__body body-medium' }, props.children)));
   }
 
   /* ── ActionPanel ────────────────────────────────────────────────────────
      Figma: page `listing form` → `action panel` (2026-11-10): surface/subtle, padding 16, a column of Buttons that fill
      it, gap 8 (Create: Publish now · Save draft · Preview). Children = the Buttons. */
   function ActionPanel(props) {
-    return h('div', Object.assign({}, omit(props, ['className', 'children']), { className: cx('zz-action-panel', props.className) }), props.children);
+    return h('div', Object.assign({}, omit(props, ['className', 'children']), { className: cx('hm-action-panel', props.className) }), props.children);
   }
 
   /* ── ListingStatus ──────────────────────────────────────────────────────
@@ -1260,11 +1260,11 @@
      (body/small, text/moderate). Booleans on in Figma; here a line shows when its prop is given. A live region: a screen
      reader hears the status change after a save. */
   function ListingStatus(props) {
-    return h('div', Object.assign({ role: 'status' }, omit(props, ['status', 'details', 'unsaved', 'shopUpdate', 'className']), { className: cx('zz-listing-status', props.className) }),
-      h('p', { className: 'zz-listing-status__status label-large' }, props.status),
-      props.details ? h('p', { className: 'zz-listing-status__details body-small' }, props.details) : null,
-      props.unsaved ? h(Alert, { className: 'zz-listing-status__unsaved' }, props.unsaved === true ? 'Unsaved changes' : props.unsaved) : null,
-      props.shopUpdate ? h('p', { className: 'zz-listing-status__shop body-small' }, props.shopUpdate === true ? 'The shop updates in about 2 minutes.' : props.shopUpdate) : null);
+    return h('div', Object.assign({ role: 'status' }, omit(props, ['status', 'details', 'unsaved', 'shopUpdate', 'className']), { className: cx('hm-listing-status', props.className) }),
+      h('p', { className: 'hm-listing-status__status label-large' }, props.status),
+      props.details ? h('p', { className: 'hm-listing-status__details body-small' }, props.details) : null,
+      props.unsaved ? h(Alert, { className: 'hm-listing-status__unsaved' }, props.unsaved === true ? 'Unsaved changes' : props.unsaved) : null,
+      props.shopUpdate ? h('p', { className: 'hm-listing-status__shop body-small' }, props.shopUpdate === true ? 'The shop updates in about 2 minutes.' : props.shopUpdate) : null);
   }
 
   /* ── ListingLine ────────────────────────────────────────────────────────
@@ -1275,22 +1275,22 @@
      (decision 0022: one sample per line). The fields are slots: the page owns their state. */
   function ListingLine(props) {
     var removable = !!props.onRemove;
-    function cell(name, node) { return node ? h('div', { className: 'zz-listing-line__' + name }, node) : null; }
+    function cell(name, node) { return node ? h('div', { className: 'hm-listing-line__' + name }, node) : null; }
     var hasMarker = props.marker !== undefined && props.marker !== null && props.marker !== false;
     return h('div', Object.assign({}, omit(props, ['artist', 'title', 'spelling', 'credit', 'onRemove', 'removeLabel', 'marker', 'className', 'children']), {
-      className: cx('zz-listing-line', props.className), 'data-removable': removable ? 'true' : 'false'
+      className: cx('hm-listing-line', props.className), 'data-removable': removable ? 'true' : 'false'
     }),
       // Figma `listing line` boolean `number` (Gio 2026-11-17): a Marker with the line number before the fields, gap 0
       hasMarker ? h(Marker, null, props.marker) : null,
-      h('div', { className: 'zz-listing-line__body' },
-        h('div', { className: 'zz-listing-line__fields' },
+      h('div', { className: 'hm-listing-line__body' },
+        h('div', { className: 'hm-listing-line__fields' },
           cell('artist', props.artist),
           cell('title', props.title),
-          removable ? h('div', { className: 'zz-listing-line__remove' },
+          removable ? h('div', { className: 'hm-listing-line__remove' },
             h(IconButton, { icon: h(CloseIcon), 'aria-label': props.removeLabel || 'Remove line', onClick: props.onRemove })) : null,
           cell('spelling', props.spelling),
           cell('credit', props.credit)),
-        props.children ? h('div', { className: 'zz-listing-line__sample' }, props.children) : null));
+        props.children ? h('div', { className: 'hm-listing-line__sample' }, props.children) : null));
   }
 
   /* ── Marker (Figma page `listing form` → `marker`, Gio 2026-11-17) ──
@@ -1298,18 +1298,18 @@
      48 × 48, border 1 border-divider/strong, body/extra-large text/strong, centred. Decorative (aria-hidden): the
      fields next to it carry their own labels. Sits 0 from the fields (wanted). */
   function Marker(props) {
-    return h('span', Object.assign({ 'aria-hidden': 'true' }, omit(props, ['className', 'children']), { className: cx('zz-marker body-extra-large', props.className) }), props.children);
+    return h('span', Object.assign({ 'aria-hidden': 'true' }, omit(props, ['className', 'children']), { className: cx('hm-marker body-extra-large', props.className) }), props.children);
   }
   /* ── PriceFields (Figma page `Create` → `price fields`, device=desktop | mobile, Gio 2026-11-17) ──
      Marker ("€€") + Sale type + Price. desktop: an 8-column grid gap 16, each field 2 columns; mobile: stacked, gap 16.
      price=offers (decision 0158): a note (body-small, text/strong) instead of Price, 6 columns, centred on the select. */
   function PriceFields(props) {
-    return h('div', Object.assign({}, omit(props, ['marker', 'saleType', 'price', 'note', 'className']), { className: cx('zz-price-fields', props.className) }),
+    return h('div', Object.assign({}, omit(props, ['marker', 'saleType', 'price', 'note', 'className']), { className: cx('hm-price-fields', props.className) }),
       h(Marker, null, props.marker === undefined ? '€€' : props.marker),
-      h('div', { className: 'zz-price-fields__row' },
-        props.saleType ? h('div', { className: 'zz-price-fields__field' }, props.saleType) : null,
-        props.note ? h('p', { className: 'zz-price-fields__note body-small' }, props.note)
-          : props.price ? h('div', { className: 'zz-price-fields__field' }, props.price) : null));
+      h('div', { className: 'hm-price-fields__row' },
+        props.saleType ? h('div', { className: 'hm-price-fields__field' }, props.saleType) : null,
+        props.note ? h('p', { className: 'hm-price-fields__note body-small' }, props.note)
+          : props.price ? h('div', { className: 'hm-price-fields__field' }, props.price) : null));
   }
 
   /* ── Checkbox ───────────────────────────────────────────────────────────
@@ -1327,14 +1327,14 @@
     var checked = props.checked !== undefined ? !!props.checked : props.state === 'active';
     var indeterminate = props.indeterminate !== undefined ? !!props.indeterminate : props.state === 'indeterminate';
     React.useEffect(function () { if (ref.current) ref.current.indeterminate = indeterminate; }, [indeterminate]);
-    var attrs = Object.assign({ type: 'checkbox', className: 'zz-checkbox__control', ref: ref },
+    var attrs = Object.assign({ type: 'checkbox', className: 'hm-checkbox__control', ref: ref },
       omit(props, ['label', 'state', 'className', 'style', 'children', 'indeterminate', 'hideLabel']));
     if (props.checked === undefined && props.state) { attrs.checked = checked; attrs.readOnly = true; }
     if (indeterminate) attrs['data-indeterminate'] = '';      // server render: the box shows the minus before hydration
-    return h('label', { className: cx('zz-checkbox', props.hideLabel && 'zz-checkbox--hide-label', props.className), style: props.style },
+    return h('label', { className: cx('hm-checkbox', props.hideLabel && 'hm-checkbox--hide-label', props.className), style: props.style },
       h('input', attrs),
-      h('span', { className: 'zz-checkbox__box', 'aria-hidden': 'true' }, h(SquareIcon), h(SquareTickIcon), h(SquareMinusIcon)),
-      h('span', { className: 'zz-checkbox__label body-medium' }, props.label || props.children));
+      h('span', { className: 'hm-checkbox__box', 'aria-hidden': 'true' }, h(SquareIcon), h(SquareTickIcon), h(SquareMinusIcon)),
+      h('span', { className: 'hm-checkbox__label body-medium' }, props.label || props.children));
   }
 
   /* ── Dialog ────────────────────────────────────────────────────────────
@@ -1354,15 +1354,15 @@
       } else if (!props.open && d.open) d.close();
     }, [props.open]);
     function onCancel(e) { e.preventDefault(); if (props.onCancel) props.onCancel(); }   // Esc
-    return h('dialog', Object.assign({ ref: ref, className: cx('zz-dialog', props.className), 'aria-labelledby': titleId,
+    return h('dialog', Object.assign({ ref: ref, className: cx('hm-dialog', props.className), 'aria-labelledby': titleId,
       'aria-describedby': bodyId, onCancel: onCancel }, omit(props, ['open', 'title', 'children', 'className', 'onCancel',
       'onConfirm', 'cancelLabel', 'confirmLabel', 'busy', 'choices', 'field'])),
-      h('div', { className: 'zz-dialog__content' },
-        h('h2', { id: titleId, className: 'zz-dialog__title label-large' }, props.title),
-        h('div', { id: bodyId, className: 'zz-dialog__body body-medium' }, props.children),
-        props.field ? h('div', { className: 'zz-dialog__field' }, props.field) : null,
-        props.choices ? h('div', { className: 'zz-dialog__choices' }, props.choices) : null),
-      h('div', { className: 'zz-dialog__actions' },
+      h('div', { className: 'hm-dialog__content' },
+        h('h2', { id: titleId, className: 'hm-dialog__title label-large' }, props.title),
+        h('div', { id: bodyId, className: 'hm-dialog__body body-medium' }, props.children),
+        props.field ? h('div', { className: 'hm-dialog__field' }, props.field) : null,
+        props.choices ? h('div', { className: 'hm-dialog__choices' }, props.choices) : null),
+      h('div', { className: 'hm-dialog__actions' },
         h(Button, { hierarchy: 'secondary', type: 'button', 'data-dialog-cancel': '', onClick: props.onCancel }, props.cancelLabel || 'Cancel'),
         h(Button, { hierarchy: 'primary', type: 'button', onClick: props.busy ? undefined : props.onConfirm, 'aria-busy': props.busy ? 'true' : undefined },
           props.confirmLabel)));
@@ -1376,14 +1376,14 @@
      Static: rendered closed; the page script opens it (showModal) from any link or button that points to the
      newsletter, and returns focus to it on close. */
   function NewsletterDialog(props) {
-    var base = props.id || 'zz-newsletter-dialog';
+    var base = props.id || 'hm-newsletter-dialog';
     return h('dialog', Object.assign({}, omit(props, ['title', 'body', 'closeLabel', 'children', 'className']), {
-      id: base, className: cx('zz-dialog zz-newsletter-dialog', props.className), 'aria-labelledby': base + '-title', 'aria-describedby': base + '-body' }),
-      h('div', { className: 'zz-dialog__content' },
-        h('div', { className: 'zz-newsletter-dialog__head' },
-          h('h2', { id: base + '-title', className: 'zz-dialog__title label-large' }, props.title || 'Get new records first'),
-          h(IconButton, { className: 'zz-newsletter-dialog__close', icon: h(CloseIcon), 'aria-label': props.closeLabel || 'Close', 'data-dialog-close': '' })),
-        h('p', { id: base + '-body', className: 'zz-dialog__body body-medium' }, props.body || 'Get them in your inbox as they\u2019re listed.')),
+      id: base, className: cx('hm-dialog hm-newsletter-dialog', props.className), 'aria-labelledby': base + '-title', 'aria-describedby': base + '-body' }),
+      h('div', { className: 'hm-dialog__content' },
+        h('div', { className: 'hm-newsletter-dialog__head' },
+          h('h2', { id: base + '-title', className: 'hm-dialog__title label-large' }, props.title || 'Get new records first'),
+          h(IconButton, { className: 'hm-newsletter-dialog__close', icon: h(CloseIcon), 'aria-label': props.closeLabel || 'Close', 'data-dialog-close': '' })),
+        h('p', { id: base + '-body', className: 'hm-dialog__body body-medium' }, props.body || 'Get them in your inbox as they\u2019re listed.')),
       props.children);
   }
 
@@ -1397,19 +1397,19 @@
   function Toast(props) {
     var showAction = props.actionLabel !== undefined && props.actionLabel !== null && props.actionLabel !== false;
     var showDismiss = props.dismiss !== false;
-    return h('div', Object.assign({ className: cx('zz-toast', props.className) },
+    return h('div', Object.assign({ className: cx('hm-toast', props.className) },
       omit(props, ['message', 'actionLabel', 'onAction', 'dismiss', 'onDismiss', 'dismissLabel', 'className'])),
-      h('p', { className: 'zz-toast__message body-medium', 'data-toast-message': '' }, props.message),
-      showAction ? h(Button, { hierarchy: 'secondary', size: 'small', className: 'zz-toast__action', 'data-toast-action': '',
+      h('p', { className: 'hm-toast__message body-medium', 'data-toast-message': '' }, props.message),
+      showAction ? h(Button, { hierarchy: 'secondary', size: 'small', className: 'hm-toast__action', 'data-toast-action': '',
         onClick: props.onAction }, props.actionLabel) : null,
-      showDismiss ? h(IconButton, { className: 'zz-toast__dismiss', 'data-toast-dismiss': '', icon: h(CloseIcon),
+      showDismiss ? h(IconButton, { className: 'hm-toast__dismiss', 'data-toast-dismiss': '', icon: h(CloseIcon),
         'aria-label': props.dismissLabel || 'Dismiss', onClick: props.onDismiss }) : null);
   }
   function ToastRegion(props) {
-    return h('section', Object.assign({ className: cx('zz-toast-region', props.className), 'aria-label': props['aria-label'] || 'Notifications',
+    return h('section', Object.assign({ className: cx('hm-toast-region', props.className), 'aria-label': props['aria-label'] || 'Notifications',
       'data-toast-region': '' }, omit(props, ['className', 'aria-label'])),
-      h('p', { className: 'zz-visually-hidden', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true', 'data-toast-announcer': '' }),
-      h('div', { className: 'zz-toast-region__slot', 'data-toast-slot': '' }),
+      h('p', { className: 'hm-visually-hidden', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true', 'data-toast-announcer': '' }),
+      h('div', { className: 'hm-toast-region__slot', 'data-toast-slot': '' }),
       h('template', { 'data-toast-template': '' }, h(Toast, { message: '', actionLabel: 'Undo' })));
   }
 
@@ -1423,24 +1423,24 @@
   var RadioGroupContext = React.createContext(null);
   function Radio(props) {
     var g = React.useContext(RadioGroupContext);
-    var attrs = Object.assign({ type: 'radio', className: 'zz-radio__control' },
+    var attrs = Object.assign({ type: 'radio', className: 'hm-radio__control' },
       omit(props, ['label', 'state', 'className', 'style', 'children', 'hideLabel']));
     if (g) {
       attrs.name = g.name;
       if (g.value !== undefined) attrs.checked = g.value === props.value;
       attrs.onChange = function (e) { if (g.onValueChange) g.onValueChange(props.value); if (props.onChange) props.onChange(e); };
     } else if (props.checked === undefined && props.state) { attrs.checked = props.state === 'active'; attrs.readOnly = true; }
-    return h('label', { className: cx('zz-radio', props.hideLabel && 'zz-radio--hide-label', props.className), style: props.style },
+    return h('label', { className: cx('hm-radio', props.hideLabel && 'hm-radio--hide-label', props.className), style: props.style },
       h('input', attrs),
-      h('span', { className: 'zz-radio__box', 'aria-hidden': 'true' }, h(RadioEmptyIcon), h(RadioDotIcon)),
-      h('span', { className: 'zz-radio__label body-medium' }, props.label || props.children));
+      h('span', { className: 'hm-radio__box', 'aria-hidden': 'true' }, h(RadioEmptyIcon), h(RadioDotIcon)),
+      h('span', { className: 'hm-radio__label body-medium' }, props.label || props.children));
   }
   function RadioGroup(props) {
     var autoName = useId();
     return h(RadioGroupContext.Provider, { value: { name: props.name || autoName, value: props.value, onValueChange: props.onValueChange } },
-      h('fieldset', Object.assign({ className: cx('zz-radio-group', props.className) },
+      h('fieldset', Object.assign({ className: cx('hm-radio-group', props.className) },
         omit(props, ['name', 'value', 'onValueChange', 'legend', 'hideLegend', 'children', 'className'])),
-        props.legend ? h('legend', { className: cx('zz-radio-group__legend body-medium', props.hideLegend && 'zz-visually-hidden') }, props.legend) : null,
+        props.legend ? h('legend', { className: cx('hm-radio-group__legend body-medium', props.hideLegend && 'hm-visually-hidden') }, props.legend) : null,
         props.children));
   }
 
@@ -1452,25 +1452,25 @@
      <fieldset> with the heading as <legend>. Logic lives in the page: OR inside a block, AND between blocks. */
   function Filter(props) {
     var content = props.content || 'label';
-    var attrs = Object.assign({ type: 'checkbox', className: 'zz-filter__control' },
+    var attrs = Object.assign({ type: 'checkbox', className: 'hm-filter__control' },
       omit(props, ['label', 'count', 'content', 'state', 'className', 'style', 'children']));
     if (props.checked === undefined && props.state) { attrs.checked = props.state === 'active'; attrs.readOnly = true; }
     var label = props.label !== undefined ? props.label : props.children;
     var hasCount = props.count !== undefined && props.count !== null && props.count !== false;
-    return h('label', { className: cx('zz-filter', props.className), 'data-content': content, style: props.style },
+    return h('label', { className: cx('hm-filter', props.className), 'data-content': content, style: props.style },
       h('input', attrs),
-      h('span', { className: 'zz-filter__box', 'aria-hidden': 'true' }, h(SquareIcon), h(SquareTickIcon)),
-      content === 'tag' ? h(Tag, { size: 'medium', className: 'zz-filter__tag' }, label) : h('span', { className: 'zz-filter__label body-small body-medium--mobile' }, label),
-      hasCount ? h('span', { className: cx('zz-filter__count body-small', content === 'label' && 'body-medium--mobile') }, props.count) : null);
+      h('span', { className: 'hm-filter__box', 'aria-hidden': 'true' }, h(SquareIcon), h(SquareTickIcon)),
+      content === 'tag' ? h(Tag, { size: 'medium', className: 'hm-filter__tag' }, label) : h('span', { className: 'hm-filter__label body-small body-medium--mobile' }, label),
+      hasCount ? h('span', { className: cx('hm-filter__count body-small', content === 'label' && 'body-medium--mobile') }, props.count) : null);
   }
   function FilterBlock(props) {
-    return h('fieldset', Object.assign({ className: cx('zz-filter-block', props.className) },
+    return h('fieldset', Object.assign({ className: cx('hm-filter-block', props.className) },
       omit(props, ['label', 'hideLabel', 'children', 'className'])),
-      h('legend', { className: cx('zz-filter-block__label label-extra-small', props.hideLabel && 'zz-visually-hidden') }, props.label),
-      h('div', { className: 'zz-filter-block__options' }, props.children));
+      h('legend', { className: cx('hm-filter-block__label label-extra-small', props.hideLabel && 'hm-visually-hidden') }, props.label),
+      h('div', { className: 'hm-filter-block__options' }, props.children));
   }
   function Filters(props) {
-    return h('div', Object.assign({ className: cx('zz-filters', props.className) }, omit(props, ['children', 'className'])), props.children);
+    return h('div', Object.assign({ className: cx('hm-filters', props.className) }, omit(props, ['children', 'className'])), props.children);
   }
 
   /* ── FilterFacet / FiltersLayer / PlpHeader / SelectButton (mobile filters, Figma page `filters`, 2026-11-10) ──
@@ -1484,40 +1484,40 @@
   function ChevronLeftIcon() { return icon('icon-chevron-left-small-thin'); }
   function FilterFacet(props) {
     var hasValue = props.value !== undefined && props.value !== null && props.value !== false && props.value !== '';
-    return h('button', Object.assign({ type: 'button', className: cx('zz-filter-facet', props.className) },
+    return h('button', Object.assign({ type: 'button', className: cx('hm-filter-facet', props.className) },
       omit(props, ['label', 'value', 'className', 'children'])),
-      h('span', { className: 'zz-filter-facet__label label-medium' }, props.label),
-      hasValue ? h('span', { className: 'zz-filter-facet__value body-small' }, props.value) : null,
-      h('span', { className: 'zz-filter-facet__chevron', 'aria-hidden': 'true' }, h(ChevronRightIcon)));
+      h('span', { className: 'hm-filter-facet__label label-medium' }, props.label),
+      hasValue ? h('span', { className: 'hm-filter-facet__value body-small' }, props.value) : null,
+      h('span', { className: 'hm-filter-facet__chevron', 'aria-hidden': 'true' }, h(ChevronRightIcon)));
   }
   function FiltersLayer(props) {
     var level = props.level || 'main';
     var titleId = useId();
     var hasApplied = props.applied !== undefined && props.applied !== null && props.applied !== false;
-    return h('div', Object.assign({ className: cx('zz-filters-layer', props.className), 'data-level': level,
+    return h('div', Object.assign({ className: cx('hm-filters-layer', props.className), 'data-level': level,
       role: props.role || 'group', 'aria-labelledby': titleId },
       omit(props, ['level', 'title', 'applied', 'appliedLabel', 'children', 'className', 'onBack', 'onClose', 'backLabel',
         'closeLabel', 'onApply', 'onReset', 'applyLabel', 'applyCount', 'resetLabel', 'role'])),
-      h('div', { className: 'zz-filters-layer__bar' },
-        h(IconButton, { className: 'zz-filters-layer__back', icon: h(ChevronLeftIcon), 'aria-label': props.backLabel || 'Back to filters',
+      h('div', { className: 'hm-filters-layer__bar' },
+        h(IconButton, { className: 'hm-filters-layer__back', icon: h(ChevronLeftIcon), 'aria-label': props.backLabel || 'Back to filters',
           onClick: props.onBack, hidden: level !== 'facet', 'data-layer-back': '' }),
-        h('h2', { id: titleId, className: 'zz-filters-layer__title label-medium', 'data-layer-title': '' }, props.title),
-        h(IconButton, { className: 'zz-filters-layer__close', icon: h(CloseIcon), 'aria-label': props.closeLabel || 'Close filters',
+        h('h2', { id: titleId, className: 'hm-filters-layer__title label-medium', 'data-layer-title': '' }, props.title),
+        h(IconButton, { className: 'hm-filters-layer__close', icon: h(CloseIcon), 'aria-label': props.closeLabel || 'Close filters',
           onClick: props.onClose, 'data-layer-close': '' })),
-      h('div', { className: 'zz-filters-layer__body' },
-        hasApplied || props.appliedLabel ? h('div', { className: 'zz-filters-layer__applied', hidden: level !== 'main' || !hasApplied, 'data-layer-applied': '' },
-          h('p', { className: 'zz-filters-layer__applied-label label-extra-small' }, props.appliedLabel || 'Applied'),
-          h('div', { className: 'zz-filters-layer__chips', 'data-layer-chips': '' }, props.applied)) : null,
+      h('div', { className: 'hm-filters-layer__body' },
+        hasApplied || props.appliedLabel ? h('div', { className: 'hm-filters-layer__applied', hidden: level !== 'main' || !hasApplied, 'data-layer-applied': '' },
+          h('p', { className: 'hm-filters-layer__applied-label label-extra-small' }, props.appliedLabel || 'Applied'),
+          h('div', { className: 'hm-filters-layer__chips', 'data-layer-chips': '' }, props.applied)) : null,
         props.children),
-      h('div', { className: 'zz-filters-layer__actions' },
+      h('div', { className: 'hm-filters-layer__actions' },
         h(Button, { hierarchy: 'secondary', size: 'large', onClick: props.onReset, 'data-layer-reset': '' }, props.resetLabel || 'Reset'),
-        h(Button, { hierarchy: 'primary', size: 'large', className: 'zz-filters-layer__apply', onClick: props.onApply,
+        h(Button, { hierarchy: 'primary', size: 'large', className: 'hm-filters-layer__apply', onClick: props.onApply,
           suffix: props.applyCount, 'data-layer-apply': '' }, props.applyLabel || 'Apply')));
   }
   function PlpHeader(props) {
-    return h('div', Object.assign({ className: cx('zz-plp-header', props.className) }, omit(props, ['filters', 'sort', 'className'])),
-      h('div', { className: 'zz-plp-header__controls' }, props.filters, props.sort),
-      h('div', { className: 'zz-plp-header__rule', 'aria-hidden': 'true' }));
+    return h('div', Object.assign({ className: cx('hm-plp-header', props.className) }, omit(props, ['filters', 'sort', 'className'])),
+      h('div', { className: 'hm-plp-header__controls' }, props.filters, props.sort),
+      h('div', { className: 'hm-plp-header__rule', 'aria-hidden': 'true' }));
   }
   /* ── MenuItem / MenuGroup / MenuLayer (mobile menu, Figma page `menu`, proposal 2026-11-12) ──
      Opened by the header hamburger. `menu layer`: the frame of `filters layer` (bar: title label/medium + close;
@@ -1530,25 +1530,25 @@
     var current = !!props.current;
     var hasDetail = props.detail !== undefined && props.detail !== null && props.detail !== false && props.detail !== '';
     // no href → a <button> (an action in the menu, e.g. the admin's Sign out, decision 0089)
-    return h(props.href ? 'a' : 'button', Object.assign(props.href ? {} : { type: 'button' }, { className: cx('zz-menu-item', props.className), 'data-state': current ? 'current' : 'default',
+    return h(props.href ? 'a' : 'button', Object.assign(props.href ? {} : { type: 'button' }, { className: cx('hm-menu-item', props.className), 'data-state': current ? 'current' : 'default',
       'aria-current': current ? 'page' : undefined }, omit(props, ['label', 'detail', 'current', 'className', 'children'])),
-      h('span', { className: 'zz-menu-item__label label-medium' }, props.label),
-      hasDetail ? h('span', { className: 'zz-menu-item__detail body-small' }, props.detail) : null);
+      h('span', { className: 'hm-menu-item__label label-medium' }, props.label),
+      hasDetail ? h('span', { className: 'hm-menu-item__detail body-small' }, props.detail) : null);
   }
   function MenuGroup(props) {
-    return h('div', Object.assign({ className: cx('zz-menu-group', props.className) }, omit(props, ['children', 'className'])), props.children);
+    return h('div', Object.assign({ className: cx('hm-menu-group', props.className) }, omit(props, ['children', 'className'])), props.children);
   }
   function MenuLayer(props) {
     var titleId = useId();
-    return h('div', Object.assign({ className: cx('zz-menu-layer', props.className) },
+    return h('div', Object.assign({ className: cx('hm-menu-layer', props.className) },
       omit(props, ['title', 'legal', 'legalLabel', 'onClose', 'closeLabel', 'children', 'className'])),
-      h('div', { className: 'zz-menu-layer__bar' },
-        h('h2', { id: titleId, className: 'zz-menu-layer__title label-medium' }, props.title || 'Menu'),
-        h(IconButton, { className: 'zz-menu-layer__close', icon: h(CloseIcon), 'aria-label': props.closeLabel || 'Close menu',
+      h('div', { className: 'hm-menu-layer__bar' },
+        h('h2', { id: titleId, className: 'hm-menu-layer__title label-medium' }, props.title || 'Menu'),
+        h(IconButton, { className: 'hm-menu-layer__close', icon: h(CloseIcon), 'aria-label': props.closeLabel || 'Close menu',
           onClick: props.onClose, 'data-menu-close': '' })),
-      h('nav', { className: 'zz-menu-layer__body', 'aria-labelledby': titleId },
+      h('nav', { className: 'hm-menu-layer__body', 'aria-labelledby': titleId },
         props.children,
-        props.legal ? h('div', { className: 'zz-menu-layer__legal body-small', role: 'group', 'aria-label': props.legalLabel || 'Legal' }, props.legal) : null));
+        props.legal ? h('div', { className: 'hm-menu-layer__legal body-small', role: 'group', 'aria-label': props.legalLabel || 'Legal' }, props.legal) : null));
   }
 
   /* ── Footer / FooterLinks / FooterNewsletter (Figma page `footer`: `footer` device=desktop | mobile,
@@ -1556,21 +1556,21 @@
      One responsive markup: desktop = newsletter and the link columns side by side, mobile (--mobile) = stacked,
      links in two columns. The page gives the content: the DS has no site data. */
   function Footer(props) {
-    return h('footer', Object.assign({ className: cx('zz-footer', props.className) },
+    return h('footer', Object.assign({ className: cx('hm-footer', props.className) },
       omit(props, ['newsletter', 'children', 'navLabel', 'legal', 'legalLabel', 'copyright', 'className'])),
-      h('div', { className: 'zz-footer__main' },
-        props.newsletter ? h('div', { className: 'zz-footer__newsletter' }, props.newsletter) : null,   // Figma boolean `newsletter`
-        h('nav', { className: 'zz-footer__links', 'aria-label': props.navLabel || 'Footer' }, props.children)),
-      h('div', { className: 'zz-footer__bottom body-small' },
-        props.copyright ? h('p', { className: 'zz-footer__copyright' }, props.copyright) : null,   // Figma `copyright`
-        props.legal ? h('div', { className: 'zz-footer__legal', role: 'group', 'aria-label': props.legalLabel || 'Legal' }, props.legal) : null));
+      h('div', { className: 'hm-footer__main' },
+        props.newsletter ? h('div', { className: 'hm-footer__newsletter' }, props.newsletter) : null,   // Figma boolean `newsletter`
+        h('nav', { className: 'hm-footer__links', 'aria-label': props.navLabel || 'Footer' }, props.children)),
+      h('div', { className: 'hm-footer__bottom body-small' },
+        props.copyright ? h('p', { className: 'hm-footer__copyright' }, props.copyright) : null,   // Figma `copyright`
+        props.legal ? h('div', { className: 'hm-footer__legal', role: 'group', 'aria-label': props.legalLabel || 'Legal' }, props.legal) : null));
   }
   // Figma `footer link list`: one column of links. `links` = [{ href, label }]. `label` names the list for screen readers
   // (aria-label: the columns have no titles in Figma). No useId: the storefront renders the footer as its own React
   // root, where generated ids would repeat the page's.
   function FooterLinks(props) {
-    return h('div', Object.assign({ className: cx('zz-footer-links', props.className) }, omit(props, ['links', 'label', 'className'])),
-      h('ul', { className: 'zz-footer-links__list body-small', role: 'list', 'aria-label': props.label },
+    return h('div', Object.assign({ className: cx('hm-footer-links', props.className) }, omit(props, ['links', 'label', 'className'])),
+      h('ul', { className: 'hm-footer-links__list body-small', role: 'list', 'aria-label': props.label },
         (props.links || []).map(function (l) {
           return h('li', { key: l.href + l.label }, h('a', { href: l.href, rel: l.rel, target: l.target }, l.label));
         })));
@@ -1581,22 +1581,22 @@
   // posts there and answers in place, in the status line, and falls back to `action` if the function can't be reached.
   // The hidden `website` field is a honeypot for bots.
   function FooterNewsletter(props) {
-    var base = props.id || 'zz-footer-newsletter';   // fixed ids, not useId (see FooterLinks)
+    var base = props.id || 'hm-footer-newsletter';   // fixed ids, not useId (see FooterLinks)
     var noteId = base + '-note';
-    return h('form', Object.assign({ className: cx('zz-footer-newsletter', props.className), action: props.action, method: props.method || 'post',
+    return h('form', Object.assign({ className: cx('hm-footer-newsletter', props.className), action: props.action, method: props.method || 'post',
       'data-newsletter-endpoint': props.endpoint || undefined },
       omit(props, ['action', 'method', 'endpoint', 'label', 'hideLabel', 'placeholder', 'submitLabel', 'note', 'name', 'className'])),
-      h('div', { className: 'zz-footer-newsletter__row' },
+      h('div', { className: 'hm-footer-newsletter__row' },
         // hideLabel (Figma `input label` off, home newsletter): the label stays for assistive tech as aria-label
-        h(Input, { id: base + '-email', className: 'zz-footer-newsletter__input', label: props.hideLabel ? undefined : props.label || 'Newsletter',
+        h(Input, { id: base + '-email', className: 'hm-footer-newsletter__input', label: props.hideLabel ? undefined : props.label || 'Newsletter',
           'aria-label': props.hideLabel ? props.label || 'Email' : undefined, type: 'email', name: props.name || 'email',
           placeholder: props.placeholder || 'Your email', autoComplete: 'email', required: true, 'aria-describedby': props.note ? noteId : undefined }),
         h(Button, { hierarchy: 'secondary', type: 'submit' }, props.submitLabel || 'Subscribe')),
-      props.endpoint ? h('div', { className: 'zz-visually-hidden', 'aria-hidden': 'true' },
+      props.endpoint ? h('div', { className: 'hm-visually-hidden', 'aria-hidden': 'true' },
         h('label', null, 'Website', h('input', { type: 'text', name: 'website', tabIndex: -1, autoComplete: 'off' }))) : null,
       // the answer after submit (filled by the page script): sent → replaces the row; error → under the row
-      props.endpoint ? h('p', { className: 'zz-footer-newsletter__status body-small', role: 'status', tabIndex: -1, hidden: true, 'data-newsletter-status': '' }) : null,
-      props.note ? h('p', { id: noteId, className: 'zz-footer-newsletter__note body-small' }, props.note) : null);
+      props.endpoint ? h('p', { className: 'hm-footer-newsletter__status body-small', role: 'status', tabIndex: -1, hidden: true, 'data-newsletter-status': '' }) : null,
+      props.note ? h('p', { id: noteId, className: 'hm-footer-newsletter__note body-small' }, props.note) : null);
   }
 
   // a native <select> drawn as a Button (Figma: button + trailing icon chevron-down): the select is invisible over
@@ -1606,12 +1606,12 @@
     var value = props.value !== undefined ? props.value : props.defaultValue;
     var current = options.filter(function (o) { return o.value === value; })[0] || options[0] || { label: '' };
     var size = props.size || 'small';
-    return h('span', { className: cx('zz-button zz-select-button', props.className), 'data-hierarchy': props.hierarchy || 'secondary', 'data-size': size, 'data-layout': props.layout || 'hug' },
-      h('span', { className: cx('zz-button__label', (size === 'small' || size === 'extra-small') ? 'label-extra-small' : 'label-medium') },
-        props.prefix ? h('span', { className: 'zz-button__prefix' }, props.prefix) : null,   // Figma `prefix` ("Sort:", desktop)
+    return h('span', { className: cx('hm-button hm-select-button', props.className), 'data-hierarchy': props.hierarchy || 'secondary', 'data-size': size, 'data-layout': props.layout || 'hug' },
+      h('span', { className: cx('hm-button__label', (size === 'small' || size === 'extra-small') ? 'label-extra-small' : 'label-medium') },
+        props.prefix ? h('span', { className: 'hm-button__prefix' }, props.prefix) : null,   // Figma `prefix` ("Sort:", desktop)
         h('span', { 'data-select-label': '' }, current.label)),
-      h('span', { className: 'zz-button__icon', 'aria-hidden': 'true' }, h(ChevronDownLargeIcon)),
-      h('select', Object.assign({ className: 'zz-select-button__control' },
+      h('span', { className: 'hm-button__icon', 'aria-hidden': 'true' }, h(ChevronDownLargeIcon)),
+      h('select', Object.assign({ className: 'hm-select-button__control' },
         omit(props, ['options', 'className', 'hierarchy', 'size', 'layout', 'prefix'])),
         options.map(function (o) { return h('option', { key: o.value, value: o.value }, o.label); })));
   }
@@ -1632,13 +1632,13 @@
   function EntityChip(props) {
     var label = props.label !== undefined ? props.label : props.children;
     var size = props.size || 'medium';   // Figma `size` (2026-11-10): medium 24px | large 44px (mobile, body/medium, × 44 × 44)
-    return h('span', Object.assign({ className: cx('zz-entity-chip', props.className), 'data-state': props.state, 'data-size': size },
+    return h('span', Object.assign({ className: cx('hm-entity-chip', props.className), 'data-state': props.state, 'data-size': size },
       omit(props, ['label', 'children', 'className', 'onRemove', 'removeLabel', 'removeHref', 'state', 'size'])),
-      h('span', { className: cx('zz-entity-chip__label', size === 'large' ? 'body-medium' : 'body-small') }, label),
+      h('span', { className: cx('hm-entity-chip__label', size === 'large' ? 'body-medium' : 'body-small') }, label),
       // removeHref: removing goes to another page (the collection chip of a collection PLP, decision 0178): a link
       props.removeHref
-        ? h('a', { className: 'zz-entity-chip__remove', href: props.removeHref, 'aria-label': props.removeLabel || ('Remove ' + label) }, h(CloseIcon))
-        : h('button', { type: 'button', className: 'zz-entity-chip__remove', 'aria-label': props.removeLabel || ('Remove ' + label),
+        ? h('a', { className: 'hm-entity-chip__remove', href: props.removeHref, 'aria-label': props.removeLabel || ('Remove ' + label) }, h(CloseIcon))
+        : h('button', { type: 'button', className: 'hm-entity-chip__remove', 'aria-label': props.removeLabel || ('Remove ' + label),
           onClick: props.onRemove, tabIndex: props.onRemove ? undefined : -1 }, h(CloseIcon)));
   }
   function entityMatches(options, text, taken, limit) {
@@ -1708,22 +1708,22 @@
     var optionId = function (i) { return id + '-option-' + i; };
 
     return h('div', {
-      className: cx('zz-input zz-entity-field', props.className), style: props.style,
+      className: cx('hm-input hm-entity-field', props.className), style: props.style,
       'data-invalid': hasError ? 'true' : undefined
     },
-      (props.label || props.optional) ? h('label', { className: 'zz-input__top', htmlFor: id },
-        h('span', { className: 'zz-input__label body-small' }, props.label),
+      (props.label || props.optional) ? h('label', { className: 'hm-input__top', htmlFor: id },
+        h('span', { className: 'hm-input__label body-small' }, props.label),
         props.optional ? ' ' : null,
-        props.optional ? h('span', { className: 'zz-input__optional body-small' }, props.optionalLabel || 'Optional') : null) : null,
-      h('div', { className: 'zz-input__field zz-entity-field__field', onMouseDown: function (e) {
+        props.optional ? h('span', { className: 'hm-input__optional body-small' }, props.optionalLabel || 'Optional') : null) : null,
+      h('div', { className: 'hm-input__field hm-entity-field__field', onMouseDown: function (e) {
           if (e.target === e.currentTarget && inputRef.current) { e.preventDefault(); inputRef.current.focus(); }
         } },
-        value.length ? h('ul', { className: 'zz-entity-field__chips', 'aria-label': (props.label || '') + ': chosen' },
+        value.length ? h('ul', { className: 'hm-entity-field__chips', 'aria-label': (props.label || '') + ': chosen' },
           value.map(function (v, i) {
             return h('li', { key: (v.id || 'new') + ':' + v.name }, h(EntityChip, { label: v.name, onRemove: function () { remove(i); } }));
           })) : null,
         full ? null : h('input', {
-          ref: inputRef, id: id, type: 'text', className: 'zz-input__control zz-entity-field__control body-medium',
+          ref: inputRef, id: id, type: 'text', className: 'hm-input__control hm-entity-field__control body-medium',
           role: 'combobox', 'aria-autocomplete': 'list', 'aria-expanded': showMenu ? 'true' : 'false', 'aria-controls': listId,
           'aria-activedescendant': showMenu ? optionId(cur) : undefined,
           'aria-invalid': hasError ? 'true' : undefined, 'aria-describedby': support ? supportId : undefined,
@@ -1731,20 +1731,20 @@
           onChange: function (e) { setText(e.target.value); setOpen(true); setActive(0); },
           onFocus: function () { if (text) setOpen(true); }, onBlur: onBlur, onKeyDown: onKeyDown
         }),
-        h('ul', { id: listId, role: 'listbox', className: 'zz-entity-field__menu', hidden: !showMenu, 'aria-label': props.label },
+        h('ul', { id: listId, role: 'listbox', className: 'hm-entity-field__menu', hidden: !showMenu, 'aria-label': props.label },
           showMenu ? items.map(function (it, i) {
             return h('li', {
               key: it.kind + (it.entity ? it.entity.id + (it.alias || '') : it.name), id: optionId(i), role: 'option',
-              className: 'zz-entity-option body-medium', 'data-kind': it.kind, 'aria-selected': i === cur ? 'true' : 'false',
+              className: 'hm-entity-option body-medium', 'data-kind': it.kind, 'aria-selected': i === cur ? 'true' : 'false',
               onMouseDown: function (e) { e.preventDefault(); }, onMouseEnter: function () { setActive(i); },
               onClick: function () { choose(it); }
             },
-              it.kind === 'create' ? h('span', { className: 'zz-entity-option__icon', 'aria-hidden': 'true' }, h(PlusSmallThinIcon)) : null,
-              h('span', { className: 'zz-entity-option__label' },
+              it.kind === 'create' ? h('span', { className: 'hm-entity-option__icon', 'aria-hidden': 'true' }, h(PlusSmallThinIcon)) : null,
+              h('span', { className: 'hm-entity-option__label' },
                 it.kind === 'create' ? (props.createLabel || 'Create') + ' “' + it.name + '”' : it.kind === 'alias' ? it.alias : it.entity.name),
-              it.kind === 'alias' ? h('span', { className: 'zz-entity-option__official body-small' }, '→ ' + it.entity.name) : null);
+              it.kind === 'alias' ? h('span', { className: 'hm-entity-option__official body-small' }, '→ ' + it.entity.name) : null);
           }) : null)),
-      support ? h('p', { id: supportId, className: 'zz-input__support body-small' }, support) : null);
+      support ? h('p', { id: supportId, className: 'hm-input__support body-small' }, support) : null);
   }
 
   /* ── LinkedInput (Figma BACKEND → Create → `custom title`, decision 0147) ────────────────────────────
@@ -1817,21 +1817,21 @@
       else if (e.key === 'Escape') { e.preventDefault(); props.onClose(); }
     }
     var listId = props.id + '-menu';
-    return h('div', { className: 'zz-linked-input__menu', role: 'dialog', 'aria-label': props.label, style: { left: props.x + 'px' },
+    return h('div', { className: 'hm-linked-input__menu', role: 'dialog', 'aria-label': props.label, style: { left: props.x + 'px' },
       onMouseDown: function (e) { e.stopPropagation(); } },
-      h('input', { ref: ref, type: 'text', className: 'zz-linked-input__search body-medium', placeholder: props.placeholder,
+      h('input', { ref: ref, type: 'text', className: 'hm-linked-input__search body-medium', placeholder: props.placeholder,
         'aria-label': props.placeholder, role: 'combobox', 'aria-expanded': 'true', 'aria-controls': listId, autoComplete: 'off',
         'aria-activedescendant': list.length ? listId + '-' + cur : undefined,
         value: q, onChange: function (e) { setQ(e.target.value); setActive(0); }, onKeyDown: onKeyDown }),
-      list.length ? h('ul', { id: listId, role: 'listbox', className: 'zz-linked-input__options', 'aria-label': props.label },
+      list.length ? h('ul', { id: listId, role: 'listbox', className: 'hm-linked-input__options', 'aria-label': props.label },
         list.map(function (it, i) {
           return h('li', { key: (it.entity.id || it.entity.name), id: listId + '-' + i, role: 'option',
-            className: 'zz-entity-option body-medium', 'aria-selected': i === cur ? 'true' : 'false',
+            className: 'hm-entity-option body-medium', 'aria-selected': i === cur ? 'true' : 'false',
             'data-current': props.current && (props.current.id ? props.current.id === it.entity.id : props.current.name === it.entity.name) ? 'true' : undefined,
             onMouseDown: function (e) { e.preventDefault(); }, onMouseEnter: function () { setActive(i); },
             onClick: function () { props.onPick(it.entity); } },
-            h('span', { className: 'zz-entity-option__label' }, it.entity.name),
-            it.note ? h('span', { className: 'zz-entity-option__official body-small' }, it.note) : null);
+            h('span', { className: 'hm-entity-option__label' }, it.entity.name),
+            it.note ? h('span', { className: 'hm-entity-option__official body-small' }, it.note) : null);
         })) : null);
   }
   function LinkedInput(props) {
@@ -1842,7 +1842,7 @@
     var ms = React.useState(null), menu = ms[0], setMenu = ms[1];
     function measure() {
       var w = wrap.current; if (!w) return;
-      var c = w.querySelector('.zz-input__control'); if (!c) return; ctl.current = c;
+      var c = w.querySelector('.hm-input__control'); if (!c) return; ctl.current = c;
       var a = w.getBoundingClientRect(), b = c.getBoundingClientRect();
       var nb = { left: b.left - a.left, top: b.top - a.top, width: b.width, scroll: c.scrollLeft };
       setBox(function (o) { return o.left === nb.left && o.top === nb.top && o.width === nb.width && o.scroll === nb.scroll ? o : nb; });
@@ -1855,7 +1855,7 @@
       return function () { window.removeEventListener('resize', measure); document.removeEventListener('mousedown', off); document.removeEventListener('mouseup', up); };
     }, []);
     function xAt(i) {
-      var bd = wrap.current.querySelector('.zz-linked-input__text'), w = document.createTreeWalker(bd, NodeFilter.SHOW_TEXT), n = 0, tn;
+      var bd = wrap.current.querySelector('.hm-linked-input__text'), w = document.createTreeWalker(bd, NodeFilter.SHOW_TEXT), n = 0, tn;
       while ((tn = w.nextNode())) {
         if (n + tn.length >= i) { var r = document.createRange(); r.setStart(tn, i - n); r.setEnd(tn, i - n); return r.getBoundingClientRect().left - wrap.current.getBoundingClientRect().left; }
         n += tn.length;
@@ -1892,12 +1892,12 @@
     var pieces = [], pos = 0;
     links.forEach(function (l, i) {
       if (l.start > pos) pieces.push(value.slice(pos, l.start));
-      pieces.push(h('span', { key: i, className: 'zz-linked-input__link' }, value.slice(l.start, l.end)));
+      pieces.push(h('span', { key: i, className: 'hm-linked-input__link' }, value.slice(l.start, l.end)));
       pos = l.end;
     });
     if (pos < value.length) pieces.push(value.slice(pos));
     var inputProps = omit(props, ['links', 'options', 'suggested', 'names', 'onChange', 'className', 'style', 'linkLabel', 'menuPlaceholder']);
-    return h('div', { ref: wrap, className: cx('zz-linked-input', props.className), style: props.style,
+    return h('div', { ref: wrap, className: cx('hm-linked-input', props.className), style: props.style,
         onMouseDown: function (e) { e.stopPropagation(); if (ctl.current && e.target === ctl.current) dragging.current = true; },
         onKeyDown: function (e) {
           if (e.target !== ctl.current || ['Shift', 'Control', 'Meta', 'Alt'].indexOf(e.key) >= 0) return;
@@ -1908,9 +1908,9 @@
       h(Input, Object.assign({}, inputProps, { id: id, value: value, onScroll: measure,
         onChange: function (e) { var v = e.target.value; setMenu(null); if (props.onChange) props.onChange(v, linksShift(links, value, v)); },
         onSelect: function () { if ('ontouchstart' in window) onSelect(true); } })),
-      h('div', { className: 'zz-linked-input__backdrop', 'aria-hidden': 'true', style: { left: box.left + 'px', top: box.top + 'px', width: box.width + 'px' } },
-        h('div', { className: 'zz-linked-input__text body-medium', style: { transform: 'translateX(' + (-box.scroll) + 'px)' } }, pieces)),
-      menu && !menu.open ? h('div', { className: 'zz-linked-input__bar', role: 'toolbar', 'aria-label': props.linkLabel || 'Link artist', style: { left: menu.x + 'px' },
+      h('div', { className: 'hm-linked-input__backdrop', 'aria-hidden': 'true', style: { left: box.left + 'px', top: box.top + 'px', width: box.width + 'px' } },
+        h('div', { className: 'hm-linked-input__text body-medium', style: { transform: 'translateX(' + (-box.scroll) + 'px)' } }, pieces)),
+      menu && !menu.open ? h('div', { className: 'hm-linked-input__bar', role: 'toolbar', 'aria-label': props.linkLabel || 'Link artist', style: { left: menu.x + 'px' },
           onMouseDown: function (e) { e.preventDefault(); e.stopPropagation(); } },   // keeps the focus and the selection in the field
         h(Button, { hierarchy: 'secondary', size: 'extra-small', title: '⌘K', onClick: function () { setMenu(Object.assign({}, menu, { open: true })); } },
           current ? 'Change link' : (props.linkLabel || 'Link artist')),
@@ -1927,7 +1927,7 @@
      (A section nav, `form section nav`, was built in 0113 and removed in 0117.) */
   function FormSectionHead(props) {
     var Tag = 'h' + (props.headingLevel || 2);
-    return h(Tag, Object.assign({}, omit(props, ['headingLevel', 'className', 'children']), { className: cx('zz-form-section-head label-medium', props.className) }), props.children);
+    return h(Tag, Object.assign({}, omit(props, ['headingLevel', 'className', 'children']), { className: cx('hm-form-section-head label-medium', props.className) }), props.children);
   }
 
   /* ── Home (Figma page `Home`, Home v2 2026-11-18, decision 0120) ─────────
@@ -1956,85 +1956,85 @@
   function SectionHead(props) {
     var HeadingTag = 'h' + (props.headingLevel || 2);
     var hasMeta = props.meta !== undefined && props.meta !== null && props.meta !== false;
-    return h('div', Object.assign({}, omit(props, ['title', 'meta', 'headingLevel', 'divider', 'actions', 'titleId', 'className']), { className: cx('zz-section-head', props.className) }),
+    return h('div', Object.assign({}, omit(props, ['title', 'meta', 'headingLevel', 'divider', 'actions', 'titleId', 'className']), { className: cx('hm-section-head', props.className) }),
       props.divider === false ? null : h(Divider),
-      h('div', { className: 'zz-section-head__row' },
-        h(HeadingTag, { className: 'zz-section-head__title body-medium', id: props.titleId }, props.title,
-          hasMeta ? h('span', { className: 'zz-section-head__meta' }, ' ', props.meta) : null),
-        props.actions ? h('div', { className: 'zz-section-head__actions' }, props.actions) : null));
+      h('div', { className: 'hm-section-head__row' },
+        h(HeadingTag, { className: 'hm-section-head__title body-medium', id: props.titleId }, props.title,
+          hasMeta ? h('span', { className: 'hm-section-head__meta' }, ' ', props.meta) : null),
+        props.actions ? h('div', { className: 'hm-section-head__actions' }, props.actions) : null));
   }
   function GenreLinks(props) {
     var genres = props.genres || [];
     return h('nav', Object.assign({}, omit(props, ['genres', 'layout', 'allHref', 'allLabel', 'className', 'aria-label']),
-      { className: cx('zz-genre-links', props.className), 'data-layout': props.layout || 'responsive', 'aria-label': props['aria-label'] || 'Genres' }),
-      h('ul', { className: 'zz-genre-links__list' }, genres.map(function (g) {
+      { className: cx('hm-genre-links', props.className), 'data-layout': props.layout || 'responsive', 'aria-label': props['aria-label'] || 'Genres' }),
+      h('ul', { className: 'hm-genre-links__list' }, genres.map(function (g) {
         return h('li', { key: g.href }, h(Tag, { size: 'large', href: g.href }, g.label));
       })),
-      props.allHref ? h(Button, { hierarchy: 'secondary', size: 'extra-small', href: props.allHref, className: 'zz-genre-links__all' }, props.allLabel || 'All') : null);
+      props.allHref ? h(Button, { hierarchy: 'secondary', size: 'extra-small', href: props.allHref, className: 'hm-genre-links__all' }, props.allLabel || 'All') : null);
   }
   function HomeIntro(props) {
     var device = props.device || 'responsive';
     var type = device === 'desktop' ? 'body-extra-large' : device === 'mobile' ? 'body-large' : 'body-extra-large body-large--mobile';
-    return h('p', Object.assign({}, omit(props, ['device', 'className', 'children']), { className: cx('zz-home-intro', type, props.className), 'data-device': device }), props.children);
+    return h('p', Object.assign({}, omit(props, ['device', 'className', 'children']), { className: cx('hm-home-intro', type, props.className), 'data-device': device }), props.children);
   }
   function HomeNewsletter(props) {
-    var titleId = (props.id || 'zz-home-newsletter') + '-title';
+    var titleId = (props.id || 'hm-home-newsletter') + '-title';
     return h('section', Object.assign({}, omit(props, ['title', 'headingLevel', 'device', 'children', 'className']),
-      { className: cx('zz-home-newsletter', props.className), 'data-device': props.device || 'responsive', 'aria-labelledby': titleId }),
-      h('div', { className: 'zz-home-newsletter__box' },
+      { className: cx('hm-home-newsletter', props.className), 'data-device': props.device || 'responsive', 'aria-labelledby': titleId }),
+      h('div', { className: 'hm-home-newsletter__box' },
         h(SectionHead, { title: props.title || 'Get new records first', headingLevel: props.headingLevel, divider: false, titleId: titleId }),
         props.children));
   }
   function CollectionCard(props) {
     return h('a', Object.assign({}, omit(props, ['label', 'state', 'className', 'children']),
-      { className: cx('zz-collection-card label-large', props.className), 'data-state': props.state }), props.label || props.children);
+      { className: cx('hm-collection-card label-large', props.className), 'data-state': props.state }), props.label || props.children);
   }
   function HomeCollections(props) {
     var items = props.collections || [];
     return h('nav', Object.assign({}, omit(props, ['collections', 'device', 'className', 'aria-label']),
-      { className: cx('zz-home-collections', props.className), 'data-device': props.device || 'responsive', 'aria-label': props['aria-label'] || 'Collections' }),
-      h('ul', { className: 'zz-home-collections__list' }, items.map(function (c) {
+      { className: cx('hm-home-collections', props.className), 'data-device': props.device || 'responsive', 'aria-label': props['aria-label'] || 'Collections' }),
+      h('ul', { className: 'hm-home-collections__list' }, items.map(function (c) {
         return h('li', { key: c.href }, h(CollectionCard, { href: c.href, label: c.label }));
       })));
   }
   function GalleryCounter(props) {
-    return h('span', Object.assign({}, omit(props, ['className', 'children']), { className: cx('zz-gallery-counter body-extra-small', props.className) }), props.children);
+    return h('span', Object.assign({}, omit(props, ['className', 'children']), { className: cx('hm-gallery-counter body-extra-small', props.className) }), props.children);
   }
   function ProductTile(props) {
     var device = props.device || 'responsive';
     var titleId = useId();
     var images = (props.images || []).filter(function (img) { return img && img.src; });
     var many = images.length > 1 && device !== 'desktop';
-    var media = h('div', { className: 'zz-product-tile__media' },
-      h(props.href ? 'a' : 'div', Object.assign({ className: 'zz-product-tile__gallery' },
+    var media = h('div', { className: 'hm-product-tile__media' },
+      h(props.href ? 'a' : 'div', Object.assign({ className: 'hm-product-tile__gallery' },
         props.href ? { href: props.href, 'aria-labelledby': titleId } : {},
         many ? { 'data-tile-gallery': '' } : {}),
         (images.length ? images : [null]).map(function (img, i) {
           if (device === 'desktop' && i > 0) return null;
-          return h('span', { key: i, className: 'zz-product-tile__photo' },
+          return h('span', { key: i, className: 'hm-product-tile__photo' },
             img ? h('img', { src: img.src, srcSet: img.srcSet, sizes: img.srcSet ? img.sizes : undefined, alt: i === 0 ? img.alt || '' : '', loading: 'lazy' }) : null);
         })),
       // Figma boolean `counter`: only with more than one photo; scripts update the first number while swiping
-      many && props.counter !== false ? h(GalleryCounter, { className: 'zz-product-tile__counter', 'aria-hidden': 'true', 'data-tile-counter': '' }, '1/' + images.length) : null);
+      many && props.counter !== false ? h(GalleryCounter, { className: 'hm-product-tile__counter', 'aria-hidden': 'true', 'data-tile-counter': '' }, '1/' + images.length) : null);
     return h('article', Object.assign({
-      className: cx('zz-product-tile', props.className),
+      className: cx('hm-product-tile', props.className),
       'data-device': device,
       'data-state': props.state && props.state !== 'default' ? props.state : undefined,   // doc-only pin (0009)
       'aria-labelledby': titleId
     }, omit(props, ['device', 'state', 'images', 'href', 'title', 'releaseInfo', 'price', 'samples', 'action', 'counter', 'headingLevel', 'className', 'children'])),
       media,
-      h('div', { className: 'zz-product-tile__title-block' },
-        h('h' + (props.headingLevel || 3), { id: titleId, className: 'zz-product-tile__name body-medium' }, props.title),
-        props.releaseInfo ? h('p', { className: 'zz-product-tile__release body-medium' }, props.releaseInfo) : null),
-      (props.price != null || props.samples) ? h('div', { className: 'zz-product-tile__price-row' },
-        props.price != null ? h('p', { className: 'zz-product-tile__price body-medium' }, props.price) : null,
-        props.samples ? h('div', { className: 'zz-product-tile__samples' }, props.samples) : null) : null,
-      props.action ? h('div', { className: 'zz-product-tile__action' }, props.action) : null);
+      h('div', { className: 'hm-product-tile__title-block' },
+        h('h' + (props.headingLevel || 3), { id: titleId, className: 'hm-product-tile__name body-medium' }, props.title),
+        props.releaseInfo ? h('p', { className: 'hm-product-tile__release body-medium' }, props.releaseInfo) : null),
+      (props.price != null || props.samples) ? h('div', { className: 'hm-product-tile__price-row' },
+        props.price != null ? h('p', { className: 'hm-product-tile__price body-medium' }, props.price) : null,
+        props.samples ? h('div', { className: 'hm-product-tile__samples' }, props.samples) : null) : null,
+      props.action ? h('div', { className: 'hm-product-tile__action' }, props.action) : null);
   }
   function ViewToggle(props) {
     var view = props.view || 'grid';
     return h(Button, Object.assign({ hierarchy: 'secondary' }, omit(props, ['view', 'className']), {
-      className: cx('zz-view-toggle', props.className),
+      className: cx('hm-view-toggle', props.className),
       'data-view': view,
       leadingIcon: view === 'grid' ? icon('icon-bars-three') : undefined   // view=list: grid icon still a placeholder in Figma (open.md)
     }), view === 'grid' ? 'List view' : 'Grid view');

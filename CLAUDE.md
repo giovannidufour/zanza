@@ -1,13 +1,13 @@
-# rythem-works (ex Zanza) — Project Summary
+# HIGHMUZIK (ex rythem-works, ex Zanza) — Project Summary
 
-> Leggi questo file all'inizio di ogni sessione su rythem-works (ex Zanza: repo, cartelle e identificatori interni si chiamano ancora `zanza`).
+> Leggi questo file all'inizio di ogni sessione su HIGHMUZIK (ex rythem-works, ex Zanza). Rinomina in corso dal 2026-11-25 (decisione 0182): checklist in `_context/provisional-names.md` → "Rinomina → HIGHMUZIK". Il repo GitHub e la cartella sul Mac si chiamano ancora `zanza` finché Gio non li rinomina.
 > Poi leggi i file in `_context/` prima di rispondere. Non proporre feature senza aver letto `open-questions.md`.
 
 ---
 
 ## What It Is
 
-**rythem-works** (nome scelto da Gio il 2026-11-15, ex "Zanza", poi per un giorno "rythem-trax"; si scrive così, *rythem* e non *rhythm*, minuscolo col trattino; dominio e marchio da verificare, Q7) — e-commerce headless di dischi in vinile con due sezioni:
+**HIGHMUZIK** (nome scelto da Gio il 2026-11-25, **sempre in maiuscolo**, anche in Figma; dominio highmuzik.com. Prima: "Zanza" provvisorio, "rythem-trax" per un giorno, rythem-works dal 15 al 25/11; decisione 0182) — e-commerce headless di dischi in vinile con due sezioni:
 
 - **For Sale** — e-commerce classico: PLP, PDP, carrello, checkout, account, preferiti
 - **For Trade** — PDP di dischi NON in vendita, con CTA **Trade** che apre un form di proposta di scambio

@@ -41,8 +41,8 @@ function contentDefaults() {
   const site = JSON.parse(fs.readFileSync(path.join(ROOT, 'apps/storefront/site.json'), 'utf8'));
   const legal = {};
   for (const b of Content.BLOCKS) if (b.page) legal[b.page] = fs.readFileSync(path.join(ROOT, 'apps/storefront/content/legal', `${b.page}.md`), 'utf8');
-  return `\nwindow.ZanzaContent.DEFAULTS = ${JSON.stringify(Content.defaults({ owner: site.owner, legal }))};\n` +
-    `window.ZanzaContent.PAGE_TITLES = ${JSON.stringify(Content.pageTitles(legal))};\n`;
+  return `\nwindow.HighmuzikContent.DEFAULTS = ${JSON.stringify(Content.defaults({ owner: site.owner, legal }))};\n` +
+    `window.HighmuzikContent.PAGE_TITLES = ${JSON.stringify(Content.pageTitles(legal))};\n`;
 }
 const hash = (s) => require('crypto').createHash('md5').update(s).digest('hex').slice(0, 8);
 fs.rmSync(OUT, { recursive: true, force: true });

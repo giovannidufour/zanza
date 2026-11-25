@@ -30,7 +30,7 @@ function ConfirmStates({ site, signup, homeHref }) {
 // the shop's page: header, then the legal pages' layout (legal.css), like /contact/; the footer has the signup form
 function ShopConfirm({ site, url }) {
   const { SiteHeader } = require('./shell.js');
-  return h('div', { className: 'zz-page' },
+  return h('div', { className: 'hm-page' },
     h(SiteHeader, { site, url }),
     h('main', { className: 'legal-content' },
       h('h1', { className: 'legal-content__title body-large', 'data-newsletter-title': '' }, title),

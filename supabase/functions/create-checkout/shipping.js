@@ -1,7 +1,7 @@
 /* packages/shipping/shipping.js — the shipping estimate (decision 0057, Figma: page Shipping + Bag → bag summary).
    ONE calculation for the three places that need it: the bag (browser, an estimate), the admin page Shipping
    ("Check an order") and create-checkout (server, the price Stripe charges). No dependencies, no DOM.
-   Works as a CommonJS module (build, tests) and as a classic script (window.ZanzaShipping) — also in Deno via globalThis.
+   Works as a CommonJS module (build, tests) and as a classic script (window.HighmuzikShipping) — also in Deno via globalThis.
 
    Config (public.shipping_settings.config, edited on the admin page Shipping):
      {
@@ -24,7 +24,7 @@
    A record whose format has no weight counts as the heaviest format (never under-charge). */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.ZanzaShipping = factory();
+  else root.HighmuzikShipping = factory();
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 

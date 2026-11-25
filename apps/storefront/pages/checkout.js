@@ -13,7 +13,7 @@ const { SiteHeader, textOf, Paragraphs } = require('./shell.js');
 const MESSAGE = 'Your order is confirmed. The confirmation is on its way to your email.';
 
 function Thanks({ site, url }) {
-  return h('div', { className: 'zz-page' },
+  return h('div', { className: 'hm-page' },
     h(SiteHeader, { site, url }),
     h('main', { className: 'bag-content', 'data-checkout-thanks': '' },
       h('h1', { className: 'bag-content__title body-large' }, 'Thank you'),

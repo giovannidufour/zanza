@@ -16,16 +16,16 @@
    --pdp-gallery-top = the gallery's top in the window, tracked by scripts/site.js on scroll and resize.
    Row 1 is at least as tall as image 1 (Figma: row 1 FIXED 330.67 at 1024); gallery gap = row gap, so row 2
    (you may also like) starts exactly where image 2 starts. Image side = 4 of 12 columns: (100cqw - 11 gaps) / 3 + 3 gaps. */
-.zz-page:has(> .pdp-content) { container-type: inline-size; }   /* 100cqw = page content width = .pdp-content width */
+.hm-page:has(> .pdp-content) { container-type: inline-size; }   /* 100cqw = page content width = .pdp-content width */
 .pdp-content {
   grid-template-rows: minmax(calc((100cqw - 11 * var(--gutter-small)) / 3 + 3 * var(--gutter-small)), auto) auto;
 }
 .pdp-content__gallery {
   grid-column: 1 / span 4;
   grid-row: 1 / span 2;
-  --zz-gallery-max-height: calc(100dvh - var(--pdp-gallery-top, 0px) - var(--page-margin-desktop));   /* Gio: page margin below */
+  --hm-gallery-max-height: calc(100dvh - var(--pdp-gallery-top, 0px) - var(--page-margin-desktop));   /* Gio: page margin below */
 }
-body[data-player-open] .pdp-content__gallery { --zz-gallery-max-height: calc(100dvh - var(--pdp-gallery-top, 0px) - var(--site-player-height, 0px) - var(--page-margin-desktop)); }
+body[data-player-open] .pdp-content__gallery { --hm-gallery-max-height: calc(100dvh - var(--pdp-gallery-top, 0px) - var(--site-player-height, 0px) - var(--page-margin-desktop)); }
 .pdp-content__related { grid-column: 5 / span 8; grid-row: 2; }   /* Figma: you may also like, row 2, cols 5–12 */
 .pdp-content__info    { grid-column: 5 / span 4; grid-row: 1; }
 .pdp-content__actions { grid-column: 9 / span 4; grid-row: 1; }
@@ -62,10 +62,10 @@ body[data-player-open] .pdp-content[data-record-stack] > .pdp-content__actions {
      of the list the grid pushes the gallery up, and a height that kept growing as it rose would uncover the last
      photo (Gio 2026-11-18: the gallery scrolls only inside, never with the page) */
   --pdp-gallery-anchor: calc(var(--site-header-visible, 0px) + var(--small));
-  --zz-gallery-max-height: calc(100dvh - max(var(--pdp-gallery-top, 0px), var(--pdp-gallery-anchor)) - var(--page-margin-desktop));
+  --hm-gallery-max-height: calc(100dvh - max(var(--pdp-gallery-top, 0px), var(--pdp-gallery-anchor)) - var(--page-margin-desktop));
 }
 body[data-player-open] .pdp-content[data-record-stack] > .pdp-content__gallery {
-  --zz-gallery-max-height: calc(100dvh - max(var(--pdp-gallery-top, 0px), var(--pdp-gallery-anchor)) - var(--site-player-height, 0px) - var(--page-margin-desktop));
+  --hm-gallery-max-height: calc(100dvh - max(var(--pdp-gallery-top, 0px), var(--pdp-gallery-anchor)) - var(--site-player-height, 0px) - var(--page-margin-desktop));
 }
 /* the anchor sits small below the visible part of the site header: when the header comes back on scroll up,
    gallery and record step down with it (same pattern and placeholder timing as the PLP filters, plp.css) */
@@ -87,7 +87,7 @@ html[data-header-revealing] .pdp-content[data-record-stack] > :is(.pdp-content__
   pointer-events: none;   /* the layer never blocks the gallery: only the card takes clicks */
 }
 html[data-header-revealing] .pdp-content[data-record-stack] > .pdp-content__back { transition: top 200ms ease-out; }
-.pdp-content__back > .zz-return-card {
+.pdp-content__back > .hm-return-card {
   position: absolute;
   left: var(--small); right: var(--small); bottom: var(--small);
   width: auto;
@@ -95,9 +95,9 @@ html[data-header-revealing] .pdp-content[data-record-stack] > .pdp-content__back
   opacity: 0; transform: translateY(var(--small)); visibility: hidden;
   transition: opacity 200ms ease-out, transform 200ms ease-out, visibility 0s linear 200ms;
 }
-.pdp-content__back[data-visible] > .zz-return-card { opacity: 1; transform: none; visibility: visible; transition: opacity 200ms ease-out, transform 200ms ease-out; }
+.pdp-content__back[data-visible] > .hm-return-card { opacity: 1; transform: none; visibility: visible; transition: opacity 200ms ease-out, transform 200ms ease-out; }
 @media (prefers-reduced-motion: reduce) {
-  .pdp-content__back > .zz-return-card, .pdp-content__back[data-visible] > .zz-return-card { transition: none; transform: none; }
+  .pdp-content__back > .hm-return-card, .pdp-content__back[data-visible] > .hm-return-card { transition: none; transform: none; }
   html[data-header-revealing] .pdp-content[data-record-stack] > .pdp-content__back { transition: none; }
 }
 /* the list is an opaque layer above the record: page ground, so the record disappears under it */
@@ -108,7 +108,7 @@ html[data-header-revealing] .pdp-content[data-record-stack] > .pdp-content__back
    move onto the title, so the band is one opaque block; margin-bottom -8 cancels the list gap the band now includes.
    8 = the component's literal padding/gap (open.md). */
 .pdp-content[data-record-stack] > .pdp-content__related { border-top: 0; padding-top: 0; }
-.pdp-content[data-record-stack] > .pdp-content__related > .zz-related-products__title {
+.pdp-content[data-record-stack] > .pdp-content__related > .hm-related-products__title {
   position: sticky;
   top: calc(var(--site-header-visible, 0px) + var(--small));
   z-index: 1;
@@ -118,8 +118,8 @@ html[data-header-revealing] .pdp-content[data-record-stack] > .pdp-content__back
   padding: 8px 0;
   margin-bottom: -8px;
 }
-html[data-header-revealing] .pdp-content[data-record-stack] > .pdp-content__related > .zz-related-products__title { transition: top 200ms ease-out; }
-@media (prefers-reduced-motion: reduce) { html[data-header-revealing] .pdp-content[data-record-stack] > .pdp-content__related > .zz-related-products__title { transition: none; } }
+html[data-header-revealing] .pdp-content[data-record-stack] > .pdp-content__related > .hm-related-products__title { transition: top 200ms ease-out; }
+@media (prefers-reduced-motion: reduce) { html[data-header-revealing] .pdp-content[data-record-stack] > .pdp-content__related > .hm-related-products__title { transition: none; } }
 /* keyboard focus on a card never lands under the band: the page scrolls it below (--pdp-related-band set by site.js) */
 html:has(.pdp-content[data-record-stack]) { scroll-padding-top: calc(var(--site-header-visible, 0px) + var(--small) + var(--pdp-related-band, 0px)); }
 
@@ -139,13 +139,13 @@ html:has(.pdp-content[data-record-stack]) { scroll-padding-top: calc(var(--site-
   .pdp-content:has(> .pdp-content__related) { padding-bottom: 0; }
   .pdp-content__related { margin-top: calc(24px - var(--small)); }
   /* Figma PDP - mobile: the gallery scroller bleeds into both page margins (image 2 peeks; swiped images exit at the edge, the resting one keeps the margin) */
-  .pdp-content__gallery { --zz-gallery-bleed: var(--page-margin-mobile); }
+  .pdp-content__gallery { --hm-gallery-bleed: var(--page-margin-mobile); }
   /* the sticky record experiment is desktop only */
   .pdp-content[data-record-stack] { grid-template-rows: none; }
   .pdp-content[data-record-stack] > .pdp-content__info, .pdp-content[data-record-stack] > .pdp-content__actions { grid-row: auto; position: static; }
   .pdp-content[data-record-stack] > .pdp-content__gallery { position: static; overscroll-behavior: auto; }
   .pdp-content[data-record-stack] > .pdp-content__back { display: none; }
   .pdp-content[data-record-stack] > .pdp-content__related { border-top: 1px solid var(--border-divider-strong); padding-top: 8px; }
-  .pdp-content[data-record-stack] > .pdp-content__related > .zz-related-products__title { position: static; box-shadow: none; border-top: 0; padding: 0; margin-bottom: 0; }
+  .pdp-content[data-record-stack] > .pdp-content__related > .hm-related-products__title { position: static; box-shadow: none; border-top: 0; padding: 0; margin-bottom: 0; }
   html:has(.pdp-content[data-record-stack]) { scroll-padding-top: 0; }
 }

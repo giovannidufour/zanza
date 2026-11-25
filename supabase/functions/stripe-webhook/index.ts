@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
   };
   const { data: result, error } = await db.rpc("checkout_claim", { p_session: session.id, p_order: order });
   if (error) { console.error(error); return json({ error: "Could not record the order." }, 500); }   // Stripe retries
-  const store = env("STORE_NAME") || "rythem-works";
+  const store = env("STORE_NAME") || "HIGHMUZIK";
   const shop = env("SHOP_URL").replace(/\/$/, "");
   const to = env("ORDERS_TO") || env("OFFER_TO");
   const dashboard = `https://dashboard.stripe.com/${session.livemode ? "" : "test/"}payments/${piId}`;

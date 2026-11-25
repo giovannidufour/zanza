@@ -94,7 +94,7 @@ function PlpFilters({ facets, hidden, sorts, showSold }) {
           'data-facet-label': optionLabel(f.key, o.value)
         }))))),
     // announces the result of a change ("12 records"); the empty state is not designed (design/open.md)
-    h('p', { className: 'zz-visually-hidden', role: 'status', 'aria-live': 'polite', 'data-plp-status': '' }));
+    h('p', { className: 'hm-visually-hidden', role: 'status', 'aria-live': 'polite', 'data-plp-status': '' }));
 }
 
 // Mobile filters (Figma `filters layer`, 2026-11-10): the same facets as the column, in a full-screen native dialog.
@@ -183,7 +183,7 @@ function Plp({ section, products, allProducts = products, site, url, search = fa
   const facets = facetsOf(products);
   const showSold = products.some(isSold);
   const hint = 'Search by artist, title, label or catalogue number.';
-  return h('div', { className: 'zz-page', 'data-search-page': search ? '' : undefined, 'data-wantlist-page': wantlist ? '' : undefined },
+  return h('div', { className: 'hm-page', 'data-search-page': search ? '' : undefined, 'data-wantlist-page': wantlist ? '' : undefined },
     h(SiteHeader, { site, url, section: search || wantlist ? undefined : section, current: wantlist ? 'wantlist' : undefined }),
     wantlist ? h(WantlistTop, { site }) : null,
     search ? h('div', { className: 'search-top' },
@@ -192,7 +192,7 @@ function Plp({ section, products, allProducts = products, site, url, search = fa
       h('div', { className: 'search-message', 'data-search-hint': '' }, h('p', { className: 'body-medium' }, hint))) : null,
     // a collection is an active filter (Gio 2026-11-24, decision 0178): its name as a chip in the row below, the
     // heading only for screen readers. Removing the chip = every record for sale (/sale/, site.js keeps the query).
-    collection ? h('h1', { className: 'zz-visually-hidden' }, `${collection.name} (${products.length})`) : null,
+    collection ? h('h1', { className: 'hm-visually-hidden' }, `${collection.name} (${products.length})`) : null,
     // Figma `active filter` (0041): in place of the breadcrumbs, the filter reached from a link (artist, label, genre,
     // tag) as a removable EntityChip, medium on desktop, large on mobile (plp.css shows one). Hidden until site.js fills it.
     h(Z.ActiveFilter, { hidden: !collection, 'data-plp-active': '' },
