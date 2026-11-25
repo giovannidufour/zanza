@@ -146,26 +146,42 @@
     });
     return muxerLoading;
   }
-  async function makeVideo(audioUrl, imageUrl, onProgress) {
+  // parts: [{ audioUrl, imageUrl }] played one after the other. More than one = the A+B video (Gio 2026-11-25, decision 0191):
+  // each part's photo stays on screen for exactly its sample, then a hard cut (no fade, no gap) to the next one.
+  async function makeVideo(parts, onProgress) {
     if (typeof VideoEncoder === 'undefined' || typeof AudioEncoder === 'undefined') throw new Error('this browser cannot make videos: use Chrome');
     var videoConfig = { codec: 'avc1.640028', width: VIDEO_SIDE, height: VIDEO_SIDE, bitrate: 4e6, framerate: VIDEO_FPS, avc: { format: 'avc' } };
     var Mux = await loadMuxer();
-    var res = await Promise.all([fetch(audioUrl), fetch(imageUrl)]);
-    if (!res[0].ok || !res[1].ok) throw new Error('could not read the sample or the photo');
-    var ctx = new AudioContext({ sampleRate: VIDEO_RATE });
-    var audio;
-    try { audio = await ctx.decodeAudioData(await res[0].arrayBuffer()); } finally { ctx.close(); }
-    var channels = Math.min(2, audio.numberOfChannels);
+    var res = await Promise.all(parts.map(function (p) { return Promise.all([fetch(p.audioUrl), fetch(p.imageUrl)]); }));
+    if (res.some(function (r) { return !r[0].ok || !r[1].ok; })) throw new Error('could not read the sample or the photo');
+    var ctx = new AudioContext({ sampleRate: VIDEO_RATE }), decoded = [];
+    try { for (var d = 0; d < res.length; d++) decoded.push(await ctx.decodeAudioData(await res[d][0].arrayBuffer())); } finally { ctx.close(); }
+    var channels = Math.min(2, Math.max.apply(null, decoded.map(function (b) { return b.numberOfChannels; })));
+    // the samples end to end, sample-exact: a mono part is copied to both channels
+    var length = decoded.reduce(function (n, b) { return n + b.length; }, 0), planes = [], starts = [];
+    for (var ch = 0; ch < channels; ch++) planes.push(new Float32Array(length));
+    for (var q = 0, at0 = 0; q < decoded.length; q++) {
+      starts.push(at0 / VIDEO_RATE);
+      for (var c = 0; c < channels; c++) planes[c].set(decoded[q].getChannelData(Math.min(c, decoded[q].numberOfChannels - 1)), at0);
+      at0 += decoded[q].length;
+    }
+    var duration = length / VIDEO_RATE;
     var audioConfig = { codec: 'mp4a.40.2', sampleRate: VIDEO_RATE, numberOfChannels: channels, bitrate: 192000 };
     var vs = await VideoEncoder.isConfigSupported(videoConfig), as = await AudioEncoder.isConfigSupported(audioConfig);
     if (!vs.supported || !as.supported) throw new Error('this browser cannot encode MP4 (H.264 + AAC): use Chrome');
-    // the photo, centre square, full frame
-    var bitmap = await createImageBitmap(await res[1].blob());
-    var canvas = document.createElement('canvas'); canvas.width = canvas.height = VIDEO_SIDE;
-    var c2 = canvas.getContext('2d'), side = Math.min(bitmap.width, bitmap.height);
-    c2.imageSmoothingQuality = 'high';
-    c2.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, VIDEO_SIDE, VIDEO_SIDE);
-    bitmap.close();
+    // each photo, centre square, full frame
+    var canvases = [];
+    for (var m = 0; m < res.length; m++) {
+      var bitmap = await createImageBitmap(await res[m][1].blob());
+      var canvas = document.createElement('canvas'); canvas.width = canvas.height = VIDEO_SIDE;
+      var c2 = canvas.getContext('2d'), side = Math.min(bitmap.width, bitmap.height);
+      c2.imageSmoothingQuality = 'high';
+      c2.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, VIDEO_SIDE, VIDEO_SIDE);
+      bitmap.close();
+      canvases.push(canvas);
+    }
+    // the frame where each part starts (the cut lands on the frame nearest to the end of the previous sample)
+    var cutFrames = starts.map(function (t) { return Math.round(t * VIDEO_FPS); });
 
     var muxer = new Mux.Muxer({ target: new Mux.ArrayBufferTarget(), fastStart: 'in-memory',
       video: { codec: 'avc', width: VIDEO_SIDE, height: VIDEO_SIDE, frameRate: VIDEO_FPS },
@@ -175,20 +191,20 @@
     var aenc = new AudioEncoder({ output: function (chunk, meta) { muxer.addAudioChunk(chunk, meta); }, error: function (e) { failed = e; } });
     venc.configure(videoConfig); aenc.configure(audioConfig);
 
-    var frames = Math.max(1, Math.ceil(audio.duration * VIDEO_FPS)), STEP = 1024, total = frames + Math.ceil(audio.length / STEP);
-    for (var i = 0; i < frames; i++) {
+    var frames = Math.max(1, Math.ceil(duration * VIDEO_FPS)), STEP = 1024, total = frames + Math.ceil(length / STEP);
+    for (var i = 0, part = 0; i < frames; i++) {
       if (failed) throw failed;
-      var frame = new VideoFrame(canvas, { timestamp: Math.round(i * 1e6 / VIDEO_FPS), duration: Math.round(1e6 / VIDEO_FPS) });
-      venc.encode(frame, { keyFrame: i % (VIDEO_FPS * 2) === 0 });
+      while (part + 1 < cutFrames.length && i >= cutFrames[part + 1]) part++;
+      var cut = cutFrames.indexOf(i) > 0;
+      var frame = new VideoFrame(canvases[part], { timestamp: Math.round(i * 1e6 / VIDEO_FPS), duration: Math.round(1e6 / VIDEO_FPS) });
+      venc.encode(frame, { keyFrame: cut || i % (VIDEO_FPS * 2) === 0 });
       frame.close();
       if (venc.encodeQueueSize > 20) await new Promise(function (r) { setTimeout(r, 5); });
       if (i % 30 === 0) onProgress(Math.round(i / total * 90));
     }
-    var planes = [];
-    for (var ch = 0; ch < channels; ch++) planes.push(audio.getChannelData(ch));
-    for (var at = 0, n = 0; at < audio.length; at += STEP, n++) {
+    for (var at = 0, n = 0; at < length; at += STEP, n++) {
       if (failed) throw failed;
-      var len = Math.min(STEP, audio.length - at), data = new Float32Array(len * channels);
+      var len = Math.min(STEP, length - at), data = new Float32Array(len * channels);
       for (var k = 0; k < channels; k++) data.set(planes[k].subarray(at, at + len), k * len);
       var ad = new AudioData({ format: 'f32-planar', sampleRate: VIDEO_RATE, numberOfFrames: len, numberOfChannels: channels,
         timestamp: Math.round(at * 1e6 / VIDEO_RATE), data: data });
@@ -703,6 +719,7 @@
 
     // manual status changes (admin_set_status): sold elsewhere, held for someone, unpublished, undo
     var nt = useState(''), statusNote = nt[0], setStatusNote = nt[1];
+    var cv = useState({}), combined = cv[0], setCombined = cv[1];   // A+B video (0191): { first, then, progress }, never saved
     async function setStatus(status) {
       setSaving(true); setMessage(null);
       var res = await sb.rpc('admin_set_status', { p_listing_id: f.listingId, p_status: status, p_note: statusNote || null });
@@ -782,11 +799,15 @@
     }
     // ── video of a sample (0180): the photo of the sample's side (file names of 0136: a… → Label A = <sku>_1_…, b… → Label B
     // = <sku>_2_…; else line 2 → photo 2), changeable in "Video image"; rendered and downloaded here, nothing is saved
+    function sampleRole(s) { return (String(s.name || '').split('_')[1] || '').toLowerCase(); }   // a1, b, …
+    function sampleSide(s) {   // 1 = side A, 2 = side B
+      var role = sampleRole(s);
+      return role.charAt(0) === 'b' ? 2 : role.charAt(0) === 'a' ? 1 : s.line === 2 ? 2 : 1;
+    }
     function defaultVideoImage(s) {
       var imgs = f.images.filter(function (x) { return x.url && !x.uploading; });
       if (!imgs.length) return null;
-      var role = (String(s.name || '').split('_')[1] || '').toLowerCase();
-      var side = role.charAt(0) === 'b' ? 2 : role.charAt(0) === 'a' ? 1 : s.line === 2 ? 2 : 1;
+      var side = sampleSide(s);
       var named = imgs.filter(function (x) { return String(x.name).split('_')[1] === String(side); })[0];
       return (named || imgs[Math.min(side, imgs.length) - 1]).id;
     }
@@ -799,7 +820,7 @@
       if (!img || !s.url) return;
       var name = String(s.name || 'sample').replace(/\.[a-z0-9]+$/i, '') + '.mp4';
       patchItem('samples', s.id, { videoProgress: 0 });
-      makeVideo(s.url, img.url, function (v) { patchItem('samples', s.id, { videoProgress: v }); })
+      makeVideo([{ audioUrl: s.url, imageUrl: img.url }], function (v) { patchItem('samples', s.id, { videoProgress: v }); })
         .then(function (blob) { saveFile(blob, name); toast('Video downloaded: ' + name); },
               function (err) { setMessage({ error: true, text: s.name + ': no video (' + err.message + ').' }); })
         .then(function () { patchItem('samples', s.id, { videoProgress: null }); });
@@ -816,6 +837,53 @@
           }) : [h('option', { key: 'none', value: '' }, 'No photos')]),
         h(Z.Button, { hierarchy: 'secondary', disabled: !imgs.length || !s.url || s.uploading || busy, onClick: function () { downloadVideo(s); } },
           busy ? 'Making video… ' + s.videoProgress + '%' : 'Download video'));
+    }
+    // ── A+B video (Gio 2026-11-25, decision 0191; Figma `combined video`): one video with the First sample on its Video
+    // image, then, with a hard cut, the Then sample on its own. Default: the first sample of side A, then the first of side B
+    // (typically vocal, then version). Only with two samples or more; downloaded, nothing is saved.
+    function combinedPick() {
+      var ready = f.samples.filter(function (x) { return x.url && !x.uploading; });
+      var has = function (id) { return ready.some(function (x) { return x.id === id; }); };
+      var a = ready.filter(function (x) { return sampleSide(x) === 1; })[0] || ready[0];
+      var first = has(combined.first) ? combined.first : a && a.id;
+      var b = ready.filter(function (x) { return sampleSide(x) === 2 && x.id !== first; })[0] || ready.filter(function (x) { return x.id !== first; })[0];
+      var then = has(combined.then) ? combined.then : b && b.id;
+      return { first: first, then: then };
+    }
+    function downloadCombinedVideo() {
+      var pick = combinedPick();
+      var parts = [pick.first, pick.then].map(function (id) {
+        var s = f.samples.filter(function (x) { return x.id === id; })[0];
+        var img = s && f.images.filter(function (x) { return x.id === videoImageOf(s); })[0];
+        return s && img ? { s: s, audioUrl: s.url, imageUrl: img.url } : null;
+      });
+      if (!parts[0] || !parts[1]) return;
+      // <sku>_a1_<slug>.mp4 + <sku>_b1_<slug>.mp4 → <sku>_a1-b1_<slug>.mp4 (else the first name + "-ab")
+      var n1 = String(parts[0].s.name || 'sample').replace(/\.[a-z0-9]+$/i, ''), bits = n1.split('_'), r2 = sampleRole(parts[1].s);
+      var name = (bits.length > 2 && bits[1] && r2 ? bits[0] + '_' + bits[1] + '-' + r2 + '_' + bits.slice(2).join('_') : n1 + '-ab') + '.mp4';
+      setCombined(function (c) { return Object.assign({}, c, { progress: 0 }); });
+      makeVideo(parts, function (v) { setCombined(function (c) { return Object.assign({}, c, { progress: v }); }); })
+        .then(function (blob) { saveFile(blob, name); toast('Video downloaded: ' + name); },
+              function (err) { setMessage({ error: true, text: 'A+B video not made (' + err.message + ').' }); })
+        .then(function () { setCombined(function (c) { return Object.assign({}, c, { progress: null }); }); });
+    }
+    function combinedVideoRow() {
+      var ready = f.samples.filter(function (x) { return x.url && !x.uploading; });
+      if (ready.length < 2) return null;
+      var pick = combinedPick(), busy = combined.progress != null;
+      var hasImgs = f.images.some(function (x) { return x.url && !x.uploading; });
+      var options = ready.map(function (x, i) {
+        var role = sampleRole(x), title = sampleTitleOf(x);
+        return h('option', { key: x.id, value: x.id }, (role ? role.toUpperCase() : String(i + 1)) + ' · ' + (title || x.name));
+      });
+      function select(key, label) {
+        return h(Z.Input, { variant: 'select', id: 'combined-video-' + key, label: label, value: pick[key] || '', disabled: busy,
+          onChange: function (e) { var v = e.target.value; setCombined(function (c) { var n = Object.assign({}, c); n[key] = v; return n; }); } }, options);
+      }
+      return h('div', { className: 'admin-combined-video' },
+        select('first', 'First'), select('then', 'Then'),
+        h(Z.Button, { hierarchy: 'secondary', disabled: !hasImgs || busy || !pick.first || !pick.then || pick.first === pick.then, onClick: downloadCombinedVideo },
+          busy ? 'Making video… ' + combined.progress + '%' : 'Download A+B video'));
     }
     function overviewSampleItem(s) {
       var clip = s.length === 'clip', long = (s.full && s.full.duration) || s.duration;
@@ -1007,6 +1075,7 @@
       h('section', sectionProps('samples'),
         h(Z.FormSectionHead, { id: 'section-samples-title' }, FORM_SECTION_LABEL['samples']),
         f.samples.length ? h(Z.FileList, { className: 'admin-samples', onMove: moveIn('samples') }, f.samples.map(overviewSampleItem)) : null,
+        combinedVideoRow(),
         h(Z.DropZone, { label: 'Browse sample', accept: 'audio/mpeg', multiple: true, onFiles: addFiles('sample', null) })));
 
     var shopUrl = f.slug && f.status !== 'draft' && f.status !== 'archived' && CFG.storefrontUrl ? CFG.storefrontUrl.replace(/\/$/, '') + '/products/' + f.slug + '/' : null;

@@ -211,3 +211,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0188](0188-accepted-offer-by-link.md) | An accepted offer goes in the Bag from its email link, no sign-in: the Bag keeps the link's token, checkout re-checks it, Stripe gets the offer's email; replaces the sign-in of 0186 | accepted |
 | [0189](0189-reserved-notify-me-best-offer.md) | Every reserved copy reads "(Reserved) Notify me", Best offer too; the offer's own buyer reads "In bag" | accepted |
 | [0190](0190-accepted-offer-remembered.md) | The buyer of an accepted offer keeps it after Remove: their card / PDP / player read "Add to bag" while the hold runs, PDP line = `offer actions` state=accepted | accepted |
+| [0191](0191-combined-a-b-video.md) | Admin A+B video: First + Then sample in one MP4, each on its own Video image, hard cut; defaults side A then side B; admin only | accepted |
