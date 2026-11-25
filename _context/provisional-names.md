@@ -16,13 +16,13 @@ Gio: nome **HIGHMUZIK, sempre maiuscolo** (testi, email, Figma), dominio **highm
 
 **Fase 2 — PR A, nome e identificatori (non dipende dal dominio)**
 - [x] [C] (PR #257) `storeName`, testi, DS (`tokens.json`, artifact), Scanner (nome, bundle id `com.highmuzik.scanner`, cartelle `HIGHMUZIK samples/scans/videos`), `hm-` al posto di `zz-`, `window.Highmuzik*`, chiavi `highmuzik-*`, `package.json`, GoDaddy legacy `/highmuzik`
-- [ ] [C/Mac] ricompilare l'app Mac, che ora si chiama **ZANZA** (decisione 0184: strumento della piattaforma, bundle id resta `xyz.gio-d.zanza.scanner`, nessuna cartella né login da spostare) e installarla al posto di Zanza Scanner
+- [x] [C/Mac] (PR #262, 2026-11-25) ricompilare l'app Mac, che ora si chiama **ZANZA** (decisione 0184: strumento della piattaforma, bundle id resta `xyz.gio-d.zanza.scanner`, nessuna cartella né login da spostare) e installarla al posto di Zanza Scanner
 - [x] [C] Supabase secret `STORE_NAME` = HIGHMUZIK (con ok di Gio)
-- [ ] [C] Figma: store name nel `header`, coming soon, copyright footer, legal; [G] rinominare il file in "HIGHMUZIK - Record Store"
+- [x] [C] Figma: store name nel `header`, coming soon, copyright footer, legal (thread del logo, 0183); il file Figma resta "zanza" (Gio 2026-11-25: Zanza = piattaforma, HIGHMUZIK = store)
 
 **Fase 3 — DNS e hosting (highmuzik.com)**
 - [x] [C] Pages: `coming-soon` su apex + www · `store-front` su `staging.` · `store-admin` su `admin.` · R2 `store-media` su `media.` (+ CORS R2 con admin.highmuzik.com)
-- [ ] [C] Access: app `staging` su staging.highmuzik.com; team Zero Trust `rythem-works` → `highmuzik` (se rinominabile)
+- [x] [C] Access: app `staging` su staging.highmuzik.com; team Zero Trust resta `rythem-works` (Gio 2026-11-25: lo vede solo lui, sparisce al lancio)
 - [x] [C] rythem-works.com: Redirect Rule 301 → highmuzik.com (path e query conservati), tutti i sottodomini
 - [x] [C] Supabase Auth: Site URL + redirect `https://admin.highmuzik.com/**`; secrets `ADMIN_ORIGINS`, `ALLOWED_ORIGINS`, `SHOP_URL`, `ADMIN_URL`, `MEDIA_BASE_URL` (ok di Gio)
 
@@ -45,8 +45,8 @@ Gio: nome **HIGHMUZIK, sempre maiuscolo** (testi, email, Figma), dominio **highm
 - [x] [C] admin → Content: nessun "rythem" nelle 12 pagine di staging dopo la build del 2026-11-25
 
 **Fase 7 — nomi interni e chiusura**
-- [ ] [G] GitHub: rinominare il repo `zanza` → `highmuzik` (GitHub reindirizza); [C] aggiornare progetto, docs, memoria
-- [ ] [G] cartella sul Mac, progetto claude.ai "Zanza"; [C] artifact DS rigenerato (`npm run build:artifact`)
+- [x] GitHub: il repo resta `zanza` (Gio 2026-11-25: nome della piattaforma)
+- [x] cartella sul Mac e progetto claude.ai restano "Zanza" (piattaforma); [C] artifact DS rigenerato come "HIGHMUZIK Design System" (2026-11-25)
 - [ ] [C] quando tutto gira su highmuzik.com: togliere rythem-works.com da Resend, vecchia regola Email Routing, vecchi custom domain
 
 ## Rinomina Zanza → rythem-trax (2026-11-14) → rythem-works (2026-11-15)
