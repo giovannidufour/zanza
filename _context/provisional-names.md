@@ -16,7 +16,7 @@ Gio: nome **HIGHMUZIK, sempre maiuscolo** (testi, email, Figma), dominio **highm
 
 **Fase 2 — PR A, nome e identificatori (non dipende dal dominio)**
 - [x] [C] (PR #257) `storeName`, testi, DS (`tokens.json`, artifact), Scanner (nome, bundle id `com.highmuzik.scanner`, cartelle `HIGHMUZIK samples/scans/videos`), `hm-` al posto di `zz-`, `window.Highmuzik*`, chiavi `highmuzik-*`, `package.json`, GoDaddy legacy `/highmuzik`
-- [ ] [G/Mac] dopo il merge: ricompilare lo Scanner, spostare `~/Music/Zanza samples`, `~/Pictures/Zanza scans`, `~/Movies/Zanza videos` nelle cartelle HIGHMUZIK, rifare il login dello Scanner (keychain nuovo)
+- [ ] [C/Mac] ricompilare l'app Mac, che ora si chiama **ZANZA** (decisione 0184: strumento della piattaforma, bundle id resta `xyz.gio-d.zanza.scanner`, nessuna cartella né login da spostare) e installarla al posto di Zanza Scanner
 - [x] [C] Supabase secret `STORE_NAME` = HIGHMUZIK (con ok di Gio)
 - [ ] [C] Figma: store name nel `header`, coming soon, copyright footer, legal; [G] rinominare il file in "HIGHMUZIK - Record Store"
 

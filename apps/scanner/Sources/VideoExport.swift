@@ -20,7 +20,7 @@ enum VideoExport {
         let count = AVAudioFrameCount(max(0, stop - file.framePosition))
         guard count > 0, let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: count) else { throw ScanError.message("The clip is empty") }
         try file.read(into: buf, frameCount: count)
-        let tmpWAV = FileManager.default.temporaryDirectory.appendingPathComponent("highmuzik-\(UUID().uuidString).wav")
+        let tmpWAV = FileManager.default.temporaryDirectory.appendingPathComponent("zanza-\(UUID().uuidString).wav")
         defer { try? FileManager.default.removeItem(at: tmpWAV) }
         try AudioExport.wavData(buf, bits: 16, rate: Int(rate), gain: AudioExport.boost(buf), id3: nil).write(to: tmpWAV)
         let duration = Double(buf.frameLength) / rate
@@ -63,14 +63,14 @@ enum VideoExport {
         var frame: Int64 = 0
         let group = DispatchGroup()
         group.enter(); group.enter()
-        video.requestMediaDataWhenReady(on: DispatchQueue(label: "highmuzik.video.frames")) {
+        video.requestMediaDataWhenReady(on: DispatchQueue(label: "zanza.video.frames")) {
             while video.isReadyForMoreMediaData {
                 if frame >= frames || writer.status != .writing { video.markAsFinished(); group.leave(); return }
                 if !adaptor.append(pixels, withPresentationTime: CMTime(value: frame, timescale: fps)) { video.markAsFinished(); group.leave(); return }
                 frame += 1
             }
         }
-        audio.requestMediaDataWhenReady(on: DispatchQueue(label: "highmuzik.video.audio")) {
+        audio.requestMediaDataWhenReady(on: DispatchQueue(label: "zanza.video.audio")) {
             while audio.isReadyForMoreMediaData {
                 guard writer.status == .writing, let sample = pcm.copyNextSampleBuffer(), audio.append(sample) else {
                     audio.markAsFinished(); group.leave(); return

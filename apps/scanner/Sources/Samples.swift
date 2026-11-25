@@ -56,7 +56,7 @@ final class SessionModel: ObservableObject {
 
     static let folder: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("HIGHMUZIK Scanner/Session", isDirectory: true)
+            .appendingPathComponent("Zanza Scanner/Session", isDirectory: true)
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         return base
     }()
