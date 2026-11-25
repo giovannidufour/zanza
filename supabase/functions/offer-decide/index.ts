@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
   if (r.status === "accepted") {
     subject = `${r.name}: you can buy it now`;
     text = [`I accept your offer of ${euro(r.amount_cents)} for ${r.name}.`, "",
-      `Sign in with this email and it goes in your Bag at that price: ${shop}/offer/pay/?t=${r.pay_token}`, "",
+      `Open this link and it goes in your Bag at that price: ${shop}/offer/pay/?t=${r.pay_token}`, "",
       "You can add other records and pay once, with one shipping.",
       `The record is held for you until ${berlin(r.expires_at)}; after that it goes back on sale. Shipping to ${countryName(r.country)} is added at checkout.`,
       "", "Questions? Just reply to this email.", "", store].join("\n");

@@ -184,9 +184,13 @@
       if (view && cur.href) view.setAttribute('href', cur.href);
       var add = q('.site-player__add');
       // trade listings (decision 0068): no "Add to bag" in the player, the offer is made on the record's page
-      // best offer (decision 0158): no "Add to bag" either, the offer is made on the record's page
-      var noBag = cur.section === 'trade' || cur.offers;
-      if (add) { add.hidden = noBag; add.disabled = !cur.listing; if (!noBag) syncAddButton(add, cur.listing); }
+      // best offer (decision 0158): no "Add to bag" either, the offer is made on the record's page; reserved or sold, its
+      // button acts as any copy's: "(Reserved) Notify me", "Sold out" (0189)
+      var noBag = cur.section === 'trade' || (cur.offers && statusFor(cur.listing) === 'available');
+      if (add) {
+        if (cur.offers) add.setAttribute('data-offer-href', (cur.href || '').replace(/\/?$/, '/') + 'offer/'); else add.removeAttribute('data-offer-href');
+        add.hidden = noBag; add.disabled = !cur.listing; if (!noBag) syncAddButton(add, cur.listing);
+      }
       q('.hm-player__previous').disabled = index <= 0;
       q('.hm-player__next').disabled = index >= queue.length - 1;
     }
@@ -1138,6 +1142,18 @@
     try { window.localStorage.setItem(BAG_KEY, JSON.stringify(ids)); } catch (e) { /* not saved: stays for this page */ }
     renderBag();
   }
+  // accepted offers (decision 0188): the token of each email link opened in this browser, by listing id. The Bag prices
+  // the line with it and create-checkout checks it again. Only the offer's inbox gets the link: it is the proof.
+  var OFFERS_KEY = 'highmuzik-offers';
+  function readOfferTokens() {
+    try {
+      var v = JSON.parse(window.localStorage.getItem(OFFERS_KEY) || '{}');
+      return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+    } catch (e) { return {}; }
+  }
+  function writeOfferTokens(map) {
+    try { window.localStorage.setItem(OFFERS_KEY, JSON.stringify(map)); return true; } catch (e) { return false; }
+  }
   // same rule as formatPrice in pages/shell.js: whole euros without decimals (12, 12.50) + the euro sign
   function formatPrice(cents) { return (cents % 100 === 0 ? cents / 100 : (cents / 100).toFixed(2)) + '\u20ac'; }
 
@@ -1208,7 +1224,7 @@
       }
       else if (li.querySelector('.hm-bag-item[data-status="sold"]')) sold++;
       else if (li.querySelector('.hm-bag-item[data-status="offer-expired"]')) expired++;
-      else if (li.getAttribute('data-price-mode') === 'offers') { held++; heldByHand++; }   // not signed in: no 30 min hint
+      else if (li.getAttribute('data-price-mode') === 'offers') { held++; heldByHand++; }   // no token here: no 30 min hint
       else { held++; if (holdKind && holdKind[id] === 'manual') heldByHand++; }
     });
     root.setAttribute('data-bag-offers', String(offers));
@@ -1317,26 +1333,29 @@
     if (sh) announce('Shipping to ' + select.options[select.selectedIndex].text + ': ' + sh.textContent + '.');
   });
 
-  // the signed-in buyer's accepted offers (decision 0186, customer_offers, migration 0040): null = not read yet, {} = none
-  // or not signed in. Read on the Bag page when the bag has a Best offer copy; read again after a sign-in.
+  // the accepted offers of the bag's Best offer copies (decision 0188): each token kept by this browser is read with the
+  // function `offer` (pay-info: state ready | expired | paid | closed, amount, expires_at). null = not read yet, {} = none.
+  // Read on the Bag page when the bag has a Best offer copy; read again when a checkout finds an offer gone.
   var bagOffers = null, bagOffersReading = false;
   function readBagOffers(force) {
     if (bagOffersReading || (bagOffers !== null && !force)) return;
     var root = document.querySelector('[data-bag-page]');
     if (!root) return;
-    var ids = readBag();
-    var any = ids.some(function (id) { var li = root.querySelector('[data-bag-line="' + id + '"]'); return li && li.getAttribute('data-price-mode') === 'offers'; });
-    if (!any) return;
-    if (!window.HighmuzikAccount) { bagOffers = {}; renderBag(); return; }
+    var endpoint = root.getAttribute('data-offer-endpoint'), tokens = readOfferTokens();
+    var ids = readBag().filter(function (id) {
+      var li = root.querySelector('[data-bag-line="' + id + '"]');
+      return li && li.getAttribute('data-price-mode') === 'offers' && tokens[id];
+    });
+    if (!ids.length || !endpoint || !window.fetch) { if (bagOffers === null && ids.length) { bagOffers = {}; renderBag(); } return; }
     bagOffersReading = true;
-    window.HighmuzikAccount.getSession().then(function (sess) {
-      return sess ? window.HighmuzikAccount.rpc('customer_offers', sess) : null;
-    }).then(function (rows) {
+    Promise.all(ids.map(function (id) {
+      return offerPost(endpoint, { action: 'pay-info', token: tokens[id] }).then(function (r) { return [id, r.data]; }, function () { return [id, null]; });
+    })).then(function (rows) {
       bagOffersReading = false;
       bagOffers = {};
-      (Array.isArray(rows) ? rows : []).forEach(function (o) { if (!bagOffers[o.listing_id]) bagOffers[o.listing_id] = o; });   // newest first
+      rows.forEach(function (r) { if (r[1] && r[1].state && r[1].state !== 'invalid') bagOffers[r[0]] = r[1]; });
       renderBag();
-    }, function () { bagOffersReading = false; bagOffers = {}; renderBag(); });
+    });
   }
   function renderBag() {
     var ids = readBag();
@@ -1346,6 +1365,11 @@
     if (known.length !== ids.length) {
       try { window.localStorage.setItem(BAG_KEY, JSON.stringify(known)); } catch (e) { /* ignore */ }
       ids = known;
+    }
+    // a token whose offer is paid leaves with its line
+    if (bagOffers) {
+      var tokens = readOfferTokens(), drop = Object.keys(tokens).filter(function (id) { return bagOffers[id] && bagOffers[id].state === 'paid'; });
+      if (drop.length) { drop.forEach(function (id) { delete tokens[id]; }); writeOfferTokens(tokens); }
     }
     renderBagCount(ids.length);
     syncAddButtons(ids);
@@ -1376,16 +1400,12 @@
     btn.setAttribute('aria-disabled', 'true');
     announce('Starting checkout\u2026');
     function done() { checkoutBusy = false; btn.removeAttribute('aria-disabled'); }
-    // an accepted offer in the bag (0186): the account's token tells create-checkout whose offer it is
-    var withOffer = (parseInt(root.getAttribute('data-bag-offers'), 10) || 0) > 0;
-    var session = withOffer && window.HighmuzikAccount ? window.HighmuzikAccount.getSession() : Promise.resolve(null);
-    session.then(function (sess) {
-      var headers = { 'Content-Type': 'application/json' };
-      if (sess) headers.Authorization = 'Bearer ' + sess.access_token;
-      return fetch(endpoint, { method: 'POST', headers: headers,
+    // accepted offers in the bag (0188): the tokens of their email links tell create-checkout which offers they are
+    var tokens = readOfferTokens();
+    var offers = ids.map(function (id) { return tokens[id]; }).filter(Boolean);
+    fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' },
       // previous: a session of ours that is still open (its end on return failed): the server ends it before holding
-      body: JSON.stringify({ ids: ids, country: select ? select.value : '', previous: (readCheckout() || {}).session }) });
-    })
+      body: JSON.stringify({ ids: ids, country: select ? select.value : '', previous: (readCheckout() || {}).session, offers: offers }) })
       .then(function (res) { return res.json().catch(function () { return {}; }).then(function (b) { return { status: res.status, body: b }; }); })
       .then(function (r) {
         var b = r.body || {};
@@ -1514,6 +1534,9 @@
     var sold = st === 'sold' || st === 'traded';
     var reserved = !sold && st === 'reserved';
     var inBag = !sold && !reserved && !!id && (ids || readBag()).indexOf(id) !== -1;
+    // a Best offer copy (data-offer-href, decision 0189): reserved = "(Reserved) Notify me" as any copy; only the buyer
+    // of the accepted offer (its token in this browser and the copy in the bag, 0188) reads "In bag"
+    if (btn.hasAttribute('data-offer-href')) { inBag = reserved && myOffer(id, ids); if (inBag) reserved = false; }
     if ('disabled' in btn) btn.disabled = sold;
     text.nodeValue = sold ? 'Sold out' : reserved ? '' : inBag ? 'In bag' : btn.getAttribute('data-label-default');
     setReservedLabel(label, text, reserved);
@@ -1565,7 +1588,11 @@
   function syncAddButtons(ids) {
     Array.prototype.forEach.call(document.querySelectorAll('[data-listing-id] .hm-product-card__add'), function (b) {
       var holder = b.closest('[data-listing-id]');
-      if (holder.getAttribute('data-listing-section') === 'trade' || holder.getAttribute('data-price-mode') === 'offers') return;   // a link to the offer page, not a bag button (0068, 0158)
+      if (holder.getAttribute('data-listing-section') === 'trade') return;   // a link to the offer page or a state, not a bag button (0068)
+      if (holder.getAttribute('data-price-mode') === 'offers') {   // best offer (0158): the link stays a link; a reserved copy's button acts as any (0189)
+        if (b.tagName === 'A') return;
+        b.setAttribute('data-offer-href', holder.getAttribute('data-offer-href') || '');
+      }
       syncAddButton(b, holder.getAttribute('data-listing-id'), ids);
     });
     Array.prototype.forEach.call(document.querySelectorAll('[data-add-to-bag]'), function (b) {
@@ -1573,15 +1600,21 @@
     });
     var add = player && player.querySelector('.site-player__add');
     var cur = typeof current === 'function' ? current() : null;
-    if (add && cur && cur.section !== 'trade' && !cur.offers) syncAddButton(add, cur.listing, ids);
+    if (add && cur && cur.section !== 'trade' && !(cur.offers && statusFor(cur.listing) === 'available')) syncAddButton(add, cur.listing, ids);
   }
   // the Add buttons: Add to bag, or open the bag when the copy is already in it (decision 0058). The header Bag link
   // does the opening, so the soft navigation keeps the player; no toast (decision 0050)
-  function addOrOpen(id) {
+  // the accepted offer of this browser for a copy in the bag (decision 0188)
+  function myOffer(id, ids) { return !!(id && readOfferTokens()[id] && (ids || readBag()).indexOf(id) !== -1); }
+  // offerHref: the button of a Best offer copy (0189): open → its offer page; reserved → Notify me, or the bag for the
+  // buyer of the accepted offer
+  function addOrOpen(id, offerHref) {
     if (!id) return;
     var st = statusFor(id);
     if (st === 'sold' || st === 'traded') return;
-    if (st === 'reserved') { openNotify(id); return; }
+    if (offerHref && st === 'available') { location.href = offerHref; return; }
+    if (st === 'reserved' && !(offerHref && myOffer(id))) { openNotify(id, !!offerHref); return; }
+    if (offerHref && st !== 'reserved') return;
     if (readBag().indexOf(id) === -1) { addToBag(id); return; }
     var link = document.querySelector('a[data-bag-count]');
     if (link) link.click();
@@ -1625,9 +1658,10 @@
   // one (owner holds it for someone, no end). Without the column (before 0016) a hold reads as a checkout.
   var RESERVED_TEXT = {
     checkout: 'Someone is checking out this record. If they don\u2019t buy it, it\u2019s back within 30 minutes.',
-    manual: 'This record is on hold for someone. If it falls through, it\u2019s back in the shop.'
+    manual: 'This record is on hold for someone. If it falls through, it\u2019s back in the shop.',
+    offer: 'An offer was accepted. If it isn\u2019t paid within 48 h, the record is back and open to offers.'   // Best offer (0189)
   };
-  function reservedText(id) { return RESERVED_TEXT[holdKind[id] === 'manual' ? 'manual' : 'checkout']; }
+  function reservedText(id, offer) { return RESERVED_TEXT[offer ? 'offer' : holdKind[id] === 'manual' ? 'manual' : 'checkout']; }
   var notifyFor = null, notifyReturn = null, notifyBusy = false;
   function supabaseConfig() {
     var base = document.querySelector('meta[name="hm-supabase-url"]');
@@ -1648,15 +1682,15 @@
     if (text) p.input.setAttribute('aria-invalid', 'true'); else p.input.removeAttribute('aria-invalid');
     if (p.support) p.support.textContent = text || NOTIFY_SUPPORT;
   }
-  function openNotify(id) {
+  function openNotify(id, offer) {
     var p = notifyParts();
     if (!p || !p.dialog.showModal || !supabaseConfig()) {
-      if (window.HighmuzikToast) window.HighmuzikToast.show({ message: reservedText(id) }); else announce(reservedText(id));
+      if (window.HighmuzikToast) window.HighmuzikToast.show({ message: reservedText(id, offer) }); else announce(reservedText(id, offer));
       return;
     }
     notifyFor = id;
     var body = p.dialog.querySelector('.hm-dialog__body');
-    if (body) body.textContent = reservedText(id) + ' Leave your email and we\u2019ll tell you.';
+    if (body) body.textContent = reservedText(id, offer) + ' Leave your email and we\u2019ll tell you.';
     notifyReturn = document.activeElement;
     setNotifyError(p, null);
     p.dialog.showModal();
@@ -1718,10 +1752,10 @@
   // a bag line follows the live status, as pages/bag.js renders it: available (price), sold / reserved (name plain,
   // "SOLD OUT" / "RESERVED" in a red inline Alert beside the struck price, decisions 0064, 0065, 0078)
   var BAG_STATUS = { available: 'available', sold: 'sold', traded: 'sold' };
-  // An accepted offer's line (decision 0186, Figma `bag item` status=offer | offer expired): a Best offer copy is priced
-  // from the buyer's account (bagOffers, customer_offers): ready = the offer's amount + "Your offer · held until …",
-  // expired = "EXPIRED" beside the struck amount + "Your offer expired on …", closed / sold = SOLD OUT. Not signed in, or
-  // no offer of this account = RESERVED with "Your offer: sign in to buy it", out of the order.
+  // An accepted offer's line (decisions 0186, 0188, Figma `bag item` status=offer | offer expired): a Best offer copy is
+  // priced from its email link's token (bagOffers, pay-info): ready = the offer's amount + "Your offer · held until …",
+  // expired = "EXPIRED" beside the struck amount + "Your offer expired on …", closed / sold = SOLD OUT. No token in this
+  // browser = RESERVED with "Open the link in the email of your offer", out of the order.
   function offerWhen(iso) {
     try { return new Date(iso).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); }
     catch (e) { return String(iso).slice(0, 16).replace('T', ' '); }
@@ -1732,9 +1766,9 @@
     if (status === 'sold' || status === 'traded' || status === 'gone' || (o && o.state === 'closed')) return { line: 'sold' };
     if (o && o.state === 'ready') return { line: 'offer', cents: o.amount_cents, note: 'Your offer \u00b7 held until ' + offerWhen(o.expires_at) };
     if (o && o.state === 'expired') return { line: 'offer-expired', cents: o.amount_cents, note: 'Your offer expired on ' + offerWhen(o.expires_at) };
-    return { line: 'reserved', note: bagOffers === null ? null : 'Your offer: sign in to buy it at your price.', signIn: bagOffers !== null };
+    return { line: 'reserved', note: bagOffers === null ? null : 'Your offer: open the link in its email to buy it at your price.' };
   }
-  function setOfferNote(item, text, signIn) {
+  function setOfferNote(item, text) {
     var info = item.querySelector('.hm-bag-item__info');
     var note = item.querySelector('.hm-bag-item__offer-note');
     if (!text) { if (note) note.parentNode.removeChild(note); return; }
@@ -1744,13 +1778,7 @@
       info.insertBefore(note, info.firstChild);
     }
     if (!note) return;
-    note.textContent = signIn ? '' : text;
-    if (signIn) {   // the account page signs in; the Bag reads the offer again when it is opened
-      var a = document.createElement('a'); a.className = 'trade-link'; a.textContent = text;
-      var bagLink = document.querySelector('a[data-bag-count]');
-      a.href = (bagLink ? bagLink.getAttribute('href').replace(/bag\/?$/, '') : '/') + 'account/';
-      note.appendChild(a);
-    }
+    note.textContent = text;
   }
   function syncBagLine(li) {
     var id = li.getAttribute('data-bag-line');
@@ -1767,7 +1795,7 @@
     var item = li.querySelector('.hm-bag-item');
     if (!item) return;
     item.setAttribute('data-status', line);
-    if (offer || item.querySelector('.hm-bag-item__offer-note')) setOfferNote(item, offer && offer.note, offer && offer.signIn);
+    if (offer || item.querySelector('.hm-bag-item__offer-note')) setOfferNote(item, offer && offer.note);
     // sold and reserved (0064, 0065): no notice on top; the word beside the struck price
     var notice = item.querySelector('.hm-bag-item__notice');
     if (notice) notice.parentNode.removeChild(notice);
@@ -1837,14 +1865,15 @@
     var card = t.closest('.hm-product-card__add');
     if (card) {
       var holder = card.closest('[data-listing-id]');
-      if (holder && (holder.getAttribute('data-listing-section') === 'trade' || holder.getAttribute('data-price-mode') === 'offers')) return;   // offer link, or a reserved/traded state (0068, 0158)
-      if (holder) addOrOpen(holder.getAttribute('data-listing-id'));
+      if (holder && holder.getAttribute('data-listing-section') === 'trade') return;   // offer link, or a reserved/traded state (0068)
+      if (holder && holder.getAttribute('data-price-mode') === 'offers' && card.tagName === 'A') return;   // Make an offer (0158)
+      if (holder) addOrOpen(holder.getAttribute('data-listing-id'), card.getAttribute('data-offer-href'));
       return;
     }
     var cta = t.closest('[data-add-to-bag]');
-    if (cta) { addOrOpen(cta.getAttribute('data-add-to-bag')); return; }
+    if (cta) { addOrOpen(cta.getAttribute('data-add-to-bag'), cta.getAttribute('data-offer-href')); return; }
     var padd = t.closest('.site-player__add');
-    if (padd) { var cur = typeof current === 'function' ? current() : null; if (cur && cur.section !== 'trade' && !cur.offers) addOrOpen(cur.listing); return; }
+    if (padd) { var cur = typeof current === 'function' ? current() : null; if (cur && cur.section !== 'trade') addOrOpen(cur.listing, padd.getAttribute('data-offer-href')); return; }
     var checkoutBtn = t.closest('[data-bag-checkout]');
     if (checkoutBtn) { if (!checkoutBtn.disabled) startCheckout(checkoutBtn); return; }
     var remove = t.closest('.hm-bag-item__remove');
@@ -2362,90 +2391,33 @@
     }).catch(function () { showOfferState(root, 'invalid'); });
   }
 
-  // /offer/pay/?t=… (the acceptance email, decision 0186): reads the offer, then signs the buyer in with the offer's email
-  // (the account's email code, scripts/account.js) and puts the copy in the Bag at the offer price; the Bag opens.
-  // States (Figma `offer pay`): loading · sign-in · code · other-account · expired · paid · closed · invalid.
+  // /offer/pay/?t=… (the acceptance email, decision 0188): reads the offer; ready → the copy goes in the Bag with the
+  // link's token (no sign-in: only the offer's inbox gets the link) and the Bag opens. If the token can't be kept (no
+  // storage) the page stays on "ready" with Go to your Bag. States (Figma `offer pay`): loading · ready · expired · paid ·
+  // closed · invalid.
   function initOfferPay() {
     var root = document.querySelector('[data-offer-pay-page]');
     if (!root || root.hasAttribute('data-ready')) return;
     root.setAttribute('data-ready', '');
     var endpoint = root.getAttribute('data-endpoint'), token = offerToken();
-    var Account = window.HighmuzikAccount;
-    if (!endpoint || !token || !Account) { showOfferState(root, 'invalid'); return; }
-    var info = null, busy = false, sentAt = 0;
-    var codeForm = root.querySelector('[data-offer-code-form]'), codeInput = codeForm.querySelector('[name="code"]');
-    var codeError = root.querySelector('[data-offer-code-error]'), sendError = root.querySelector('[data-offer-error]');
+    if (!endpoint || !token) { showOfferState(root, 'invalid'); return; }
     function fill(sel, text) { Array.prototype.forEach.call(root.querySelectorAll(sel), function (el) { el.textContent = text; }); }
-    function say(el, text) { el.textContent = text || ''; el.hidden = !text; }
-    function same(a, b) { return String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase(); }
-    // signed in with the offer's email: into the Bag (once), then the Bag
-    function toBag() {
-      var ids = readBag();
-      if (ids.indexOf(info.listing_id) === -1) { ids.push(info.listing_id); writeBag(ids); }
-      track('price_offer_to_bag');
-      location.href = (root.getAttribute('data-bag-url') || '/bag/') + '?offer=added';
-    }
-    function decide(sess) {
-      if (sess && same(sess.email, info.email)) { toBag(); return; }
-      if (sess) { fill('[data-offer-signed-in]', sess.email); showOfferState(root, 'other-account'); return; }
-      showOfferState(root, 'sign-in');
-    }
-    function send(then) {
-      if (busy) return;
-      busy = true;
-      Account.sendCode(info.email, location.href).then(function (err) {
-        busy = false;
-        if (!err) sentAt = Date.now();
-        then(err);
-      });
-    }
     offerPost(endpoint, { action: 'pay-info', token: token }).then(function (r) {
       var d = r.data || {};
       if (!d.state) { showOfferState(root, 'invalid'); return; }
-      info = d;
       fillOfferTarget(root, d, 'Yours for ' + formatPrice(d.amount_cents));
       if (d.state !== 'ready') { showOfferState(root, d.state); return; }
-      fill('[data-offer-email]', d.email);
       fill('[data-offer-amount]', formatPrice(d.amount_cents));
       fill('[data-offer-held]', d.expires_at ? 'Held for you until ' + offerWhen(d.expires_at) + '. Then the record is back open to offers.' : '');
-      return Account.getSession().then(decide);
+      var tokens = readOfferTokens();
+      tokens[d.listing_id] = token;
+      var kept = writeOfferTokens(tokens);
+      var ids = readBag();
+      if (ids.indexOf(d.listing_id) === -1) { ids.push(d.listing_id); writeBag(ids); }
+      track('price_offer_to_bag');
+      if (kept && readBag().indexOf(d.listing_id) !== -1) { location.href = (root.getAttribute('data-bag-url') || '/bag/') + '?offer=added'; return; }
+      showOfferState(root, 'ready');
     }).catch(function () { showOfferState(root, 'invalid'); });
-
-    root.querySelector('[data-offer-send-code]').addEventListener('click', function () {
-      say(sendError, '');
-      send(function (err) {
-        if (err) { say(sendError, err); return; }
-        codeInput.value = ''; say(codeError, '');
-        showOfferState(root, 'code');
-        codeInput.focus();
-      });
-    });
-    codeForm.addEventListener('submit', function (e) {
-      e.preventDefault();
-      if (busy) return;
-      var code = codeInput.value.replace(/\D/g, '');
-      if (code.length !== 6) { say(codeError, 'Enter the 6 digits from the email.'); codeInput.focus(); return; }
-      busy = true; say(codeError, '');
-      Account.verifyCode(info.email, code).then(function (sess) {
-        busy = false;
-        if (!sess) { say(codeError, Account.wrongCode); codeInput.focus(); return; }
-        toBag();
-      }, function () { busy = false; say(codeError, 'No connection. Check it and try again.'); });
-    });
-    root.querySelector('[data-offer-resend]').addEventListener('click', function () {
-      var wait = Math.ceil(Account.resendAfter - (Date.now() - sentAt) / 1000);
-      if (wait > 0) { say(codeError, 'You can ask for a new code in ' + wait + ' seconds.'); codeInput.focus(); return; }
-      send(function (err) {
-        say(codeError, err);
-        if (!err && window.HighmuzikToast) window.HighmuzikToast.show({ message: 'New code sent.' });
-        codeInput.focus();
-      });
-    });
-    root.querySelector('[data-offer-sign-out]').addEventListener('click', function () {
-      Account.signOut();
-      if (window.HighmuzikToast) window.HighmuzikToast.show({ message: 'Signed out.' });
-      showOfferState(root, 'sign-in');
-    });
   }
 
   // back on the Bag from the email link of an accepted offer (0186): say it, once

@@ -2,11 +2,11 @@
 // First to pay wins (decision 0116): starting a checkout holds NOTHING. The copies stay available for everyone while
 // the buyer is on Stripe; Stripe only authorizes the payment (capture_method manual) and stripe-webhook captures it
 // if the copies are still free when the session completes (checkout_claim), or cancels the authorization if not.
-// POST { ids: [listing uuid], country: "DE", previous?: "cs_…" } → { url, session } of a Stripe Checkout session
-//      With the buyer's account token (Authorization: Bearer <access token>, decision 0186) a copy Reserved for an
-//      accepted offer of that email counts too, at the offer's amount (checkout_items(ids, email), migration 0040); the
-//      offers remember the session (checkout_open_offers) so checkout_claim lets it buy them. A Bag with an accepted
-//      offer has no minimum order (0158: an offer never had one).
+// POST { ids: [listing uuid], country: "DE", previous?: "cs_…", offers?: [pay token] } → { url, session } of a Stripe
+//      Checkout session. offers = the tokens of the email links of accepted offers that the Bag keeps (decision 0188, no
+//      sign-in): a copy Reserved for one of them counts too, at the offer's amount (checkout_items(ids, tokens), migration
+//      0041), and Stripe gets the offer's email (fixed); the offers remember the session (checkout_open_offers, 0040)
+//      so checkout_claim lets it buy them. A Bag with an accepted offer has no minimum order (0158: an offer never had one).
 // POST { action: "cancel", session: "cs_…" }   → the buyer came back without paying (cancel_url, browser Back, Bag
 //                                                opened again): the session is expired on Stripe → { ok, paid? }
 // Steps: copies from the DB (checkout_items: all available or nothing) → minimum order and shipping with
@@ -26,6 +26,7 @@ const env = (k: string) => Deno.env.get(k) ?? "";
 const SESSION_MINUTES = 31;   // Stripe's minimum is 30
 const MAX_RECORDS = 50;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const TOKEN = /^[0-9a-f]{64}$/;   // an offer's pay_token (0034)
 
 function allowedOrigin(origin: string | null) {
   if (!origin) return null;
@@ -67,7 +68,7 @@ const mediaUrl = (key: string | null) => {
 Deno.serve(async (req) => {
   const origin = allowedOrigin(req.headers.get("origin"));
   const cors: Record<string, string> = origin
-    ? { "Access-Control-Allow-Origin": origin, "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "authorization, content-type", Vary: "Origin" }
+    ? { "Access-Control-Allow-Origin": origin, "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "content-type", Vary: "Origin" }
     : {};
   const json = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
@@ -127,14 +128,9 @@ Deno.serve(async (req) => {
     if (ended.paid) return json({ error: "already_paid", session: previous }, 409);
   }
 
-  // the signed-in buyer (accepted offers, 0186): the email of a valid account token, else none
-  let email: string | null = null;
-  const bearer = /^Bearer\s+(\S+)$/i.exec(req.headers.get("authorization") ?? "")?.[1];
-  if (bearer) {
-    const { data: who } = await db.auth.getUser(bearer);
-    if (who?.user?.email && who.user.email_confirmed_at) email = who.user.email;
-  }
-  const { data: items, error: itemsError } = await db.rpc("checkout_items", { p_ids: ids, p_email: email });
+  // the email links of accepted offers kept by the Bag (0188)
+  const tokens = (Array.isArray(b.offers) ? b.offers : []).map(String).filter((s: string) => TOKEN.test(s)).slice(0, MAX_RECORDS);
+  const { data: items, error: itemsError } = await db.rpc("checkout_items", { p_ids: ids, p_tokens: tokens });
   if (itemsError) return json({ error: "Could not read the records." }, 500);
   if (!items || items.length !== ids.length) {
     // which ones are gone (sold, held by hand, no longer public): the Bag marks them
@@ -169,6 +165,8 @@ Deno.serve(async (req) => {
       expires_at: Math.floor(Date.now() / 1000) + SESSION_MINUTES * 60,
       locale: "en",
       billing_address_collection: "auto",
+      // the email of an accepted offer (0188): Stripe shows it fixed, so receipt and order go to the offer's inbox
+      ...(copies.find((c) => c.offer_email) ? { customer_email: copies.find((c) => c.offer_email).offer_email } : {}),
       shipping_address_collection: { allowed_countries: [country] },
       shipping_options: [{
         shipping_rate_data: {
