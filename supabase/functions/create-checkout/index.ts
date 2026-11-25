@@ -3,6 +3,10 @@
 // the buyer is on Stripe; Stripe only authorizes the payment (capture_method manual) and stripe-webhook captures it
 // if the copies are still free when the session completes (checkout_claim), or cancels the authorization if not.
 // POST { ids: [listing uuid], country: "DE", previous?: "cs_…" } → { url, session } of a Stripe Checkout session
+//      With the buyer's account token (Authorization: Bearer <access token>, decision 0186) a copy Reserved for an
+//      accepted offer of that email counts too, at the offer's amount (checkout_items(ids, email), migration 0040); the
+//      offers remember the session (checkout_open_offers) so checkout_claim lets it buy them. A Bag with an accepted
+//      offer has no minimum order (0158: an offer never had one).
 // POST { action: "cancel", session: "cs_…" }   → the buyer came back without paying (cancel_url, browser Back, Bag
 //                                                opened again): the session is expired on Stripe → { ok, paid? }
 // Steps: copies from the DB (checkout_items: all available or nothing) → minimum order and shipping with
@@ -63,7 +67,7 @@ const mediaUrl = (key: string | null) => {
 Deno.serve(async (req) => {
   const origin = allowedOrigin(req.headers.get("origin"));
   const cors: Record<string, string> = origin
-    ? { "Access-Control-Allow-Origin": origin, "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "content-type", Vary: "Origin" }
+    ? { "Access-Control-Allow-Origin": origin, "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "authorization, content-type", Vary: "Origin" }
     : {};
   const json = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
@@ -123,7 +127,14 @@ Deno.serve(async (req) => {
     if (ended.paid) return json({ error: "already_paid", session: previous }, 409);
   }
 
-  const { data: items, error: itemsError } = await db.rpc("checkout_items", { p_ids: ids });
+  // the signed-in buyer (accepted offers, 0186): the email of a valid account token, else none
+  let email: string | null = null;
+  const bearer = /^Bearer\s+(\S+)$/i.exec(req.headers.get("authorization") ?? "")?.[1];
+  if (bearer) {
+    const { data: who } = await db.auth.getUser(bearer);
+    if (who?.user?.email && who.user.email_confirmed_at) email = who.user.email;
+  }
+  const { data: items, error: itemsError } = await db.rpc("checkout_items", { p_ids: ids, p_email: email });
   if (itemsError) return json({ error: "Could not read the records." }, 500);
   if (!items || items.length !== ids.length) {
     // which ones are gone (sold, held by hand, no longer public): the Bag marks them
@@ -140,8 +151,9 @@ Deno.serve(async (req) => {
     const config = settings?.config;
     const subtotal = copies.reduce((sum, c) => sum + c.price_cents, 0);
 
+    const withOffer = copies.some((c) => c.offer_id);
     const min = Shipping.minimumOrder(config, subtotal);
-    if (!min.ok) return json({ error: "below_minimum", min_cents: min.min_cents, missing_cents: min.missing_cents }, 422);
+    if (!min.ok && !withOffer) return json({ error: "below_minimum", min_cents: min.min_cents, missing_cents: min.missing_cents }, 422);
 
     const est = Shipping.estimate(config, copies.map((c) => ({ format: c.format, weight_g: c.weight_g })), country);
     if (est.status !== "ok") return json({ error: "shipping", status: est.status }, 422);
@@ -168,7 +180,7 @@ Deno.serve(async (req) => {
         quantity: 1,
         price_data: {
           currency: "eur", unit_amount: c.price_cents,
-          product_data: { name: c.name.slice(0, 250), images: mediaUrl(c.photo_key) ? [mediaUrl(c.photo_key)] : undefined, metadata: { listing_id: c.id } },
+          product_data: { name: (c.offer_id ? `${c.name} (your accepted offer)` : c.name).slice(0, 250), images: mediaUrl(c.photo_key) ? [mediaUrl(c.photo_key)] : undefined, metadata: { listing_id: c.id } },
         },
       })),
       // the listing ids travel on each line (product metadata): stripe-webhook reads them back from the line items
@@ -179,6 +191,15 @@ Deno.serve(async (req) => {
     if (openError) {   // without the bookkeeping, a rival session could not be expired: don't start this one
       await stripe(`checkout/sessions/${session.id}/expire`, {}).catch(() => {});
       throw new Error(`checkout_open: ${openError.message}`);
+    }
+    const offerIds = copies.filter((c) => c.offer_id).map((c) => c.offer_id);
+    if (offerIds.length) {
+      const { data: opened, error: offersError } = await db.rpc("checkout_open_offers", { p_session: session.id, p_offers: offerIds });
+      if (offersError || opened !== offerIds.length) {   // an offer ran out meanwhile: this session could not buy it
+        await stripe(`checkout/sessions/${session.id}/expire`, {}).catch(() => {});
+        if (offersError) throw new Error(`checkout_open_offers: ${offersError.message}`);
+        return json({ error: "unavailable", unavailable: copies.filter((c) => c.offer_id).map((c) => c.id) }, 409);
+      }
     }
     return json({ url: session.url, session: session.id });
   } catch (e) {

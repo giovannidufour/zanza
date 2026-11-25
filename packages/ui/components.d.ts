@@ -304,10 +304,13 @@ export declare function ProductCard(props: ProductCardProps): JSX.Element;
 export interface BagItemProps extends HTMLAttributes<HTMLElement> {
   /** Omitted → responsive (breakpoint `--mobile` from tokens.json): desktop type = ProductCard desktop, mobile = ProductCard mobile. */
   device?: "desktop" | "mobile";
-  /** Figma `status`. sold: name plain, "SOLD OUT" in an inline Alert (alert box, decision 0078) beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). Samples stay. `unavailable` is the pre-0064 name of reserved. @default "available" */
-  status?: "available" | "sold" | "reserved" | "unavailable";
-  /** The word beside the struck price of a sold / reserved line. @default "SOLD OUT" / "RESERVED" */
+  /** Figma `status`. sold: name plain, "SOLD OUT" in an inline Alert (alert box, decision 0078) beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). offer: a copy bought at an accepted Best offer, priced as available, with `offerNote`; offer-expired: as sold with "EXPIRED" (decision 0186). Samples stay. `unavailable` is the pre-0064 name of reserved. @default "available" */
+  status?: "available" | "sold" | "reserved" | "unavailable" | "offer" | "offer-expired";
+  /** The word beside the struck price of a sold / reserved / offer-expired line. @default "SOLD OUT" / "RESERVED" / "EXPIRED" */
   notice?: ReactNode;
+  /** Figma `offer note` (status offer | offer expired, decision 0186): one line above the name, body/small text/moderate,
+   *  e.g. "Your offer · held until Wed 25 Nov, 16:30" / "Your offer expired on Wed 25 Nov, 16:30". */
+  offerNote?: ReactNode;
   /** Figma `cover`: the cover image, 96 × 96. */
   image?: ProductCardImage;
   /** Product page URL: the title and the cover link to it. */
@@ -642,8 +645,8 @@ export interface DialogProps extends Omit<HTMLAttributes<HTMLDialogElement>, "ti
   busy?: boolean;
   /** A required pick under the body, e.g. which artist to keep when merging: pass a <RadioGroup>. Figma: `choices`. */
   choices?: ReactNode;
-  /** One form field under the body, e.g. the email of "Notify me": pass an <Input>; its support text carries the fine
-   *  print. Proposal (Figma: PDP page → `reserved + notify me (proposal)`, mock), not yet a property of the Figma component. */
+  /** One form field under the body (Figma: boolean `field`, a text area by default; decision 0187), e.g. the optional
+   *  message of admin → Offers → Decline, or the email of "Notify me": pass an <Input>. */
   field?: ReactNode;
 }
 export declare function Dialog(props: DialogProps): JSX.Element;

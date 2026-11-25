@@ -518,18 +518,23 @@
     var t = CARD_TYPE[device];
     var titleId = useId();
     var img = props.image;
-    var status = props.status === 'sold' ? 'sold' : (props.status === 'reserved' || props.status === 'unavailable') ? 'reserved' : 'available';
-    var unavailable = status !== 'available';
+    // offer / offer-expired (decision 0186): a copy bought through an accepted Best offer; offer = at the offer price (as
+    // available, plus the `offer note`), offer-expired = as sold with "EXPIRED"
+    var status = props.status === 'sold' ? 'sold' : (props.status === 'reserved' || props.status === 'unavailable') ? 'reserved'
+      : props.status === 'offer' ? 'offer' : props.status === 'offer-expired' ? 'offer-expired' : 'available';
+    var unavailable = status === 'sold' || status === 'reserved' || status === 'offer-expired';
+    var NOTICE = { sold: 'SOLD OUT', reserved: 'RESERVED', 'offer-expired': 'EXPIRED' };
     return h('article', Object.assign({
       className: cx('hm-bag-item', props.className),
       'data-device': device,
       'data-status': status,
       'aria-labelledby': titleId
-    }, omit(props, ['device', 'status', 'notice', 'image', 'href', 'title', 'releaseInfo', 'price', 'grading', 'cover', 'conditions',
+    }, omit(props, ['device', 'status', 'notice', 'offerNote', 'image', 'href', 'title', 'releaseInfo', 'price', 'grading', 'cover', 'conditions',
                     'samples', 'onRemove', 'removeLabel', 'headingLevel', 'className', 'children'])),
       h(props.href ? 'a' : 'div', props.href ? { className: 'hm-bag-item__image', href: props.href, tabIndex: -1, 'aria-hidden': 'true' } : { className: 'hm-bag-item__image' },
         img && img.src ? h('img', { src: img.src, srcSet: img.srcSet, sizes: img.srcSet ? img.sizes || '96px' : undefined, alt: img.alt || '', loading: 'lazy' }) : null),
       h('div', { className: 'hm-bag-item__info' },
+        props.offerNote ? h('p', { className: 'hm-bag-item__offer-note body-small' }, props.offerNote) : null,
         h('div', { className: 'hm-bag-item__title-block' },
           h('h' + (props.headingLevel || 2), { id: titleId, className: cx('hm-bag-item__name', t.head) },
             props.href ? h('a', { className: 'hm-bag-item__link', href: props.href }, props.title) : props.title),
@@ -544,10 +549,10 @@
       h('div', { className: 'hm-bag-item__purchase' },
         unavailable
           ? h('p', { className: cx('hm-bag-item__price', t.head) },
-              h(Alert, { layout: 'inline', className: 'hm-bag-item__status' }, props.notice || (status === 'sold' ? 'SOLD OUT' : 'RESERVED')),
+              h(Alert, { layout: 'inline', className: 'hm-bag-item__status' }, props.notice || NOTICE[status]),
               h('span', { className: 'hm-visually-hidden' }, ', not in your order, '),
               props.price != null ? h('s', null, props.price) : null)
-          : status === 'available' && props.price != null ? h('p', { className: cx('hm-bag-item__price', t.head) }, props.price) : null,
+          : props.price != null ? h('p', { className: cx('hm-bag-item__price', t.head) }, props.price) : null,
         removable ? h(Button, { hierarchy: 'secondary', size: 'small', className: 'hm-bag-item__remove', onClick: props.onRemove, 'aria-describedby': titleId },
           props.removeLabel || 'Remove') : null));
   }

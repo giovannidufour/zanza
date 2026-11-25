@@ -10,7 +10,11 @@
    site.js estimates with packages/shipping/shipping.js. create-checkout recalculates on the server. The select lists
    only the countries the shop ships to (decision 0075).
    Minimum order (decision 0072, Figma `bag summary` minimum=below): the page carries the minimum (admin page Shipping)
-   in data-min-order-cents; under it site.js shows the `minimum note` and disables Checkout. */
+   in data-min-order-cents; under it site.js shows the `minimum note` and disables Checkout. A bag with an accepted
+   offer has no minimum (decision 0186).
+   Accepted offers (decision 0186, Figma `bag item` status=offer | offer expired): Best offer copies have a hidden line
+   too; the email link of an accepted offer puts the copy in the bag after the buyer signs in with the offer's email, and
+   site.js prices the line from the account (customer_offers, migration 0040). */
 'use strict';
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
@@ -22,10 +26,13 @@ const BAG_STATUS = { available: 'available', sold: 'sold', traded: 'sold' };
 
 function BagLine({ product, url }) {
   const { listing, release, copy, samples } = product;
-  const available = listing.status === 'available';
+  // a Best offer copy (price_mode offers) is in a bag only through an accepted offer (decision 0186): no price here,
+  // site.js prices it from the buyer's account (customer_offers) and shows the `offer note`
+  const offers = listing.price_mode === 'offers';
+  const available = listing.status === 'available' && !offers;
   return h('li', { className: 'bag-list__line', hidden: true, 'data-bag-line': listing.id,
       'data-price': listing.price ? listing.price.amount : 0, 'data-available': available ? 'true' : 'false',
-      'data-listing-status': listing.status,
+      'data-listing-status': listing.status, 'data-price-mode': offers ? 'offers' : undefined,
       'data-format': release.format || '', 'data-weight': listing.weight_g || '' },
     h(Z.Divider),
     h(Z.BagItem, {

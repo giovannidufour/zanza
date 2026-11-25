@@ -177,13 +177,18 @@ Deno.serve(async (req) => {
     return json({ result: r.result, name: r.name, slug: r.slug, amount_cents: r.amount_cents });
   }
 
-  // ── the pay page of an accepted offer ────────────────────────────────────
+  // ── the email link of an accepted offer ──────────────────────────────────
+  // pay-info: the page /offer/pay/ (since 0186 it signs the buyer in and puts the record in the Bag, whose checkout is
+  // create-checkout). pay: the single-record Stripe Checkout of 0158, no longer called by the shop; kept for a page
+  // still open in a tab during the deploy.
   if (b.action === "pay-info" || b.action === "pay") {
     const token = String(b.token ?? "");
     if (!TOKEN.test(token)) return json({ state: "invalid" });
     const { data: info, error } = await db.rpc("offer_pay_info", { p_token: token });
     if (error) { console.error(error); return json({ error: "Could not read the offer." }, 500); }
+    // email + listing: the page signs the buyer in with the offer's email, then puts the copy in the Bag (0186)
     const view = { state: info.state, name: info.name, slug: info.slug, amount_cents: info.amount_cents, country: info.country,
+      email: info.email, listing_id: info.listing_id,
       expires_at: info.expires_at, format: info.format, weight_g: info.weight_g, image: mediaUrl(info.photo_key) };
     if (b.action === "pay-info") return json(view);
     if (info.state !== "ready") return json(view, 409);

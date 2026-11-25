@@ -704,14 +704,15 @@ a.hm-product-card__image { display: block; color: inherit; }
 .hm-bag-item__title-block { display: flex; flex-direction: column; min-width: 0; }
 .hm-bag-item__link { color: inherit; text-decoration: none; }
 @media (hover: hover) { .hm-bag-item__link:hover { text-decoration: underline; } }   /* as .site-inline-link (decision 0043) */
+.hm-bag-item__offer-note { color: var(--text-moderate); }   /* Figma `offer note`: body/small, text/moderate (0186) */
 .hm-bag-item__description { display: flex; flex-direction: column; gap: 4px; }
 .hm-bag-item__samples { display: flex; flex-wrap: wrap; gap: 8px; }
 .hm-bag-item__purchase { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: var(--small); }
 /* sold (decision 0064) and reserved (0065): name plain (decision 0078); "SOLD OUT" / "RESERVED" in an inline Alert beside the struck price (Figma `price row`, gap small) */
-.hm-bag-item:is([data-status="sold"], [data-status="reserved"]) .hm-bag-item__price { display: flex; align-items: center; gap: var(--small); white-space: nowrap; }
+.hm-bag-item:is([data-status="sold"], [data-status="reserved"], [data-status="offer-expired"]) .hm-bag-item__price { display: flex; align-items: center; gap: var(--small); white-space: nowrap; }
 /* mobile: the word below the struck price (Figma mobile `price row` vertical: price, then word; align right, gap small; Gio 2026-11-14). column-reverse keeps the DOM / screen reader order "SOLD OUT, not in your order, 12€" */
-.hm-bag-item[data-device="mobile"]:is([data-status="sold"], [data-status="reserved"]) .hm-bag-item__price { flex-direction: column-reverse; align-items: flex-end; }
-@media (--mobile) { .hm-bag-item[data-device="responsive"]:is([data-status="sold"], [data-status="reserved"]) .hm-bag-item__price { flex-direction: column-reverse; align-items: flex-end; } }
+.hm-bag-item[data-device="mobile"]:is([data-status="sold"], [data-status="reserved"], [data-status="offer-expired"]) .hm-bag-item__price { flex-direction: column-reverse; align-items: flex-end; }
+@media (--mobile) { .hm-bag-item[data-device="responsive"]:is([data-status="sold"], [data-status="reserved"], [data-status="offer-expired"]) .hm-bag-item__price { flex-direction: column-reverse; align-items: flex-end; } }
 /* mobile: samples padding-top 8 (Figma: copied from the mobile product card) */
 .hm-bag-item[data-device="mobile"] .hm-bag-item__samples { padding-top: 8px; }
 @media (--mobile) { .hm-bag-item[data-device="responsive"] .hm-bag-item__samples { padding-top: 8px; } }
