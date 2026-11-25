@@ -388,35 +388,5 @@
     });
   }
 
-  // ---------------------------------------------------------------- for other pages (decision 0186)
-  // The email link of an accepted offer signs the buyer in with the offer's email and puts the record in the Bag
-  // (scripts/site.js initOfferPay); the Bag prices it from customer_offers(). Same calls as the sign-in above.
-  // sendCode(email, back) -> Promise(error text | null); verifyCode(email, code) -> Promise(session | null, rejects offline)
-  function sendCode(email, back) {
-    if (!config()) return Promise.resolve('Accounts are not switched on in this copy of the shop.');
-    return call('/auth/v1/otp?redirect_to=' + encodeURIComponent(back || location.href), { body: { email: email, create_user: true } }).then(function (r) {
-      if (r.status === 429) return 'Too many codes asked. Wait a minute and try again.';
-      if (!r.ok && r.status !== 403 && r.status !== 422) return 'The code could not be sent. Try again in a moment.';
-      return null;
-    }, function () { return 'No connection. Check it and try again.'; });
-  }
-  function verifyCode(email, code) {
-    return call('/auth/v1/verify', { body: { type: 'email', email: email, token: code } }).then(function (r) {
-      if (!r.ok || !r.body || !r.body.access_token) return null;
-      var s = sessionFrom(r.body); if (!s.email) s.email = email; writeSession(s); renderMenu(s); return s;
-    });
-  }
-  function signOut() {
-    var s = readSession();
-    if (s && config()) call('/auth/v1/logout?scope=local', { token: s.access_token }).catch(function () {});
-    writeSession(null); renderMenu(null);
-  }
-  // an RPC as the signed-in buyer: Promise(body | null)
-  function rpc(name, s) {
-    if (!config() || !s) return Promise.resolve(null);
-    return call('/rest/v1/rpc/' + name, { token: s.access_token, body: {} }).then(function (r) { return r.ok ? r.body : null; }, function () { return null; });
-  }
-
-  window.HighmuzikAccount = { init: init, getSession: function () { return config() ? getSession() : Promise.resolve(null); },
-    sendCode: sendCode, verifyCode: verifyCode, signOut: signOut, rpc: rpc, wrongCode: WRONG_CODE, resendAfter: RESEND_AFTER };
+  window.HighmuzikAccount = { init: init };
 })();

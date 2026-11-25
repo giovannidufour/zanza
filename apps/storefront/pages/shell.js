@@ -336,9 +336,14 @@ function ProductCardFor({ product, url, headingLevel }) {
     price: priceText(listing),
     // trade (Figma page Trade) and best offer (Figma page Offers, 0158): the card button is a link to the offer page,
     // not a bag button (only while available: a reserved, sold or traded copy shows its state, and site.js ignores its button)
+    // A reserved best-offer copy (decision 0189) has a button like any copy: site.js makes it "(Reserved) Notify me"
+    // (data-offer-href: where it leads once the copy is open to offers again)
+    'data-offer-href': isOffers(listing) ? url(`/products/${listing.slug}/offer/`) : undefined,
     addHref: (listing.section === 'trade' || isOffers(listing)) && listing.status === 'available' ? url(`/products/${listing.slug}/offer/`) : undefined,
-    addLabel: listing.section === 'trade' || isOffers(listing) ? TRADE_CARD_LABEL[listing.status] || TRADE_CARD_LABEL.available : undefined,
-    addLabelShort: listing.section === 'trade' || isOffers(listing) ? (listing.status === 'available' ? 'Offer' : TRADE_CARD_LABEL[listing.status]) : undefined,
+    addLabel: listing.section === 'trade' ? TRADE_CARD_LABEL[listing.status] || TRADE_CARD_LABEL.available
+      : isOffers(listing) ? (listing.status === 'sold' ? 'Sold out' : 'Make an offer') : undefined,
+    addLabelShort: listing.section === 'trade' ? (listing.status === 'available' ? 'Offer' : TRADE_CARD_LABEL[listing.status])
+      : isOffers(listing) ? (listing.status === 'sold' ? 'Sold out' : 'Offer') : undefined,
     tags: tagLinksOf(release, url),
     description: copy.notes,
     ...gradingProps(copy),

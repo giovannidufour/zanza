@@ -50,10 +50,13 @@ function TileFor({ product, url }) {
       'aria-label': `${productName(release)}, sample ${i + 1}: ${s.title}`
     }, sampleAttrs(product, s, url)), String(i + 1))) : null,
     counter: false,   // Gio 2026-11-18 (0121): the next photo peeks in, no "1/3" needed
-    // best offer (decision 0158): a link to the offer page instead of Add to bag
+    // best offer (decision 0158): a link to the offer page instead of Add to bag; reserved, a button like any copy's that
+    // site.js makes "(Reserved) Notify me" (0189)
     action: isOffers(listing)
-      ? h(Z.Button, { hierarchy: 'secondary', href: listing.status === 'available' ? url(`/products/${listing.slug}/offer/`) : undefined,
-          disabled: listing.status !== 'available' }, listing.status === 'available' ? 'Make an offer' : listing.status === 'sold' ? 'Sold out' : 'Reserved')
+      ? (listing.status === 'available'
+        ? h(Z.Button, { hierarchy: 'secondary', href: url(`/products/${listing.slug}/offer/`) }, 'Make an offer')
+        : h(Z.Button, { hierarchy: 'secondary', 'data-add-to-bag': listing.id, 'data-listing-status': listing.status,
+            'data-offer-href': url(`/products/${listing.slug}/offer/`), disabled: listing.status === 'sold' }, listing.status === 'sold' ? 'Sold out' : 'Make an offer'))
       : h(Z.Button, { hierarchy: 'secondary', 'data-add-to-bag': listing.id, 'data-listing-status': listing.status }, 'Add to bag')
   });
 }

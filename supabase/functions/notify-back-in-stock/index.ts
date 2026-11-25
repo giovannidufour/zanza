@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
   const db = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), { auth: { persistSession: false } });
   const { data: rows, error } = await db
     .from("back_in_stock")
-    .select("id, email, listing:listings(id, slug, status, reserved_until, custom_title, release:releases(lines:release_lines(position, artist, title)))")
+    .select("id, email, listing:listings(id, slug, status, reserved_until, custom_title, price_mode, release:releases(lines:release_lines(position, artist, title)))")
     .is("sent_at", null)
     .limit(50);
   if (error) return json({ error: error.message }, 500);
@@ -49,7 +49,12 @@ Deno.serve(async (req) => {
     const l = (row as any).listing;
     if (!l || !isAvailable(l)) continue;           // still reserved: wait for the next run
     const name = l.custom_title || nameOf(l.release?.lines ?? []) || "The record";
-    const href = `${shop}/products/${l.slug}/`;
+    // a Best offer copy (decision 0189): back after an accepted offer that wasn't paid, open to offers again
+    const offers = l.price_mode === "offers";
+    const href = offers ? `${shop}/products/${l.slug}/offer/` : `${shop}/products/${l.slug}/`;
+    const back = offers
+      ? `${name} is open to offers again at ${store}. It's a single copy: make your offer here`
+      : `${name} is available again at ${store}. It's a single copy, so the first to check out gets it`;
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${env("RESEND_API_KEY")}`, "Content-Type": "application/json" },
@@ -57,10 +62,10 @@ Deno.serve(async (req) => {
         from: env("MAIL_FROM"),
         to: row.email,
         subject: `It's back: ${name}`,
-        text: `${name} is available again at ${store}. It's a single copy, so the first to check out gets it:\n${href}\n\n` +
+        text: `${back}:\n${href}\n\n` +
           `You asked to be told once. We have now deleted your email address.`,
-        html: `<p>${escapeHtml(name)} is available again at ${escapeHtml(store)}. It's a single copy, so the first to check out gets it.</p>` +
-          `<p><a href="${escapeHtml(href)}">View the record</a></p>` +
+        html: `<p>${escapeHtml(back)}.</p>` +
+          `<p><a href="${escapeHtml(href)}">${offers ? "Make an offer" : "View the record"}</a></p>` +
           `<p>You asked to be told once. We have now deleted your email address.</p>`,
       }),
     });
