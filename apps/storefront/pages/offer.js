@@ -18,7 +18,8 @@ const offerHref = (product, url) => url(`/products/${product.listing.slug}/offer
 const DEFAULT_COUNTRY = 'DE';   // as the Bag: Germany first, else the first country the shop ships to
 const signature = (site) => ((site.owner || {}).name ? `— ${site.owner.name}` : null);
 
-// Figma `offer actions`: open → Make an offer; reserved (an accepted offer is being paid) → (Reserved) Notify me; sold → Sold out
+// Figma `offer actions`: open → Make an offer; reserved (an accepted offer is being paid) → (Reserved) Notify me, or for
+// the offer's buyer (accepted, 0190) Add to bag; sold → Sold out
 const ACTION_TEXT = {
   available: 'No fixed price. Offer what it’s worth to you: I read every offer and answer by email.',
   reserved: 'An offer was accepted. If it isn’t paid within 48 h, the record is back and open to offers.'
@@ -35,7 +36,8 @@ function OfferActions({ product, url }) {
           ? h(Z.Button, { hierarchy: 'primary', size: 'large', className: 'pdp-content__cta', 'data-add-to-bag': listing.id,
               'data-listing-status': listing.status, 'data-offer-href': offerHref(product, url) }, 'Make an offer')
           : h(Z.Button, { hierarchy: 'primary', size: 'large', className: 'pdp-content__cta', disabled: true }, 'Sold out'),
-      ACTION_TEXT[st] ? h('p', { className: 'body-small' }, ACTION_TEXT[st]) : null));
+      // reserved: site.js swaps the line for the buyer of the accepted offer (state=accepted, decision 0190)
+      ACTION_TEXT[st] ? h('p', { className: 'body-small', 'data-offer-note': st === 'reserved' ? listing.id : undefined }, ACTION_TEXT[st]) : null));
 }
 
 // the sent / confirmed / expired blocks share Figma `offer sent` (divider, title, body, signature, button)
