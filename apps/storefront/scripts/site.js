@@ -110,36 +110,9 @@
     window.addEventListener('resize', apply);
     header.addEventListener('focusin', reveal);   // keyboard: tabbing into a hidden header brings it back
     header.addEventListener('transitionend', onTransitionEnd);
-    var stopLogoFit = fitHeaderLogo(header);
-    headerCleanup = function () { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', apply); stopLogoFit(); };
+    headerCleanup = function () { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', apply); };
   }
 
-  // Logo only when everything fits (owner, 2026-11-15; Figma `header` boolean `logo`): on screens too narrow for
-  // menu + logo + store name + Bag in one row (desktop: + tabs + search + Account) (e.g. 375px with "HIGHMUZIK"), the logo goes and the name stays.
-  // Measured, not a breakpoint: the room depends on the store name and on the Bag count. Min gap = the row's 8px gap.
-  function fitHeaderLogo(header) {
-    var bar = header.classList.contains('hm-header') ? header : header.querySelector('.hm-header');
-    var row = bar && bar.querySelector('.hm-header__row');
-    var leading = row && row.querySelector('.hm-header__leading');
-    var trailing = row && row.querySelector('.hm-header__trailing');
-    if (!leading || !trailing || !bar.querySelector('.hm-header__logo')) return function () {};
-    function overflows() {
-      var parts = Array.prototype.filter.call(row.children, function (el) { return el.offsetWidth > 0; });
-      return parts.reduce(function (sum, el) { return sum + el.getBoundingClientRect().width; }, 0) + 8 * (parts.length - 1) > row.clientWidth;
-    }
-    // big logo → logo inside the store name ("inside") → no logo at all ("hidden", only if even that does not fit)
-    function fit() {
-      bar.removeAttribute('data-logo');                     // measure with the big logo shown
-      if (!overflows()) return;
-      bar.setAttribute('data-logo', 'inside');
-      if (overflows()) bar.setAttribute('data-logo', 'hidden');
-    }
-    fit();
-    var ro = window.ResizeObserver ? new ResizeObserver(function () { window.requestAnimationFrame(fit); }) : null;
-    if (ro) { ro.observe(row); ro.observe(trailing); } else window.addEventListener('resize', fit);
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);   // the web font changes the name's width
-    return function () { if (ro) ro.disconnect(); else window.removeEventListener('resize', fit); };
-  }
 
   /* ---------------------------------------------------------------- 2. player */
 

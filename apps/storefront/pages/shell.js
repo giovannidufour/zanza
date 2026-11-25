@@ -203,7 +203,7 @@ function SiteHeader({ site, url, section, current }) {
   return h(React.Fragment, null,
     h(Z.Header, {
       className: 'site-header',   // sticky on scroll up: base.css + scripts/site.js
-      logo: h('img', { src: url('/assets/logo.png'), alt: '', width: 64, height: 64 }),
+      logo: h(Z.Logo),   // Figma `logo`, the HIGHMUZIK wordmark (decision 0183)
       storeName: site.storeName,
       homeHref: url('/'),
       homeCurrent: current === 'home',   // Figma `store name` state=active on the home page (decision 0085)

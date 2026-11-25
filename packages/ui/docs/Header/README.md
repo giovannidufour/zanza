@@ -1,6 +1,6 @@
 # Header
 
-The site header: logo and store name on the left, section tabs in the middle (desktop), actions on the right, a 1px rule below. Figma: `header` (device=desktop | mobile). A composition of `Button` and `Tabs`: it defines no colours or type of its own besides the ones below.
+The site header: the wordmark (`Logo`, decision 0183) on the left as the home link, section tabs in the middle (desktop), actions on the right, a 1px rule below. Figma: `header` (device=desktop | mobile). A composition of `Button` and `Tabs`: it defines no colours or type of its own besides the ones below.
 
 ## API
 
@@ -9,8 +9,8 @@ The site header: logo and store name on the left, section tabs in the middle (de
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `device` | `"desktop" \| "mobile"` |  | Which Figma variant to render. Omitted → responsive: one markup, CSS switches menu/tabs/logo size (breakpoint `--mobile` from tokens.json, &lt;768px placeholder). |
-| `logo` | `ReactNode` |  | Logo image (&lt;img> or &lt;svg>). 64×64 on desktop, 48×48 on mobile. Figma: `logo` (boolean). Also rendered 36×36 inside the store name, shown only when the header sets `data-logo="inside"` (no room for the big one, decision 0094). |
-| `storeName` | `ReactNode` |  | Store name shown in the bordered label box (from `site.json` → storeName). Figma: text layer `store name`. |
+| `logo` | `ReactNode` |  | The wordmark, usually &lt;Logo /> (Figma: `logo` instance, decision 0183). 64 tall on desktop, 48 on mobile, width from its ratio; shrinks in width when the row is short of room. With a logo the store name is visually hidden (it stays the link's accessible name). |
+| `storeName` | `ReactNode` |  | Store name (from `site.json` → storeName). Without `logo` it shows in the bordered label box (Figma `store name`, deprecated); with `logo` it is the home link's accessible name only. |
 | `homeHref` | `string` |  | When set, logo + store name become ONE link to this URL (decision 0175): one tab stop, named by the store name. |
 | `homeCurrent` | `boolean` |  | Figma `store name` state=active: the page is the home page. Lit like the active tab; aria-current="page" on the home link, which stays clickable (the storefront reloads the page). |
 | `tabs` | `ReactNode` |  | A &lt;Tabs> element. Rendered on desktop only (Figma: no tabs in the mobile variant). |
@@ -35,7 +35,7 @@ Without `device` it is responsive: one markup, CSS switches menu button / tabs /
 
 ## Dimensions (Figma)
 
-padding-top 8 · leading / trailing gap 8 · `space-between`, top-aligned · logo 64 desktop / 48 mobile · store-name box padding 8, `label-medium` · rule 1px.
+padding-top 8 · leading / trailing gap 8 · `space-between`, top-aligned · logo (wordmark) 64 tall desktop / 48 mobile, width from the 290 × 87 ratio, shrinks when short of room · store-name box (only without a logo) padding 8, `label-medium` · rule 1px.
 
 ## Placement
 

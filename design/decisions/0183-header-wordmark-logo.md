@@ -1,0 +1,9 @@
+# 0183 — Header logo = the HIGHMUZIK wordmark, the store name only as accessible name
+
+`2026-11-25` · accepted (Gio: "a bene", the illustration kept only as a keepsake) · Figma: `logo`, `logo mark`, `logo illustration` (page assets), `header` (leading actions → `logo` instance), `coming soon`; `store name` set removed
+
+**Context.** The rythem-works logo was a square illustration (64 / 48) next to the store name set in a bordered box, and moved inside the box or disappeared when the row was short (0094). On 2026-11-25 Gio placed the new HIGHMUZIK logo in Figma: a wordmark, 290 × 87. It already reads the name, so the illustration + name pair would repeat it.
+**Decision.** The header shows only the wordmark (`Logo`, inline SVG, fill currentColor → `text-strong`), 64 tall on desktop and 48 on mobile, width from its ratio. It is the home link (0175/0176); the store name stays as the link's accessible name, visually hidden. No measuring and no hiding (0094 superseded): when the row is short of room the wordmark shrinks in width. Square uses (favicons, Scanner app icon) take `logo mark`, the "HM" monogram cut from the wordmark glyphs, on the environment grounds of 0127.
+**Kept, unused.** The old illustration stays as Figma `logo illustration` and `apps/storefront/public/logo.png` (Gio: "tienila come ricordo, in caso la volessi usare ancora"). Not shown anywhere for now; don't put it back without Gio asking.
+**Rule.** Any place that shows the store's brand uses `Logo` (or `logo mark` where the space is square), never the name typed in a text style; name the link or heading around it with the store name. The `store name` box is legacy: don't use it in new layouts.
+**Where.** `packages/ui/components.js` (Logo, Header), `components.css` (.hm-header__logo), `apps/storefront/pages/shell.js`, `build-coming-soon.js`, `scripts/site.js` (fitHeaderLogo removed), `apps/storefront/public/favicon-*`, `apple-touch-icon-*`, `apps/scanner/AppIcon.icns`.

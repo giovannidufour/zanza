@@ -72,7 +72,7 @@ Il 2026-11-15 tutto quello che nel repo e in Figma diceva rythem-trax è passato
 - Figma: rinominare il file "Zanza - Record Store" (l'API non può; la key non cambia).
 - claude.ai: progetto "Zanza" e artifact "Zanza Design System" (va rigenerato con `npm run build:artifact` per avere il titolo nuovo).
 - Stripe public details (nome e email pubblica = rythem-works, gio@rythem-works.com) prima del live.
-- Logo (`apps/storefront/public/logo.png`, illustrazione): non contiene il nome, non toccato.
+- Logo: illustrazione `logo.png` (tenuta come ricordo, non usata; Figma `logo illustration`) sostituita il 2026-11-25 dal wordmark HIGHMUZIK (`Logo` in packages/ui, Figma `logo`) e dal monogramma HM nei favicon (decisione 0183).
 
 ## Pagine legali: segnaposto (2026-11-14, ridotte il 2026-11-15, decisioni 0079 e 0093)
 

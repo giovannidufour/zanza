@@ -39,13 +39,12 @@ const css = {
 };
 const escape = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-// Figma `coming soon` → store name (logo=true): the shop Header with only the store name, the logo inside it
-// (data-logo="inside", decision 0094) and no rule under it (coming-soon.css)
+// Figma `coming soon` → `logo` (the wordmark, 64 tall, decision 0183): the shop Header with only the home link and no
+// rule under it (coming-soon.css); the store name is its accessible name
 const header = h(Z.Header, {
   className: 'coming-soon__header',
   device: 'desktop',   // no menu button: there is nothing to navigate to
-  'data-logo': 'inside',
-  logo: h('img', { src: '/assets/logo.png', alt: '', width: 64, height: 64 }),
+  logo: h(Z.Logo),
   storeName: site.storeName,
   homeHref: '/'
 });
