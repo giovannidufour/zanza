@@ -38,6 +38,7 @@ Gio: nome **HIGHMUZIK, sempre maiuscolo** (testi, email, Figma), dominio **highm
 
 **Fase 6 — servizi**
 - [x] [C/G] Buttondown: username `highmuzik` (cambia l'endpoint, va insieme a PR B), newsletter name e Author name HIGHMUZIK, email dell'account `gio@highmuzik.com` (= Rispondi a; login resta Google) — fatto 2026-11-25
+- [ ] [C/G] dopo il lancio, da valutare: BIMI (logo HM nelle mail di gio@highmuzik.com su Gmail) = record DNS su Cloudflare + certificato VMC/CMC a pagamento + DMARC quarantine/reject. Non fatto il 2026-11-25 (dominio nuovo, costo).
 - [ ] [G] AL LANCIO (oggi Stripe è solo sandbox, nessun nome rythem-works): public business name HIGHMUZIK, statement descriptor HIGHMUZIK, support email gio@highmuzik.com
 - [x] [C] Discogs developer app: nome HIGHMUZIK, callback https://highmuzik.com/wantlist/ (2026-11-25)
 - [x] [C] PostHog: progetto HIGHMUZIK, app_urls highmuzik.com + staging.highmuzik.com (2026-11-25)
