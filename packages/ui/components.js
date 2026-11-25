@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Highmuzik","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"OrderItem"},{"name":"OrderRow"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"ProductReturnCard"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"Step"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"},{"name":"DiscogsLink"},{"name":"FormSectionHead"},{"name":"Marker"},{"name":"PriceFields"},{"name":"ListingStatus"},{"name":"SectionHead"},{"name":"GenreLinks"},{"name":"HomeIntro"},{"name":"HomeNewsletter"},{"name":"ProductTile"},{"name":"GalleryCounter"},{"name":"ViewToggle"},{"name":"NewsletterDialog"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Highmuzik","components":[{"name":"Button"},{"name":"Tabs"},{"name":"Header"},{"name":"Logo"},{"name":"Breadcrumbs"},{"name":"Tag"},{"name":"PlayerButton"},{"name":"IconButton"},{"name":"Player"},{"name":"ProductInfo"},{"name":"ProductCard"},{"name":"BagItem"},{"name":"OrderItem"},{"name":"OrderRow"},{"name":"BagSummary"},{"name":"RelatedProducts"},{"name":"ProductReturnCard"},{"name":"Gallery"},{"name":"Input"},{"name":"DropZone"},{"name":"FileList"},{"name":"FileItem"},{"name":"Alert"},{"name":"Divider"},{"name":"ActionPanel"},{"name":"ListingLine"},{"name":"Checkbox"},{"name":"Dialog"},{"name":"EntityField"},{"name":"Radio"},{"name":"Filter"},{"name":"FiltersLayer"},{"name":"PlpHeader"},{"name":"MenuItem"},{"name":"MenuGroup"},{"name":"MenuLayer"},{"name":"Footer"},{"name":"FooterLinks"},{"name":"FooterNewsletter"},{"name":"TradeNote"},{"name":"DiscogsCard"},{"name":"Step"},{"name":"ReleaseOption"},{"name":"ReleaseList"},{"name":"ChosenRelease"},{"name":"DiscogsLink"},{"name":"FormSectionHead"},{"name":"Marker"},{"name":"PriceFields"},{"name":"ListingStatus"},{"name":"SectionHead"},{"name":"GenreLinks"},{"name":"HomeIntro"},{"name":"HomeNewsletter"},{"name":"ProductTile"},{"name":"GalleryCounter"},{"name":"ViewToggle"},{"name":"NewsletterDialog"}]} */
 /* packages/ui/components.js — the ONE implementation of the HIGHMUZIK components.
    Plain React.createElement (no JSX, no build step). Works as a CommonJS module (Node / SSR)
    and as a classic script (window.Highmuzik) for the design-system artifact.
@@ -186,8 +186,21 @@
       props.trailingIcon ? h('span', { className: 'hm-tab__icon', 'aria-hidden': 'true' }, props.trailingIcon) : null);
   }
 
+  /* ── Logo ───────────────────────────────────────────────────────────────
+     Figma: `logo` (page assets, Gio 2026-11-25, decision 0183): the HIGHMUZIK wordmark, one vector, 290 × 87.
+     Fill = currentColor, so the colour comes from a token on the parent (header: text-strong). Decorative by default
+     (aria-hidden): whoever places it names the link or heading it sits in (the Header uses the store name). */
+  var LOGO_PATHS = '<path d="M 72.233 0 C 75.561 0 78.648 2.088 81.492 6.263 C 84.365 10.437 86.128 15.581 86.782 21.694 L 75.22 32.206 C 74.907 30.044 74.381 28.441 73.642 27.397 C 72.931 26.279 72.106 25.72 71.167 25.72 C 69.688 25.72 68.336 26.912 67.113 29.298 C 65.89 31.609 64.966 34.517 64.34 38.021 C 63.714 41.524 63.401 45.103 63.401 48.756 C 63.401 53.08 63.856 56.584 64.767 59.268 C 65.677 61.951 66.901 63.293 68.437 63.293 C 69.489 63.293 70.512 62.659 71.508 61.392 C 72.503 60.05 73.2 58.224 73.599 55.913 L 68.308 55.913 L 69.503 36.008 L 87.551 36.008 C 87.039 45.848 86.256 53.564 85.204 59.155 C 84.152 64.672 82.7 69.481 80.852 73.581 C 79.003 77.607 76.87 80.849 74.452 83.31 C 72.063 85.77 69.559 87 66.942 87 C 63.899 87 61.197 85.546 58.836 82.639 C 56.504 79.657 54.698 75.519 53.418 70.227 C 52.166 64.934 51.54 58.82 51.54 51.887 C 51.54 46.146 51.967 40.108 52.82 33.771 C 53.674 27.36 55.053 21.545 56.959 16.326 C 58.893 11.033 61.183 7.007 63.828 4.249 C 66.502 1.416 69.304 0 72.233 0 Z"/><path d="M 178.344 42.382 C 177.974 48.494 177.803 52.259 177.831 53.676 C 177.831 55.838 178.031 57.441 178.429 58.484 C 178.855 59.528 179.538 60.05 180.477 60.05 C 181.643 60.05 182.525 59.193 183.122 57.479 C 183.719 55.764 184.146 52.744 184.402 48.42 L 187.261 0.671 L 198.951 0.671 L 195.965 50.657 C 195.282 62.063 193.476 70.86 190.546 77.048 C 187.588 83.235 183.705 86.329 178.898 86.329 C 174.66 86.329 171.432 83.981 169.213 79.284 C 167.023 74.513 165.928 67.617 165.928 58.597 C 165.928 57.031 165.97 55.279 166.056 53.341 C 166.141 51.403 166.283 48.867 166.482 45.736 L 169.17 0.671 L 180.86 0.671 L 178.344 42.382 Z"/><path d="M 14.635 29.745 L 21.803 29.745 L 23.509 1.342 L 34.772 1.342 L 29.695 85.658 L 18.432 85.658 L 20.181 56.36 L 13.013 56.36 L 11.264 85.658 L 0 85.658 L 5.077 1.342 L 16.341 1.342 L 14.635 29.745 Z"/><path d="M 46.463 85.658 L 34.772 85.658 L 39.85 1.342 L 51.54 1.342 L 46.463 85.658 Z"/><path d="M 102.185 29.745 L 109.353 29.745 L 111.06 1.342 L 122.323 1.342 L 117.246 85.658 L 105.982 85.658 L 107.731 56.36 L 100.563 56.36 L 98.814 85.658 L 87.551 85.658 L 92.628 1.342 L 103.892 1.342 L 102.185 29.745 Z"/><path d="M 146.43 45.625 L 146.728 45.625 L 147.197 41.599 L 147.667 37.909 C 147.724 37.387 148.022 35.561 148.563 32.43 L 153.811 1.342 L 165.714 1.342 L 165.928 85.658 L 154.621 85.658 L 155.815 39.475 L 155.603 39.475 L 154.92 44.507 C 154.692 45.923 154.507 47.041 154.365 47.861 L 147.41 85.658 L 140.584 85.658 L 138.621 50.992 L 138.536 49.427 C 138.508 48.756 138.465 46.668 138.408 43.164 C 138.408 41.524 138.423 40.295 138.451 39.475 L 138.066 39.475 C 137.498 46.333 136.801 53.863 135.977 62.063 L 133.63 85.658 L 122.323 85.658 L 132.605 1.342 L 144.638 1.342 L 146.43 45.625 Z"/><path d="M 219.26 59.603 L 219.346 60.05 C 220.483 59.752 221.336 59.603 221.905 59.603 L 231.847 59.603 L 230.268 85.658 L 198.951 85.658 L 213.543 36.343 C 214.055 34.554 214.61 32.839 215.207 31.199 L 216.999 26.167 L 216.871 25.832 C 216.217 26.205 215.662 26.465 215.207 26.614 C 214.78 26.763 214.424 26.838 214.14 26.838 L 205.266 26.838 L 206.802 1.342 L 236.753 1.342 L 219.26 59.603 Z"/><path d="M 248.443 85.658 L 236.753 85.658 L 241.83 1.342 L 253.521 1.342 L 248.443 85.658 Z"/><path d="M 267.558 37.909 L 267.813 37.909 C 268.041 36.195 268.368 34.554 268.795 32.988 L 277.243 1.342 L 290 1.342 L 277.456 42.382 L 285.989 85.658 L 272.422 85.658 L 268.624 61.504 C 268.34 59.715 268.084 58.224 267.856 57.031 C 267.657 55.764 267.515 54.943 267.43 54.57 C 267.288 53.974 267.16 52.557 267.046 50.321 L 266.79 50.321 L 264.912 85.658 L 253.521 85.658 L 258.598 1.342 L 269.989 1.342 L 267.558 37.909 Z"/>';
+  function Logo(props) {
+    return h('svg', Object.assign({
+      className: cx('hm-logo', props.className), xmlns: 'http://www.w3.org/2000/svg', viewBox: '0 0 290 87', width: 290, height: 87,
+      preserveAspectRatio: 'xMinYMin meet', fill: 'currentColor', 'aria-hidden': 'true', focusable: 'false',
+      dangerouslySetInnerHTML: { __html: LOGO_PATHS }
+    }, omit(props, ['className'])));
+  }
+
   /* ── Header ─────────────────────────────────────────────────────────────
-     Figma: `header` (device=desktop | mobile). Composition: logo + store name, Tabs (desktop), actions, menu (mobile), 1px rule.
+     Figma: `header` (device=desktop | mobile). Composition: logo (wordmark, 0183), Tabs (desktop), actions, menu (mobile), 1px rule.
      `device` omitted → responsive: both the menu button and the tabs are rendered and CSS shows one of them (see components.css). */
   function HamburgerIcon() { return icon('icon-bars-three'); }
 
@@ -196,9 +209,10 @@
     var showMenu = device !== 'desktop';
     var showTabs = device !== 'mobile' && !!props.tabs;
     var hasSearch = !!(props.search || props.searchHref);
-    // Logo + store name = one home link (decision 0176): one tab stop, accessible name = the store name (the logo is
-    // alt=""). Without homeHref the same pair sits in a plain div. On the home page the link stays clickable: the
-    // storefront reloads the page (scripts/site.js, soft navigation).
+    // The home link (decision 0176): one tab stop, accessible name = the store name. With a logo (the wordmark, decision
+    // 0183) the name is visually hidden: the wordmark already reads HIGHMUZIK. Without a logo the name shows in its
+    // bordered box. Without homeHref the same content sits in a plain div. On the home page the link stays clickable:
+    // the storefront reloads the page (scripts/site.js, soft navigation).
     var homeTag = props.homeHref ? 'a' : 'div';
     var homeAttrs = { className: 'hm-header__home' };
     if (props.homeHref) homeAttrs.href = props.homeHref;
@@ -215,11 +229,7 @@
           showMenu ? h(Button, Object.assign({ className: 'hm-header__menu', hierarchy: 'secondary', leadingIcon: h(HamburgerIcon), 'aria-label': props.menuLabel || 'Menu', onClick: props.onMenuClick }, props.menuProps)) : null,
           (props.logo || props.storeName) ? h(homeTag, homeAttrs,
             props.logo ? h('span', { className: 'hm-header__logo' }, props.logo) : null,
-            // Figma `store name` logo=true (2026-11-15, decision 0094): when the header has no room for the big logo
-            // (data-logo="hidden"), the same logo shows 36px inside the store name; CSS switches between the two.
-            props.storeName ? h('span', nameAttrs,
-              props.logo ? h('span', { className: 'hm-header__name-logo', 'aria-hidden': 'true' }, props.logo) : null,
-              props.storeName) : null) : null),
+            props.storeName ? (props.logo ? h('span', { className: 'hm-visually-hidden' }, props.storeName) : h('span', nameAttrs, props.storeName)) : null) : null),
         showTabs ? h('div', { className: 'hm-header__tabs' }, props.tabs) : null,
         (props.actions || hasSearch) ? h('div', { className: 'hm-header__trailing' },
           // Figma boolean `search` (2026-11-12): desktop = the search field (input type=search, 280 wide) before the
@@ -2040,7 +2050,7 @@
     }), view === 'grid' ? 'List view' : 'Grid view');
   }
 
-  return { Button: Button, Pagination: Pagination, Tabs: Tabs, Tab: Tab, Header: Header, Breadcrumbs: Breadcrumbs, ActiveFilter: ActiveFilter, Tag: Tag, TagGroup: TagGroup,
+  return { Button: Button, Pagination: Pagination, Tabs: Tabs, Tab: Tab, Header: Header, Logo: Logo, Breadcrumbs: Breadcrumbs, ActiveFilter: ActiveFilter, Tag: Tag, TagGroup: TagGroup,
            PlayerButton: PlayerButton, IconButton: IconButton, Player: Player, ProductInfo: ProductInfo, ProductCard: ProductCard, BagItem: BagItem, OrderItem: OrderItem, OrderRow: OrderRow, BagSummary: BagSummary, RelatedProducts: RelatedProducts, ProductReturnCard: ProductReturnCard, Gallery: Gallery, HamburgerIcon: HamburgerIcon, PlayIcon: PlayIcon, PauseIcon: PauseIcon, PreviousIcon: PreviousIcon, NextIcon: NextIcon, CloseIcon: CloseIcon,
            Input: Input, DropZone: DropZone, FileList: FileList, FileItem: FileItem, SearchIcon: SearchIcon, ChevronDownIcon: ChevronDownIcon, ChevronDownLargeIcon: ChevronDownLargeIcon, DragHandleIcon: DragHandleIcon,
            Checkbox: Checkbox, Alert: Alert, Divider: Divider, ActionPanel: ActionPanel, ListingStatus: ListingStatus, ListingLine: ListingLine, SquareIcon: SquareIcon, SquareTickIcon: SquareTickIcon, SquareMinusIcon: SquareMinusIcon, Dialog: Dialog, Toast: Toast, ToastRegion: ToastRegion,

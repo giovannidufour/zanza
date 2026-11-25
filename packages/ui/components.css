@@ -316,22 +316,15 @@ a.hm-tab {
 /* logo + store name: one home link (decision 0176), laid out like the leading row (gap 8, top-aligned) */
 .hm-header__home { display: flex; align-items: flex-start; gap: 8px; color: inherit; text-decoration: none; }
 a.hm-header__home:focus-visible { outline: auto; }   /* browser ring: no focus token yet (open.md) */
-.hm-header__logo { display: block; flex: none; width: 64px; height: 64px; overflow: hidden; }
-.hm-header[data-device="mobile"] .hm-header__logo { width: 48px; height: 48px; }
-/* Figma `header` boolean `logo` (default on). The storefront turns it off when the row cannot hold everything
-   (apps/storefront/scripts/site.js → fitHeaderLogo): the store name always stays. */
-.hm-header[data-logo="inside"] .hm-header__logo,
-.hm-header[data-logo="hidden"] .hm-header__logo { display: none; }
-/* …and it moves inside the store name (Figma `store name` logo=true): logo 36x36 against the left border,
-   padding 0 8 0 0, gap 8 → still 38px tall like the plain name. */
-.hm-header__name-logo { display: none; flex: none; width: 36px; height: 36px; overflow: hidden; }
-.hm-header__name-logo > img,
-.hm-header__name-logo > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
-.hm-header[data-logo="inside"] .hm-header__name-logo { display: block; }
-.hm-header[data-logo="inside"] .hm-header__name { padding: 0 8px 0 0; }
-/* data-logo="hidden": not even the small one fits (e.g. 320px): only the name */
-.hm-header__logo > img,
-.hm-header__logo > svg { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* Figma `header` → `logo` instance (the wordmark, decision 0183): 64 tall on desktop, 48 on mobile, width from the
+   290 × 87 ratio. Always shown: when the row is short of room (e.g. 320px) it shrinks in width (min-width 0) and the
+   SVG scales down inside its box, anchored top left (preserveAspectRatio xMinYMin). */
+.hm-header__home { min-width: 0; }
+.hm-header__leading { min-width: 0; }
+.hm-header__logo { display: block; flex: 0 1 auto; min-width: 0; height: 64px; color: var(--text-strong); }
+.hm-header[data-device="mobile"] .hm-header__logo { height: 48px; }
+.hm-header__logo > svg,
+.hm-header__logo > img { display: block; height: 100%; width: auto; max-width: 100%; }
 
 /* store name: 1px border divider/strong, padding 8, label/medium */
 .hm-header__name {
@@ -380,7 +373,7 @@ a.hm-header__home:focus-visible { outline: auto; }   /* browser ring: no focus t
   .hm-header[data-device="responsive"] .hm-header__menu { display: inline-flex; }
   .hm-header[data-device="responsive"] .hm-header__tabs { display: none; }
   .hm-header[data-device="responsive"] .hm-header__account { display: none; }   /* Figma mobile: only Bag */
-  .hm-header[data-device="responsive"] .hm-header__logo { width: 48px; height: 48px; }
+  .hm-header[data-device="responsive"] .hm-header__logo { height: 48px; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

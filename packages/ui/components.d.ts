@@ -1,4 +1,4 @@
-import type { AnchorHTMLAttributes, ButtonHTMLAttributes, CSSProperties, HTMLAttributes, InputHTMLAttributes, ReactNode, Ref } from "react";
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, CSSProperties, HTMLAttributes, InputHTMLAttributes, ReactNode, Ref, SVGAttributes } from "react";
 
 /** Mirrors the Figma component `button` — variants hierarchy × size, states via pseudo-classes. */
 export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
@@ -53,9 +53,9 @@ export declare function Pagination(props: PaginationProps): JSX.Element;
 export interface HeaderProps extends HTMLAttributes<HTMLElement> {
   /** Which Figma variant to render. Omitted → responsive: one markup, CSS switches menu/tabs/logo size (breakpoint `--mobile` from tokens.json, <768px placeholder). */
   device?: "desktop" | "mobile";
-  /** Logo image (<img> or <svg>). 64×64 on desktop, 48×48 on mobile. Figma: `logo` (boolean). Also rendered 36×36 inside the store name, shown only when the header sets `data-logo="inside"` (no room for the big one, decision 0094). */
+  /** The wordmark, usually <Logo /> (Figma: `logo` instance, decision 0183). 64 tall on desktop, 48 on mobile, width from its ratio; shrinks in width when the row is short of room. With a logo the store name is visually hidden (it stays the link's accessible name). */
   logo?: ReactNode;
-  /** Store name shown in the bordered label box (from `site.json` → storeName). Figma: text layer `store name`. */
+  /** Store name (from `site.json` → storeName). Without `logo` it shows in the bordered label box (Figma `store name`, deprecated); with `logo` it is the home link's accessible name only. */
   storeName?: ReactNode;
   /** When set, logo + store name become ONE link to this URL (decision 0175): one tab stop, named by the store name. */
   homeHref?: string;
@@ -79,6 +79,10 @@ export interface HeaderProps extends HTMLAttributes<HTMLElement> {
   menuProps?: Record<string, unknown>;
 }
 export declare function Header(props: HeaderProps): JSX.Element;
+
+/** Mirrors the Figma component `logo` (page assets): the HIGHMUZIK wordmark, inline SVG 290 × 87, fill currentColor, aria-hidden (decision 0183). Size it with CSS height; name it on the link or heading around it. */
+export interface LogoProps extends SVGAttributes<SVGSVGElement> {}
+export declare function Logo(props: LogoProps): JSX.Element;
 
 /** Mirrors the Figma component `tab group`: a horizontal tablist, gap 8. Owns the selection. */
 export interface TabsProps extends Omit<HTMLAttributes<HTMLDivElement>, "onChange"> {
