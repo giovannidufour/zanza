@@ -18,7 +18,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import "./file-names.js";
 
 // deno-lint-ignore no-explicit-any
-const FileNames = (globalThis as any).ZanzaFileNames;
+const FileNames = (globalThis as any).HighmuzikFileNames;
 const USER_AGENT = "rythem-works-admin/1.0 +https://rythem-works.com";
 const headers = {
   "Access-Control-Allow-Origin": "*",   // a native app sends no Origin; the session token is what protects it

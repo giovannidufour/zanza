@@ -17,7 +17,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import "./shipping.js";
 
 // deno-lint-ignore no-explicit-any
-const Shipping = (globalThis as any).ZanzaShipping;
+const Shipping = (globalThis as any).HighmuzikShipping;
 const env = (k: string) => Deno.env.get(k) ?? "";
 const SESSION_MINUTES = 31;   // Stripe's minimum is 30
 const MAX_RECORDS = 50;

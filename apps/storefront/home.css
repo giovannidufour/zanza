@@ -32,7 +32,7 @@
 .home-shelf__action > * { width: 100%; }
 
 /* the newsletter box: 2 of the 3 tile columns, left-aligned (Gio 2026-11-18) */
-.home-newsletter .zz-home-newsletter__box { width: calc((100% - 2 * var(--gutter-small)) * 2 / 3 + var(--gutter-small)); }
+.home-newsletter .hm-home-newsletter__box { width: calc((100% - 2 * var(--gutter-small)) * 2 / 3 + var(--gutter-small)); }
 
 /* grid | list: one view at a time, chosen by .home-content[data-view] (scripts/site.js); the toggle names the other */
 .home-content[data-view="grid"] [data-home-view="list"],
@@ -48,10 +48,10 @@
   .home-main { padding-top: 0; }
   .home-view-toggle { display: none; }
   /* tile swipe galleries bleed into the page margins, as the PDP gallery (decision 0121) */
-  .home-shelf__grid { --zz-gallery-bleed: var(--page-margin-mobile); }
+  .home-shelf__grid { --hm-gallery-bleed: var(--page-margin-mobile); }
   /* mobile is always tiles (Gio 2026-11-18: no list view on mobile) */
   .home-content[data-view] [data-home-view="grid"] { display: grid; }
   .home-content[data-view] [data-home-view="list"] { display: none; }
   .home-shelf__grid { grid-template-columns: minmax(0, 1fr); row-gap: var(--medium-small); }
-  .home-newsletter .zz-home-newsletter__box { width: auto; }
+  .home-newsletter .hm-home-newsletter__box { width: auto; }
 }

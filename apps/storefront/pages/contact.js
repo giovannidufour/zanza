@@ -11,7 +11,7 @@ const { SiteHeader, textOf, Paragraphs } = require('./shell.js');
 function Contact({ site, url }) {
   const email = (site.legal || {}).email || '';
   const endpoint = (site.contact || {}).endpoint || '';
-  return h('div', { className: 'zz-page' },
+  return h('div', { className: 'hm-page' },
     h(SiteHeader, { site, url, current: 'contact' }),
     h('main', { className: 'legal-content' },
       h('h1', { className: 'legal-content__title body-large', 'data-contact-title': '' }, 'Contact'),
@@ -26,7 +26,7 @@ function Contact({ site, url }) {
             supportText: 'This is where I answer you.' }),
           h(Z.Input, { variant: 'text-area', label: 'Message', name: 'message', required: true, maxLength: 4000 }),
           // honeypot: hidden from people, bots fill it (the function drops those messages)
-          h('div', { className: 'zz-visually-hidden', 'aria-hidden': 'true' },
+          h('div', { className: 'hm-visually-hidden', 'aria-hidden': 'true' },
             h('label', null, 'Website', h('input', { type: 'text', name: 'website', tabIndex: -1, autoComplete: 'off' }))),
           h('p', { className: 'body-small' }, 'Your message reaches me by email and is not stored on the site. ', h('a', { href: url('/privacy/') }, 'Privacy')),
           h('p', { className: 'contact-form__error body-small', role: 'alert', hidden: true, 'data-contact-error': '' }),

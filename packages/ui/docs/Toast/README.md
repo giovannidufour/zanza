@@ -28,7 +28,7 @@ A short, non-blocking confirmation of an action just done: Add to bag (+ View ba
 
 ## Behaviour (`packages/ui/toast.js`)
 
-`ZanzaToast.show({ message, actionLabel, onAction, actionElsewhere, returnFocus })` — framework-free, the same file in the shop and the admin. Needs one `ToastRegion` on the page (render it outside the content that soft navigation swaps, 0015).
+`HighmuzikToast.show({ message, actionLabel, onAction, actionElsewhere, returnFocus })` — framework-free, the same file in the shop and the admin. Needs one `ToastRegion` on the page (render it outside the content that soft navigation swaps, 0015).
 
 - One at a time: a new toast replaces the current one. No queue.
 - Without an action: closes after 6 s; the timer pauses while the pointer is over it, focus is inside it, or the tab is hidden.
@@ -44,7 +44,7 @@ A short, non-blocking confirmation of an action just done: Add to bag (+ View ba
 | border | `border-divider-strong`, 1px dashed [16,16] ([0053](../../../../design/decisions/0053-toast-border-dash-16.md)) |
 | text | `text-strong` (body/medium) |
 | padding, gap | `medium-small` |
-| distance from the top | `gutter-small` below the visible sticky header (shop: `--zz-toast-offset` = `--site-header-visible`), or below the safe area if larger ([0071](../../../../design/decisions/0071-toasts-at-the-top.md)) |
+| distance from the top | `gutter-small` below the visible sticky header (shop: `--hm-toast-offset` = `--site-header-visible`), or below the safe area if larger ([0071](../../../../design/decisions/0071-toasts-at-the-top.md)) |
 | side margin | `page-margin-desktop` / `page-margin-mobile` |
 
 ## Dimensions

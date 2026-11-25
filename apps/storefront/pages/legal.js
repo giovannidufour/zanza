@@ -114,7 +114,7 @@ function block(b, key, { url, shipping, countries }) {
 function legalPage(page, { site, url, shipping, countries, header, md }) {
   const missing = new Set();
   const { title, sections } = parse(fill(md || read(page), site, missing));
-  const body = h('div', { className: 'zz-page' },
+  const body = h('div', { className: 'hm-page' },
     header || h(SiteHeader, { site, url, current: page }),
     h('main', { className: 'legal-content' },
       h('h1', { className: 'legal-content__title body-large' }, title),

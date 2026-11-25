@@ -9,7 +9,7 @@ import { AwsClient } from "npm:aws4fetch@1.0.20";
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import "./images.js";
 
-const Images = (globalThis as any).ZanzaImages;
+const Images = (globalThis as any).HighmuzikImages;
 
 const ALLOWED_ORIGINS = (Deno.env.get("ADMIN_ORIGINS") ?? "https://store-admin-3k1.pages.dev").split(",").map((s) => s.trim());
 

@@ -43,7 +43,7 @@
 /* Figma `which record`: the suggestions overlay what follows (they are not in the page flow) */
 .release-picker { position: relative; display: flex; flex-direction: column; gap: 4px; }
 .release-picker__list { position: absolute; top: 100%; left: 0; right: 0; z-index: 5; max-height: 360px; overflow-y: auto; }
-.release-picker__list[hidden], .release-picker__chosen[hidden], .release-picker .zz-input[hidden] { display: none; }
+.release-picker__list[hidden], .release-picker__chosen[hidden], .release-picker .hm-input[hidden] { display: none; }
 .release-picker__chosen { display: flex; flex-direction: column; gap: 4px; }
 .release-picker__chosen > p { margin: 0; color: var(--text-strong); }
 .offered-record__grades { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gutter-small); }

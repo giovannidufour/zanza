@@ -10,7 +10,7 @@ The newsletter signup as a modal (decision 0121). Figma: page `dialog` → `news
 <!-- generated from components.d.ts by build-docs.js: edit the .d.ts, not this table -->
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `id` | `string` | `zz-newsletter-dialog` | id of the &lt;dialog> (its title and body ids derive from it). |
+| `id` | `string` | `hm-newsletter-dialog` | id of the &lt;dialog> (its title and body ids derive from it). |
 | `title` | `ReactNode` |  | Figma `title`. @default "Get new records first" |
 | `body` | `ReactNode` |  | Figma `body`. @default "Get them in your inbox as they’re listed." |
 | `closeLabel` | `string` | `Close` | Accessible name of the close icon button. |

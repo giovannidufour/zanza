@@ -7,13 +7,13 @@
 (function () {
   'use strict';
   var React = window.React, h = React.createElement, useState = React.useState, useEffect = React.useEffect, useRef = React.useRef;
-  var Z = window.Zanza, CFG = window.ADMIN_CONFIG;
+  var Z = window.Highmuzik, CFG = window.ADMIN_CONFIG;
   var sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey, { auth: { persistSession: true, detectSessionInUrl: true, flowType: 'implicit' } });
 
   // ── vocabularies ──────────────────────────────────────────────────────────
   var GRADES = ['M', 'NM', 'NM-', 'EX+', 'EX', 'EX-', 'VG+', 'VG', 'VG-', 'G+', 'G', 'G-', 'F'];   // Q8, table public.grades
   // the listing model shared with the Scanner's Edge Function scanner-draft (packages/listing-draft, decision 0145)
-  var LD = window.ZanzaListingDraft;
+  var LD = window.HighmuzikListingDraft;
   var FORMATS = LD.FORMATS, MACRO_GENRES = LD.MACRO_GENRES, COUNTRIES = LD.COUNTRIES;
   var textToCents = LD.textToCents, discogsId = LD.discogsId, newLine = LD.newLine, namesOf = LD.namesOf, findEntity = LD.findEntity,
       differs = LD.differs, emptyForm = LD.emptyForm, formatOf = LD.formatOf, positionsOf = LD.positionsOf,
@@ -30,8 +30,8 @@
   function fileNameOf(key) { return String(key || '').split('/').pop(); }
   // a done action whose rows left the view: packages/ui toast.js (decision 0049); the region is rendered at the end of this file
   function toast(message, onUndo) {
-    if (!window.ZanzaToast) return;
-    window.ZanzaToast.show({ message: message, actionLabel: onUndo ? 'Undo' : null, onAction: onUndo || null });
+    if (!window.HighmuzikToast) return;
+    window.HighmuzikToast.show({ message: message, actionLabel: onUndo ? 'Undo' : null, onAction: onUndo || null });
   }
   var uid = 0;
   function nextId() { return 'u' + (++uid); }
@@ -63,7 +63,7 @@
   // ── uploads ───────────────────────────────────────────────────────────────
   // images: resized in the browser to webp, long side 1600 (backend.md → Storage), plus the smaller copies the shop
   // shows in cards, bag and player (packages/images/images.js, decision 0108)
-  var IMG = window.ZanzaImages;
+  var IMG = window.HighmuzikImages;
   function loadImage(src, crossOrigin) {
     return new Promise(function (resolve, reject) {
       var img = new Image();
@@ -1387,7 +1387,7 @@
         }).filter(Boolean);
         return options.length ? h(Z.FilterBlock, { key: f[0], label: f[1] }, options) : null;
       }))),
-      h('p', { className: 'zz-visually-hidden', role: 'status', 'aria-live': 'polite' }, filtered ? plural(visible.length, 'draft') + ' shown' : ''));
+      h('p', { className: 'hm-visually-hidden', role: 'status', 'aria-live': 'polite' }, filtered ? plural(visible.length, 'draft') + ' shown' : ''));
 
     var dialog = null;
     if (confirm) {
@@ -1424,9 +1424,9 @@
       mobile ? h(OrderedRows, { mobile: true, rows: visible, onMove: canOrder ? moveRow : null, selected: selected, toggle: toggle, empty: emptyText }) : null,
       mobile ? bar : h(filterColumn ? 'div' : React.Fragment, filterColumn ? { className: 'admin-listings__body' } : null, filterColumn, h('div', { className: 'admin-listings__list' }, bar, h(OrderedRows, { rows: visible, onMove: canOrder ? moveRow : null, selected: selected, toggle: toggle, empty: emptyText,
         head: h('thead', null, h('tr', null,
-          canOrder ? h('th', { className: 'handle' }, h('span', { className: 'zz-visually-hidden' }, 'Order')) : null,
+          canOrder ? h('th', { className: 'handle' }, h('span', { className: 'hm-visually-hidden' }, 'Order')) : null,
           h('th', { className: 'select' }, visible.length ? h(Z.Checkbox, { id: 'select-all', hideLabel: true, label: 'Select all', checked: allOn, indeterminate: someOn, onChange: toggleAll }) : null),
-          h('th', { className: 'thumb' }, h('span', { className: 'zz-visually-hidden' }, 'Photo')),
+          h('th', { className: 'thumb' }, h('span', { className: 'hm-visually-hidden' }, 'Photo')),
           ['SKU', 'Record', 'Status', 'Section'].map(function (t) { return h('th', { key: t, className: t === 'SKU' ? 'num' : t.toLowerCase() }, t); }),
           INFO_COLUMNS.map(function (c) { return h('th', { key: c[0], className: c[0] + (c[2] ? ' num' : '') }, c[1]); }),
           h('th', { className: 'num price' }, 'Price'))) }))),
@@ -1453,7 +1453,7 @@
   ];
   // nothing entered yet: an em dash in text/moderate, read as "Missing"
   function missingMark() {
-    return h('span', { className: 'admin-table__missing' }, h('span', { 'aria-hidden': 'true' }, '—'), h('span', { className: 'zz-visually-hidden' }, 'Missing'));
+    return h('span', { className: 'admin-table__missing' }, h('span', { 'aria-hidden': 'true' }, '—'), h('span', { className: 'hm-visually-hidden' }, 'Missing'));
   }
   function OrderedRows(props) {
     var rows = props.rows, move = props.onMove;
@@ -1466,7 +1466,7 @@
       return h(Z.Checkbox, { id: 'select-' + r.id, hideLabel: true, label: 'Select ' + nameOf(r),
         checked: props.selected.indexOf(r.id) >= 0, onChange: function (e) { props.toggle(r.id, e.target.checked); } });
     }
-    var status = move ? h('span', { className: 'zz-visually-hidden', role: 'status', 'aria-live': 'polite' }, d.live) : null;
+    var status = move ? h('span', { className: 'hm-visually-hidden', role: 'status', 'aria-live': 'polite' }, d.live) : null;
     if (props.mobile) {
       // mobile (Figma page `admin` → Listings - mobile, decision 0089): rows instead of the table
       return h(React.Fragment, null,
@@ -2191,10 +2191,10 @@
      and as their own page /collections/<slug>/. A collection = name + slug + rules (Years, Genres, Tags: AND between
      rules, OR inside one, decision 0028) + "Show on the home". The list is in the order of the cards: drag & drop (or
      ↑ ↓ on the handle) with the admin's one drag logic (useDragOrder, 0129); the whole order is saved at once
-     (admin_order_collections). Which records match = packages/collections (window.ZanzaCollections), the same file as
+     (admin_order_collections). Which records match = packages/collections (window.HighmuzikCollections), the same file as
      the shop build. Writes go straight to the table (admin RLS); a trigger rebuilds the shop.
      Routes: #collections · #collections/<id> · #collections/new */
-  var CR = window.ZanzaCollections;
+  var CR = window.HighmuzikCollections;
   // the copies the shop's collection pages can show: sale, public (available, reserved, sold), as the shop build
   var SHOP_STATES = ['available', 'reserved', 'sold'];
   function loadCatalogForCollections() {
@@ -2251,7 +2251,7 @@
         }) : h('li', { className: 'body-small admin-rows__empty' }, empty))
       : h('div', { className: 'admin-table-wrap' }, h('table', { className: 'admin-table admin-collections body-small' },
           h('thead', null, h('tr', null,
-            h('th', { className: 'handle' }, h('span', { className: 'zz-visually-hidden' }, 'Order')),
+            h('th', { className: 'handle' }, h('span', { className: 'hm-visually-hidden' }, 'Order')),
             h('th', { className: 'name' }, 'Name'), h('th', null, 'Rules'), h('th', { className: 'on-home' }, 'On home'), h('th', { className: 'num price' }, 'Records'))),
           h('tbody', Object.assign({ className: 'admin-sortable' }, d.listProps), resolved.length ? resolved.map(function (c, i) {
             return h('tr', d.rowProps(i),
@@ -2267,7 +2267,7 @@
         h('p', { className: 'body-small' }, 'Curated groups of records, shown as cards on the home in this order. Drag to reorder.'),
         h(Z.Button, { hierarchy: 'secondary', href: '#collections/new' }, 'New collection')),
       list,
-      h('span', { className: 'zz-visually-hidden', role: 'status', 'aria-live': 'polite' }, d.live),
+      h('span', { className: 'hm-visually-hidden', role: 'status', 'aria-live': 'polite' }, d.live),
       h('p', { className: 'admin-status body-small' + (message && message.error ? ' admin-status--error' : ''), role: 'status' }, message ? message.text : ''));
   }
 
@@ -2428,10 +2428,10 @@
 
   // ── Content ───────────────────────────────────────────────────────────────
   /* Figma BACKEND → Content (2337:4277, decision 0106): the shop's texts in Gio's own voice. The blocks, their fields
-     and today's texts (the defaults) come from packages/content/content.js (window.ZanzaContent, built by build.js).
+     and today's texts (the defaults) come from packages/content/content.js (window.HighmuzikContent, built by build.js).
      A block = one row of public.site_texts (migration 0025); Save = admin_set_text, which also rebuilds the shop.
      Routes: #content (the list), #content/<key> (an editor). */
-  var CT = window.ZanzaContent;
+  var CT = window.HighmuzikContent;
   var CONDITION = {
     'identity-on': 'Shown while \u201cShow who I am\u201d is on',
     'identity-off': 'Shown while \u201cShow who I am\u201d is off',
@@ -2517,7 +2517,7 @@
 
     var view = block.path && shopHref(block.path);
     var viewBtn = view ? h(Z.Button, { key: 'view', hierarchy: 'secondary', href: view, target: '_blank', rel: 'noopener' }, 'View on shop',
-      h('span', { 'aria-hidden': 'true' }, ' \u2197'), h('span', { className: 'zz-visually-hidden' }, ' (opens in a new tab)')) : null;
+      h('span', { 'aria-hidden': 'true' }, ' \u2197'), h('span', { className: 'hm-visually-hidden' }, ' (opens in a new tab)')) : null;
     var saveBtn = h(Z.Button, { key: 'save', hierarchy: 'primary', 'aria-busy': busy || undefined, onClick: save }, 'Save');
     var status = problems.length ? h('ul', { className: 'body-small admin-status--error admin-content__problems', role: 'alert' },
       problems.map(function (p, i) { return h('li', { key: i }, p); })) : null;
@@ -2726,7 +2726,7 @@
      rates, and "Check an order" with the same maths as the shop (packages/shipping/shipping.js). One Save for the whole
      page = public.admin_save_shipping (migration 0015), which also rebuilds the shop (the bag carries the config).
      The form keeps text (what is typed); numbers are parsed on check and save. Route: #shipping */
-  var SHIP = window.ZanzaShipping;
+  var SHIP = window.HighmuzikShipping;
   var regionName = (function () {
     try { var dn = new Intl.DisplayNames(['en'], { type: 'region' }); return function (c) { try { return dn.of(c); } catch (e) { return c; } }; }
     catch (e) { return function (c) { return c; }; }
@@ -3029,7 +3029,7 @@
               return h(Z.ReleaseOption, { key: r.id, id: id + '-opt-' + i, title: r.title, meta: r.meta, thumb: r.thumb, highlighted: i === active,
                 onMouseDown: function (e) { e.preventDefault(); }, onClick: function () { pick(r); } });
             })) : null,
-          h('p', { key: 'live', className: 'zz-visually-hidden', 'aria-live': 'polite' },
+          h('p', { key: 'live', className: 'hm-visually-hidden', 'aria-live': 'polite' },
             box ? (box.message || results.length + (results.length === 1 ? ' release' : ' releases') + ' found. Use the arrow keys to choose.') : '')
         ];
       }
@@ -3137,7 +3137,7 @@
         'aria-busy': reading || undefined, onClick: function () { if (!reading) input.current.click(); } },
         st.state === 'read' || st.state === 'not read' ? 'Another photo' : 'Photo of the label');
     return h('div', { className: 'admin-photo' },
-      h('input', { ref: input, type: 'file', accept: 'image/*', capture: 'environment', className: 'zz-visually-hidden',
+      h('input', { ref: input, type: 'file', accept: 'image/*', capture: 'environment', className: 'hm-visually-hidden',
         tabIndex: -1, 'aria-hidden': 'true', onChange: onFile }),
       h('div', { className: 'admin-photo-actions' }, props.actions, button,
         props.images && props.images.length ? h(Z.Button, { type: 'button', hierarchy: 'secondary', disabled: props.disabled,
@@ -3331,7 +3331,7 @@
     function closeMenu() { var d = dialogRef.current; if (d && d.open) d.close(); }
     useEffect(function () {
       var d = dialogRef.current; if (!d) return;
-      function onClose() { setOpen(false); var b = document.querySelector('.zz-admin-bar__menu'); if (b) b.focus(); }
+      function onClose() { setOpen(false); var b = document.querySelector('.hm-admin-bar__menu'); if (b) b.focus(); }
       d.addEventListener('close', onClose);
       return function () { d.removeEventListener('close', onClose); };
     }, []);

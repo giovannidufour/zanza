@@ -6,6 +6,48 @@
 
 Legenda colonna *Cambio*: 🟢 facile (testo/config) · 🟡 da pianificare (URL pubblici, dati utente, redirect) · 🔴 difficile o impossibile (identificativo fisso: si crea un nuovo account/progetto).
 
+## Rinomina → HIGHMUZIK (dal 2026-11-25, decisione 0182) — CHECKLIST
+
+Gio: nome **HIGHMUZIK, sempre maiuscolo** (testi, email, Figma), dominio **highmuzik.com**, tutto rinominato compresi gli identificatori interni. rythem-works.com: auto-renew spento il 2026-11-25, scade il 2027-11-15; fino ad allora redirect 301 a highmuzik.com. Legenda: **[G]** = lo fa Gio (account, credenziali, pagamenti, dati fiscali) · **[C]** = Claude (browser di Gio o PR).
+
+**Fase 1 — dominio**
+- [x] [C] auto-renew rythem-works.com OFF (2026-11-25)
+- [ ] [G] VAT-ID nel billing Cloudflare (fattura), poi acquisto highmuzik.com ($11.17/anno) con ok di Gio
+
+**Fase 2 — PR A, nome e identificatori (non dipende dal dominio)**
+- [ ] [C] `storeName`, testi, DS (`tokens.json`, artifact), Scanner (nome, bundle id `com.highmuzik.scanner`, cartelle `HIGHMUZIK samples/scans/videos`), `hm-` al posto di `zz-`, `window.Highmuzik*`, chiavi `highmuzik-*`, `package.json`, GoDaddy legacy `/highmuzik`
+- [ ] [G/Mac] dopo il merge: ricompilare lo Scanner, spostare `~/Music/Zanza samples`, `~/Pictures/Zanza scans`, `~/Movies/Zanza videos` nelle cartelle HIGHMUZIK, rifare il login dello Scanner (keychain nuovo)
+- [ ] [C] Supabase secret `STORE_NAME` = HIGHMUZIK (con ok di Gio)
+- [ ] [C] Figma: store name nel `header`, coming soon, copyright footer, legal; [G] rinominare il file in "HIGHMUZIK - Record Store"
+
+**Fase 3 — DNS e hosting (highmuzik.com)**
+- [ ] [C] Pages: `coming-soon` su apex + www · `store-front` su `staging.` · `store-admin` su `admin.` · R2 `store-media` su `media.` (+ CORS R2 con admin.highmuzik.com)
+- [ ] [C] Access: app `staging` su staging.highmuzik.com; team Zero Trust `rythem-works` → `highmuzik` (se rinominabile)
+- [ ] [C] rythem-works.com: Redirect Rule 301 → highmuzik.com (path e query conservati), tutti i sottodomini
+- [ ] [C] Supabase Auth: Site URL + redirect `https://admin.highmuzik.com/**`; secrets `ADMIN_ORIGINS`, `ALLOWED_ORIGINS`, `SHOP_URL`, `ADMIN_URL`, `MEDIA_BASE_URL` (ok di Gio)
+
+**Fase 4 — email**
+- [ ] [G] nuova Gmail della casella del negozio (proposta `gio.highmuzik@gmail.com`), o tenere quella attuale
+- [ ] [C] Email Routing `gio@highmuzik.com` → casella del negozio ([G] clic di verifica), DMARC
+- [ ] [C] Resend: dominio highmuzik.com + DNS; [G] nuove chiavi (`highmuzik-site`, SMTP Gmail, SMTP Supabase Auth)
+- [ ] [C] secrets `MAIL_FROM` = `HIGHMUZIK <gio@highmuzik.com>`, `OFFER_TO`, `RESEND_API_KEY`; Supabase Auth SMTP (sender HIGHMUZIK, gio@highmuzik.com)
+- [ ] [G] Gmail "Invia come" `gio@highmuzik.com`, nome HIGHMUZIK (popup che Claude non raggiunge)
+
+**Fase 5 — PR B, dominio nel codice** (dopo fasi 3–4)
+- [ ] [C] `site.json` (mediaBaseUrl, liveHosts, legal.email, comingSoon.email, newsletter.action), `admin.json`, default delle Edge Functions + User-Agent Discogs, commenti; redeploy funzioni (ok di Gio)
+
+**Fase 6 — servizi**
+- [ ] [C/G] Buttondown: username `highmuzik` (cambia l'endpoint, va insieme a PR B), newsletter name e Author name HIGHMUZIK, email account gio@highmuzik.com
+- [ ] [G] Stripe: public business name HIGHMUZIK, statement descriptor HIGHMUZIK, support email gio@highmuzik.com
+- [ ] [C] Discogs developer app: nome HIGHMUZIK, callback URL sul nuovo dominio
+- [ ] [C] PostHog: nome progetto, dominio web analytics + URL heatmap su highmuzik.com
+- [ ] [C] admin → Content: cercare "rythem-works" nei testi salvati in `site_texts`
+
+**Fase 7 — nomi interni e chiusura**
+- [ ] [G] GitHub: rinominare il repo `zanza` → `highmuzik` (GitHub reindirizza); [C] aggiornare progetto, docs, memoria
+- [ ] [G] cartella sul Mac, progetto claude.ai "Zanza"; [C] artifact DS rigenerato (`npm run build:artifact`)
+- [ ] [C] quando tutto gira su highmuzik.com: togliere rythem-works.com da Resend, vecchia regola Email Routing, vecchi custom domain
+
 ## Rinomina Zanza → rythem-trax (2026-11-14) → rythem-works (2026-11-15)
 
 Il 2026-11-15 tutto quello che nel repo e in Figma diceva rythem-trax è passato a rythem-works (stessi punti elencati qui sotto).

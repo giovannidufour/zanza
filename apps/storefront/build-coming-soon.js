@@ -95,7 +95,7 @@ write('_headers', '/*\n  X-Robots-Tag: noindex\n');
 
 // Figma `coming soon`: store name, then intro (page title, divider, text, newsletter), then the bottom row
 const nl = site.newsletter || {};
-const home = h('div', { className: 'zz-page coming-soon' },
+const home = h('div', { className: 'hm-page coming-soon' },
   header,
   h('main', { className: 'coming-soon__intro' },
     h('h1', { className: 'coming-soon__title body-large' }, cs.title || 'Opening soon'),
@@ -108,7 +108,7 @@ write('index.html', page({ title: site.storeName, description: cs.text, body: re
 
 // the link in the newsletter confirmation email lands here (decision 0103): the page's own layout, title + divider + states
 {
-  const confirm = h('div', { className: 'zz-page coming-soon' },
+  const confirm = h('div', { className: 'hm-page coming-soon' },
     header,
     h('main', { className: 'coming-soon__intro' },
       h('h1', { className: 'coming-soon__title body-large', 'data-newsletter-title': '' }, Newsletter.title),
@@ -122,7 +122,7 @@ write('index.html', page({ title: site.storeName, description: cs.text, body: re
 // it), with the coming-soon header and bottom row. The shop keeps its full privacy.md
 {
   const { title, body, missing } = Legal.legalPage('privacy-coming-soon', { site, url, shipping: null, countries: [], header });
-  const withBottom = h('div', { className: 'zz-page coming-soon' }, ...React.Children.toArray(body.props.children), bottom);
+  const withBottom = h('div', { className: 'hm-page coming-soon' }, ...React.Children.toArray(body.props.children), bottom);
   write('privacy/index.html', page({ title: `${title} · ${site.storeName}`, body: renderToStaticMarkup(withBottom) }));
   if (missing.length) console.log(`    to fill: ${missing.join(' · ')}`);
 }

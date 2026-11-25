@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
   const { data: r, error } = await db.rpc("admin_offer_decide", { p_offer: b.id, p_accept: b.accept });
   if (error) return json({ error: error.message }, error.code === "42501" ? 403 : 409);
 
-  const store = env("STORE_NAME") || "rythem-works";
+  const store = env("STORE_NAME") || "HIGHMUZIK";
   const shop = env("SHOP_URL").replace(/\/$/, "");
   let text: string, subject: string;
   if (r.status === "accepted") {

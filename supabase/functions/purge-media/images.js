@@ -6,11 +6,11 @@
    The shop then lets the browser pick the smallest file that is sharp enough for the spot (srcset + sizes).
    ONE list of widths for the four places that need it: the admin (upload + "Make small sizes" in Settings), the
    storefront build (srcset), and the Edge Functions sign-upload (which keys it signs) and purge-media (what it deletes).
-   No dependencies, no DOM. CommonJS (build), classic script (window.ZanzaImages) and Deno (globalThis). */
+   No dependencies, no DOM. CommonJS (build), classic script (window.HighmuzikImages) and Deno (globalThis). */
 (function (root, factory) {
   var api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
-  else root.ZanzaImages = api;
+  else root.HighmuzikImages = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
   // long side in px, smallest first. 200: player 48, bag 96, mobile card 96 (all at 2×) · 400: cards on desktop ·

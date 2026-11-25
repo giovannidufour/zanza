@@ -10,7 +10,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import "./listing-draft.js";
 
 // deno-lint-ignore no-explicit-any
-const ListingDraft = (globalThis as any).ZanzaListingDraft;   // ./listing-draft.js is a COPY, `npm run sync:functions`
+const ListingDraft = (globalThis as any).HighmuzikListingDraft;   // ./listing-draft.js is a COPY, `npm run sync:functions`
 
 const headers = {
   "Access-Control-Allow-Origin": "*",   // the session token is what protects it
