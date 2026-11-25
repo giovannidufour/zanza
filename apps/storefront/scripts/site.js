@@ -1845,6 +1845,13 @@
       p.hidden = statusFor(id) !== 'reserved';
       if (!p.hidden) p.textContent = reservedText(id);
     });
+    // the price slot of a Best offer copy (card, tile, PDP, return card): "Your offer · 25€" for the buyer of the accepted
+    // offer while the hold runs, else empty and hidden (decision 0191)
+    Array.prototype.forEach.call(document.querySelectorAll('[data-offer-price]'), function (s) {
+      var id = s.getAttribute('data-offer-price'), o = statusFor(id) === 'reserved' && heldOffer(id);
+      s.textContent = o && o.a ? 'Your offer \u00b7 ' + formatPrice(o.a) : '';
+      s.hidden = !(o && o.a);
+    });
     // the PDP line of a Best offer copy (Figma `offer actions`): for the buyer of the accepted offer, state=accepted (0190)
     Array.prototype.forEach.call(document.querySelectorAll('[data-offer-note]'), function (p) {
       var id = p.getAttribute('data-offer-note'), o = statusFor(id) === 'reserved' && heldOffer(id);

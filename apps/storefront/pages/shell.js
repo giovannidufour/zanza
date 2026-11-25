@@ -35,8 +35,11 @@ function smallImageUrl(product, src, px, url) {
 const formatPrice = (p) => `${p.amount % 100 === 0 ? p.amount / 100 : (p.amount / 100).toFixed(2)}€`;
 // best offer (migration 0034, decision 0158): a sale copy with no price, buyers make an offer on /products/<slug>/offer/
 const isOffers = (listing) => listing.section === 'sale' && listing.price_mode === 'offers';
-// the price slot of a card, tile, PDP: the price or "Trade only"; best offer has none (the "Make an offer" CTA says it, Gio 2026-11-23)
-const priceText = (listing) => listing.section !== 'sale' ? 'Trade only' : isOffers(listing) ? null : formatPrice(listing.price);
+// the price slot of a card, tile, PDP: the price or "Trade only"; best offer has none (the "Make an offer" CTA says it, Gio 2026-11-23),
+// except for the buyer of an accepted offer: an empty hidden slot that scripts/site.js fills with "Your offer · 25€" (decision
+// 0191; base.css hides the slot while it is empty)
+const priceText = (listing) => listing.section !== 'sale' ? 'Trade only'
+  : isOffers(listing) ? React.createElement('span', { 'data-offer-price': listing.id, hidden: true }) : formatPrice(listing.price);
 // `name` comes from the database (custom title or the release lines, see data/products.js); JSON test content has none
 const productName = (r) => r.name || `${r.artist} - ${r.title}`;
 // a pre-release ("blank") of the label: "Pre" right after the label name (Gio, 2026-11-10)

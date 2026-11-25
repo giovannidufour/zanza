@@ -83,4 +83,6 @@ h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus, main[tabindex="-1"]:focus, dia
 
 /* "(Reserved) Notify me" (decision 0065): on mobile only "Reserved" + the envelope (Gio 2026-11-12) */
 @media (--mobile) { .site-reserved__bracket, .site-reserved__action { display: none; } }
+/* Best offer (decision 0191): the price slot stays empty and hidden unless this browser holds the accepted offer */
+:is(p, span):has(> [data-offer-price][hidden]) { display: none; }
 
