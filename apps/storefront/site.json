@@ -42,8 +42,8 @@
     }
   },
   "newsletter": {
-    "note": "Footer newsletter signup (decision 0076). action = the Buttondown subscribe URL (https://buttondown.com/api/emails/embed-subscribe/rythem-works). Empty = the footer shows no signup. Switched on 2026-11-14: the Privacy page names Buttondown (decision 0079).",
-    "action": "https://buttondown.com/api/emails/embed-subscribe/rythem-works",
+    "note": "Footer newsletter signup (decision 0076). action = the Buttondown subscribe URL (https://buttondown.com/api/emails/embed-subscribe/highmuzik). Empty = the footer shows no signup. Switched on 2026-11-14: the Privacy page names Buttondown (decision 0079).",
+    "action": "https://buttondown.com/api/emails/embed-subscribe/highmuzik",
     "endpoint": "https://hhpknvyfypqipxufmbys.supabase.co/functions/v1/newsletter",
     "autoConfirm": true,
     "flowNote": "Own double opt-in (decision 0103): endpoint = URL of the Supabase function newsletter (secret BUTTONDOWN_API_KEY, Verify JWT OFF); the form posts there and answers in place, the email link lands on /newsletter/confirm/ and adds the address to Buttondown as active. If the function is missing or fails, the form falls back to action (Buttondown's own flow). autoConfirm true = the confirm page confirms as it opens (one click); false = it shows a Confirm button (safe from email link scanners that run JavaScript)."
