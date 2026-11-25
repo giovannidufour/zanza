@@ -30,7 +30,8 @@ text fields are not drawn by the renderer). `Zanza --test-scan <folder> <x mm> <
 
 ## Icon
 
-`AppIcon.icns` = the shop logo on the staging favicon's acid-green ground (0127), in the macOS rounded square.
-Figma: `favicon`, variant `environment=scanner` (page assets). To remake it after a logo change:
-`swift tools/make-icon.swift <logo.png> icon1024.png`, then the iconset sizes with `sips` and `iconutil -c icns`.
-The logo PNG is the one embedded in `apps/storefront/public/favicon-staging.svg`.
+`AppIcon.icns` = the **ZANZA logo** (the illustration that was the shop logo until 0183; `apps/storefront/public/logo.png`,
+Figma `zanza logo` on page assets) on the staging favicon's acid-green ground (0127), in the macOS rounded square (decision 0185).
+The app is a Zanza platform tool, not HIGHMUZIK: never use the HM mark here. Figma: `favicon`, variant `environment=scanner`.
+To remake it: `swift tools/make-icon.swift apps/storefront/public/logo.png icon1024.png`, then the iconset sizes with `sips`
+and `iconutil -c icns`.
