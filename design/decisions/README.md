@@ -185,6 +185,7 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0161](0161-show-sold-out-only-when-sold.md) | "Show sold out" in the filters only when the page has a sold record (build-time) | accepted |
 | [0162](0162-drafts-filter-column.md) | Admin Listings → Drafts: filter column (Status ready/incomplete, Missing, Photos, Samples, Section, Format) with the shop's `Filters`; 0028 rules; desktop only | accepted |
 | [0163](0163-listings-full-width-overview-columns.md) | Admin Listings full width; columns Format, Grading, Genre, Photos, Samples; missing = "—" in text/moderate | accepted |
+| [0165](0165-scanner-push-all.md) | Scanner: Push all on the drafts column, pushes every listed draft out of sync, skips synced, one question for the batch | accepted |
 | [0166](0166-listings-year-column.md) | Admin Listings: Year column after Format (1983 or 1990s), every tab | accepted |
 | [0167](0167-home-more-records-view-all.md) | Home: Recent shows 12 records, then a full-width "View all for sale" → /sale/ | proposed |
 | [0168](0168-attribute-records-checklist.md) | Genre and tag pages: every copy as a ListingRow with a checkbox; a tick saves at once | proposed |
@@ -203,3 +204,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0181](0181-plp-filter-column-bottom-padding.md) | PLP filter column: padding-bottom medium-small inside the sticky scroller, so the last option clears the open player (height still minus `--site-player-height`); PLP only, not the `filters` component | accepted |
 | [0182](0182-store-renamed-highmuzik.md) | Store renamed HIGHMUZIK (always uppercase in text); code ids follow: `hm-` class prefix, `window.Highmuzik*`, `highmuzik-*` keys, bundle id `com.highmuzik.scanner`; domain switch in a second change | accepted |
 | [0183](0183-header-wordmark-logo.md) | Header logo = the HIGHMUZIK wordmark (`Logo`), 64 / 48 tall, shrinks when short of room; store name only as the link's accessible name; favicons and Scanner icon = `logo mark` "HM"; supersedes 0094; old illustration kept unused (`logo.png`) | accepted |
+| [0184](0184-mac-app-named-zanza.md) | Mac app = ZANZA (platform tool, not "HIGHMUZIK Scanner"); ids back to `xyz.gio-d.zanza.scanner`, nothing to migrate | accepted |

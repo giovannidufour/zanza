@@ -41,16 +41,16 @@ final class AppModel: ObservableObject {
         didSet { UserDefaults.standard.set(pushed, forKey: "pushed") }
     }
     @Published var wavFolder: URL = UserDefaults.standard.url(forKey: "wavFolder")
-        ?? FileManager.default.urls(for: .musicDirectory, in: .userDomainMask)[0].appendingPathComponent("HIGHMUZIK samples/WAV") {
+        ?? FileManager.default.urls(for: .musicDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza samples/WAV") {
         didSet { UserDefaults.standard.set(wavFolder, forKey: "wavFolder"); refreshDisk(); scheduleSync() }
     }
     @Published var mp3Folder: URL = UserDefaults.standard.url(forKey: "mp3Folder")
-        ?? FileManager.default.urls(for: .musicDirectory, in: .userDomainMask)[0].appendingPathComponent("HIGHMUZIK samples/MP3") {
+        ?? FileManager.default.urls(for: .musicDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza samples/MP3") {
         didSet { UserDefaults.standard.set(mp3Folder, forKey: "mp3Folder"); refreshDisk(); scheduleSync() }
     }
     /// Square videos of the clips with Video ticked (0177)
     @Published var videoFolder: URL = UserDefaults.standard.url(forKey: "videoFolder")
-        ?? FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask)[0].appendingPathComponent("HIGHMUZIK videos") {
+        ?? FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza videos") {
         didSet { UserDefaults.standard.set(videoFolder, forKey: "videoFolder"); scheduleSync() }
     }
 
@@ -71,12 +71,12 @@ final class AppModel: ObservableObject {
         didSet { UserDefaults.standard.set(format.rawValue, forKey: "format") }
     }
     @Published var folder: URL = UserDefaults.standard.url(forKey: "folder")
-        ?? FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask)[0].appendingPathComponent("HIGHMUZIK scans") {
+        ?? FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza scans") {
         didSet { UserDefaults.standard.set(folder, forKey: "folder"); refreshDisk() }
     }
     /// Where the whole-record originals are archived
     @Published var originalsFolder: URL = UserDefaults.standard.url(forKey: "originalsFolder")
-        ?? FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask)[0].appendingPathComponent("HIGHMUZIK scans/Originals") {
+        ?? FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask)[0].appendingPathComponent("Zanza scans/Originals") {
         didSet { UserDefaults.standard.set(originalsFolder, forKey: "originalsFolder") }
     }
 
@@ -404,40 +404,101 @@ final class AppModel: ObservableObject {
         return pushed[d.id] == now ? .synced : .push
     }
 
-    /// Push to admin: check what the admin has, ask before replacing, upload (WebP + sizes, MP3 128), attach
-    func push(_ d: DraftSummary) {
-        // the open draft knows its clip lines; another one is opened first by the user (its lines come from scan-targets)
-        guard drafts.draft?.id == d.id else { drafts.pick(d); caption = "Draft opened: press Push again"; return }
+    /// What one push sends: the draft's scanned images by role and its assigned clips by line (0142)
+    struct PushPlan {
+        let draft: DraftSummary
+        let images: [(role: Int, url: URL)]
+        let clips: [(line: Int, url: URL, trim: Double, trimEnd: Double, label: String)]
+        let missingLines: Int
+        let snapshot: [String]
+        var isEmpty: Bool { images.isEmpty && clips.isEmpty }
+        var files: Set<String> { Set(clips.map { $0.url.lastPathComponent }) }
+    }
+
+    /// The plan of a draft. The open draft uses what the app shows; any other draft reads its image names and clip
+    /// lines from scan-targets, so it never has to be opened first (0165).
+    @MainActor func pushPlan(_ d: DraftSummary) async throws -> PushPlan {
         let sku = d.skuText
-        let images: [(role: Int, url: URL)] = drafts.names.compactMap { n in drafts.file(named: n.name, in: folder).map { (n.role, $0) } }
-        let clips: [(line: Int, url: URL, trim: Double, trimEnd: Double, label: String)] = drafts.clips.compactMap { slot in
+        var names = drafts.names, slots = drafts.clips
+        if drafts.draft?.id != d.id || names.isEmpty {
+            let detail = try await Backend.shared.detail(of: d.id, roles: max(3, drafts.scannedRoles(sku: sku).max() ?? 0))
+            names = detail.images; slots = detail.clips
+        }
+        let images: [(role: Int, url: URL)] = names.compactMap { n in drafts.file(named: n.name, in: folder).map { (n.role, $0) } }
+        let clips: [(line: Int, url: URL, trim: Double, trimEnd: Double, label: String)] = slots.compactMap { slot in
             guard let line = slot.line, let c = session.clip(assignedTo: slot.name) else { return nil }
             // "Clip A1 · Artist - Title" for the confirm dialog, never a bare "A"
             let track = [slot.artist, slot.title].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " - ")
             return (line, c.url, c.trimStart, c.trimEnd, "Clip \(slot.label)" + (track.isEmpty ? "" : " · \(track)"))
         }
-        let recordTitle = d.title
-        guard !images.isEmpty || !clips.isEmpty else { return }
-        let snapshot = pushItems(sku: sku)
-        let missingLines = drafts.clips.filter { $0.line == nil && session.clip(assignedTo: $0.name) != nil }.count
-        jobs.enqueue(draftID: d.id, sku: sku, kind: .push, files: Set(clips.map { $0.url.lastPathComponent })) { progress in
+        let missingLines = slots.filter { $0.line == nil && session.clip(assignedTo: $0.name) != nil }.count
+        return PushPlan(draft: d, images: images, clips: clips, missingLines: missingLines, snapshot: pushItems(sku: sku))
+    }
+
+    /// What a push would replace in the admin, as readable names ("Label A", "Clip A1 · …")
+    struct PushCheck { let replaced: [String]; let added: [String]; let has: (photos: [Int], clips: [Int]) }
+    static func photoName(_ r: Int) -> String { r == 1 ? "Label A" : r == 2 ? "Label B" : "Other photo \(r)" }
+    func check(_ plan: PushPlan) async throws -> PushCheck {
+        let has = try await Backend.shared.adminHas(plan.draft.id)
+        let replaced = plan.images.map(\.role).filter { has.photos.contains($0) }.map(Self.photoName)
+            + plan.clips.filter { has.clips.contains($0.line) }.map(\.label)
+        let added = plan.images.map(\.role).filter { !has.photos.contains($0) }.map(Self.photoName)
+            + plan.clips.filter { !has.clips.contains($0.line) }.map(\.label)
+        return PushCheck(replaced: replaced, added: added, has: has)
+    }
+
+    /// Upload and attach one plan. `fill` = keep what the admin has: those files are not even uploaded (0165).
+    func send(_ plan: PushPlan, fill: Bool, has: (photos: [Int], clips: [Int]), progress: JobQueue.Progress) async throws -> String {
+        let images = fill ? plan.images.filter { !has.photos.contains($0.role) } : plan.images
+        let clips = fill ? plan.clips.filter { !has.clips.contains($0.line) } : plan.clips
+        let total = Double(max(1, images.count + clips.count))
+        var photoKeys: [(role: Int, key: String)] = [], clipKeys: [(line: Int, key: String)] = []
+        for (i, img) in images.enumerated() {
+            progress(Double(i) / total, "image \(i + 1) of \(images.count)")
+            let key = try await Backend.shared.upload(try AudioExport.webp(from: img.url, long: 1600), kind: "photo", contentType: "image/webp")
+            for w in [200, 400, 800] {
+                _ = try await Backend.shared.upload(try AudioExport.webp(from: img.url, width: w), kind: "photo", contentType: "image/webp", of: key, width: w)
+            }
+            photoKeys.append((img.role, key))
+        }
+        for (i, c) in clips.enumerated() {
+            progress(Double(images.count + i) / total, "clip \(i + 1) of \(clips.count)")
+            let key = try await Backend.shared.upload(try AudioExport.mp3(source: c.url, trimStart: c.trim, trimEnd: c.trimEnd, kbps: 128), kind: "sample", contentType: "audio/mpeg")
+            clipKeys.append((c.line, key))
+        }
+        if !photoKeys.isEmpty || !clipKeys.isEmpty {
+            progress(0.98, "attaching")
+            try await Backend.shared.attach(plan.draft.id, photos: photoKeys, clips: clipKeys, mode: fill ? "fill" : "replace")
+        }
+        await MainActor.run { self.pushed[plan.draft.id] = plan.snapshot }
+        var r = "Pushed \(photoKeys.count) image\(photoKeys.count == 1 ? "" : "s") and \(clipKeys.count) clip\(clipKeys.count == 1 ? "" : "s")"
+        let kept = (plan.images.count - images.count) + (plan.clips.count - clips.count)
+        if kept > 0 { r += " · \(kept) kept as in the admin" }
+        if plan.missingLines > 0 { r += " · \(plan.missingLines) clip(s) skipped: no line yet (scan-targets)" }
+        return r
+    }
+
+    /// Push to admin (row button): check what the admin has, ask before replacing, upload (WebP + sizes, MP3 128),
+    /// attach. Works on any listed draft, open or not (0165).
+    func push(_ d: DraftSummary) {
+        guard !jobs.isActive(d.id, .push) else { return }
+        let sku = d.skuText, recordTitle = d.title
+        jobs.enqueue(draftID: d.id, sku: sku, kind: .push, files: Set(session.assignments.filter { $0.value.sku == sku }.map(\.key))) { progress in
+            progress(0, "reading the draft")
+            let plan = try await self.pushPlan(d)
+            guard !plan.isEmpty else { return ("Nothing to push", nil) }
             progress(0, "checking the admin")
-            let has = try await Backend.shared.adminHas(d.id)
-            func photoName(_ r: Int) -> String { r == 1 ? "Label A" : r == 2 ? "Label B" : "Other photo \(r)" }
-            let replacedPhotos = images.map(\.role).filter { has.photos.contains($0) }
-            let addedPhotos = images.map(\.role).filter { !has.photos.contains($0) }
-            let replacedClips = clips.filter { has.clips.contains($0.line) }.map(\.label)
-            let addedClips = clips.filter { !has.clips.contains($0.line) }.map(\.label)
-            if !replacedPhotos.isEmpty || !replacedClips.isEmpty {
+            let c = try await self.check(plan)
+            if !c.replaced.isEmpty {
                 // Figma `push · replace confirm` 2458:28040
+                let photos = plan.images.filter { c.has.photos.contains($0.role) }.count
+                let clips = plan.clips.filter { c.has.clips.contains($0.line) }.count
                 func count(_ n: Int, _ one: String, _ many: String) -> String? { n == 0 ? nil : "\(n) \(n == 1 ? one : many)" }
-                let what = [count(replacedPhotos.count, "photo", "photos"), count(replacedClips.count, "clip", "clips")].compactMap { $0 }.joined(separator: " and ")
+                let what = [count(photos, "photo", "photos"), count(clips, "clip", "clips")].compactMap { $0 }.joined(separator: " and ")
                 var body = "SKU \(sku) · \(recordTitle)\n\nReplaced (already in the admin):\n"
-                body += (replacedPhotos.map(photoName) + replacedClips).map { "• \($0)" }.joined(separator: "\n")
-                let added = addedPhotos.map(photoName) + addedClips
-                if !added.isEmpty { body += "\n\nAdded:\n" + added.map { "• \($0)" }.joined(separator: "\n") }
-                let n = replacedPhotos.count + replacedClips.count
-                body += n == 1 ? "\n\nThe old file stays in storage." : "\n\nThe old files stay in storage."
+                body += c.replaced.map { "• \($0)" }.joined(separator: "\n")
+                if !c.added.isEmpty { body += "\n\nAdded:\n" + c.added.map { "• \($0)" }.joined(separator: "\n") }
+                body += c.replaced.count == 1 ? "\n\nThe old file stays in storage." : "\n\nThe old files stay in storage."
                 let text = body
                 let ok = await MainActor.run { () -> Bool in
                     let a = NSAlert()
@@ -448,28 +509,110 @@ final class AppModel: ObservableObject {
                 }
                 if !ok { return ("Cancelled: nothing changed in the admin", nil) }
             }
-            let total = Double(images.count + clips.count)
-            var photoKeys: [(role: Int, key: String)] = [], clipKeys: [(line: Int, key: String)] = []
-            for (i, img) in images.enumerated() {
-                progress(Double(i) / total, "image \(i + 1) of \(images.count)")
-                let key = try await Backend.shared.upload(try AudioExport.webp(from: img.url, long: 1600), kind: "photo", contentType: "image/webp")
-                for w in [200, 400, 800] {
-                    _ = try await Backend.shared.upload(try AudioExport.webp(from: img.url, width: w), kind: "photo", contentType: "image/webp", of: key, width: w)
-                }
-                photoKeys.append((img.role, key))
-            }
-            for (i, c) in clips.enumerated() {
-                progress(Double(images.count + i) / total, "clip \(i + 1) of \(clips.count)")
-                let key = try await Backend.shared.upload(try AudioExport.mp3(source: c.url, trimStart: c.trim, trimEnd: c.trimEnd, kbps: 128), kind: "sample", contentType: "audio/mpeg")
-                clipKeys.append((c.line, key))
-            }
-            progress(0.98, "attaching")
-            try await Backend.shared.attach(d.id, photos: photoKeys, clips: clipKeys)
-            await MainActor.run { self.pushed[d.id] = snapshot }
-            var r = "Pushed \(photoKeys.count) image\(photoKeys.count == 1 ? "" : "s") and \(clipKeys.count) clip\(clipKeys.count == 1 ? "" : "s")"
-            if missingLines > 0 { r += " · \(missingLines) clip(s) skipped: no line yet (scan-targets)" }
-            return (r, nil)
+            return (try await self.send(plan, fill: false, has: c.has, progress: progress), nil)
         }
+    }
+
+    // MARK: Push all (0165)
+
+    /// Listed drafts a Push all would send: push or failed. Synced, empty and already queued ones are skipped.
+    var pushAllPending: [DraftSummary] {
+        drafts.results.filter { d in
+            switch pushState(d) { case .push, .failed: return true; default: return false }
+        }
+    }
+    /// true while Push all checks the admin before queueing (the button reads "Checking…")
+    @Published var pushAllChecking = false
+    /// the drafts of the last Push all, for "1 of 3 · 2 waiting"
+    @Published var pushAllBatch: [String] = []
+
+    /// Check every pending draft, ask ONCE if any already has files in the admin (replace, or keep and add only
+    /// what is missing), then queue one push job per draft in list order (0143).
+    func pushAll() {
+        let list = pushAllPending
+        guard !list.isEmpty, !pushAllChecking else { return }
+        pushAllChecking = true
+        Task { @MainActor in
+            defer { self.pushAllChecking = false }
+            var items: [(plan: PushPlan, check: PushCheck)] = []
+            var failures: [String] = []
+            for d in list {
+                do {
+                    let plan = try await self.pushPlan(d)
+                    if plan.isEmpty { continue }
+                    items.append((plan, try await self.check(plan)))
+                } catch { failures.append("SKU \(d.skuText): \(error.localizedDescription)") }
+            }
+            guard !items.isEmpty else {
+                self.caption = failures.isEmpty ? "Nothing to push" : "Push all: " + failures.joined(separator: " · ")
+                return
+            }
+            var fill = false
+            let withFiles = items.filter { !$0.check.replaced.isEmpty }
+            if !withFiles.isEmpty {
+                // Figma `push all · replace confirm` 2519:7935: one question for the whole batch
+                let n = items.count
+                var body = "\(withFiles.count == 1 ? "1 of them already has" : "\(withFiles.count) of them already have") files in the admin:\n"
+                for it in withFiles {
+                    body += "\nSKU \(it.plan.draft.skuText) · \(it.plan.draft.title)\n• " + it.check.replaced.joined(separator: " · ")
+                }
+                body += "\n\nEverything else is added. Old files stay in storage."
+                if !failures.isEmpty { body += "\n\nNot checked (left out): " + failures.joined(separator: " · ") }
+                let a = NSAlert()
+                a.messageText = "Push \(n) draft\(n == 1 ? "" : "s") to the admin?"
+                a.informativeText = body
+                let group = RadioGroup()
+                let replace = NSButton(radioButtonWithTitle: "Replace them with the Scanner’s files", target: group, action: #selector(RadioGroup.pick(_:)))
+                let keep = NSButton(radioButtonWithTitle: "Keep them, add only what is missing", target: group, action: #selector(RadioGroup.pick(_:)))
+                replace.state = .on
+                group.buttons = [replace, keep]
+                let stack = NSStackView(views: [replace, keep]); stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 6
+                stack.frame = NSRect(x: 0, y: 0, width: 320, height: 44)
+                a.accessoryView = stack
+                a.addButton(withTitle: "Push \(n) draft\(n == 1 ? "" : "s")"); a.addButton(withTitle: "Cancel")
+                let ok = a.runModal() == .alertFirstButtonReturn
+                withExtendedLifetime(group) {}
+                guard ok else { self.caption = "Push all cancelled: nothing changed in the admin"; return }
+                fill = keep.state == .on
+            }
+            self.pushAllBatch = items.map(\.plan.draft.id)
+            for it in items {
+                let plan = it.plan, has = it.check.has
+                self.jobs.enqueue(draftID: plan.draft.id, sku: plan.draft.skuText, kind: .push, files: plan.files) { progress in
+                    (try await self.send(plan, fill: fill, has: has, progress: progress), nil)
+                }
+            }
+            if !failures.isEmpty { self.caption = "Push all: " + failures.joined(separator: " · ") }
+        }
+    }
+
+    /// The `push all` row (Figma 2519:7929): ready | pushing | failed | synced, nil = hidden
+    struct PushAllStatus { enum State { case ready, pushing, failed, synced }; let state: State; let summary: String; let button: String?; let count: Int }
+    var pushAllStatus: PushAllStatus? {
+        let listed = drafts.results
+        guard !listed.isEmpty else { return nil }
+        let states = listed.map { pushState($0) }
+        let synced = states.filter { if case .synced = $0 { return true }; return false }.count
+        let failed = states.filter { if case .failed = $0 { return true }; return false }.count
+        let pending = pushAllPending.count
+        let active = pushAllBatch.filter { jobs.isActive($0, .push) }.count
+        if pushAllChecking { return PushAllStatus(state: .pushing, summary: "Checking \(pending) draft\(pending == 1 ? "" : "s")", button: "Pushing…", count: 0) }
+        if active > 0 {
+            let total = pushAllBatch.count, waiting = active - 1
+            return PushAllStatus(state: .pushing, summary: "\(total - active + 1) of \(total)" + (waiting > 0 ? " · \(waiting) waiting" : ""), button: "Pushing…", count: 0)
+        }
+        if failed > 0 {
+            let pushedNow = pushAllBatch.filter { id in listed.first { $0.id == id }.map { if case .synced = pushState($0) { return true }; return false } ?? false }.count
+            var s = "\(failed) push\(failed == 1 ? "" : "es") failed"
+            if pushedNow > 0 { s += " · \(pushedNow) pushed" }
+            if pending > failed { s += " · \(pending - failed) to push" }
+            return PushAllStatus(state: .failed, summary: s, button: pending == failed ? "Retry \(failed)" : "Push \(pending)", count: pending)
+        }
+        if pending > 0 {
+            return PushAllStatus(state: .ready, summary: "\(pending) to push" + (synced > 0 ? " · \(synced) synced" : ""), button: "Push \(pending)", count: pending)
+        }
+        if synced > 0 { return PushAllStatus(state: .synced, summary: "All \(synced) synced", button: nil, count: 0) }
+        return nil
     }
 
     // MARK: Session: remove and clear (0141)
@@ -727,4 +870,10 @@ final class AppModel: ObservableObject {
         if let next = steps.first(where: { !$0.done }) { select(next) }
         else if !steps.isEmpty { addPhoto() }
     }
+}
+
+/// Two or more radio buttons in an NSAlert accessory: one on at a time
+final class RadioGroup: NSObject {
+    var buttons: [NSButton] = []
+    @objc func pick(_ sender: NSButton) { for b in buttons { b.state = b === sender ? .on : .off } }
 }

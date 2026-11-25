@@ -5,9 +5,9 @@ import Security
 /// email) and read drafts and file names from the Edge Function `scan-targets`. Read only.
 /// Config comes from Info.plist, filled by build.sh from apps/storefront/.supabase.env and site.json (never committed).
 enum Config {
-    static let supabaseURL = (Bundle.main.object(forInfoDictionaryKey: "HighmuzikSupabaseURL") as? String) ?? ""
-    static let supabaseKey = (Bundle.main.object(forInfoDictionaryKey: "HighmuzikSupabaseKey") as? String) ?? ""
-    static let mediaBaseURL = (Bundle.main.object(forInfoDictionaryKey: "HighmuzikMediaBaseURL") as? String) ?? ""
+    static let supabaseURL = (Bundle.main.object(forInfoDictionaryKey: "ZanzaSupabaseURL") as? String) ?? ""
+    static let supabaseKey = (Bundle.main.object(forInfoDictionaryKey: "ZanzaSupabaseKey") as? String) ?? ""
+    static let mediaBaseURL = (Bundle.main.object(forInfoDictionaryKey: "ZanzaMediaBaseURL") as? String) ?? ""
     static var configured: Bool { !supabaseURL.isEmpty && !supabaseKey.isEmpty }
 }
 
@@ -126,8 +126,9 @@ final class Backend {
         return (photos, clips)
     }
 
-    func attach(_ id: String, photos: [(role: Int, key: String)], clips: [(line: Int, key: String)]) async throws {
-        _ = try await post("/functions/v1/scanner-push", ["id": id, "mode": "replace",
+    /// mode "replace" = what is pushed replaces the admin's; "fill" = only empty roles/lines are set (0165)
+    func attach(_ id: String, photos: [(role: Int, key: String)], clips: [(line: Int, key: String)], mode: String = "replace") async throws {
+        _ = try await post("/functions/v1/scanner-push", ["id": id, "mode": mode,
                                                           "photos": photos.map { ["role": $0.role, "key": $0.key] },
                                                           "clips": clips.map { ["line": $0.line, "key": $0.key] }], auth: true)
     }
@@ -219,7 +220,7 @@ final class Backend {
 /// The refresh token, in the login Keychain
 enum Keychain {
     private static let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
-                                               kSecAttrService as String: "com.highmuzik.scanner",
+                                               kSecAttrService as String: "xyz.gio-d.zanza.scanner",
                                                kSecAttrAccount as String: "supabase-refresh-token"]
     static func save(_ value: String) {
         delete()

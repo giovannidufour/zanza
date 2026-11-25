@@ -61,7 +61,7 @@ enum AudioExport {
         }
 
         // MP3: LAME reads a plain 16/24-bit WAV (no tag), the ID3v2.4 tag is put in front afterwards
-        let tmpIn = FileManager.default.temporaryDirectory.appendingPathComponent("highmuzik-\(UUID().uuidString).wav")
+        let tmpIn = FileManager.default.temporaryDirectory.appendingPathComponent("zanza-\(UUID().uuidString).wav")
         let tmpOut = tmpIn.deletingPathExtension().appendingPathExtension("mp3")
         defer { try? FileManager.default.removeItem(at: tmpIn); try? FileManager.default.removeItem(at: tmpOut) }
         try wavData(buf, bits: bits, rate: Int(rate), gain: gain, id3: nil).write(to: tmpIn)
@@ -83,7 +83,7 @@ enum AudioExport {
         let count = AVAudioFrameCount(max(0, stop - file.framePosition))
         guard let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: max(count, 1)) else { throw ScanError.message("Out of memory") }
         try file.read(into: buf, frameCount: count)
-        let tmpIn = FileManager.default.temporaryDirectory.appendingPathComponent("highmuzik-\(UUID().uuidString).wav")
+        let tmpIn = FileManager.default.temporaryDirectory.appendingPathComponent("zanza-\(UUID().uuidString).wav")
         let tmpOut = tmpIn.deletingPathExtension().appendingPathExtension("mp3")
         defer { try? FileManager.default.removeItem(at: tmpIn); try? FileManager.default.removeItem(at: tmpOut) }
         try wavData(buf, bits: 16, rate: Int(rate), gain: boost(buf), id3: nil).write(to: tmpIn)
@@ -112,7 +112,7 @@ enum AudioExport {
         }
         ctx.interpolationQuality = .high
         ctx.draw(img, in: CGRect(x: 0, y: 0, width: w, height: h))
-        let tmpIn = FileManager.default.temporaryDirectory.appendingPathComponent("highmuzik-\(UUID().uuidString).png")
+        let tmpIn = FileManager.default.temporaryDirectory.appendingPathComponent("zanza-\(UUID().uuidString).png")
         let tmpOut = tmpIn.deletingPathExtension().appendingPathExtension("webp")
         defer { try? FileManager.default.removeItem(at: tmpIn); try? FileManager.default.removeItem(at: tmpOut) }
         try ImageOutput.write(ctx.makeImage()!, to: tmpIn, format: .png, dpi: 72)

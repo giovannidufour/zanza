@@ -314,7 +314,7 @@ final class DraftSession: ObservableObject {
                 guard let oldIndex = old.firstIndex(where: { $0.id == slot.id }), oldIndex != newIndex,
                       ofCurrentDraft(names[oldIndex].name), ofCurrentDraft(names[newIndex].name),
                       let f = file(named: names[oldIndex].name, in: folder) else { continue }
-                let tmp = folder.appendingPathComponent(".highmuzik-move-\(UUID().uuidString).\(f.pathExtension)")
+                let tmp = folder.appendingPathComponent(".zanza-move-\(UUID().uuidString).\(f.pathExtension)")
                 if (try? fm.moveItem(at: f, to: tmp)) != nil { moved.append((tmp, names[newIndex].name)) }
             }
             for (tmp, base) in moved {

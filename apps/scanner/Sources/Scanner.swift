@@ -64,7 +64,7 @@ final class ScannerController: NSObject, ObservableObject, ICDeviceBrowserDelega
     private var completion: ((Result<CGImage, Error>) -> Void)?
     private var timer: Timer?
     private let tempDir: URL = {
-        let u = FileManager.default.temporaryDirectory.appendingPathComponent("highmuzik-scanner", isDirectory: true)
+        let u = FileManager.default.temporaryDirectory.appendingPathComponent("zanza-scanner", isDirectory: true)
         try? FileManager.default.createDirectory(at: u, withIntermediateDirectories: true)
         return u
     }()
