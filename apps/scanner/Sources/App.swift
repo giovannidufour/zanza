@@ -8,7 +8,7 @@ struct HighmuzikScannerApp: App {
     @MainActor init() { Snapshot.runIfAsked(); TestScan.runIfAsked(); GlassSnapshot.runIfAsked() }
 
     var body: some Scene {
-        WindowGroup("Rythem-Works Scanner") {
+        WindowGroup("HIGHMUZIK Scanner") {
             ContentView(scanner: model.scanner)
                 .environmentObject(model)
                 .onAppear {
