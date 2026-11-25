@@ -28,7 +28,7 @@ Gio: nome **HIGHMUZIK, sempre maiuscolo** (testi, email, Figma), dominio **highm
 
 **Fase 4 — email**
 - [x] [G] nuova Gmail della casella del negozio: `gio.highmuzik@gmail.com`, solo per transazionali e clienti. TUTTI i login degli account (Cloudflare, Supabase, GitHub, Resend, Buttondown, login admin) restano sulla Gmail personale di Gio
-- [x] [C] Email Routing `gio@highmuzik.com` → gio.highmuzik@gmail.com (verificata 2026-11-25) · [ ] DMARC
+- [x] [C] Email Routing `gio@highmuzik.com` → gio.highmuzik@gmail.com (verificata 2026-11-25) · DMARC (Cloudflare DMARC Management, p=none) 2026-11-25
 - [x] [C] Resend: dominio highmuzik.com verificato; [G] chiave `highmuzik-site` in `RESEND_API_KEY` (2026-11-25, mail di prova dal form contatti ok) · [ ] [G] chiavi SMTP per Supabase Auth e Gmail
 - [x] [C] secrets `MAIL_FROM` = `HIGHMUZIK <gio@highmuzik.com>`, `OFFER_TO`, `RESEND_API_KEY`; Supabase Auth SMTP (sender HIGHMUZIK, gio@highmuzik.com)
 - [ ] [G] Gmail "Invia come" `gio@highmuzik.com`, nome HIGHMUZIK (popup che Claude non raggiunge)
@@ -37,11 +37,12 @@ Gio: nome **HIGHMUZIK, sempre maiuscolo** (testi, email, Figma), dominio **highm
 - [x] [C] (PR #259; 7 funzioni ridistribuite il 2026-11-25) `site.json` (mediaBaseUrl, liveHosts, legal.email, comingSoon.email; newsletter.action nel PR successivo), `admin.json`, default delle Edge Functions + User-Agent Discogs, commenti; redeploy funzioni (ok di Gio)
 
 **Fase 6 — servizi**
-- [x] [C/G] Buttondown: username `highmuzik` (cambia l'endpoint, va insieme a PR B), newsletter name e Author name HIGHMUZIK, email dell'account resta la Gmail personale
-- [ ] [G] Stripe: public business name HIGHMUZIK, statement descriptor HIGHMUZIK, support email gio@highmuzik.com
-- [ ] [C] Discogs developer app: nome HIGHMUZIK, callback URL sul nuovo dominio
-- [ ] [C] PostHog: nome progetto, dominio web analytics + URL heatmap su highmuzik.com
-- [ ] [C] admin → Content: cercare "rythem-works" nei testi salvati in `site_texts`
+- [x] [C/G] Buttondown: username `highmuzik` (cambia l'endpoint, va insieme a PR B), newsletter name e Author name HIGHMUZIK, email dell'account `gio@highmuzik.com` (= Rispondi a; login resta Google) — fatto 2026-11-25
+- [ ] [C/G] dopo il lancio, da valutare: BIMI (logo HM nelle mail di gio@highmuzik.com su Gmail) = record DNS su Cloudflare + certificato VMC/CMC a pagamento + DMARC quarantine/reject. Non fatto il 2026-11-25 (dominio nuovo, costo).
+- [ ] [G] AL LANCIO (oggi Stripe è solo sandbox, nessun nome rythem-works): public business name HIGHMUZIK, statement descriptor HIGHMUZIK, support email gio@highmuzik.com
+- [x] [C] Discogs developer app: nome HIGHMUZIK, callback https://highmuzik.com/wantlist/ (2026-11-25)
+- [x] [C] PostHog: progetto HIGHMUZIK, app_urls highmuzik.com + staging.highmuzik.com (2026-11-25)
+- [x] [C] admin → Content: nessun "rythem" nelle 12 pagine di staging dopo la build del 2026-11-25
 
 **Fase 7 — nomi interni e chiusura**
 - [ ] [G] GitHub: rinominare il repo `zanza` → `highmuzik` (GitHub reindirizza); [C] aggiornare progetto, docs, memoria
