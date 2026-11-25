@@ -1142,17 +1142,32 @@
     try { window.localStorage.setItem(BAG_KEY, JSON.stringify(ids)); } catch (e) { /* not saved: stays for this page */ }
     renderBag();
   }
-  // accepted offers (decision 0188): the token of each email link opened in this browser, by listing id. The Bag prices
-  // the line with it and create-checkout checks it again. Only the offer's inbox gets the link: it is the proof.
+  // accepted offers (decision 0188): each email link opened in this browser, by listing id: { t: token, a: amount in
+  // cents, e: end of the hold } (0190: the record's page remembers the offer after a Remove). The Bag prices the line with
+  // the token and create-checkout checks it again. Only the offer's inbox gets the link: it is the proof.
   var OFFERS_KEY = 'highmuzik-offers';
-  function readOfferTokens() {
+  function readOffers() {
     try {
       var v = JSON.parse(window.localStorage.getItem(OFFERS_KEY) || '{}');
-      return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+      if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+      Object.keys(v).forEach(function (id) { if (typeof v[id] === 'string') v[id] = { t: v[id] }; });   // 0188 kept the token alone
+      return v;
     } catch (e) { return {}; }
   }
-  function writeOfferTokens(map) {
+  function writeOffers(map) {
     try { window.localStorage.setItem(OFFERS_KEY, JSON.stringify(map)); return true; } catch (e) { return false; }
+  }
+  function readOfferTokens() {
+    var all = readOffers(), out = {};
+    Object.keys(all).forEach(function (id) { if (all[id] && all[id].t) out[id] = all[id].t; });
+    return out;
+  }
+  // this browser's accepted offer for a copy, while its hold runs (null otherwise)
+  function heldOffer(id) {
+    var o = id && readOffers()[id];
+    if (!o || !o.t) return null;
+    if (o.e && new Date(o.e).getTime() <= Date.now()) return null;
+    return o;
   }
   // same rule as formatPrice in pages/shell.js: whole euros without decimals (12, 12.50) + the euro sign
   function formatPrice(cents) { return (cents % 100 === 0 ? cents / 100 : (cents / 100).toFixed(2)) + '\u20ac'; }
@@ -1368,8 +1383,8 @@
     }
     // a token whose offer is paid leaves with its line
     if (bagOffers) {
-      var tokens = readOfferTokens(), drop = Object.keys(tokens).filter(function (id) { return bagOffers[id] && bagOffers[id].state === 'paid'; });
-      if (drop.length) { drop.forEach(function (id) { delete tokens[id]; }); writeOfferTokens(tokens); }
+      var all = readOffers(), drop = Object.keys(all).filter(function (id) { return bagOffers[id] && bagOffers[id].state === 'paid'; });
+      if (drop.length) { drop.forEach(function (id) { delete all[id]; }); writeOffers(all); }
     }
     renderBagCount(ids.length);
     syncAddButtons(ids);
@@ -1534,11 +1549,16 @@
     var sold = st === 'sold' || st === 'traded';
     var reserved = !sold && st === 'reserved';
     var inBag = !sold && !reserved && !!id && (ids || readBag()).indexOf(id) !== -1;
-    // a Best offer copy (data-offer-href, decision 0189): reserved = "(Reserved) Notify me" as any copy; only the buyer
-    // of the accepted offer (its token in this browser and the copy in the bag, 0188) reads "In bag"
-    if (btn.hasAttribute('data-offer-href')) { inBag = reserved && myOffer(id, ids); if (inBag) reserved = false; }
+    // a Best offer copy (data-offer-href, decision 0189): reserved = "(Reserved) Notify me" as any copy; the buyer of the
+    // accepted offer (its link opened in this browser, 0188) reads "Add to bag", or "In bag" once it is there (0190)
+    var mine = false;
+    if (btn.hasAttribute('data-offer-href')) {
+      mine = reserved && !!heldOffer(id);
+      inBag = mine && (ids || readBag()).indexOf(id) !== -1;
+      if (mine) reserved = false;
+    }
     if ('disabled' in btn) btn.disabled = sold;
-    text.nodeValue = sold ? 'Sold out' : reserved ? '' : inBag ? 'In bag' : btn.getAttribute('data-label-default');
+    text.nodeValue = sold ? 'Sold out' : reserved ? '' : inBag ? 'In bag' : mine ? 'Add to bag' : btn.getAttribute('data-label-default');
     setReservedLabel(label, text, reserved);
     btn.setAttribute('data-hierarchy', sold || reserved || inBag ? 'secondary' : btn.getAttribute('data-hierarchy-default'));
     btn.setAttribute('data-in-bag', inBag ? 'true' : 'false');
@@ -1604,16 +1624,14 @@
   }
   // the Add buttons: Add to bag, or open the bag when the copy is already in it (decision 0058). The header Bag link
   // does the opening, so the soft navigation keeps the player; no toast (decision 0050)
-  // the accepted offer of this browser for a copy in the bag (decision 0188)
-  function myOffer(id, ids) { return !!(id && readOfferTokens()[id] && (ids || readBag()).indexOf(id) !== -1); }
-  // offerHref: the button of a Best offer copy (0189): open → its offer page; reserved → Notify me, or the bag for the
-  // buyer of the accepted offer
+  // offerHref: the button of a Best offer copy (0189): open → its offer page; reserved → Notify me, or for the buyer of
+  // the accepted offer Add to bag / open the bag (0190)
   function addOrOpen(id, offerHref) {
     if (!id) return;
     var st = statusFor(id);
     if (st === 'sold' || st === 'traded') return;
     if (offerHref && st === 'available') { location.href = offerHref; return; }
-    if (st === 'reserved' && !(offerHref && myOffer(id))) { openNotify(id, !!offerHref); return; }
+    if (st === 'reserved' && !(offerHref && heldOffer(id))) { openNotify(id, !!offerHref); return; }
     if (offerHref && st !== 'reserved') return;
     if (readBag().indexOf(id) === -1) { addToBag(id); return; }
     var link = document.querySelector('a[data-bag-count]');
@@ -1826,6 +1844,13 @@
       var id = p.getAttribute('data-reserved-note');
       p.hidden = statusFor(id) !== 'reserved';
       if (!p.hidden) p.textContent = reservedText(id);
+    });
+    // the PDP line of a Best offer copy (Figma `offer actions`): for the buyer of the accepted offer, state=accepted (0190)
+    Array.prototype.forEach.call(document.querySelectorAll('[data-offer-note]'), function (p) {
+      var id = p.getAttribute('data-offer-note'), o = statusFor(id) === 'reserved' && heldOffer(id);
+      if (!p.hasAttribute('data-text-default')) p.setAttribute('data-text-default', p.textContent);
+      p.textContent = o ? 'Your offer' + (o.a ? ' of ' + formatPrice(o.a) : '') + ' was accepted. It\u2019s held for you' +
+        (o.e ? ' until ' + offerWhen(o.e) : '') + ': add it to your bag and pay when you like.' : p.getAttribute('data-text-default');
     });
     Array.prototype.forEach.call(document.querySelectorAll('[data-listing-status]'), function (el) {
       var id = listingIdOf(el);
@@ -2409,9 +2434,9 @@
       if (d.state !== 'ready') { showOfferState(root, d.state); return; }
       fill('[data-offer-amount]', formatPrice(d.amount_cents));
       fill('[data-offer-held]', d.expires_at ? 'Held for you until ' + offerWhen(d.expires_at) + '. Then the record is back open to offers.' : '');
-      var tokens = readOfferTokens();
-      tokens[d.listing_id] = token;
-      var kept = writeOfferTokens(tokens);
+      var all = readOffers();
+      all[d.listing_id] = { t: token, a: d.amount_cents, e: d.expires_at };
+      var kept = writeOffers(all);
       var ids = readBag();
       if (ids.indexOf(d.listing_id) === -1) { ids.push(d.listing_id); writeBag(ids); }
       track('price_offer_to_bag');
