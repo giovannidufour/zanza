@@ -1507,8 +1507,9 @@
   // ── Offers ────────────────────────────────────────────────────────────────
   /* Figma BACKEND → Offers (decision 0158): the offers on Best offer listings (price_mode 'offers', migration 0034),
      confirmed by the buyer's email link (unconfirmed ones never show). View admin_offers, newest first.
-     Tabs New (pending: Accept / Decline) · Accepted (payment link open) · All. Accept / Decline ask first in a Dialog,
-     then run the Edge Function offer-decide (admin_offer_decide + the email to the buyer). Route: #offers */
+     Tabs New (pending: Accept / Decline) · Accepted (held, the buyer can buy it from their Bag, 0186) · All. Accept /
+     Decline ask first in a Dialog (Decline with an optional message to the buyer, 0187), then run the Edge Function
+     offer-decide (admin_offer_decide + the email to the buyer). Route: #offers */
   var OFFER_TABS = [
     ['new', 'New', function (o) { return o.state === 'pending'; }],
     ['accepted', 'Accepted', function (o) { return o.state === 'accepted'; }],
@@ -1519,7 +1520,7 @@
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   }
   function offerStatus(o) {
-    if (o.state === 'accepted') return 'Accepted · payment link open until ' + dateTime(o.expires_at);
+    if (o.state === 'accepted') return 'Accepted · held for the buyer until ' + dateTime(o.expires_at);
     if (o.state === 'expired') return 'Expired · not paid in 48 h';
     if (o.state === 'paid') return o.order_id ? h(React.Fragment, null, 'Paid · ', h('a', { href: '#orders/' + o.order_id }, 'order ' + orderRef({ id: o.order_id }))) : 'Paid';
     if (o.state === 'declined') return 'Declined';
@@ -1532,6 +1533,7 @@
     var er = useState(null), error = er[0], setError = er[1];
     var tb = useState('new'), tab = tb[0], setTab = tb[1];
     var cf = useState(null), confirm = cf[0], setConfirm = cf[1];   // { offer, accept }
+    var dm = useState(''), declineNote = dm[0], setDeclineNote = dm[1];   // the Decline dialog's optional message (0187)
     var bz = useState(false), busy = bz[0], setBusy = bz[1];
     var ms = useState(null), message = ms[0], setMessage = ms[1];
     function load() {
@@ -1543,7 +1545,7 @@
       var o = confirm.offer, accept = confirm.accept;
       setBusy(true); setMessage(null);
       try {
-        var r = await invoke('offer-decide', { id: o.id, accept: accept });
+        var r = await invoke('offer-decide', accept ? { id: o.id, accept: true } : { id: o.id, accept: false, message: declineNote.trim() });
         setConfirm(null);
         await load();
         var what = (accept ? 'Offer accepted' : 'Offer declined');
@@ -1567,9 +1569,14 @@
       dialog = confirm.accept
         ? h(Z.Dialog, { open: true, busy: busy, title: 'Accept ' + amount + '?', confirmLabel: 'Accept offer',
             onCancel: function () { setConfirm(null); }, onConfirm: decided },
-            h('p', null, name + ' goes Reserved for 48 hours and ' + o.email + ' gets the payment link by email (' + amount + ' + shipping to ' + regionName(o.country) + '). Not paid in time: it goes back on sale.'))
+            h('p', null, name + ' goes Reserved for 48 hours and ' + o.email + ' gets a link by email that puts it in their Bag at ' + amount + ' (+ shipping to ' + regionName(o.country) + '). Not paid in time: it goes back on sale.'))
+        // Figma BACKEND → Offers → `Offer - decline dialog` (dialog `field` on, decision 0187): an optional message, added
+        // to the email after "This time I'll pass."
         : h(Z.Dialog, { open: true, busy: busy, title: 'Decline ' + amount + '?', confirmLabel: 'Decline offer',
-            onCancel: function () { setConfirm(null); }, onConfirm: decided },
+            onCancel: function () { setConfirm(null); }, onConfirm: decided,
+            field: h(Z.Input, { variant: 'text-area', label: 'Message to the buyer', optional: true, maxLength: 1000,
+              placeholder: 'Optional. It goes in the email after \u201cThis time I\u2019ll pass.\u201d',
+              value: declineNote, onChange: function (e) { setDeclineNote(e.target.value); } }) },
             h('p', null, o.email + ' gets a short "not this time" email. ' + name + ' stays as it is.'));
     } else dialog = h(Z.Dialog, { open: false, title: '', confirmLabel: '', onCancel: function () {}, onConfirm: function () {} }, '');
     return h('div', { className: 'admin-section admin-listings' },
@@ -1589,7 +1596,7 @@
           actions: pending ? [
             h(Z.Button, { key: 'a', hierarchy: 'primary', disabled: !live, title: live ? null : 'The record is not live: it can take an offer only while it is.',
               onClick: function () { setConfirm({ offer: o, accept: true }); } }, 'Accept'),
-            h(Z.Button, { key: 'd', hierarchy: 'secondary', onClick: function () { setConfirm({ offer: o, accept: false }); } }, 'Decline')] : null,
+            h(Z.Button, { key: 'd', hierarchy: 'secondary', onClick: function () { setDeclineNote(''); setConfirm({ offer: o, accept: false }); } }, 'Decline')] : null,
           status: pending ? null : offerStatus(o) });
       }) : h('li', { className: 'body-small admin-rows__empty' }, empty)),
       dialog);

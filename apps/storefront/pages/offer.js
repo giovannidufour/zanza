@@ -5,7 +5,8 @@
    - OfferActions: the PDP actions of a best-offer copy (Figma `offer actions`, state open | reserved | sold)
    - PriceOffer: /products/<slug>/offer/ — Figma `price offer` + `offer sent · price` (check email), hidden until sent
    - OfferConfirm: /offer/confirm/?t=… — the email link: confirms the offer (Figma `offer sent · price` confirmed | link expired)
-   - OfferPay: /offer/pay/?t=… — the payment link of an accepted offer (Figma `offer pay` ready | expired | paid) */
+   - OfferPay: /offer/pay/?t=… — the link of an accepted offer: sign in with its email, then the record goes in the Bag
+     (decision 0186; Figma `offer pay` sign in | code | other account | expired | paid) */
 'use strict';
 const React = require('react');
 const Z = require('../../../packages/ui/components.js');
@@ -70,7 +71,7 @@ function PriceOffer({ product, site, url, countries }) {
         h('div', { className: 'hm-visually-hidden', 'aria-hidden': 'true' },
           h('label', null, 'Website', h('input', { type: 'text', name: 'website', tabIndex: -1, autoComplete: 'off' }))),
         // Figma `offer submit`: fine print, error line, Send offer
-        h('p', { className: 'body-small' }, 'Nothing is agreed until I say yes. If I accept, you get a payment link valid 48 h, and the record is held for you. ',
+        h('p', { className: 'body-small' }, 'Nothing is agreed until I say yes. If I accept, the record is held for you for 48 h and you can buy it from your Bag. ',
           h('a', { className: 'trade-link', href: url('/privacy/') }, 'Privacy')),
         h('p', { className: 'trade-form__error body-small', role: 'alert', hidden: true, 'data-offer-error': '' }),
         h(Z.Button, { type: 'submit', hierarchy: 'primary', className: 'trade-form__send', 'data-offer-send': '' }, 'Send offer')),
@@ -104,41 +105,53 @@ function OfferConfirm({ site, url }) {
         'One moment.'),
       h(SentBlock, { site, title: 'Offer sent', props: { hidden: true, 'data-offer-state': 'confirmed' }, button: more },
         'Your offer of ', h('span', { 'data-offer-amount': '' }), ' for ', h('span', { 'data-offer-name': '' }),
-        ' is with me. I answer you by email within a couple of days. If I accept, you get a payment link.'),
+        ' is with me. I answer you by email within a couple of days. If I accept, the record goes in your Bag at that price.'),
       h(SentBlock, { site, title: 'This link has expired', props: { hidden: true, 'data-offer-state': 'expired' }, button: more },
         'Confirmation links work for 24 h. Send your offer again from the record’s page.'),
       h(SentBlock, { site, title: 'This link doesn’t work', props: { hidden: true, 'data-offer-state': 'invalid' }, button: more },
         'Check that you opened the whole link from the email, or send your offer again from the record’s page.')));
 }
 
-// /offer/pay/?t=… (Figma `Offer pay - desktop`, `offer pay` ready | expired | paid): the accepted amount + shipping to the
-// chosen country (shipping config as on the Bag page), Checkout → the function → Stripe
-function OfferPay({ site, url, shipping, countries }) {
+// /offer/pay/?t=… — the link of the acceptance email (decision 0186, replaces the pay page of 0158). Figma `Offer pay -
+// desktop · sign in` / `· code`, `offer pay` state = sign in | code | other account | expired | paid. site.js reads the
+// offer (function `offer`, pay-info), then: signed in with the offer's email → the copy goes in the Bag and the Bag
+// opens; not signed in → the account's email code, sent to the offer's email (fixed: no email field); signed in with
+// another email → Sign out. Expired / paid / closed / invalid as before.
+function OfferPay({ site, url }) {
   const endpoint = (site.offers || {}).endpoint || '';
-  const list = countries || [];
-  const def = list.some((c) => c.code === DEFAULT_COUNTRY) ? DEFAULT_COUNTRY : (list[0] || {}).code;
   const more = h(Z.Button, { hierarchy: 'secondary', href: url('/sale/') }, 'More records for sale');
+  const block = (state, title, body, extra) => h('div', { className: 'trade-col trade-col--2 trade-sent', hidden: true, 'data-offer-state': state },
+    h(Z.Divider), h('h2', { className: 'label-small' }, title), body, ...extra);
   return h('div', { className: 'hm-page' },
     h(SiteHeader, { site, url, section: 'sale' }),
-    h('main', { className: 'trade-content', 'data-offer-pay-page': '', 'data-endpoint': endpoint, 'data-products-base': url('/products/') },
+    h('main', { className: 'trade-content', 'data-offer-pay-page': '', 'data-endpoint': endpoint, 'data-products-base': url('/products/'),
+      'data-bag-url': url('/bag/') },
       h('h1', { className: 'trade-content__title body-large' }, 'Your offer was accepted'),
       h('div', { className: 'trade-col trade-col--1' }, h(Z.Divider), h(LiveTarget, { label: 'Yours for' })),
-      h('div', { className: 'trade-col trade-col--2', hidden: true, 'data-offer-state': 'ready' },
-        h(Z.BagSummary, {
-          'aria-label': 'Payment',
-          subtotalLabel: 'Your offer, accepted',
-          subtotal: h('span', { 'data-offer-amount': '' }),
-          shipTo: list.length ? h(Z.Input, { variant: 'select', label: 'Ship to', id: 'offer-ship-to', 'data-offer-ship-to': '', defaultValue: def },
-            list.map((c) => h('option', { key: c.code, value: c.code }, c.name))) : null,
-          shipping: h('span', { 'data-offer-shipping': '' }, 'Calculated at checkout'),
-          total: h('span', { 'data-offer-total': '' }),
-          checkoutProps: { 'data-offer-checkout': '' },
-          note: h('span', { 'data-offer-note': '' }, 'You enter the address and pay on Stripe.')
-        })),
-      shipping ? h('script', { type: 'application/json', 'data-shipping-config': '',
-        dangerouslySetInnerHTML: { __html: JSON.stringify(shipping).replace(/</g, '\\u003c') } }) : null,
-      h(SentBlock, { site, title: 'One moment…', props: { 'data-offer-state': 'loading' }, button: more }, 'Loading your offer.'),
-      h(SentBlock, { site, title: 'This payment link has expired', props: { hidden: true, 'data-offer-state': 'expired' },
+      h(SentBlock, { site, title: 'One moment…', props: { 'data-offer-state': 'loading' }, button: null }, 'Loading your offer.'),
+      // Figma `offer pay` state=sign in
+      block('sign-in', 'Sign in to buy at your price',
+        h('p', { className: 'body-medium' }, 'Sign in with ', h('span', { 'data-offer-email': '' }), ', the email of your offer, and the record goes in your Bag at ',
+          h('span', { 'data-offer-amount': '' }), '. Add other records and pay once, with one shipping.'),
+        [h('p', { key: 'e', className: 'trade-form__error body-small', role: 'alert', hidden: true, 'data-offer-error': '' }),
+         h(Z.Button, { key: 'b', hierarchy: 'primary', type: 'button', 'data-offer-send-code': '' }, 'Send code'),
+         h('p', { key: 'n', className: 'body-small', 'data-offer-held': '' })]),
+      // Figma `offer pay` state=code (the account's sign-in step, 0101)
+      h('form', { className: 'trade-col trade-col--2 trade-sent', hidden: true, noValidate: true, 'data-offer-state': 'code', 'data-offer-code-form': '' },
+        h(Z.Divider),
+        h('h2', { className: 'label-small' }, 'Sign in to buy at your price'),
+        h('p', { className: 'body-medium' }, 'We sent a 6-digit code to ', h('span', { 'data-offer-email': '' }), '. It works for 10 minutes.'),
+        h(Z.Input, { label: 'Code', name: 'code', inputMode: 'numeric', autoComplete: 'one-time-code', maxLength: 6, placeholder: '123456', id: 'offer-code' }),
+        h('p', { className: 'trade-form__error body-small', role: 'alert', hidden: true, 'data-offer-code-error': '' }),
+        h(Z.Button, { hierarchy: 'primary', type: 'submit', 'data-offer-sign-in': '' }, 'Sign in and add to Bag'),
+        h(Z.Button, { hierarchy: 'secondary', type: 'button', className: 'offer-pay__resend', 'data-offer-resend': '' }, 'Send a new code'),
+        h('p', { className: 'body-small' }, 'No email? Check your spam folder. You can ask for a new code after 60 seconds.')),
+      // Figma `offer pay` state=other account
+      block('other-account', 'Signed in with another email',
+        h('p', { className: 'body-medium' }, 'This offer was made with ', h('span', { 'data-offer-email': '' }), ', but you are signed in as ',
+          h('span', { 'data-offer-signed-in': '' }), '. Sign out, then open the link in the email again.'),
+        [h(Z.Button, { key: 'b', hierarchy: 'secondary', type: 'button', 'data-offer-sign-out': '' }, 'Sign out')]),
+      h(SentBlock, { site, title: 'This offer has expired', props: { hidden: true, 'data-offer-state': 'expired' },
         button: h(Z.Button, { hierarchy: 'secondary', href: url('/sale/'), 'data-offer-back': '' }, 'Back to the record') },
         'The 48 h are over and the record is open to offers again. You can send a new offer from its page.'),
       h(SentBlock, { site, title: 'Already paid', props: { hidden: true, 'data-offer-state': 'paid' }, button: more },

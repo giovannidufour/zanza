@@ -9,8 +9,9 @@ One line of the bag: one copy (copies are unique, so there is no quantity: Remov
 | Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `device` | `"desktop" \| "mobile"` |  | Omitted → responsive (breakpoint `--mobile` from tokens.json): desktop type = ProductCard desktop, mobile = ProductCard mobile. |
-| `status` | `"available" \| "sold" \| "reserved" \| "unavailable"` | `available` | Figma `status`. sold: name plain, "SOLD OUT" in an inline Alert (alert box, decision 0078) beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). Samples stay. `unavailable` is the pre-0064 name of reserved. |
-| `notice` | `ReactNode` |  | The word beside the struck price of a sold / reserved line. @default "SOLD OUT" / "RESERVED" |
+| `status` | `"available" \| "sold" \| "reserved" \| "unavailable" \| "offer" \| "offer-expired"` | `available` | Figma `status`. sold: name plain, "SOLD OUT" in an inline Alert (alert box, decision 0078) beside the struck price, no notice (decision 0064). reserved (held by someone else's checkout or by hand): the same, with "RESERVED" (decision 0065). offer: a copy bought at an accepted Best offer, priced as available, with `offerNote`; offer-expired: as sold with "EXPIRED" (decision 0186). Samples stay. `unavailable` is the pre-0064 name of reserved. |
+| `notice` | `ReactNode` |  | The word beside the struck price of a sold / reserved / offer-expired line. @default "SOLD OUT" / "RESERVED" / "EXPIRED" |
+| `offerNote` | `ReactNode` |  |  |
 | `image` | `ProductCardImage` |  | Figma `cover`: the cover image, 96 × 96. |
 | `href` | `string` |  | Product page URL: the title and the cover link to it. |
 | `title` * | `ReactNode` |  | Figma `product name`. Rendered as a heading; it also names the line and its Remove button. |

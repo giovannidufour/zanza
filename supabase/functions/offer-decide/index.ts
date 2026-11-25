@@ -1,7 +1,9 @@
 // supabase/functions/offer-decide — admin → Offers: Accept / Decline a pending offer (migration 0034, decision 0158).
-// POST { id, accept: true|false } with the admin's session (Verify JWT ON). admin_offer_decide runs AS THE ADMIN (it
+// POST { id, accept: true|false, message?: "…" } with the admin's session (Verify JWT ON). admin_offer_decide runs AS THE ADMIN (it
 // checks is_admin()): accept → the copy goes Reserved for 48 h and the offer gets its payment link; decline → declined.
-// Then the email to the buyer: the payment link (SHOP_URL/offer/pay/?t=…) or a polite no. → { ok, status, emailed }.
+// Then the email to the buyer: the link that puts the record in their Bag (SHOP_URL/offer/pay/?t=…, decision 0186) or a
+// polite no, with Gio's own message when he wrote one in the Decline dialog (decision 0187, max 1000 characters, decline
+// only). → { ok, status, emailed }.
 // Secrets: RESEND_API_KEY, MAIL_FROM, SHOP_URL, STORE_NAME (shared), ADMIN_ORIGINS (as sign-upload).
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
@@ -36,6 +38,8 @@ Deno.serve(async (req) => {
   let b: any;
   try { b = await req.json(); } catch { return json({ error: "Bad request." }, 400); }
   if (!UUID.test(String(b.id ?? "")) || typeof b.accept !== "boolean") return json({ error: "Bad request." }, 400);
+  // the optional message of the Decline dialog: plain text, line breaks kept, trimmed
+  const message = typeof b.message === "string" ? b.message.replace(/\r\n?/g, "\n").trim().slice(0, 1000) : "";
 
   const db = createClient(env("SUPABASE_URL"), env("SUPABASE_ANON_KEY"), { auth: { persistSession: false }, global: { headers: { Authorization: auth } } });
   const { data: r, error } = await db.rpc("admin_offer_decide", { p_offer: b.id, p_accept: b.accept });
@@ -47,12 +51,14 @@ Deno.serve(async (req) => {
   if (r.status === "accepted") {
     subject = `${r.name}: you can buy it now`;
     text = [`I accept your offer of ${euro(r.amount_cents)} for ${r.name}.`, "",
-      `Pay here by ${berlin(r.expires_at)}: ${shop}/offer/pay/?t=${r.pay_token}`, "",
-      `Shipping to ${countryName(r.country)} is added at checkout. The record is held for you until then; after that it goes back on sale.`,
+      `Sign in with this email and it goes in your Bag at that price: ${shop}/offer/pay/?t=${r.pay_token}`, "",
+      "You can add other records and pay once, with one shipping.",
+      `The record is held for you until ${berlin(r.expires_at)}; after that it goes back on sale. Shipping to ${countryName(r.country)} is added at checkout.`,
       "", "Questions? Just reply to this email.", "", store].join("\n");
   } else {
     subject = `${r.name}: my answer`;
     text = [`Thanks for your offer of ${euro(r.amount_cents)} for ${r.name}. This time I'll pass.`, "",
+      ...(message ? [message, ""] : []),
       `Other records: ${shop}/sale/`, "", store].join("\n");
   }
   let emailed = false;
