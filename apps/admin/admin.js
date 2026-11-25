@@ -112,7 +112,8 @@
   }
 
   // samples: an mp3 above ~160 kbps (a 320) is encoded again at 128 kbps in the browser (Gio 2026-11-17, decision 0108),
-  // with lamejs (LGPL, loaded only when needed). A 128 stays as it is: encoding it again would only lose quality.
+  // with lamejs (LGPL, loaded only when needed), at the shop's level (0192). A 128 already at that level stays as it
+  // is: encoding it again would only lose quality.
   var SAMPLE_KBPS = 128, SAMPLE_MAX_KBPS = 160;
   var LAME_SRC = 'https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js';
   var LAME_SRI = 'sha384-xuasJXVcyv3hZq0eYpelEkBC8l4yufatZXDsKuyCU2rqfhDCb+ftuE/mSfZAteiK';
@@ -225,10 +226,19 @@
     try { audio = await new Ctx(2, 1, 44100).decodeAudioData(await file.arrayBuffer()); }
     catch (e) { return same('the browser could not read it to convert it'); }
     var kbps = file.size * 8 / audio.duration / 1000;
-    if (!(kbps > SAMPLE_MAX_KBPS)) return same();
+    var levelled = levelForWeb(audio, audio.length);
+    if (!levelled && !(kbps > SAMPLE_MAX_KBPS)) return same();   // a 128 already at the shop's level stays as it is
     var out;
     try { out = await encodeMp3(audio, audio.length, 0, onConvert); } catch (e) { return same('the mp3 encoder did not load'); }
-    return out.size < file.size ? { blob: out, converted: true, note: null } : same();
+    return levelled || out.size < file.size ? { blob: out, converted: true, note: null } : same();
+  }
+  // decision 0192: the shop's copy plays at one level (packages/audio/web-level.js), the same as the Scanner's Push to
+  // admin. Changes the first `frames` of the decoded AudioBuffer in place; true when it changed them.
+  function levelForWeb(audio, frames) {
+    if (!window.HighmuzikWebLevel) return false;
+    var chans = [];
+    for (var c = 0; c < Math.min(2, audio.numberOfChannels); c++) chans.push(audio.getChannelData(c).subarray(0, Math.min(frames, audio.length)));
+    return window.HighmuzikWebLevel.level(chans, audio.sampleRate).changed;
   }
   // the first `frames` of a decoded AudioBuffer → mp3 128 kbps; fadeOut = seconds of fade at the end (a clip, 0 = none)
   async function encodeMp3(audio, frames, fadeOut, onProgress) {
@@ -265,6 +275,7 @@
     var data = source instanceof Blob ? await source.arrayBuffer() : await (await fetch(source)).arrayBuffer();
     var Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
     var audio = await new Ctx(2, 1, 44100).decodeAudioData(data);
+    levelForWeb(audio, Math.round(seconds * audio.sampleRate));   // 0192: the clip itself at the shop's level
     var blob = await encodeMp3(audio, Math.round(seconds * audio.sampleRate), CLIP_FADE_OUT, function (f) { report({ phase: 'cutting', value: Math.round(f * 60) }); });
     report({ phase: 'uploading', value: 60 });
     var key = await upload('sample', blob, null, function (f) { report({ phase: 'uploading', value: Math.round(60 + f * 40) }); });

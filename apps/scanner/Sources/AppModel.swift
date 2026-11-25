@@ -463,7 +463,7 @@ final class AppModel: ObservableObject {
         }
         for (i, c) in clips.enumerated() {
             progress(Double(images.count + i) / total, "clip \(i + 1) of \(clips.count)")
-            let key = try await Backend.shared.upload(try AudioExport.mp3(source: c.url, trimStart: c.trim, trimEnd: c.trimEnd, kbps: 128), kind: "sample", contentType: "audio/mpeg")
+            let key = try await Backend.shared.upload(try AudioExport.mp3(source: c.url, trimStart: c.trim, trimEnd: c.trimEnd, kbps: 128, web: true), kind: "sample", contentType: "audio/mpeg")
             clipKeys.append((c.line, key))
         }
         if !photoKeys.isEmpty || !clipKeys.isEmpty {
