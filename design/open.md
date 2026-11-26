@@ -91,6 +91,7 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - **Button `layout` (hug | fill).** Not ported: the admin side buttons fill their column via the page layout.
 
 ## Accessibility risks
+- **Dark ink ([0197](decisions/0197-dark-ink-mode.md)).** (1) genre tags on `surface/support-1` turn white on lime in `frontend-dark`: add `text/on-support-1` (black in every mode) and bind it in `tag item` · (2) mid-tone palettes (e.g. #636ab4) fail `text/moderate` with both inks: pick a darker accent or raise `text/moderate` in `frontend-dark` (white-80 = 3.8:1, still short) · (3) `white-N` primitives to rename `white-aN` (with `white-0`…`white-24`) · (4) `npm run check:contrast` is not in the build: add `--strict` once alert / success are fixed.
 
 - **IconButton** is exactly 24px: needs ≥ 24px clear space from neighbouring targets.
 - **PDP sticky scroll (0119)**: the anchored layout moves content at different speeds (record still, list moving). Kept on with `prefers-reduced-motion` because nothing animates by itself; if a user test shows discomfort, switch it off under reduced motion. Focus ring of `product return card` is the browser default (no focus token yet).
