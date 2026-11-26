@@ -912,6 +912,27 @@
       var ok = s.videoImage && f.images.some(function (x) { return x.id === s.videoImage; });
       return ok ? s.videoImage : defaultVideoImage(s);
     }
+    // a video's file name says what is in it (Gio 2026-11-26), with the rule of 0136: <sku>_<role>_<artist-title>.mp4.
+    // A sample already named that way (Scanner) keeps its name; one saved earlier is only a storage key (uuid), so the
+    // name is built from the listing: role = the side (a, b; line 3 → l3), slug = the line's artist + the sample's title.
+    function fileSlug(t) {
+      var x = String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+        .replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      if (x.length > 60) { x = x.slice(0, 60); var cut = x.lastIndexOf('-'); if (cut > 30) x = x.slice(0, cut); x = x.replace(/-+$/, ''); }
+      return x;
+    }
+    function videoNameBits(s) {
+      var own = String(s.name || '').replace(/\.[a-z0-9]+$/i, '').split('_');
+      if (own.length > 2 && /^\d{5}$/.test(own[0]) && own[1]) return { sku: own[0], role: own[1], slug: own.slice(2).join('_') };
+      var line = s.line ? f.lines[s.line - 1] : null, first = f.lines[0];
+      var artist = (line && lineArtistText(line)) || (first && lineArtistText(first)) || '';
+      return { sku: f.sku ? String(f.sku) : '', role: sampleRole(s) || (s.line === 1 ? 'a' : s.line === 2 ? 'b' : s.line ? 'l' + s.line : ''),
+        slug: fileSlug(artist + ' ' + (sampleTitleOf(s) || (line && line.title) || '')) || 'sample' };
+    }
+    function videoName(samples) {
+      var b = samples.map(videoNameBits), roles = b.map(function (x) { return x.role; }).filter(Boolean).join('-');
+      return [b[0].sku, roles, b[0].slug].filter(Boolean).join('_') + '.mp4';
+    }
     function samplePart(s) {
       var img = f.images.filter(function (x) { return x.id === videoImageOf(s); })[0];
       return img && img.key && s.key && s.url ? { audioKey: s.key, imageKey: img.key, audioUrl: s.url, imageUrl: img.url } : null;
@@ -919,7 +940,7 @@
     function downloadVideo(s) {
       var part = samplePart(s);
       if (!part) return;
-      var name = String(s.name || 'sample').replace(/\.[a-z0-9]+$/i, '') + '.mp4';
+      var name = videoName([s]);
       requestVideo([part], name, function () {
         patchItem('samples', s.id, { videoProgress: 0 });
         makeVideo([part], function (v) { patchItem('samples', s.id, { videoProgress: v }); })
@@ -966,9 +987,8 @@
     function downloadCombinedVideo() {
       var parts = combinedParts();
       if (!parts) return;
-      // <sku>_a1_<slug>.mp4 + <sku>_b1_<slug>.mp4 → <sku>_a1-b1_<slug>.mp4 (else the first name + "-ab")
-      var n1 = String(parts[0].s.name || 'sample').replace(/\.[a-z0-9]+$/i, ''), bits = n1.split('_'), r2 = sampleRole(parts[1].s);
-      var name = (bits.length > 2 && bits[1] && r2 ? bits[0] + '_' + bits[1] + '-' + r2 + '_' + bits.slice(2).join('_') : n1 + '-ab') + '.mp4';
+      // <sku>_a1_<slug> + <sku>_b1_<slug> → <sku>_a1-b1_<slug of the first>.mp4
+      var name = videoName([parts[0].s, parts[1].s]);
       requestVideo(parts, name, function () {
         setCombined(function (c) { return Object.assign({}, c, { progress: 0 }); });
         makeVideo(parts, function (v) { setCombined(function (c) { return Object.assign({}, c, { progress: v }); }); })
