@@ -1,0 +1,35 @@
+# Record videos made on a server (decision 0195): the admin asks the Edge Function render-video, which starts this
+# workflow with a repository_dispatch { job_id }. ffmpeg renders the square 1080 MP4 (0180 / A+B 0191) from the files on
+# R2 and uploads it there; the admin shows Download when the job is done. No secret here: the workflow proves who it is
+# to render-video with its GitHub OIDC token (id-token: write).
+name: Render video
+
+on:
+  repository_dispatch:
+    types: [render-video]
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: video_jobs.id to render again
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts/render-video.sh
+          sparse-checkout-cone-mode: false
+      - name: ffmpeg
+        run: command -v ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
+      - name: Render
+        run: bash .github/scripts/render-video.sh
+        env:
+          FUNCTION_URL: https://hhpknvyfypqipxufmbys.supabase.co/functions/v1/render-video
+          JOB_ID: ${{ github.event.client_payload.job_id || inputs.job_id }}

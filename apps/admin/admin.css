@@ -275,6 +275,8 @@ body[data-player-open] .hm-action-bar { bottom: var(--admin-player-height, 0px);
 /* video of a sample (0180): Video image select + Download video, below Length */
 .admin-sample-video { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
 .admin-sample-video > :first-child { flex: 0 1 240px; min-width: 0; }
+/* server videos (decision 0195): Make video, then Download once it is ready; why the last one failed on its own line */
+.admin-sample-video__error { flex-basis: 100%; margin: 0; }
 /* A+B video (Figma `combined video`, decision 0191): First and Then selects 240 wide, then the button; wraps when narrow */
 .admin-combined-video { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
 .admin-combined-video > :nth-child(-n+2) { flex: 0 1 240px; min-width: 0; }
