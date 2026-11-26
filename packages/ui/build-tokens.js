@@ -39,11 +39,15 @@ lines.push('', `[data-theme="${themes[0]}"] {`);
 for (const tok of t.color.tokens) if (typeof tok.value === 'object') lines.push(`  --${tok.name}: ${cssValue(valueIn(tok, themes[0]))};`);
 lines.push('}');
 
-// other themes (Figma modes of the `color` collection), e.g. backend = the admin
+// other themes (Figma modes of the `color` collection), e.g. backend = the admin, frontend-dark = the shop on a dark palette (0197).
+// Each block declares EVERY per-mode token (a token without a value for that theme takes the first theme's value),
+// so a theme nested inside another theme never inherits the outer theme's values.
 for (const id of themes.slice(1)) {
-  const diff = t.color.tokens.filter(tok => typeof tok.value === 'object' && tok.value[id] !== undefined && tok.value[id] !== tok.value[themes[0]]);
   lines.push('', `[data-theme="${id}"] {`);
-  for (const tok of diff) lines.push(`  --${tok.name}: ${cssValue(tok.value[id])};`);
+  for (const tok of t.color.tokens) {
+    if (typeof tok.value !== 'object') continue;
+    lines.push(`  --${tok.name}: ${cssValue(tok.value[id] !== undefined ? tok.value[id] : tok.value[themes[0]])};`);
+  }
   lines.push('}');
 }
 
