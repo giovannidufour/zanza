@@ -483,20 +483,59 @@ final class AppModel: ObservableObject {
         defer { plan.discard() }
         let images = fill ? plan.images.filter { !has.photos.contains($0.role) } : plan.images
         let clips = fill ? plan.clips.filter { !has.clips.contains($0.line) } : plan.clips
-        let total = Double(max(1, images.count + clips.count))
-        var photoKeys: [(role: Int, key: String)] = [], clipKeys: [(line: Int, key: String)] = []
-        for (i, img) in images.enumerated() {
-            progress(Double(i) / total, "image \(i + 1) of \(images.count)")
-            let key = try await Backend.shared.upload(try AudioExport.webp(from: img.url, long: 1600), kind: "photo", contentType: "image/webp")
-            for w in [200, 400, 800] {
-                _ = try await Backend.shared.upload(try AudioExport.webp(from: img.url, width: w), kind: "photo", contentType: "image/webp", of: key, width: w)
+        // Every image and clip is made and uploaded on its own task, a few at a time (0198): the clips' levelling
+        // (web-level.js) and LAME run while the photos upload, instead of one file after the other.
+        enum Item { case photo(role: Int, url: URL), clip(line: Int, url: URL, trim: Double, trimEnd: Double) }
+        struct Done { let index: Int; let key: String }
+        let items = images.map { Item.photo(role: $0.role, url: $0.url) }
+            + clips.map { Item.clip(line: $0.line, url: $0.url, trim: $0.trim, trimEnd: $0.trimEnd) }
+        let total = Double(max(1, items.count))
+        func make(_ item: Item) async throws -> String {
+            switch item {
+            case let .photo(_, url):
+                let img = try AudioExport.image(url)
+                let key = try await Backend.shared.upload(try AudioExport.webp(from: img, long: 1600), kind: "photo", contentType: "image/webp")
+                try await withThrowingTaskGroup(of: Void.self) { sizes in
+                    for w in [200, 400, 800] {
+                        sizes.addTask {
+                            _ = try await Backend.shared.upload(try AudioExport.webp(from: img, width: w), kind: "photo", contentType: "image/webp", of: key, width: w)
+                        }
+                    }
+                    try await sizes.waitForAll()
+                }
+                return key
+            case let .clip(_, url, trim, trimEnd):
+                let mp3 = try AudioExport.mp3(source: url, trimStart: trim, trimEnd: trimEnd, kbps: 128, web: true)
+                return try await Backend.shared.upload(mp3, kind: "sample", contentType: "audio/mpeg")
             }
-            photoKeys.append((img.role, key))
         }
-        for (i, c) in clips.enumerated() {
-            progress(Double(images.count + i) / total, "clip \(i + 1) of \(clips.count)")
-            let key = try await Backend.shared.upload(try AudioExport.mp3(source: c.url, trimStart: c.trim, trimEnd: c.trimEnd, kbps: 128, web: true), kind: "sample", contentType: "audio/mpeg")
-            clipKeys.append((c.line, key))
+        // 3 at a time: a long 96 kHz side needs a few hundred MB while it is levelled
+        let width = min(3, max(1, ProcessInfo.processInfo.activeProcessorCount - 1))
+        var keys = [String?](repeating: nil, count: items.count), finished = 0
+        progress(0, "\(items.count) file\(items.count == 1 ? "" : "s")")
+        try await withThrowingTaskGroup(of: Done.self) { group in
+            var next = 0
+            while next < min(width, items.count) {
+                let i = next, item = items[i]; next += 1
+                group.addTask { Done(index: i, key: try await make(item)) }
+            }
+            while let done = try await group.next() {
+                keys[done.index] = done.key; finished += 1
+                progress(Double(finished) / total, "\(finished) of \(items.count) file\(items.count == 1 ? "" : "s")")
+                if next < items.count {
+                    let i = next, item = items[i]; next += 1
+                    group.addTask { Done(index: i, key: try await make(item)) }
+                }
+            }
+        }
+        // the admin gets them in the plan's order, whatever finished first
+        var photoKeys: [(role: Int, key: String)] = [], clipKeys: [(line: Int, key: String)] = []
+        for (item, key) in zip(items, keys) {
+            guard let key else { continue }
+            switch item {
+            case let .photo(role, _): photoKeys.append((role, key))
+            case let .clip(line, _, _, _): clipKeys.append((line, key))
+            }
         }
         if !photoKeys.isEmpty || !clipKeys.isEmpty {
             progress(0.98, "attaching")

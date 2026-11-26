@@ -5,11 +5,14 @@ import JavaScriptCore
 /// file as the admin's (`packages/audio/web-level.js`, copied into the app's Resources by build.sh) run in
 /// JavaScriptCore. The JS works in place on the buffer's float channels (no copy). The exported WAV and MP3 320 never
 /// come here: they keep the plain boost of 0157.
+/// Each call has a JSContext (and so a virtual machine) of its own: Push levels several clips at once (0198).
 enum WebLevel {
+    private static let source: String? = Bundle.main.url(forResource: "web-level", withExtension: "js")
+        .flatMap { try? String(contentsOf: $0, encoding: .utf8) }
+
     /// Levels `buf` in place. Throws only when the script is missing from the app (a build without it).
     static func apply(_ buf: AVAudioPCMBuffer) throws {
-        guard let url = Bundle.main.url(forResource: "web-level", withExtension: "js"),
-              let source = try? String(contentsOf: url, encoding: .utf8) else {
+        guard let source else {
             throw ScanError.message("web-level.js is missing from the app: rebuild it with build.sh.")
         }
         guard let ctx = JSContext(), let data = buf.floatChannelData else { return }

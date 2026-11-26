@@ -100,11 +100,21 @@ enum AudioExport {
 
     /// WebP for the admin (0108): long side `long` (or exact `width`), quality 0.86, through Homebrew cwebp
     static func webp(from url: URL, long: Int? = nil, width: Int? = nil) throws -> Data {
+        try webp(from: try image(url), long: long, width: width)
+    }
+
+    /// A scan decoded once, so Push makes its four WebP sizes from one read of the file
+    static func image(_ url: URL) throws -> CGImage {
+        let decodeNow = [kCGImageSourceShouldCacheImmediately: true] as CFDictionary
+        guard let src = CGImageSourceCreateWithURL(url as CFURL, nil), let img = CGImageSourceCreateImageAtIndex(src, 0, decodeNow) else {
+            throw ScanError.message("Cannot read \(url.lastPathComponent)")
+        }
+        return img
+    }
+
+    static func webp(from img: CGImage, long: Int? = nil, width: Int? = nil) throws -> Data {
         guard let cwebp = ["/opt/homebrew/bin/cwebp", "/usr/local/bin/cwebp"].first(where: { FileManager.default.isExecutableFile(atPath: $0) }) else {
             throw ScanError.message("cwebp is not installed (brew install webp).")
-        }
-        guard let src = CGImageSourceCreateWithURL(url as CFURL, nil), let img = CGImageSourceCreateImageAtIndex(src, 0, nil) else {
-            throw ScanError.message("Cannot read \(url.lastPathComponent)")
         }
         let w0 = CGFloat(img.width), h0 = CGFloat(img.height)
         let f: CGFloat = width.map { CGFloat($0) / w0 } ?? long.map { min(1, CGFloat($0) / max(w0, h0)) } ?? 1
@@ -131,12 +141,21 @@ enum AudioExport {
 
     static func wavData(_ buf: AVAudioPCMBuffer, bits: Int, rate: Int, gain: Float, id3: Data?) -> Data {
         let ch = Int(buf.format.channelCount), frames = Int(buf.frameLength), bytes = bits / 8
-        var pcm = Data(capacity: frames * ch * bytes)
         let maxV = Float(bits == 24 ? 8_388_607 : 32_767)
-        for i in 0..<frames {
-            for c in 0..<ch {
-                let v = Int32((max(-1, min(1, buf.floatChannelData![c][i] * gain)) * maxV).rounded())
-                withUnsafeBytes(of: v.littleEndian) { pcm.append(contentsOf: $0.prefix(bytes)) }
+        // written straight into one buffer (appending sample by sample to a Data took seconds on a long 24-bit side)
+        var pcm = Data(count: frames * ch * bytes)
+        if let data = buf.floatChannelData {
+            pcm.withUnsafeMutableBytes { (raw: UnsafeMutableRawBufferPointer) in
+                guard let out = raw.baseAddress?.assumingMemoryBound(to: UInt8.self) else { return }
+                var o = 0
+                for i in 0..<frames {
+                    for c in 0..<ch {
+                        let v = UInt32(bitPattern: Int32((max(-1, min(1, data[c][i] * gain)) * maxV).rounded()))
+                        out[o] = UInt8(truncatingIfNeeded: v); out[o + 1] = UInt8(truncatingIfNeeded: v >> 8)
+                        if bytes == 3 { out[o + 2] = UInt8(truncatingIfNeeded: v >> 16) }
+                        o += bytes
+                    }
+                }
             }
         }
         func u32(_ v: Int) -> Data { withUnsafeBytes(of: UInt32(v).littleEndian) { Data($0) } }
