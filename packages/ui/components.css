@@ -965,7 +965,7 @@ a.hm-product-card__image { display: block; color: inherit; }
 
 .hm-input__support { margin: 0; color: var(--text-strong); }
 
-/* state=error: field border + support text in the alert colour (PROVISIONAL tokens, see tokens.json / open.md) */
+/* state=error: field border + support text in the alert colour (Figma text/alert, border/alert, 0194) */
 .hm-input[data-invalid="true"] .hm-input__field { border-color: var(--border-alert); }
 .hm-input[data-invalid="true"] .hm-input__support { color: var(--text-alert); }
 

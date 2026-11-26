@@ -192,14 +192,14 @@ final class GuideView: NSView {
         let square = CGRect(x: mid.x - s / 2, y: mid.y - s / 2, width: s, height: s)
         ctx.setStrokeColor(ink); ctx.setLineWidth(1)
         if g.aids {   // guide lines over the whole preview, 24 pt apart, fixed to the window; centre line stronger (0138)
-            ctx.setStrokeColor(NSColor.black.withAlphaComponent(0.16).cgColor)   // black-a16
+            ctx.setStrokeColor(Theme.borderSubtleNS.cgColor)
             var y = mid.y.truncatingRemainder(dividingBy: 24)
             while y < bounds.maxY {
                 if abs(y - mid.y) > 1 { ctx.move(to: CGPoint(x: 0, y: y.rounded() + 0.5)); ctx.addLine(to: CGPoint(x: bounds.maxX, y: y.rounded() + 0.5)) }
                 y += 24
             }
             ctx.strokePath()
-            ctx.setStrokeColor(NSColor.black.withAlphaComponent(0.48).cgColor)   // black-a48
+            ctx.setStrokeColor(Theme.borderModerateNS.cgColor)
             ctx.move(to: CGPoint(x: 0, y: mid.y.rounded() + 0.5)); ctx.addLine(to: CGPoint(x: bounds.maxX, y: mid.y.rounded() + 0.5))
             ctx.strokePath()
             ctx.setStrokeColor(ink)
