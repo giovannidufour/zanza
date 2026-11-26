@@ -770,9 +770,9 @@
     // a job left queued for 30 minutes never started (GitHub down, workflow off): the row offers Make video again
     function jobBusy(j) { return !!j && (j.status === 'queued' || j.status === 'rendering') && Date.now() - Date.parse(j.created_at) < 30 * 60000; }
     var anyBusy = jobs.some(jobBusy);
-    useEffect(function () {   // while a video is being made, its row is read again every 5 s (and when the tab comes back)
+    useEffect(function () {   // while a video is being made, its row (status, progress) is read again every 3 s (and when the tab comes back)
       if (!anyBusy) return;
-      var t = setInterval(loadJobs, 5000);
+      var t = setInterval(loadJobs, 3000);
       function onShow() { if (!document.hidden) loadJobs(); }
       document.addEventListener('visibilitychange', onShow);
       return function () { clearInterval(t); document.removeEventListener('visibilitychange', onShow); };
@@ -811,7 +811,8 @@
       var serverBusy = jobBusy(job), busy = localProgress != null || serverBusy;
       return [
         h(Z.Button, { key: 'make', hierarchy: 'secondary', disabled: disabled || busy, onClick: onMake },
-          localProgress != null ? 'Making video… ' + localProgress + '%' : serverBusy ? 'Making video…' : label),
+          localProgress != null ? 'Making video… ' + localProgress + '%'
+            : serverBusy ? (job.status === 'queued' ? 'Starting…' : 'Making video… ' + (job.progress || 0) + '%') : label),
         job && job.status === 'done' && !serverBusy ? h(Z.Button, { key: 'download', hierarchy: 'primary', onClick: function () { downloadJob(job); } }, 'Download') : null,
         job && job.status === 'failed' ? h('p', { key: 'error', className: 'body-small admin-status--error admin-sample-video__error' }, 'Last video failed: ' + (job.error || 'unknown error') + '.') : null,
       ];
