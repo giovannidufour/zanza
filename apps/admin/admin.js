@@ -130,7 +130,7 @@
     return lameLoading;
   }
   // ── a square video of a sample (Gio 2026-11-24, decision 0180): the chosen photo, still, full frame, with the sample,
-  // 1080 × 1080 H.264 30 fps + AAC, rendered here with WebCodecs and packed by mp4-muxer (MIT, loaded only when needed).
+  // 1080 × 1080 H.264 (one frame a second on a 30 fps grid) + AAC, rendered here with WebCodecs and packed by mp4-muxer (MIT, loaded only when needed).
   // For Instagram feed and Reels; works for any listing (draft, live, sold), from the files already on R2.
   var MUXER_SRC = 'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.js';
   var MUXER_SRI = 'sha384-wr0AQH9RBAKio/g7bHM5245MBCU5B/b0Y9u42cTxRYQQJXKEijZvWEJKL9JG26hs';
@@ -151,7 +151,7 @@
   // each part's photo stays on screen for exactly its sample, then a hard cut (no fade, no gap) to the next one.
   async function makeVideo(parts, onProgress) {
     if (typeof VideoEncoder === 'undefined' || typeof AudioEncoder === 'undefined') throw new Error('this browser cannot make videos: use Chrome');
-    var videoConfig = { codec: 'avc1.640028', width: VIDEO_SIDE, height: VIDEO_SIDE, bitrate: 4e6, framerate: VIDEO_FPS, avc: { format: 'avc' } };
+    var videoConfig = { codec: 'avc1.640028', width: VIDEO_SIDE, height: VIDEO_SIDE, bitrate: 4e6, framerate: 1, avc: { format: 'avc' } };
     var Mux = await loadMuxer();
     var res = await Promise.all(parts.map(function (p) { return Promise.all([fetch(p.audioUrl), fetch(p.imageUrl)]); }));
     if (res.some(function (r) { return !r[0].ok || !r[1].ok; })) throw new Error('could not read the sample or the photo');
@@ -207,16 +207,22 @@
     }, error: function (e) { failed = e; } });
     venc.configure(videoConfig); aenc.configure(audioConfig);
 
-    var frames = Math.max(1, Math.ceil(duration * VIDEO_FPS)), STEP = 1024, total = frames + Math.ceil(length / STEP);
-    for (var i = 0, part = 0; i < frames; i++) {
+    // The picture is still, so one frame a second is enough (Gio 2026-11-26: 30 identical frames a second made it very
+    // slow on iPhone): each frame lasts until the next one, on the 1/30 s grid, plus one frame exactly on each cut.
+    // The photo is read from its canvas once per part; every frame is a cheap copy of it with its own time.
+    var stills = canvases.map(function (cv) { return new VideoFrame(cv, { timestamp: 0 }); });
+    var frames = Math.max(1, Math.ceil(duration * VIDEO_FPS)), ticks = [];
+    for (var t = 0; t < frames; t++) if (t % VIDEO_FPS === 0 || cutFrames.indexOf(t) > 0) ticks.push(t);
+    var STEP = 1024, total = ticks.length + Math.ceil(length / STEP);
+    for (var j = 0, part = 0; j < ticks.length; j++) {
       if (failed) throw failed;
+      var i = ticks[j], next = j + 1 < ticks.length ? ticks[j + 1] : frames;
       while (part + 1 < cutFrames.length && i >= cutFrames[part + 1]) part++;
-      var cut = cutFrames.indexOf(i) > 0;
-      var frame = new VideoFrame(canvases[part], { timestamp: Math.round(i * 1e6 / VIDEO_FPS), duration: Math.round(1e6 / VIDEO_FPS) });
-      venc.encode(frame, { keyFrame: cut || i % (VIDEO_FPS * 2) === 0 });
+      var frame = new VideoFrame(stills[part], { timestamp: Math.round(i * 1e6 / VIDEO_FPS), duration: Math.round((next - i) * 1e6 / VIDEO_FPS) });
+      venc.encode(frame, { keyFrame: cutFrames.indexOf(i) > 0 || j % 2 === 0 });
       frame.close();
       if (venc.encodeQueueSize > 20) await new Promise(function (r) { setTimeout(r, 5); });
-      if (i % 30 === 0) onProgress(Math.round(i / total * 90));
+      onProgress(Math.round(j / total * 90));
     }
     for (var at = 0, n = 0; at < length; at += STEP, n++) {
       if (failed) throw failed;
@@ -226,8 +232,9 @@
         timestamp: Math.round(at * 1e6 / VIDEO_RATE), data: data });
       aenc.encode(ad); ad.close();
       if (aenc.encodeQueueSize > 50) await new Promise(function (r) { setTimeout(r, 5); });
-      if (n % 100 === 0) onProgress(Math.round((frames + n) / total * 90));
+      if (n % 100 === 0) onProgress(Math.round((ticks.length + n) / total * 90));
     }
+    stills.forEach(function (st) { st.close(); });
     await venc.flush(); await aenc.flush();
     venc.close(); aenc.close();
     if (failed) throw failed;
@@ -747,6 +754,68 @@
     // manual status changes (admin_set_status): sold elsewhere, held for someone, unpublished, undo
     var nt = useState(''), statusNote = nt[0], setStatusNote = nt[1];
     var cv = useState({}), combined = cv[0], setCombined = cv[1];   // A+B video (0191): { first, then, progress }, never saved
+    // ── videos made on the server (decision 0195, migration 0042): Make video asks render-video, GitHub Actions renders
+    // it with ffmpeg while the admin may be closed, and the row gets a Download button. A video belongs to its files
+    // (audio keys + photo keys, in play order): change the photo and the row offers Make video again.
+    // Until render-video is set up (or when it cannot be reached) the video is made here in the browser (0180, 0194).
+    var vj = useState([]), jobs = vj[0], setJobs = vj[1];
+    var serverVideos = useRef(true);
+    var sampleKeys = f.samples.map(function (x) { return x.key; }).filter(Boolean), keysSig = sampleKeys.join(',');
+    function loadJobs() {
+      if (!sampleKeys.length) return;
+      sb.from('video_jobs').select('*').overlaps('audio_keys', sampleKeys).order('created_at', { ascending: false }).limit(50)
+        .then(function (res) { if (!res.error) setJobs(res.data || []); });
+    }
+    useEffect(loadJobs, [keysSig]);
+    // a job left queued for 30 minutes never started (GitHub down, workflow off): the row offers Make video again
+    function jobBusy(j) { return !!j && (j.status === 'queued' || j.status === 'rendering') && Date.now() - Date.parse(j.created_at) < 30 * 60000; }
+    var anyBusy = jobs.some(jobBusy);
+    useEffect(function () {   // while a video is being made, its row is read again every 5 s (and when the tab comes back)
+      if (!anyBusy) return;
+      var t = setInterval(loadJobs, 5000);
+      function onShow() { if (!document.hidden) loadJobs(); }
+      document.addEventListener('visibilitychange', onShow);
+      return function () { clearInterval(t); document.removeEventListener('visibilitychange', onShow); };
+    }, [anyBusy, keysSig]);
+    function sameKeys(a, b) { return a.length === b.length && a.every(function (x, i) { return x === b[i]; }); }
+    function jobFor(parts) {
+      var audio = parts.map(function (p) { return p.audioKey; }), images = parts.map(function (p) { return p.imageKey; });
+      return jobs.filter(function (j) { return sameKeys(j.audio_keys, audio) && sameKeys(j.image_keys, images); })[0] || null;
+    }
+    // parts: [{ audioKey, imageKey, audioUrl, imageUrl }]; inBrowser() = the 0180 path, used when the server is not there
+    async function requestVideo(parts, name, inBrowser) {
+      name = name.replace(/[^A-Za-z0-9._-]+/g, '-');
+      if (serverVideos.current) {
+        try {
+          var r = await invoke('render-video', { audio_keys: parts.map(function (p) { return p.audioKey; }),
+            image_keys: parts.map(function (p) { return p.imageKey; }), name: name, listing_id: f.listingId || null });
+          setJobs(function (js) { return [r.job].concat(js); });
+          return;
+        } catch (e) {
+          if (!/not set up|not found|non-2xx|failed to send|failed to fetch|load failed/i.test(e.message)) {
+            setMessage({ error: true, text: name + ': no video (' + e.message + ').' }); loadJobs(); return;
+          }
+          serverVideos.current = false;
+        }
+      }
+      inBrowser();
+    }
+    function downloadJob(j) {
+      var url = mediaUrl(j.video_key);
+      fetch(url).then(function (r) { if (!r.ok) throw new Error(); return r.blob(); })
+        .then(function (b) { saveFile(b, j.name); toast('Video downloaded: ' + j.name); },
+              function () { window.open(url, '_blank'); });
+    }
+    // Make video (+ Download once the server made it), and why the last try failed
+    function videoButtons(job, localProgress, disabled, label, onMake) {
+      var serverBusy = jobBusy(job), busy = localProgress != null || serverBusy;
+      return [
+        h(Z.Button, { key: 'make', hierarchy: 'secondary', disabled: disabled || busy, onClick: onMake },
+          localProgress != null ? 'Making video… ' + localProgress + '%' : serverBusy ? 'Making video…' : label),
+        job && job.status === 'done' && !serverBusy ? h(Z.Button, { key: 'download', hierarchy: 'primary', onClick: function () { downloadJob(job); } }, 'Download') : null,
+        job && job.status === 'failed' ? h('p', { key: 'error', className: 'body-small admin-status--error admin-sample-video__error' }, 'Last video failed: ' + (job.error || 'unknown error') + '.') : null,
+      ];
+    }
     async function setStatus(status) {
       setSaving(true); setMessage(null);
       var res = await sb.rpc('admin_set_status', { p_listing_id: f.listingId, p_status: status, p_note: statusNote || null });
@@ -842,18 +911,25 @@
       var ok = s.videoImage && f.images.some(function (x) { return x.id === s.videoImage; });
       return ok ? s.videoImage : defaultVideoImage(s);
     }
-    function downloadVideo(s) {
+    function samplePart(s) {
       var img = f.images.filter(function (x) { return x.id === videoImageOf(s); })[0];
-      if (!img || !s.url) return;
+      return img && img.key && s.key && s.url ? { audioKey: s.key, imageKey: img.key, audioUrl: s.url, imageUrl: img.url } : null;
+    }
+    function downloadVideo(s) {
+      var part = samplePart(s);
+      if (!part) return;
       var name = String(s.name || 'sample').replace(/\.[a-z0-9]+$/i, '') + '.mp4';
-      patchItem('samples', s.id, { videoProgress: 0 });
-      makeVideo([{ audioUrl: s.url, imageUrl: img.url }], function (v) { patchItem('samples', s.id, { videoProgress: v }); })
-        .then(function (blob) { saveFile(blob, name); toast('Video downloaded: ' + name); },
-              function (err) { setMessage({ error: true, text: s.name + ': no video (' + err.message + ').' }); })
-        .then(function () { patchItem('samples', s.id, { videoProgress: null }); });
+      requestVideo([part], name, function () {
+        patchItem('samples', s.id, { videoProgress: 0 });
+        makeVideo([part], function (v) { patchItem('samples', s.id, { videoProgress: v }); })
+          .then(function (blob) { saveFile(blob, name); toast('Video downloaded: ' + name); },
+                function (err) { setMessage({ error: true, text: s.name + ': no video (' + err.message + ').' }); })
+          .then(function () { patchItem('samples', s.id, { videoProgress: null }); });
+      });
     }
     function videoRow(s) {
-      var imgs = f.images.filter(function (x) { return x.url && !x.uploading; }), busy = s.videoProgress != null;
+      var imgs = f.images.filter(function (x) { return x.url && !x.uploading; }), part = samplePart(s), job = part && jobFor([part]);
+      var busy = s.videoProgress != null || jobBusy(job);
       return h('div', { className: 'admin-sample-video' },
         h(Z.Input, { variant: 'select', id: 'sample-video-image-' + s.id, label: 'Video image', value: videoImageOf(s) || '',
           disabled: !imgs.length || busy, supportText: imgs.length ? null : 'Add a photo of the label first.',
@@ -862,8 +938,7 @@
             var r = String(x.name).split('_')[1], tag = r === '1' ? 'Label A' : r === '2' ? 'Label B' : 'Photo ' + (i + 1);
             return h('option', { key: x.id, value: x.id }, tag + (tag.indexOf('Photo') ? ' (photo ' + (i + 1) + ')' : ''));
           }) : [h('option', { key: 'none', value: '' }, 'No photos')]),
-        h(Z.Button, { hierarchy: 'secondary', disabled: !imgs.length || !s.url || s.uploading || busy, onClick: function () { downloadVideo(s); } },
-          busy ? 'Making video… ' + s.videoProgress + '%' : 'Download video'));
+        videoButtons(job, s.videoProgress, !imgs.length || !part || s.uploading, 'Make video', function () { downloadVideo(s); }));
     }
     // ── A+B video (Gio 2026-11-25, decision 0191; Figma `combined video`): one video with the First sample on its Video
     // image, then, with a hard cut, the Then sample on its own. Default: the first sample of side A, then the first of side B
@@ -877,27 +952,35 @@
       var then = has(combined.then) ? combined.then : b && b.id;
       return { first: first, then: then };
     }
-    function downloadCombinedVideo() {
+    function combinedParts() {
       var pick = combinedPick();
+      if (!pick.first || !pick.then || pick.first === pick.then) return null;
       var parts = [pick.first, pick.then].map(function (id) {
         var s = f.samples.filter(function (x) { return x.id === id; })[0];
         var img = s && f.images.filter(function (x) { return x.id === videoImageOf(s); })[0];
-        return s && img ? { s: s, audioUrl: s.url, imageUrl: img.url } : null;
+        return s && img && s.key && img.key ? { s: s, audioKey: s.key, imageKey: img.key, audioUrl: s.url, imageUrl: img.url } : null;
       });
-      if (!parts[0] || !parts[1]) return;
+      return parts[0] && parts[1] ? parts : null;
+    }
+    function downloadCombinedVideo() {
+      var parts = combinedParts();
+      if (!parts) return;
       // <sku>_a1_<slug>.mp4 + <sku>_b1_<slug>.mp4 → <sku>_a1-b1_<slug>.mp4 (else the first name + "-ab")
       var n1 = String(parts[0].s.name || 'sample').replace(/\.[a-z0-9]+$/i, ''), bits = n1.split('_'), r2 = sampleRole(parts[1].s);
       var name = (bits.length > 2 && bits[1] && r2 ? bits[0] + '_' + bits[1] + '-' + r2 + '_' + bits.slice(2).join('_') : n1 + '-ab') + '.mp4';
-      setCombined(function (c) { return Object.assign({}, c, { progress: 0 }); });
-      makeVideo(parts, function (v) { setCombined(function (c) { return Object.assign({}, c, { progress: v }); }); })
-        .then(function (blob) { saveFile(blob, name); toast('Video downloaded: ' + name); },
-              function (err) { setMessage({ error: true, text: 'A+B video not made (' + err.message + ').' }); })
-        .then(function () { setCombined(function (c) { return Object.assign({}, c, { progress: null }); }); });
+      requestVideo(parts, name, function () {
+        setCombined(function (c) { return Object.assign({}, c, { progress: 0 }); });
+        makeVideo(parts, function (v) { setCombined(function (c) { return Object.assign({}, c, { progress: v }); }); })
+          .then(function (blob) { saveFile(blob, name); toast('Video downloaded: ' + name); },
+                function (err) { setMessage({ error: true, text: 'A+B video not made (' + err.message + ').' }); })
+          .then(function () { setCombined(function (c) { return Object.assign({}, c, { progress: null }); }); });
+      });
     }
     function combinedVideoRow() {
       var ready = f.samples.filter(function (x) { return x.url && !x.uploading; });
       if (ready.length < 2) return null;
-      var pick = combinedPick(), busy = combined.progress != null;
+      var pick = combinedPick(), parts = combinedParts(), job = parts && jobFor(parts);
+      var busy = combined.progress != null || jobBusy(job);
       var hasImgs = f.images.some(function (x) { return x.url && !x.uploading; });
       var options = ready.map(function (x, i) {
         var role = sampleRole(x), title = sampleTitleOf(x);
@@ -909,8 +992,7 @@
       }
       return h('div', { className: 'admin-combined-video' },
         select('first', 'First'), select('then', 'Then'),
-        h(Z.Button, { hierarchy: 'secondary', disabled: !hasImgs || busy || !pick.first || !pick.then || pick.first === pick.then, onClick: downloadCombinedVideo },
-          busy ? 'Making video… ' + combined.progress + '%' : 'Download A+B video'));
+        videoButtons(job, combined.progress, !hasImgs || !parts, 'Make A+B video', downloadCombinedVideo));
     }
     function overviewSampleItem(s) {
       var clip = s.length === 'clip', long = (s.full && s.full.duration) || s.duration;
