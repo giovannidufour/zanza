@@ -1,6 +1,6 @@
 # 0195 — Admin record videos made on the server: Make video, then Download
 
-`2026-11-26` · proposed · Figma: COMPONENTS → `uploads` → `file item` `video` row and `combined video`: button "Make video" / "Make A+B video", new primary "Download" next to it once the video exists, error line under them
+`2026-11-26` · proposed · Figma: `file item` (type=audio) → `video` row: "Make video" + primary `video download button` (boolean `video download`), `video error` line (boolean `video error`, OFF in the screens); `combined video` (2575:41934): "Make A+B video" + `combined download button` (boolean `download`), `combined error` (boolean `error`, OFF in the screens)
 
 **Context.** After 0194 the browser makes videos much faster, but only while the admin page stays open and in front (iPhone stops a page in the background). Gio (2026-11-26): it should work in the background, "even with the browser closed"; no email when a video is ready, but a Download button in the admin next to the video it made.
 **Decision.**
