@@ -215,3 +215,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0191](0191-combined-a-b-video.md) | Admin A+B video: First + Then sample in one MP4, each on its own Video image, hard cut; defaults side A then side B; admin only | accepted |
 | [0192](0192-shop-samples-at-one-level.md) | The shop's 128 kbps samples play at one level (−11 LUFS, light limiter capped at 6 dB, peak −2 dBFS), one script for admin and Scanner; WAV / MP3 320 keep 0157; Settings → Level samples for the old ones | accepted |
 | [0193](0193-scanner-push-in-parallel.md) | Scanner: Push to admin runs in parallel with exports (one lane per job kind) and sends a copy of the scans taken when planned; activity bar one line per running lane | proposed |
+| [0194](0194-record-video-one-frame-a-second.md) | Admin record videos: one frame a second (still picture) + keyframe on the A+B cut, AAC frames placed by hand (Safari/iPhone audio fix); server rendering next | accepted |

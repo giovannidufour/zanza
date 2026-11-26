@@ -130,7 +130,7 @@
     return lameLoading;
   }
   // ── a square video of a sample (Gio 2026-11-24, decision 0180): the chosen photo, still, full frame, with the sample,
-  // 1080 × 1080 H.264 30 fps + AAC, rendered here with WebCodecs and packed by mp4-muxer (MIT, loaded only when needed).
+  // 1080 × 1080 H.264 (one frame a second on a 30 fps grid) + AAC, rendered here with WebCodecs and packed by mp4-muxer (MIT, loaded only when needed).
   // For Instagram feed and Reels; works for any listing (draft, live, sold), from the files already on R2.
   var MUXER_SRC = 'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/build/mp4-muxer.js';
   var MUXER_SRI = 'sha384-wr0AQH9RBAKio/g7bHM5245MBCU5B/b0Y9u42cTxRYQQJXKEijZvWEJKL9JG26hs';
@@ -151,7 +151,7 @@
   // each part's photo stays on screen for exactly its sample, then a hard cut (no fade, no gap) to the next one.
   async function makeVideo(parts, onProgress) {
     if (typeof VideoEncoder === 'undefined' || typeof AudioEncoder === 'undefined') throw new Error('this browser cannot make videos: use Chrome');
-    var videoConfig = { codec: 'avc1.640028', width: VIDEO_SIDE, height: VIDEO_SIDE, bitrate: 4e6, framerate: VIDEO_FPS, avc: { format: 'avc' } };
+    var videoConfig = { codec: 'avc1.640028', width: VIDEO_SIDE, height: VIDEO_SIDE, bitrate: 4e6, framerate: 1, avc: { format: 'avc' } };
     var Mux = await loadMuxer();
     var res = await Promise.all(parts.map(function (p) { return Promise.all([fetch(p.audioUrl), fetch(p.imageUrl)]); }));
     if (res.some(function (r) { return !r[0].ok || !r[1].ok; })) throw new Error('could not read the sample or the photo');
@@ -207,16 +207,22 @@
     }, error: function (e) { failed = e; } });
     venc.configure(videoConfig); aenc.configure(audioConfig);
 
-    var frames = Math.max(1, Math.ceil(duration * VIDEO_FPS)), STEP = 1024, total = frames + Math.ceil(length / STEP);
-    for (var i = 0, part = 0; i < frames; i++) {
+    // The picture is still, so one frame a second is enough (Gio 2026-11-26: 30 identical frames a second made it very
+    // slow on iPhone): each frame lasts until the next one, on the 1/30 s grid, plus one frame exactly on each cut.
+    // The photo is read from its canvas once per part; every frame is a cheap copy of it with its own time.
+    var stills = canvases.map(function (cv) { return new VideoFrame(cv, { timestamp: 0 }); });
+    var frames = Math.max(1, Math.ceil(duration * VIDEO_FPS)), ticks = [];
+    for (var t = 0; t < frames; t++) if (t % VIDEO_FPS === 0 || cutFrames.indexOf(t) > 0) ticks.push(t);
+    var STEP = 1024, total = ticks.length + Math.ceil(length / STEP);
+    for (var j = 0, part = 0; j < ticks.length; j++) {
       if (failed) throw failed;
+      var i = ticks[j], next = j + 1 < ticks.length ? ticks[j + 1] : frames;
       while (part + 1 < cutFrames.length && i >= cutFrames[part + 1]) part++;
-      var cut = cutFrames.indexOf(i) > 0;
-      var frame = new VideoFrame(canvases[part], { timestamp: Math.round(i * 1e6 / VIDEO_FPS), duration: Math.round(1e6 / VIDEO_FPS) });
-      venc.encode(frame, { keyFrame: cut || i % (VIDEO_FPS * 2) === 0 });
+      var frame = new VideoFrame(stills[part], { timestamp: Math.round(i * 1e6 / VIDEO_FPS), duration: Math.round((next - i) * 1e6 / VIDEO_FPS) });
+      venc.encode(frame, { keyFrame: cutFrames.indexOf(i) > 0 || j % 2 === 0 });
       frame.close();
       if (venc.encodeQueueSize > 20) await new Promise(function (r) { setTimeout(r, 5); });
-      if (i % 30 === 0) onProgress(Math.round(i / total * 90));
+      onProgress(Math.round(j / total * 90));
     }
     for (var at = 0, n = 0; at < length; at += STEP, n++) {
       if (failed) throw failed;
@@ -226,8 +232,9 @@
         timestamp: Math.round(at * 1e6 / VIDEO_RATE), data: data });
       aenc.encode(ad); ad.close();
       if (aenc.encodeQueueSize > 50) await new Promise(function (r) { setTimeout(r, 5); });
-      if (n % 100 === 0) onProgress(Math.round((frames + n) / total * 90));
+      if (n % 100 === 0) onProgress(Math.round((ticks.length + n) / total * 90));
     }
+    stills.forEach(function (st) { st.close(); });
     await venc.flush(); await aenc.flush();
     venc.close(); aenc.close();
     if (failed) throw failed;
