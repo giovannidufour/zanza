@@ -11,6 +11,9 @@ enum Theme {
     static let surfaceSubtle = Color.black.opacity(0.04)     // black-a4
     static let surfaceHover = Color.black.opacity(0.04)
     static let divider = Color.black                         // border-divider-strong
+    /// border-subtle (black-a16) and border-moderate (black-a48): the glass guide lines (0194)
+    static let borderSubtleNS = NSColor.black.withAlphaComponent(0.16)
+    static let borderModerateNS = NSColor.black.withAlphaComponent(0.48)
     static let primaryDisabled = Color.black.opacity(0.08)   // black-a8
     static let alert = Color(red: 0xe0 / 255, green: 0x20 / 255, blue: 0x1b / 255)   // surface/alert (backend) = red
     /// surface/success = acid-green, text/on-success = black (tokens.json, PR #206); text/on-alert (backend) = white
