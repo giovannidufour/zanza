@@ -103,6 +103,7 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - Create / Edit (0118): the mobile `listing line` still overlaps fields with 2 lines (Artist 2, Artist name on label) in the viewport frame; old frames "(old, before 0113)" to delete when Gio agrees.
 - `_input-master` › value text wraps on several lines in single-line fields (a long URL grows the field); code inputs scroll. Proposal: truncate to one line in sizes medium/compact. `size=multiline, state=filled` added 2026-11-17 (0106); the multiline variants overlapped row 1 of the grid, moved to row 5.
 - Variables: `white-0/4/8/16/24` → `white-a*` · `small`, `medium-small` → `space/*`.
+- **Spacing without tokens (0194, Gio 2026-11-26: no new tokens for now).** Components: every auto-layout padding/gap of 8 / 16 is bound to `small` / `medium-small`. Still literal: 2, 4, 12, 24, 32, 40 (and 1, 36, 64…) in components and screens; screens are not bound at all (an 8 there can be `small` or `page-margin/*`). Radius: 1000 (pill) and 10, no token. When a scale is wanted: numeric `space/2 … space/96` was the proposal.
 - `_button-sizes`: `size` options ordered large, medium, extra small, small → order by size. Unported `prefix` / `suffix` slots and single-value `active` axis.
 - `icon button`: no instance-swap property on the icon · `state=disabled` background bound to `…/default` instead of `…/disabled`.
 - `tab`: single-value `hierarchy`, unused `layout` variant.
