@@ -11,3 +11,5 @@
 - **Accessibility.** Progress is text + bar (never bar only); VoiceOver reads the activity bar as a status (announce start, done, failed; not every percent).
 **Rule.** Long work in the Scanner never blocks choosing a draft: it is a queued job shown on its draft row and in the activity bar.
 **Where.** Figma; the Mac Scanner app (`apps/scanner`, PR #202 branch).
+
+**Update 2026-11-26.** The single queue is replaced by one lane per job kind (export, push) by 0193: a push no longer waits for exports.
