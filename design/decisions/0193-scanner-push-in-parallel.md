@@ -1,0 +1,12 @@
+# 0193 — Scanner: Push to admin runs in parallel with exports, on a copy of the scans
+
+`2026-11-26` · proposed · Figma: BACKEND → `Scanner`: screen "Scanner v3 - push in parallel with export (0193)" (2583:11475): two `activity bar` instances stacked (export line, then push line), the exporting draft's `job progress` = running. No new component.
+
+**Context.** Gio (2026-11-26): in the Scanner a push only starts once everything else has finished. Cause: 0143 put Export and Push in ONE queue, one job at a time, and the automatic export of 0144 adds an export job at every scan, trim, swap or tick, so a push waited behind every one of them (videos of 0177 make exports long). Scanning and renaming were never queued.
+**Decision.**
+- **Two lanes.** The job queue has an export lane and a push lane. Each lane still runs one job at a time in order (LAME/video encoding is heavy; one upload at a time keeps Push all in list order), but the two lanes run side by side: a push starts at once even while an export runs, and the reverse.
+- **Safe against edits during a push.** When a push is planned (single push or Push all), the scans it sends are copied (APFS clone) into a private temporary folder in the same main-thread step that records the push snapshot (`pushItems`). Rescanning, reordering (files renamed, 0138) or trashing a scan while the upload runs never changes what is sent; the copies are deleted when the push ends (done, failed, cancelled). A Retry plans again from the scans as they are then. Session clips are not copied: a running or waiting job already keeps them from the Trash (`uses`, 0143), and its trims are a snapshot. If something changed during the push, the row shows Push again (snapshot ≠ now), as before.
+- **What shows.** The activity bar shows one line per lane that is running (export first, then push), each with its own bar and "+N waiting" of that lane; an idle lane's failure stays as a line while the other runs. With nothing running, the last job, as before. A draft row shows the job running for it (a push and an export of the same draft can run together), else its latest.
+- **Untouched.** Push still uploads WebP + sizes and the 128 kbps copy levelled by 0192; Quit still warns about running jobs.
+**Rule.** In the Scanner, jobs of different kinds never wait for each other: one lane per kind. A job that uploads files works on its own copy taken when it is planned.
+**Where.** `apps/scanner/Sources/Jobs.swift` (lanes, `shown`), `AppModel.swift` (`PushPlan.copies`, `copyScans`), `SamplesViews.swift` (`ActivityBar`).

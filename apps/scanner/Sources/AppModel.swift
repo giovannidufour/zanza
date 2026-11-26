@@ -411,8 +411,31 @@ final class AppModel: ObservableObject {
         let clips: [(line: Int, url: URL, trim: Double, trimEnd: Double, label: String)]
         let missingLines: Int
         let snapshot: [String]
+        /// private copies of the scans (0193): renaming, rescanning or trashing a scan while the push runs never changes what it sends
+        let copies: URL?
         var isEmpty: Bool { images.isEmpty && clips.isEmpty }
         var files: Set<String> { Set(clips.map { $0.url.lastPathComponent }) }
+        /// the copies go once the push has ended (done, failed or cancelled)
+        func discard() { if let copies { try? FileManager.default.removeItem(at: copies) } }
+        /// false once a push used them: a Retry plans again from the scans as they are then
+        var hasCopies: Bool { copies.map { FileManager.default.fileExists(atPath: $0.path) } ?? true }
+    }
+
+    /// Copies the scans a push sends into a folder of its own, at the moment the push is planned (0193). APFS makes the
+    /// copy a clone, so it costs nothing; the session clips need no copy: a running job keeps them from the Trash (`uses`).
+    private static func copyScans(_ images: [(role: Int, url: URL)]) throws -> (images: [(role: Int, url: URL)], folder: URL?) {
+        guard !images.isEmpty else { return (images, nil) }
+        let fm = FileManager.default
+        let dir = fm.temporaryDirectory.appendingPathComponent("zanza-push-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        do {
+            let copied = try images.map { img -> (role: Int, url: URL) in
+                let to = dir.appendingPathComponent(img.url.lastPathComponent)
+                try fm.copyItem(at: img.url, to: to)
+                return (img.role, to)
+            }
+            return (copied, dir)
+        } catch { try? fm.removeItem(at: dir); throw error }
     }
 
     /// The plan of a draft. The open draft uses what the app shows; any other draft reads its image names and clip
@@ -424,7 +447,7 @@ final class AppModel: ObservableObject {
             let detail = try await Backend.shared.detail(of: d.id, roles: max(3, drafts.scannedRoles(sku: sku).max() ?? 0))
             names = detail.images; slots = detail.clips
         }
-        let images: [(role: Int, url: URL)] = names.compactMap { n in drafts.file(named: n.name, in: folder).map { (n.role, $0) } }
+        let found: [(role: Int, url: URL)] = names.compactMap { n in drafts.file(named: n.name, in: folder).map { (n.role, $0) } }
         let clips: [(line: Int, url: URL, trim: Double, trimEnd: Double, label: String)] = slots.compactMap { slot in
             guard let line = slot.line, let c = session.clip(assignedTo: slot.name) else { return nil }
             // "Clip A1 · Artist - Title" for the confirm dialog, never a bare "A"
@@ -432,7 +455,10 @@ final class AppModel: ObservableObject {
             return (line, c.url, c.trimStart, c.trimEnd, "Clip \(slot.label)" + (track.isEmpty ? "" : " · \(track)"))
         }
         let missingLines = slots.filter { $0.line == nil && session.clip(assignedTo: $0.name) != nil }.count
-        return PushPlan(draft: d, images: images, clips: clips, missingLines: missingLines, snapshot: pushItems(sku: sku))
+        // snapshot and copies in the same main-actor step: no rename or rescan can fall between them
+        let snapshot = pushItems(sku: sku)
+        let (images, copies) = try Self.copyScans(found)
+        return PushPlan(draft: d, images: images, clips: clips, missingLines: missingLines, snapshot: snapshot, copies: copies)
     }
 
     /// What a push would replace in the admin, as readable names ("Label A", "Clip A1 · …")
@@ -449,6 +475,7 @@ final class AppModel: ObservableObject {
 
     /// Upload and attach one plan. `fill` = keep what the admin has: those files are not even uploaded (0165).
     func send(_ plan: PushPlan, fill: Bool, has: (photos: [Int], clips: [Int]), progress: JobQueue.Progress) async throws -> String {
+        defer { plan.discard() }
         let images = fill ? plan.images.filter { !has.photos.contains($0.role) } : plan.images
         let clips = fill ? plan.clips.filter { !has.clips.contains($0.line) } : plan.clips
         let total = Double(max(1, images.count + clips.count))
@@ -486,9 +513,10 @@ final class AppModel: ObservableObject {
         jobs.enqueue(draftID: d.id, sku: sku, kind: .push, files: Set(session.assignments.filter { $0.value.sku == sku }.map(\.key))) { progress in
             progress(0, "reading the draft")
             let plan = try await self.pushPlan(d)
-            guard !plan.isEmpty else { return ("Nothing to push", nil) }
+            guard !plan.isEmpty else { plan.discard(); return ("Nothing to push", nil) }
             progress(0, "checking the admin")
-            let c = try await self.check(plan)
+            let c: PushCheck
+            do { c = try await self.check(plan) } catch { plan.discard(); throw error }
             if !c.replaced.isEmpty {
                 // Figma `push · replace confirm` 2458:28040
                 let photos = plan.images.filter { c.has.photos.contains($0.role) }.count
@@ -507,7 +535,7 @@ final class AppModel: ObservableObject {
                     a.addButton(withTitle: "Replace and push"); a.addButton(withTitle: "Cancel")
                     return a.runModal() == .alertFirstButtonReturn
                 }
-                if !ok { return ("Cancelled: nothing changed in the admin", nil) }
+                if !ok { plan.discard(); return ("Cancelled: nothing changed in the admin", nil) }
             }
             return (try await self.send(plan, fill: false, has: c.has, progress: progress), nil)
         }
@@ -539,8 +567,8 @@ final class AppModel: ObservableObject {
             for d in list {
                 do {
                     let plan = try await self.pushPlan(d)
-                    if plan.isEmpty { continue }
-                    items.append((plan, try await self.check(plan)))
+                    if plan.isEmpty { plan.discard(); continue }
+                    do { items.append((plan, try await self.check(plan))) } catch { plan.discard(); throw error }
                 } catch { failures.append("SKU \(d.skuText): \(error.localizedDescription)") }
             }
             guard !items.isEmpty else {
@@ -572,14 +600,15 @@ final class AppModel: ObservableObject {
                 a.addButton(withTitle: "Push \(n) draft\(n == 1 ? "" : "s")"); a.addButton(withTitle: "Cancel")
                 let ok = a.runModal() == .alertFirstButtonReturn
                 withExtendedLifetime(group) {}
-                guard ok else { self.caption = "Push all cancelled: nothing changed in the admin"; return }
+                guard ok else { items.forEach { $0.plan.discard() }; self.caption = "Push all cancelled: nothing changed in the admin"; return }
                 fill = keep.state == .on
             }
             self.pushAllBatch = items.map(\.plan.draft.id)
             for it in items {
                 let plan = it.plan, has = it.check.has
                 self.jobs.enqueue(draftID: plan.draft.id, sku: plan.draft.skuText, kind: .push, files: plan.files) { progress in
-                    (try await self.send(plan, fill: fill, has: has, progress: progress), nil)
+                    let p = plan.hasCopies ? plan : try await self.pushPlan(plan.draft)   // Retry: plan again
+                    return (try await self.send(p, fill: fill, has: has, progress: progress), nil)
                 }
             }
             if !failures.isEmpty { self.caption = "Push all: " + failures.joined(separator: " · ") }

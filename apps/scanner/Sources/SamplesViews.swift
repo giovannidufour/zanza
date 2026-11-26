@@ -301,35 +301,42 @@ struct ExportPanel: View {
 
 /// `activity bar` (0143): the running (or last) job, a 240 px bar and "+N waiting"; Show in Finder when done,
 /// the reason and Retry when failed. Hidden until a job has run in this session. Clicking selects that draft.
+/// One line per lane (0193): an export and a push running together show as two lines, export first.
 struct ActivityBar: View {
     @ObservedObject var jobs: JobQueue
     @ObservedObject var drafts: DraftSession
     var body: some View {
-        if let j = jobs.shown {
-            HStack(spacing: 12) {
-                Text(text(j)).bodyStyle(12).lineLimit(1)
-                if j.state == .running || j.state == .waiting {
-                    ZStack(alignment: .leading) {
-                        Rectangle().fill(Color.black.opacity(0.08))
-                        Rectangle().fill(Theme.textStrong).frame(width: 240 * j.progress)
-                    }
-                    .frame(width: 240, height: 4)
-                }
-                if jobs.waitingCount > 0 { Text("+\(jobs.waitingCount) waiting").bodyStyle(12, color: Theme.textModerate) }
-                Spacer()
-                if j.state == .done, let f = j.folder {
-                    Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([f]) }.buttonStyle(.plain).bodyStyle(12).underline()
-                }
-                if case .failed = j.state { Button("Retry") { jobs.retry(j.id) }.buttonStyle(.plain).bodyStyle(12).underline() }
+        let lines = jobs.shown
+        if !lines.isEmpty {
+            VStack(spacing: 0) {
+                ForEach(lines) { j in line(j, waiting: lines.count > 1 ? jobs.waitingCount(j.kind) : jobs.waitingCount) }
             }
-            .padding(.horizontal, 24).frame(height: 36)
-            .background(Theme.surfacePage)
-            .overlay(Rectangle().fill(Theme.divider).frame(height: 1), alignment: .top)
-            .contentShape(Rectangle())
-            .onTapGesture { if let d = drafts.results.first(where: { $0.id == j.draftID }) { drafts.pick(d) } }
-            .accessibilityElement(children: .combine)
-            .accessibilityAddTraits(.updatesFrequently)
         }
+    }
+    func line(_ j: JobQueue.Job, waiting: Int) -> some View {
+        HStack(spacing: 12) {
+            Text(text(j)).bodyStyle(12).lineLimit(1)
+            if j.state == .running || j.state == .waiting {
+                ZStack(alignment: .leading) {
+                    Rectangle().fill(Color.black.opacity(0.08))
+                    Rectangle().fill(Theme.textStrong).frame(width: 240 * j.progress)
+                }
+                .frame(width: 240, height: 4)
+            }
+            if waiting > 0 { Text("+\(waiting) waiting").bodyStyle(12, color: Theme.textModerate) }
+            Spacer()
+            if j.state == .done, let f = j.folder {
+                Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([f]) }.buttonStyle(.plain).bodyStyle(12).underline()
+            }
+            if case .failed = j.state { Button("Retry") { jobs.retry(j.id) }.buttonStyle(.plain).bodyStyle(12).underline() }
+        }
+        .padding(.horizontal, 24).frame(height: 36)
+        .background(Theme.surfacePage)
+        .overlay(Rectangle().fill(Theme.divider).frame(height: 1), alignment: .top)
+        .contentShape(Rectangle())
+        .onTapGesture { if let d = drafts.results.first(where: { $0.id == j.draftID }) { drafts.pick(d) } }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.updatesFrequently)
     }
     func text(_ j: JobQueue.Job) -> String {
         let verb = j.kind == .export ? "Exporting" : "Pushing"
