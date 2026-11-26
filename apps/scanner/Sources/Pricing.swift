@@ -305,7 +305,8 @@ struct SelectField: View {
                 .overlay(Rectangle().stroke(Theme.divider, lineWidth: 1))
                 .contentShape(Rectangle())
             }
-            .menuStyle(.borderlessButton).menuIndicator(.hidden)
+            // .button + .plain: macOS draws our label (border, ground, chevron) instead of its own popup (Gio 2026-11-26)
+            .menuStyle(.button).buttonStyle(.plain).menuIndicator(.hidden)
             .accessibilityLabel(label)
         }
         .frame(maxWidth: width ?? .infinity, alignment: .leading)
