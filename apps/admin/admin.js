@@ -167,7 +167,7 @@
       at0 += decoded[q].length;
     }
     var duration = length / VIDEO_RATE;
-    var audioConfig = { codec: 'mp4a.40.2', sampleRate: VIDEO_RATE, numberOfChannels: channels, bitrate: 192000 };
+    var audioConfig = { codec: 'mp4a.40.2', sampleRate: VIDEO_RATE, numberOfChannels: channels, bitrate: 192000, aac: { format: 'aac' } };
     var vs = await VideoEncoder.isConfigSupported(videoConfig), as = await AudioEncoder.isConfigSupported(audioConfig);
     if (!vs.supported || !as.supported) throw new Error('this browser cannot encode MP4 (H.264 + AAC): use Chrome');
     // each photo, centre square, full frame
@@ -187,9 +187,24 @@
     var muxer = new Mux.Muxer({ target: new Mux.ArrayBufferTarget(), fastStart: 'in-memory',
       video: { codec: 'avc', width: VIDEO_SIDE, height: VIDEO_SIDE, frameRate: VIDEO_FPS },
       audio: { codec: 'aac', sampleRate: VIDEO_RATE, numberOfChannels: channels } });
-    var failed = null;
-    var venc = new VideoEncoder({ output: function (chunk, meta) { muxer.addVideoChunk(chunk, meta); }, error: function (e) { failed = e; } });
-    var aenc = new AudioEncoder({ output: function (chunk, meta) { muxer.addAudioChunk(chunk, meta); }, error: function (e) { failed = e; } });
+    var failed = null, aacFrames = 0;
+    var venc = new VideoEncoder({ output: function (chunk, meta) {
+      try { muxer.addVideoChunk(chunk, meta); } catch (e) { failed = failed || e; }
+    }, error: function (e) { failed = e; } });
+    // Safari (iPhone, Mac) hands back AAC chunks that Chrome does not: no duration, a timestamp shifted by the encoder
+    // delay, sometimes an ADTS header and a decoderConfig without description. mp4-muxer refuses such a chunk by
+    // throwing inside this callback, where nobody sees it, so the MP4 came out with an empty audio track (Gio 2026-11-26).
+    // Every AAC-LC frame is 1024 samples: we place each one ourselves and keep the muxer's own AudioSpecificConfig.
+    var AAC_US = 1024 * 1e6 / VIDEO_RATE;
+    var aenc = new AudioEncoder({ output: function (chunk, meta) {
+      try {
+        var bytes = new Uint8Array(chunk.byteLength); chunk.copyTo(bytes);
+        if (bytes.length > 7 && bytes[0] === 0xff && (bytes[1] & 0xf6) === 0xf0) bytes = bytes.subarray(bytes[1] & 1 ? 7 : 9);
+        var m = meta && meta.decoderConfig && meta.decoderConfig.description && meta.decoderConfig.description.byteLength ? meta : undefined;
+        muxer.addAudioChunkRaw(bytes, 'key', aacFrames * AAC_US, AAC_US, m);
+        aacFrames++;
+      } catch (e) { failed = failed || e; }
+    }, error: function (e) { failed = e; } });
     venc.configure(videoConfig); aenc.configure(audioConfig);
 
     var frames = Math.max(1, Math.ceil(duration * VIDEO_FPS)), STEP = 1024, total = frames + Math.ceil(length / STEP);
@@ -216,6 +231,7 @@
     await venc.flush(); await aenc.flush();
     venc.close(); aenc.close();
     if (failed) throw failed;
+    if (!aacFrames) throw new Error('the browser made no audio for the video');
     muxer.finalize();
     onProgress(100);
     return new Blob([muxer.target.buffer], { type: 'video/mp4' });
