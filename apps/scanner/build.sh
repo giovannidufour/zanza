@@ -6,10 +6,11 @@ APP="build/ZANZA.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 swiftc -O -swift-version 5 -target arm64-apple-macos13.0 \
-  -framework SwiftUI -framework ImageCaptureCore -framework AppKit \
+  -framework SwiftUI -framework ImageCaptureCore -framework AppKit -framework JavaScriptCore \
   Sources/*.swift -o "$APP/Contents/MacOS/Zanza"
 cp Info.plist "$APP/Contents/Info.plist"
 cp AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"   # made by tools/make-icon.swift (README)
+cp ../../packages/audio/web-level.js "$APP/Contents/Resources/web-level.js"   # 0192: the shop's sample level, same file as the admin
 # Admin link (0138): Supabase URL + publishable key (public) and media base URL, from the git-ignored env file
 ENV=../storefront/.supabase.env
 if [ -f "$ENV" ]; then
