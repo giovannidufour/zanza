@@ -11,6 +11,8 @@ struct ScannerTabs: View {
                 .keyboardShortcut("1", modifiers: .command)
             Button("Samples") { model.tab = .samples }.buttonStyle(ZButtonStyle(primary: model.tab == .samples))
                 .keyboardShortcut("2", modifiers: .command)
+            Button("Price") { model.tab = .price }.buttonStyle(ZButtonStyle(primary: model.tab == .price))   // 0196
+                .keyboardShortcut("3", modifiers: .command)
             Spacer()
         }
     }

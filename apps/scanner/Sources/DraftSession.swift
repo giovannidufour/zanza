@@ -174,6 +174,7 @@ final class DraftSession: ObservableObject {
     /// edited in the admin while the app was open
     func refresh(silent: Bool = false) {
         search()
+        app?.pricing.reload(results.map(\.id))   // price and conditions too (0196)
         guard draft != nil else { return }
         load(roles: max(3, names.count))
         if !silent { app?.caption = "Draft updated from the admin" }

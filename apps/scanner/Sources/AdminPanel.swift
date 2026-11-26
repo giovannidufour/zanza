@@ -79,7 +79,7 @@ struct DraftColumn: View {
                         VStack(alignment: .leading, spacing: 12) {
                             DraftResult(draft: d, scanned: drafts.scannedCount(d), imageSlots: drafts.slotCounts[d.id]?.images ?? 3,
                                         clips: model.clipCount(d), clipSlots: drafts.slotCounts[d.id]?.clips, selected: open,
-                                        imageMedia: model.imageMedia(d), clipMedia: model.clipMedia(d),
+                                        imageMedia: model.imageMedia(d), clipMedia: model.clipMedia(d), price: model.pricing.media(d.id),
                                         push: model.pushState(d), onPush: { model.push(d) },
                                         job: model.jobs.latest(for: d.id).flatMap { $0.seen ? nil : $0 }, jobs: model.jobs)
                                 .onTapGesture { drafts.pick(d); model.jobs.markSeen(d.id) }
@@ -105,6 +105,8 @@ struct DraftResult: View {
     var selected = false
     var imageMedia: AppModel.Media?
     var clipMedia: AppModel.Media?
+    /// price · side A grade (0196); nil until read
+    var price: (text: String, state: AppModel.MediaState, note: String)?
     var push: AppModel.PushState = .none
     var onPush: () -> Void = {}
     var job: JobQueue.Job?
@@ -128,6 +130,7 @@ struct DraftResult: View {
                 HStack(spacing: 6) {   // media status chips (Figma 2446:26829): green = some, red = none
                     MediaChip(icon: "photo", media: imageMedia ?? AppModel.Media(count: scanned, state: scanned > 0 ? .partial : .none, note: ""))
                     MediaChip(icon: "waveform", media: clipMedia ?? AppModel.Media(count: clips, state: clips > 0 ? .partial : .none, note: ""))
+                    if let price { PriceChip(text: price.text, state: price.state, note: price.note) }
                 }
                 if let job { JobLine(job: job, jobs: jobs) }
             }

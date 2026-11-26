@@ -9,8 +9,10 @@ final class AppModel: ObservableObject {
     let drafts = DraftSession()
     /// The Samples tab (0141)
     let session = SessionModel()
-    enum Tab { case scans, samples }
-    @Published var tab: Tab = .scans { didSet { session.active = tab == .samples; if tab == .scans { session.stop() } } }
+    /// Price and conditions of the drafts (0196)
+    let pricing = PricingModel()
+    enum Tab { case scans, samples, price }
+    @Published var tab: Tab = .scans { didSet { session.active = tab == .samples; if tab != .samples { session.stop() } } }
     /// Export and Push to admin run here, one at a time, in the background (0143)
     let jobs = JobQueue()
     /// Removal feedback with Undo (0149)
@@ -112,7 +114,10 @@ final class AppModel: ObservableObject {
         // draft rows read jobs and session (progress, push state, counts): redraw them when those change
         refreshDisk()
         forward = [jobs.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() },
-                   session.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }]
+                   session.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() },
+                   pricing.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() },
+                   // the price chip of every listed draft (0196): read the terms of drafts not read yet
+                   drafts.$results.sink { [weak self] list in self?.pricing.load(list.map(\.id)) }]
         previewZone = zone(for: preset)
         center = CGPoint(x: previewZone.midX, y: previewZone.midY)
     }
