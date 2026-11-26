@@ -7,7 +7,7 @@ set -euo pipefail
 work=$(mktemp -d)
 
 token() { curl -fsS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=render-video" | jq -r .value; }
-call() { curl -fsS -X POST "$FUNCTION_URL" -H "Authorization: Bearer $(token)" -H 'Content-Type: application/json' -d "$1"; }
+call() { curl -sS --fail-with-body -X POST "$FUNCTION_URL" -H "Authorization: Bearer $(token)" -H 'Content-Type: application/json' -d "$1"; }
 fail() { call "$(jq -n --arg id "$JOB_ID" --arg e "$1" '{job_id:$id, action:"failed", error:$e}')" >/dev/null || true; echo "$1"; exit 1; }
 trap 'fail "render stopped at line $LINENO"' ERR
 
