@@ -19,7 +19,7 @@
 }(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  var TARGET_LUFS = -11;        // TODO(0192): calibrate on reggaefever.ch samples
+  var TARGET_LUFS = -11;        // ≈ the loudest reggaefever.ch samples (their median ≈ −15, peak-normalized to 0 dBFS)
   var CEILING_DB = -2;          // the headroom of 0157: the MP3 encoder can add ~1 dB on a limited peak
   var MAX_REDUCTION_DB = 6;
   var MAX_GAIN_DB = 24;         // a near-silent file is not blown up

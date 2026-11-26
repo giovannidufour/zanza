@@ -2696,7 +2696,8 @@
         h('div', { className: 'admin-settings__number' }, h(Z.Input, { id: 'settings-per-page-input', type: 'number', inputMode: 'numeric', min: 1, max: 100, step: 1,
           'aria-labelledby': 'settings-per-page', 'aria-describedby': 'settings-per-page-help', value: perPage,
           onChange: function (e) { setPerPage(e.target.value); setProblem(null); } }))) : null,
-      h(PhotoSizes));
+      h(PhotoSizes),
+      h(LevelSamples));
   }
 
   /* Settings → Photo sizes (decision 0108; not in Figma yet, design/open.md): makes the smaller copies of the photos
@@ -2737,6 +2738,55 @@
         : ''),
       h('div', null, h(Z.Button, { hierarchy: 'secondary', 'aria-busy': st.running || undefined, 'aria-describedby': 'settings-photo-sizes-help',
         onClick: st.running ? undefined : run }, 'Make photo sizes')));
+  }
+
+  /* Settings → Sample level (decision 0192; not in Figma, like Photo sizes): brings the samples already in the shop to
+     the level of 0192, once. Each sample is read back from storage, levelled by packages/audio/web-level.js and, when
+     that changed it, encoded at 128 kbps and uploaded under a NEW key; the samples rows that used the old key get the new
+     one and the old file goes to media_trash (purge-media deletes it after 7 days, only if nothing uses it). A sample
+     already at level is skipped, so running it again does nothing. Then the shop is rebuilt once. */
+  function LevelSamples() {
+    var ss = useState(null), state = ss[0], setState = ss[1];   // null | { running, done, total, levelled, failed, error }
+    async function run() {
+      setState({ running: true, done: 0, total: 0, levelled: 0, failed: 0 });
+      var res = await sb.from('samples').select('audio_key');
+      if (res.error) { setState({ error: 'Could not read the samples: ' + res.error.message }); return; }
+      var keys = [];
+      res.data.forEach(function (r) { if (r.audio_key && keys.indexOf(r.audio_key) < 0) keys.push(r.audio_key); });
+      var Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      var levelled = 0, failed = 0, unreadable = 0;
+      for (var i = 0; i < keys.length; i++) {
+        setState({ running: true, done: i, total: keys.length, levelled: levelled, failed: failed });
+        var audio;
+        try {
+          var got = await fetch(mediaUrl(keys[i]) + '?level=1');   // own query string, as Photo sizes: no cached non-CORS copy
+          if (!got.ok) throw new Error(String(got.status));
+          audio = await new Ctx(2, 1, 44100).decodeAudioData(await got.arrayBuffer());
+        } catch (e) { failed++; unreadable++; if (levelled === 0 && unreadable >= 3 && unreadable === i + 1) break; continue; }
+        if (!levelForWeb(audio, audio.length)) continue;            // already at level
+        try {
+          var key = await upload('sample', await encodeMp3(audio, audio.length, 0), null);
+          var up = await sb.from('samples').update({ audio_key: key }).eq('audio_key', keys[i]);
+          if (up.error) throw new Error(up.error.message);
+          await sb.from('media_trash').upsert({ key: keys[i], trashed_at: new Date().toISOString() });
+          levelled++;
+        } catch (e) { failed++; }
+      }
+      if (levelled) await sb.rpc('mark_site_build');
+      setState({ running: false, done: keys.length, total: keys.length, levelled: levelled, failed: failed,
+                 error: levelled === 0 && unreadable >= 3 && failed === unreadable ? 'Storage does not let the admin read the samples back. In Cloudflare → R2 → store-media → Settings → CORS policy, add "GET" to AllowedMethods, then try again.' : null });
+    }
+    var st = state || {};
+    return h('section', { className: 'admin-shipping__section', 'aria-labelledby': 'settings-sample-level' },
+      h('h2', { id: 'settings-sample-level', className: 'label-medium' }, 'Sample level'),
+      h('p', { className: 'body-small', id: 'settings-sample-level-help' }, 'Every sample you upload plays on the shop at the same level, about as loud as other record shops. Samples uploaded before 26 November 2026 are quieter: bring them to that level here, once. Your WAV and MP3 320 files are not touched. Samples already at level are skipped. The shop updates in about 2 minutes.'),
+      st.error ? h('p', { className: 'body-small admin-status--error', role: 'alert' }, st.error) : null,
+      h('p', { className: 'body-small', role: 'status' },
+        st.running ? (st.total ? 'Sample ' + (st.done + 1) + ' of ' + st.total + '… ' + st.levelled + ' done.' : 'Reading the samples…')
+        : state && !st.error && st.total !== undefined ? (st.levelled ? st.levelled + (st.levelled === 1 ? ' sample is' : ' samples are') + ' now at level. ' : 'Every sample is already at level. ') + (st.failed ? st.failed + ' could not be done.' : '')
+        : ''),
+      h('div', null, h(Z.Button, { hierarchy: 'secondary', 'aria-busy': st.running || undefined, 'aria-describedby': 'settings-sample-level-help',
+        onClick: st.running ? undefined : run }, 'Level samples')));
   }
 
   // ── Shipping ──────────────────────────────────────────────────────────────
