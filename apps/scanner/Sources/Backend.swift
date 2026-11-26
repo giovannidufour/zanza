@@ -178,6 +178,57 @@ final class Backend {
         return .created(id: id, sku: sku)
     }
 
+    // MARK: Price and conditions (0196): the listing columns the admin's form writes, read and written directly
+    // (PostgREST, the admin's own session: RLS listings_admin). No Edge Function, no copy of the data.
+
+    /// The price and conditions of these listings, by id
+    func terms(of ids: [String]) async throws -> [String: ListingTerms] {
+        guard !ids.isEmpty else { return [:] }
+        var out: [String: ListingTerms] = [:]
+        for chunk in stride(from: 0, to: ids.count, by: 100).map({ Array(ids[$0..<min($0 + 100, ids.count)]) }) {
+            let q = "/rest/v1/listings?select=\(ListingTerms.columns)&id=in.(\(chunk.joined(separator: ",")))"
+            let data = try await rest("GET", q, nil)
+            for t in try JSONDecoder().decode([ListingTerms].self, from: data) { out[t.id] = t }
+        }
+        return out
+    }
+
+    /// Writes only these columns of one listing; answers the row as saved
+    func saveTerms(_ t: ListingTerms) async throws -> ListingTerms {
+        let data = try await rest("PATCH", "/rest/v1/listings?id=eq.\(t.id)&select=\(ListingTerms.columns)", t.patch)
+        guard let saved = try JSONDecoder().decode([ListingTerms].self, from: data).first else {
+            throw BackendError.server("The draft was not saved: it is no longer in the admin")
+        }
+        return saved
+    }
+
+    /// shop_settings.trade_enabled (0102): For trade is offered only while trade is on
+    func tradeEnabled() async throws -> Bool {
+        let data = try await rest("GET", "/rest/v1/shop_settings?select=*", nil)
+        let rows = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] ?? []
+        return (rows.first?["trade_enabled"] as? Bool) ?? true
+    }
+
+    private func rest(_ method: String, _ path: String, _ body: [String: Any]?) async throws -> Data {
+        guard Config.configured, let url = URL(string: Config.supabaseURL + path) else { throw BackendError.notConfigured }
+        var req = URLRequest(url: url)
+        req.httpMethod = method
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue("return=representation", forHTTPHeaderField: "Prefer")
+        req.setValue(Config.supabaseKey, forHTTPHeaderField: "apikey")
+        req.setValue("Bearer " + (try await token()), forHTTPHeaderField: "Authorization")
+        if let body { req.httpBody = try JSONSerialization.data(withJSONObject: body) }
+        req.timeoutInterval = 30
+        let (data, res) = try await URLSession.shared.data(for: req)
+        let status = (res as? HTTPURLResponse)?.statusCode ?? 0
+        if status == 401 { signOut(); throw BackendError.signedOut }
+        guard (200..<300).contains(status) else {
+            let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
+            throw BackendError.server((json["message"] as? String) ?? "Error \(status)")
+        }
+        return data
+    }
+
     /// POST that hands back any status (scanner-draft answers 409 on purpose)
     private func raw(_ path: String, _ body: [String: Any]) async throws -> (Int, [String: Any]) {
         guard Config.configured, let url = URL(string: Config.supabaseURL + path) else { throw BackendError.notConfigured }

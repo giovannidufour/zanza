@@ -16,14 +16,20 @@ struct ContentView: View {
             Rectangle().fill(Theme.divider).frame(width: 1)
             VStack(spacing: 0) {   // centre: tabs switch the centre and right columns only (0141)
                 ScannerTabs().padding(.horizontal, 24).padding(.top, 24)
-                if model.tab == .scans { ScanColumn(scanner: scanner) }
-                else { SessionPanel(session: model.session).padding(24) }
+                switch model.tab {
+                case .scans: ScanColumn(scanner: scanner)
+                case .samples: SessionPanel(session: model.session).padding(24)
+                case .price: PricePanel(pricing: model.pricing, drafts: model.drafts)
+                }
             }
             .frame(minWidth: 560, maxWidth: .infinity)
             Rectangle().fill(Theme.divider).frame(width: 1)
             Group {
-                if model.tab == .scans { RecordColumn(scanner: scanner) }
-                else { SamplesColumn(scanner: scanner) }
+                switch model.tab {
+                case .scans: RecordColumn(scanner: scanner)
+                case .samples: SamplesColumn(scanner: scanner)
+                case .price: PriceColumn(pricing: model.pricing, drafts: model.drafts)
+                }
             }
             .frame(width: 360)
         }

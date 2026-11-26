@@ -26,6 +26,7 @@ text fields are not drawn by the renderer). `Zanza --test-scan <folder> <x mm> <
 | `Sources/Names.swift` | Parses pasted names (`<sku>_<role>_<slug>`), role labels, next photo name |
 | `Sources/ContentView.swift` | The window (mirrors the Figma screens) |
 | `Sources/GlassView.swift` | The preview under the fixed guide (AppKit): drag, turn, trackpad rotate, grid and up figure while turning |
+| `Sources/Pricing.swift` | Price tab (0196): sale type, price and conditions of a draft, read and written on the listing's own columns (PostgREST, admin session); € chip of the draft rows |
 | `Sources/Theme.swift` | Colours and type styles from `packages/ui/tokens.json` (backend theme) |
 
 ## Icon
