@@ -5,7 +5,7 @@
 //    .github/workflows/render-video.yml. Answers { job }. The admin then reads the row until it is done or failed.
 // 2. The workflow, with a GitHub Actions OIDC token (no shared secret: the token proves it is this repository's
 //    render-video workflow on main): { job_id, action: "start" } → media URLs + a signed PUT for videos/<uuid>.mp4;
-//    { job_id, action: "done", video_key } / { job_id, action: "failed", error }.
+//    { job_id, action: "progress", progress } (0–99, from ffmpeg) / { job_id, action: "done", video_key } / { job_id, action: "failed", error }.
 // Secrets (Supabase → Edge Functions → Secrets): GITHUB_DISPATCH_TOKEN (fine-grained token, this repository only,
 // Contents: read and write), the R2 ones of sign-upload. Optional: GITHUB_REPO (default giovannidufour/zanza),
 // MEDIA_BASE_URL (default https://media.highmuzik.com), ADMIN_ORIGINS.
@@ -76,7 +76,12 @@ Deno.serve(async (req) => {
     if (body.action === "done") {
       const key = String(body.video_key ?? "");
       if (!/^videos\/[0-9a-f-]+\.mp4$/.test(key)) return json({ error: "Bad video_key." }, 400, headers);
-      await service.from("video_jobs").update({ status: "done", video_key: key, error: null }).eq("id", id);
+      await service.from("video_jobs").update({ status: "done", video_key: key, error: null, progress: 100 }).eq("id", id);
+      return json({ ok: true }, 200, headers);
+    }
+    if (body.action === "progress") {
+      const p = Math.max(0, Math.min(99, Math.round(Number(body.progress) || 0)));
+      await service.from("video_jobs").update({ status: "rendering", progress: p }).eq("id", id).in("status", ["queued", "rendering"]);
       return json({ ok: true }, 200, headers);
     }
     if (body.action === "failed") {

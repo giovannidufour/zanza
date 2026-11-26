@@ -7,26 +7,37 @@ set -euo pipefail
 work=$(mktemp -d)
 
 token() { curl -fsS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=render-video" | jq -r .value; }
-call() { curl -fsS -X POST "$FUNCTION_URL" -H "Authorization: Bearer $(token)" -H 'Content-Type: application/json' -d "$1"; }
+call() { curl -sS --fail-with-body -X POST "$FUNCTION_URL" -H "Authorization: Bearer $(token)" -H 'Content-Type: application/json' -d "$1"; }
 fail() { call "$(jq -n --arg id "$JOB_ID" --arg e "$1" '{job_id:$id, action:"failed", error:$e}')" >/dev/null || true; echo "$1"; exit 1; }
 trap 'fail "render stopped at line $LINENO"' ERR
 
 start=$(call "$(jq -n --arg id "$JOB_ID" '{job_id:$id, action:"start"}')")
 n=$(jq '.parts | length' <<<"$start")
-inputs=(); filter=""; joins=""
+inputs=(); filter=""; joins=""; total=0
 for ((i = 0; i < n; i++)); do
   curl -fsS -o "$work/a$i" "$(jq -r ".parts[$i].audio" <<<"$start")" || fail "could not read sample $((i + 1))"
   curl -fsS -o "$work/i$i" "$(jq -r ".parts[$i].image" <<<"$start")" || fail "could not read photo $((i + 1))"
   d=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$work/a$i")
+  total=$(awk -v a="$total" -v b="$d" 'BEGIN { print a + b }')
   inputs+=(-loop 1 -framerate 30 -t "$d" -i "$work/i$i" -i "$work/a$i")
   filter+="[$((2 * i)):v]crop='min(iw,ih)':'min(iw,ih)',scale=1080:1080:flags=lanczos,setsar=1,format=yuv420p,trim=duration=$d,setpts=PTS-STARTPTS[v$i];"
   filter+="[$((2 * i + 1)):a]aresample=48000,aformat=channel_layouts=stereo,asetpts=PTS-STARTPTS[a$i];"
   joins+="[v$i][a$i]"
 done
 filter+="${joins}concat=n=$n:v=1:a=1[v][a]"
-ffmpeg -nostdin -loglevel error -y "${inputs[@]}" -filter_complex "$filter" -map '[v]' -map '[a]' \
-  -c:v libx264 -preset veryfast -tune stillimage -crf 18 -r 30 -g 60 -c:a aac -b:a 192k -movflags +faststart "$work/out.mp4" \
-  || fail "ffmpeg could not make the video"
+# progress (Gio 2026-11-26): ffmpeg writes how far it is; every 3 s the job gets 5–90 %, the upload 95 %
+progress() { call "$(jq -n --arg id "$JOB_ID" --argjson p "$1" '{job_id:$id, action:"progress", progress:$p}')" >/dev/null || true; }
+progress 5
+ffmpeg -nostdin -loglevel error -nostats -progress "$work/progress" -y "${inputs[@]}" -filter_complex "$filter" -map '[v]' -map '[a]' \
+  -c:v libx264 -preset veryfast -tune stillimage -crf 18 -r 30 -g 60 -c:a aac -b:a 192k -movflags +faststart "$work/out.mp4" &
+pid=$!
+while kill -0 "$pid" 2>/dev/null; do
+  sleep 3
+  us=$( (grep '^out_time_us=' "$work/progress" 2>/dev/null || true) | tail -n 1 | cut -d= -f2)
+  [[ "$us" =~ ^[0-9]+$ ]] && progress "$(awk -v u="$us" -v t="$total" 'BEGIN { p = 5 + int(85 * u / (t * 1000000)); print (p > 90 ? 90 : p) }')"
+done
+wait "$pid" || fail "ffmpeg could not make the video"
+progress 95
 curl -fsS -X PUT -H 'Content-Type: video/mp4' --data-binary @"$work/out.mp4" "$(jq -r .upload_url <<<"$start")" >/dev/null || fail "could not upload the video"
 trap - ERR
 call "$(jq -n --arg id "$JOB_ID" --arg k "$(jq -r .video_key <<<"$start")" '{job_id:$id, action:"done", video_key:$k}')" >/dev/null
