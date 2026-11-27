@@ -122,10 +122,13 @@ Everything undecided, parked or to fix lives here and nowhere else. When an item
 - `player`: native-player placeholder fill unbound (placeholder only, fine).
 - `buttons` page: loose component `Frame 1` (2191:27533) with no name or use → delete or name it.
 - Icons: `icon-bars-three` (hamburger) lines have a white stroke · `icon-pencil` uses unbound `#212121`.
+- `title link menu` (Create, 0147): search placeholder is body/extra small, code (LinkMenu) uses body/medium; `jump to menu` (0199) follows the code. Align one way.
+- Button: swapping the `leading icon` instance carries the old icon's fill/stroke overrides onto the new one (fixed by hand on `listing nav`, 0199): check other swapped button icons.
 
 
 ## Code to do
 
+- **Unsaved changes on leaving Edit listing (0199)**: Back and Jump to navigate without asking; propose a confirm dialog (Dialog) when the form is dirty.
 - **ProductReturnCard (0119)** is a first version: Gio plans more iterations (content, motion, position). Motion values (200ms fade + 8 up, 600ms scroll back) are placeholders until Figma has motion tokens.
 - **"More for sale" (0119)**: 12 records picked in the build (same section, other section, then sold); replace with backend recommendations when they exist.
 

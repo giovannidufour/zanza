@@ -250,8 +250,8 @@ body[data-player-open] .hm-action-bar { bottom: var(--admin-player-height, 0px);
    ActionBar and the bulk bar (decision 0099: bars and dialogs stay surface/base) */
 .admin-player .hm-player { background: var(--surface-base); }
 
-/* Back to the list, above the title on Edit listing */
-.admin-main > .hm-back-link { margin-bottom: 8px; }
+/* Back + Jump to, above the title on Edit listing (decision 0199) */
+.admin-main > .hm-listing-nav { margin-bottom: 8px; }
 
 /* Figma BACKEND → Dashboard (decision 0169): sections 40 apart; a section = head (title, period tabs) + stats, gap 16.
    Stats: 4 columns, gap 24 (desktop frame 976 = 4 × 226 + 3 × 24); one column, gap 16, on mobile. */

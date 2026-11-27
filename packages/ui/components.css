@@ -1455,11 +1455,22 @@ button.hm-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .hm-progress-bar { position: relative; height: 4px; background: var(--surface-subtle); overflow: hidden; }
 .hm-progress-bar__value { height: 100%; background: var(--action-primary-background-default); transition: width 0.3s ease-out; }
 @media (prefers-reduced-motion: reduce) { .hm-progress-bar__value { transition: none; } }
-/* BackLink (Figma `admin` → `back link`) */
 /* DiscogsLink (Figma BACKEND → Create › `discogs link`, 0150): same as the ChosenRelease Discogs link */
 .hm-discogs-link { color: inherit; text-decoration: underline; align-self: flex-start; }
-.hm-back-link { display: inline-block; color: var(--text-moderate); text-decoration: none; }
-.hm-back-link:hover { text-decoration: underline; }
+/* ── ListingNav + JumpTo (Figma `admin` → `listing nav`, `jump to menu`; decision 0199) ──
+   Back and Jump to: Buttons secondary small, gap small. The menu floats under Jump to (4 below, as the link menu),
+   320 wide, 1px border-divider/strong on surface/base: search (as the link menu's) over ReleaseOption rows. */
+.hm-listing-nav { display: flex; flex-wrap: wrap; align-items: center; gap: var(--small); }
+.hm-jump-to { position: relative; }
+.hm-jump-to__menu {
+  position: absolute; z-index: 10; top: calc(100% + 4px); left: 0;
+  box-sizing: border-box; width: 320px; max-width: calc(100vw - 32px);
+  display: flex; flex-direction: column;
+  background: var(--surface-base); border: 1px solid var(--border-divider-strong);
+}
+.hm-jump-to__options { margin: 0; padding: 0; list-style: none; max-height: 288px; overflow-y: auto; }
+.hm-jump-to__message { margin: 0; padding: var(--small); }
+.hm-release-option[data-current="true"] .hm-release-option__title { text-decoration: underline; text-underline-offset: 3px; }
 
 /* ── AdminBar (Figma page `admin` → `admin bar`, decision 0089): desktop = section buttons + account, mobile = menu · title (no Create since 0125) ── */
 .hm-admin-bar__desktop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
@@ -1747,11 +1758,11 @@ button.hm-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 }
 .hm-linked-input__bar { display: flex; gap: 4px; padding: 4px; }
 .hm-linked-input__menu { width: 320px; display: flex; flex-direction: column; }
-.hm-linked-input__search {
+.hm-linked-input__search, .hm-jump-to__search {
   margin: 0; padding: 8px; border: 0; border-bottom: 1px solid var(--border-divider-strong); border-radius: 0;
   background: var(--surface-accent); color: var(--text-strong); font: inherit; appearance: none; -webkit-appearance: none;
 }
-.hm-linked-input__search::placeholder { color: var(--text-moderate); opacity: 1; }
+.hm-linked-input__search::placeholder, .hm-jump-to__search::placeholder { color: var(--text-moderate); opacity: 1; }
 .hm-linked-input__options { margin: 0; padding: 0; list-style: none; max-height: 288px; overflow-y: auto; }
 .hm-linked-input__options .hm-entity-option[data-current="true"] .hm-entity-option__label { text-decoration: underline; text-underline-offset: 3px; }
 

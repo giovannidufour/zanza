@@ -75,6 +75,7 @@ final class Backend {
     }
 
     func signOut() {
+        lock.lock(); defer { lock.unlock() }
         Keychain.delete(); refreshToken = nil; accessToken = nil; expiry = .distantPast
     }
 
@@ -82,21 +83,36 @@ final class Backend {
         guard let access = r["access_token"] as? String, let refresh = r["refresh_token"] as? String else {
             throw BackendError.server("The code was not accepted.")
         }
+        lock.lock(); defer { lock.unlock() }
         accessToken = access
         expiry = Date().addingTimeInterval(TimeInterval((r["expires_in"] as? Int) ?? 3600) - 60)
         if refresh != refreshToken { Keychain.save(refresh); refreshToken = refresh }
     }
 
+    /// Push uploads several files at once (0198): the token is read under a lock, and an expired one is refreshed by
+    /// ONE request that every upload waits for (two refreshes with the same refresh token would sign the app out).
+    private let lock = NSLock()
+    private var refreshing: Task<String, Error>?
+
     private func token() async throws -> String {
-        if let t = accessToken, Date() < expiry { return t }
-        guard let refresh = refreshToken else { throw BackendError.signedOut }
-        do {
-            let r = try await post("/auth/v1/token?grant_type=refresh_token", ["refresh_token": refresh], auth: false)
-            try keep(r)
-            return accessToken!
-        } catch {
-            signOut(); throw BackendError.signedOut
+        lock.lock()
+        if let t = accessToken, Date() < expiry { lock.unlock(); return t }
+        if let running = refreshing { lock.unlock(); return try await running.value }
+        guard let refresh = refreshToken else { lock.unlock(); throw BackendError.signedOut }
+        let task = Task { () throws -> String in
+            do {
+                let r = try await self.post("/auth/v1/token?grant_type=refresh_token", ["refresh_token": refresh], auth: false)
+                try self.keep(r)
+                guard let access = r["access_token"] as? String else { throw BackendError.signedOut }
+                return access
+            } catch {
+                self.signOut(); throw BackendError.signedOut
+            }
         }
+        refreshing = task
+        lock.unlock()
+        defer { lock.lock(); refreshing = nil; lock.unlock() }
+        return try await task.value
     }
 
     // MARK: scan-targets
