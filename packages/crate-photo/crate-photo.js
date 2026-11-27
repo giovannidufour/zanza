@@ -423,12 +423,40 @@
     }
   }
 
-  // both crops at `size` px, turned by `angle`, light evened out (planes fitted on the Full crop, applied to both),
+  /* 5. the hole's shadow (Gio 2026-11-27): the phone's light casts a dark crescent from the label edge onto what is under
+     the hole; the Scanner's flat light barely does. Inside the hole every pixel darker than the hole's own fill (from
+     its inner 80 %, 75th percentile) keeps only `HOLE_KEEP` of its darkness: the shadow stays, softer, however far it
+     reaches (a lamp far away casts a long one). From 0.8 mm to 0.2 mm before the edge the effect fades out, so the thin
+     dark line of the edge itself stays. */
+  var HOLE_KEEP = 0.35;
+  function softenHole(img, mm, holeR) {
+    var W = img.width, d = img.data, ppm = W / mm, c = W / 2, R = holeR * ppm, inner = 0.8 * R;
+    var r0 = Math.max(0, R - 0.8 * ppm), r1 = R - 0.2 * ppm;     // full effect inside r0, none from r1 out
+    var x0 = Math.max(0, Math.floor(c - R)), x1 = Math.min(W - 1, Math.ceil(c + R)), x, y, i, ch;
+    var fill = [0, 0, 0], vals = [[], [], []];
+    for (y = x0; y <= x1; y += 2) for (x = x0; x <= x1; x += 2) {
+      if (Math.hypot(x + 0.5 - c, y + 0.5 - c) > inner) continue;
+      i = (y * W + x) * 4; for (ch = 0; ch < 3; ch++) vals[ch].push(d[i + ch]);
+    }
+    if (!vals[0].length) return;
+    for (ch = 0; ch < 3; ch++) { var v = vals[ch].sort(function (a, b) { return a - b; }); fill[ch] = v[Math.floor(v.length * 0.75)]; }
+    for (y = x0; y <= x1; y++) for (x = x0; x <= x1; x++) {
+      var r = Math.hypot(x + 0.5 - c, y + 0.5 - c);
+      if (r >= r1) continue;
+      var w = r <= r0 ? 1 : (r1 - r) / (r1 - r0);
+      i = (y * W + x) * 4;
+      for (ch = 0; ch < 3; ch++) if (d[i + ch] < fill[ch]) d[i + ch] += (fill[ch] - d[i + ch]) * (1 - HOLE_KEEP) * w;
+    }
+  }
+
+  // both crops at `size` px, turned by `angle`, light evened out (planes fitted on the Full crop, applied to both), the
+  // hole's shadow softened,
   // then the Scanner look of the camera that took the photo (`camera`: 'live' default | 'phone' | 'none')
   function render(sd, an, size, angle, camera) {
     var full = crop(sd, an, FULL_MM, size, angle), label = crop(sd, an, LABEL_MM, size, angle);
     var planes = fitPaper(full);
     if (planes) { evenOut(full, FULL_MM, planes); evenOut(label, LABEL_MM, planes); }
+    if (an.hole) { softenHole(full, FULL_MM, an.hole.r); softenHole(label, LABEL_MM, an.hole.r); }
     var look = LOOK[camera || 'live'];
     if (look) {
       var a = an.toPx(-10, 0), b = an.toPx(10, 0), pxPerMm = Math.hypot(b[0] - a[0], b[1] - a[1]) / 20;
