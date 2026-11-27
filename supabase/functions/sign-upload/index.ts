@@ -1,6 +1,7 @@
 // supabase/functions/sign-upload — returns a short-lived URL to PUT one file straight into R2 (bucket store-media).
 // Admin only: the caller's Supabase session must belong to a row of public.admins.
-// Keys are random and immutable (never overwritten): photos/<uuid>.<ext>, samples/<uuid>.<ext>.
+// Keys are random and immutable (never overwritten): photos/<uuid>.<ext>, samples/<uuid>.<ext>,
+// originals/<uuid>.<ext> (listings.original_keys, migration 0044: kept with the SKU, never shown in the shop).
 // A smaller copy of a photo (decision 0108, images.js = packages/images/images.js, copied by sync-functions.js):
 // { kind: "photo", of: "photos/<uuid>.webp", width: 400 } signs photos/<uuid>-w400.webp, next to its photo.
 // The database stores only the key; the public base URL lives in config (backend.md → Storage).
@@ -15,6 +16,8 @@ const ALLOWED_ORIGINS = (Deno.env.get("ADMIN_ORIGINS") ?? "https://store-admin-3
 const KINDS: Record<string, { prefix: string; types: Record<string, string>; maxBytes: number }> = {
   photo: { prefix: "photos", types: { "image/webp": "webp", "image/jpeg": "jpg", "image/png": "png" }, maxBytes: 8 * 1024 * 1024 },
   // sample: up to 30 MB (Gio 2026-11-17: files over 10 MB too); R2 takes a single PUT up to 5 GB
+  // original: the Full record photo of admin → Take photo (decision 0200); not shown in the shop, no smaller copies
+  original: { prefix: "originals", types: { "image/webp": "webp", "image/jpeg": "jpg", "image/png": "png" }, maxBytes: 20 * 1024 * 1024 },
   sample: { prefix: "samples", types: { "audio/mpeg": "mp3" }, maxBytes: 30 * 1024 * 1024 },
 };
 
@@ -48,7 +51,7 @@ Deno.serve(async (req) => {
   let body: { kind?: string; contentType?: string; size?: number; of?: string; width?: number };
   try { body = await req.json(); } catch { return json({ error: "Send JSON: { kind, contentType, size }." }, 400, headers); }
   const kind = KINDS[body.kind ?? ""];
-  if (!kind) return json({ error: "kind must be photo or sample." }, 400, headers);
+  if (!kind) return json({ error: "kind must be photo, original or sample." }, 400, headers);
   const ext = kind.types[body.contentType ?? ""];
   if (!ext) return json({ error: `File type not allowed for ${body.kind}: ${body.contentType}.` }, 400, headers);
   if (!body.size || body.size > kind.maxBytes) return json({ error: `File too large (max ${kind.maxBytes / 1024 / 1024} MB).` }, 400, headers);

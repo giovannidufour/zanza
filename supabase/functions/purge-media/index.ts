@@ -1,7 +1,7 @@
 // supabase/functions/purge-media — deletes from R2 the files nothing uses any more (migration 0009, public.media_trash).
 // Admin only (the caller's session must belong to public.admins). The admin calls it when the Listings page opens.
 // What to delete is decided by the database (admin_media_to_purge): trashed more than 7 days ago AND referenced by no
-// listing photo and no sample. A key R2 answers 204 or 404 for is gone: it leaves the trash (admin_media_purged).
+// listing photo, no listing original (migration 0044) and no sample. A key R2 answers 204 or 404 for is gone: it leaves the trash (admin_media_purged).
 // A photo goes with its smaller copies (decision 0108, images.js = packages/images/images.js): they are deleted first,
 // and the photo leaves the trash only when they are gone too.
 // Secrets: the same as sign-upload (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET).
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
 
   const purged: string[] = [], failed: { key: string; status: number }[] = [];
   for (const key of keys as string[]) {
-    if (!/^(photos|samples)\/[\w.-]+$/.test(key)) { failed.push({ key, status: 0 }); continue; }   // never anything else
+    if (!/^(photos|samples|originals)\/[\w.-]+$/.test(key)) { failed.push({ key, status: 0 }); continue; }   // never anything else
     let status = 204;
     for (const k of [...Images.sizedKeys(key), key]) {
       const res = await r2.fetch(`https://${accountId}.r2.cloudflarestorage.com/${bucket}/${k}`, { method: "DELETE" });
