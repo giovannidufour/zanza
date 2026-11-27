@@ -26,6 +26,7 @@
   .out figure { margin: 0; min-width: 0; }
   .out figure.wide { grid-column: 1 / -1; max-width: 480px; }
   .out canvas { width: 100%; display: block; border: 1px solid var(--line); }
+  #full, #label { touch-action: none; cursor: grab; }
   figcaption { font-size: 12px; color: var(--muted); }
   .opts { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; align-items: center; }
   .opts button { padding: 6px 10px; }
@@ -56,14 +57,14 @@
 <div class="opts">
   <label><input type="checkbox" id="optPersp" checked> Fix tilt</label>
   <label><input type="checkbox" id="optLight" checked> Even out light</label>
-  <span>Rotate <button id="rotL">−5°</button> <button id="rotL1">−1°</button> <button id="rotR1">+1°</button> <button id="rotR">+5°</button> <button id="rot90">90°</button></span>
+  <span>Turn: drag on a crop · <b id="angle">0.0°</b> <button id="rot90">90°</button> <button id="rot0">Reset</button></span>
 </div>
 
 <div class="row"><pre id="info">Camera not started.</pre></div>
 
 <div class="out">
   <figure class="wide"><canvas id="raw"></canvas><figcaption>As shot (pink = markers found)</figcaption></figure>
-  <figure><canvas id="full" width="1600" height="1600"></canvas><figcaption>Full · 180 mm</figcaption></figure>
+  <figure><canvas id="full" width="1600" height="1600"></canvas><figcaption>Full · 180 mm · drag to turn</figcaption></figure>
   <figure><canvas id="label" width="1600" height="1600"></canvas><figcaption>Label · 96.52 mm (3.8")</figcaption></figure>
 </div>
 <div class="row">
@@ -120,8 +121,10 @@ $('native').onchange = async e => {
   userRot = 0; run(c);
 };
 
-for (const [id, d] of [['rotL', -5], ['rotL1', -1], ['rotR1', 1], ['rotR', 5], ['rot90', 90]]) $(id).onclick = () => { userRot += d; if (source) run(source); };
-$('optPersp').onchange = $('optLight').onchange = () => { if (source) run(source); };
+$('rot90').onclick = () => { userRot += 90; draw(OUT); };
+$('rot0').onclick = () => { userRot = 0; draw(OUT); };
+$('optPersp').onchange = () => { if (source) run(source); };
+$('optLight').onchange = () => draw(OUT);
 
 function run(c) {
   source = c;
@@ -182,15 +185,22 @@ function process(src) {
     notes.push(`Centred on the ${hole.r > 10 ? 'large' : 'small'} hole (Ø ${(hole.r * 2).toFixed(1)} mm, ${Math.round(hole.score * 100)} % of its edge), ${Math.hypot(hole.x, hole.y).toFixed(1)} mm from the outline centre`);
   } else notes.push('Hole not found: centred on the record outline');
 
-  // user rotation around the record centre
-  const rr = userRot * Math.PI / 180, rc = Math.cos(rr), rs = Math.sin(rr);
+  state = { sd, toPx, notes, t0 };
+  draw(OUT);
+}
+
+// Render both crops at `size` px with the current rotation. Dragging draws at 400 px (live),
+// letting go draws at 1600 px.
+let state = null;
+function draw(size) {
+  if (!state) return;
+  const { sd, toPx } = state, notes = [...state.notes];
+  // user rotation around the hole: positive = content turns clockwise
+  const rr = -userRot * Math.PI / 180, rc = Math.cos(rr), rs = Math.sin(rr);
   const map = (x, y) => toPx(x * rc - y * rs, x * rs + y * rc);
 
-  // 2. The two crops, both centred on the record
-  const fullImg = render(sd, map, FULL_MM, OUT);
-  const labelImg = render(sd, map, LABEL_MM, OUT);
-
-  // 3. Light: a plane per channel fitted on the paper around the record, divided out of both crops
+  const fullImg = render(sd, map, FULL_MM, size);
+  const labelImg = render(sd, map, LABEL_MM, size);
   if ($('optLight').checked) {
     const planes = fitPaper(fullImg, FULL_MM);
     if (planes) {
@@ -198,19 +208,48 @@ function process(src) {
       notes.push(`Light: paper was rgb(${planes.map(p => Math.round(p[0])).join(', ')}) → now ${PAPER}`);
     } else notes.push('Light: no paper visible around the record, skipped');
   }
-  $('full').getContext('2d').putImageData(fullImg, 0, 0);
-  $('label').getContext('2d').putImageData(labelImg, 0, 0);
+  for (const [id, img] of [['full', fullImg], ['label', labelImg]]) {
+    const c = $(id);
+    if (c.width !== size) { c.width = size; c.height = size; }
+    c.getContext('2d').putImageData(img, 0, 0);
+  }
+  $('angle').textContent = fmtAngle(userRot);
+  if (size < OUT) return;
 
   const a = map(-10, 0), b = map(10, 0), pxmm = Math.hypot(b[0] - a[0], b[1] - a[1]) / 20;
   const fullSrc = Math.round(FULL_MM * pxmm), labelSrc = Math.round(LABEL_MM * pxmm);
   notes.push(`Photo resolution on the record: ${pxmm.toFixed(1)} px/mm`);
   notes.push(`Full: ${fullSrc} px of photo → 1600 ${fullSrc >= OUT ? '✓' : '✗ upscaled'}`);
   notes.push(`Label: ${labelSrc} px of photo → 1600 ${labelSrc >= OUT ? '✓' : '(upscaled ' + Math.round(OUT / labelSrc * 100 - 100) + ' %)'}`);
-  notes.push(`Rotation ${userRot}° · ${Math.round(performance.now() - t0)} ms`);
+  if (state.t0) { notes.push(`First result in ${Math.round(performance.now() - state.t0)} ms`); state.t0 = 0; }
   log('fix', notes.join('\n'));
-
   $('full').toBlob(b => { const el = $('saveFull'); el.href = URL.createObjectURL(b); el.hidden = false; }, 'image/webp', 0.9);
   $('label').toBlob(b => { const el = $('saveLabel'); el.href = URL.createObjectURL(b); el.hidden = false; }, 'image/webp', 0.9);
+}
+const fmtAngle = d => { const v = ((d % 360) + 540) % 360 - 180; return (v > 0 ? '+' : '') + v.toFixed(1) + '°'; };
+
+// ── Turn by dragging on either crop (both turn together)
+{
+  let drag = null, raf = 0;
+  const angleAt = (el, e) => { const r = el.getBoundingClientRect(); return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI; };
+  for (const id of ['full', 'label']) {
+    const el = $(id);
+    el.addEventListener('pointerdown', e => {
+      if (!state) return;
+      el.setPointerCapture(e.pointerId);
+      drag = { el, start: angleAt(el, e), rot: userRot };
+    });
+    el.addEventListener('pointermove', e => {
+      if (!drag || drag.el !== el) return;
+      let d = angleAt(el, e) - drag.start;
+      if (d > 180) d -= 360; if (d < -180) d += 360;
+      userRot = Math.round((drag.rot + d) * 10) / 10;
+      if (!raf) raf = requestAnimationFrame(() => { raf = 0; draw(400); });
+    });
+    const end = () => { if (!drag) return; drag = null; cancelAnimationFrame(raf); raf = 0; $('angle').textContent = fmtAngle(userRot) + ' …'; setTimeout(() => draw(OUT), 20); };
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+  }
 }
 
 // ── Helpers
