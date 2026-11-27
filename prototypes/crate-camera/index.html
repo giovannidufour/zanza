@@ -13,7 +13,7 @@
          padding: env(safe-area-inset-top) max(16px, env(safe-area-inset-right)) 32px max(16px, env(safe-area-inset-left)); }
   h1 { font-size: 18px; margin: 16px 0 4px; }
   p.note { color: var(--muted); margin: 0 0 12px; font-size: 13px; }
-  .viewer { position: relative; width: 100%; aspect-ratio: 1; background: #000; overflow: hidden; border-radius: 4px; }
+  .viewer { position: relative; width: 100%; max-width: 480px; aspect-ratio: 3 / 4; background: #000; overflow: hidden; border-radius: 4px; }
   .viewer video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .viewer svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
   .row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
@@ -21,25 +21,29 @@
   button.primary { background: var(--fg); color: var(--bg); }
   button:disabled { opacity: .4; }
   label.btn input { display: none; }
-  pre { font: 12px/1.5 ui-monospace, monospace; background: color-mix(in srgb, var(--fg) 6%, var(--bg)); padding: 10px; border-radius: 4px; white-space: pre-wrap; margin: 0; }
+  pre { font: 12px/1.5 ui-monospace, monospace; background: color-mix(in srgb, var(--fg) 6%, var(--bg)); padding: 10px; border-radius: 4px; white-space: pre-wrap; margin: 0; width: 100%; }
   .out { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .out figure { margin: 0; min-width: 0; }
-  .out img, .out canvas { width: 100%; display: block; border: 1px solid var(--line); }
+  .out figure.wide { grid-column: 1 / -1; max-width: 480px; }
+  .out canvas { width: 100%; display: block; border: 1px solid var(--line); }
   figcaption { font-size: 12px; color: var(--muted); }
-  .opts { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; }
+  .opts { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; align-items: center; }
+  .opts button { padding: 6px 10px; }
 </style>
 </head>
 <body>
 <h1>Crate camera test</h1>
-<p class="note">Prototype to check what the phone camera gives a web page. Put the record on a plain grey or white card, shoot from above, fill the circle.</p>
+<p class="note">Lay the record in the middle of the printed sheet (crate-photo-sheet-7in.pdf), shoot from above with the four black squares inside the frame. Without the sheet it falls back to the record outline.</p>
 
 <div class="viewer" id="viewer">
   <video id="video" playsinline muted autoplay></video>
-  <svg viewBox="0 0 100 100" aria-hidden="true">
-    <circle cx="50" cy="50" r="47" fill="none" stroke="#fff" stroke-width=".4" stroke-dasharray="1.5 1.5"/>
-    <circle cx="50" cy="50" r="17" fill="none" stroke="#fff" stroke-width=".3" stroke-dasharray="1 1"/>
-    <line x1="50" y1="46" x2="50" y2="54" stroke="#fff" stroke-width=".3"/>
-    <line x1="46" y1="50" x2="54" y2="50" stroke="#fff" stroke-width=".3"/>
+  <!-- on screen only: where the sheet's markers and the record should fall (portrait frame ≈ 202 × 270 mm) -->
+  <svg viewBox="-101 -135 202 270" aria-hidden="true">
+    <g fill="none" stroke="#fff" stroke-width=".7">
+      <rect x="-83.5" y="-123.5" width="7" height="7"/><rect x="76.5" y="-123.5" width="7" height="7"/>
+      <rect x="-83.5" y="116.5" width="7" height="7"/><rect x="76.5" y="116.5" width="7" height="7"/>
+      <circle r="87.5" stroke-dasharray="3 3"/>
+    </g>
   </svg>
 </div>
 
@@ -52,22 +56,32 @@
 <div class="opts">
   <label><input type="checkbox" id="optPersp" checked> Fix tilt</label>
   <label><input type="checkbox" id="optLight" checked> Even out light</label>
-  <span>Rotate <button id="rotL">−5°</button> <button id="rotR">+5°</button> <button id="rot90">90°</button></span>
+  <span>Rotate <button id="rotL">−5°</button> <button id="rotL1">−1°</button> <button id="rotR1">+1°</button> <button id="rotR">+5°</button> <button id="rot90">90°</button></span>
 </div>
 
 <div class="row"><pre id="info">Camera not started.</pre></div>
 
 <div class="out">
-  <figure><canvas id="raw"></canvas><figcaption>As shot</figcaption></figure>
-  <figure><canvas id="result" width="1600" height="1600"></canvas><figcaption id="resCap">Fixed, 1600 × 1600</figcaption></figure>
+  <figure class="wide"><canvas id="raw"></canvas><figcaption>As shot (pink = markers found)</figcaption></figure>
+  <figure><canvas id="full" width="1600" height="1600"></canvas><figcaption>Full · 180 mm</figcaption></figure>
+  <figure><canvas id="label" width="1600" height="1600"></canvas><figcaption>Label · 96.52 mm (3.8")</figcaption></figure>
 </div>
-<div class="row"><a id="save" download="crate-test.webp" hidden><button>Save result</button></a></div>
+<div class="row">
+  <a id="saveFull" download="crate-full.webp" hidden><button>Save full</button></a>
+  <a id="saveLabel" download="crate-label.webp" hidden><button>Save label</button></a>
+</div>
 
 <script>
+// ── Sheet and crops in millimetres (decision 0153: 7" = 180 mm square, label 3.8" = 96.52 mm)
+const MARKERS = [[-80, -120], [80, -120], [80, 120], [-80, 120]];   // centres, from the sheet centre
+const RECORD_R = 87.5;                     // 7" record radius
+const FULL_MM = 180, LABEL_MM = 96.52, OUT = 1600;
+const PAPER = 240;                         // the sheet ends up this white in every photo
+
 const $ = id => document.getElementById(id);
 const video = $('video'), info = $('info');
 const lines = {};
-function log(key, text) { lines[key] = text; info.textContent = Object.values(lines).join('\n'); }
+function log(key, text) { lines[key] = text; info.textContent = Object.values(lines).filter(Boolean).join('\n'); }
 
 let stream = null, source = null, userRot = 0;
 
@@ -79,13 +93,8 @@ $('start').onclick = async () => {
     });
     video.srcObject = stream;
     await video.play();
-    const track = stream.getVideoTracks()[0];
-    const s = track.getSettings();
-    const caps = track.getCapabilities ? track.getCapabilities() : {};
-    log('live', `Live camera: ${s.width} × ${s.height}` +
-      (caps.width ? ` (max ${caps.width.max} × ${caps.height.max})` : '') +
-      `\nSquare crop from live camera: ${Math.min(s.width, s.height)} px` +
-      (Math.min(s.width, s.height) >= 1600 ? ' ✓ enough for 1600' : ' ✗ below 1600'));
+    const s = stream.getVideoTracks()[0].getSettings();
+    log('live', `Live camera: ${s.width} × ${s.height}`);
     $('shoot').disabled = false;
   } catch (e) {
     log('live', 'Live camera refused: ' + e.name + ' ' + e.message);
@@ -97,67 +106,152 @@ $('shoot').onclick = () => {
   c.width = video.videoWidth; c.height = video.videoHeight;
   c.getContext('2d').drawImage(video, 0, 0);
   log('src', `Photo from live camera: ${c.width} × ${c.height}`);
-  process(c);
+  userRot = 0; run(c);
 };
 
 $('native').onchange = async e => {
   const file = e.target.files[0];
   if (!file) return;
-  const bmp = await createImageBitmap(file); // honours EXIF orientation
+  const bmp = await createImageBitmap(file);
   const c = document.createElement('canvas');
   c.width = bmp.width; c.height = bmp.height;
   c.getContext('2d').drawImage(bmp, 0, 0);
   log('src', `Photo from native camera: ${c.width} × ${c.height}`);
-  process(c);
+  userRot = 0; run(c);
 };
 
-for (const [id, d] of [['rotL', -5], ['rotR', 5], ['rot90', 90]]) $(id).onclick = () => { userRot += d; if (source) process(source); };
-$('optPersp').onchange = $('optLight').onchange = () => { if (source) process(source); };
+for (const [id, d] of [['rotL', -5], ['rotL1', -1], ['rotR1', 1], ['rotR', 5], ['rot90', 90]]) $(id).onclick = () => { userRot += d; if (source) run(source); };
+$('optPersp').onchange = $('optLight').onchange = () => { if (source) run(source); };
 
-// ── Find the record. Two candidates, the most disc-shaped wins:
-// (a) the dark vinyl (luminance below an Otsu threshold), (b) whatever differs from the frame border.
-// Components touching the frame are skipped (table, sleeve running off the edge).
-function detect(src) {
-  const W = 400, H = Math.round(src.height * W / src.width), k = src.width / W;
+function run(c) {
+  source = c;
+  log('fix', 'Working…');
+  setTimeout(() => {
+    try { process(c); } catch (e) { log('fix', 'Error: ' + e.message); }
+  }, 20);
+}
+
+// ── Pipeline
+function process(src) {
+  const t0 = performance.now();
+  const raw = $('raw'); raw.width = 800; raw.height = Math.round(src.height * 800 / src.width);
+  const rg = raw.getContext('2d'); rg.drawImage(src, 0, 0, raw.width, raw.height);
+
+  const sd = src.getContext('2d').getImageData(0, 0, src.width, src.height);
+  const small = downscale(src, 800);
+  const persp = $('optPersp').checked;
+  const notes = [];
+
+  // 1. A function from record millimetres (centred on the record) to photo pixels
+  let toPx = null;
+  const marks = persp ? findMarkers(small, sd) : null;
+  if (marks) {
+    const H = homography(MARKERS, marks.points);
+    const sheetToPx = (x, y) => applyH(H, x, y);
+    const det = findRecordOnSheet(sd, sheetToPx);
+    for (const p of marks.points) { rg.fillStyle = '#f0f'; rg.fillRect(p[0] * 800 / src.width - 5, p[1] * 800 / src.width - 5, 10, 10); }
+    if (!det) { log('fix', 'Sheet found, record not found on it.'); return; }
+    notes.push('Sheet found (4 markers): perspective fixed exactly');
+    notes.push(`Record: ${det.x.toFixed(1)}, ${det.y.toFixed(1)} mm from the sheet centre · diameter ${(det.r * 2).toFixed(1)} mm (7" = 175)`);
+    toPx = (x, y) => sheetToPx(x + det.x, y + det.y);
+    const edge = Math.max(Math.abs(det.x), Math.abs(det.y)) + FULL_MM / 2;
+    if (Math.abs(det.y) + FULL_MM / 2 > 116.5) notes.push('⚠️ Record too far up or down: a marker is inside the full crop');
+    else if (Math.abs(det.x) + FULL_MM / 2 > 105) notes.push('⚠️ Record too far to the side: the sheet edge is inside the full crop');
+  } else {
+    const f = detectEllipse(small);
+    if (!f) { log('fix', 'Record not found. Use the printed sheet, or a plain card that contrasts with the record.'); return; }
+    const k = src.width / small.width;
+    const cx = f.cx * k, cy = f.cy * k;
+    const sa = f.a * k / RECORD_R, sb = (persp ? f.b : f.a) * k / RECORD_R;
+    const co = Math.cos(f.theta), si = Math.sin(f.theta);
+    toPx = (x, y) => {                     // circle (mm) → ellipse (px)
+      const u = x * co + y * si, v = -x * si + y * co;
+      const U = u * sa, V = v * sb;
+      return [cx + U * co - V * si, cy + U * si + V * co];
+    };
+    notes.push(persp ? 'No sheet found: perspective guessed from the record outline' : 'Tilt fix off');
+    notes.push(`Record outline: ${f.method}, roundness ${(f.fill * 100).toFixed(0)} %, squash ${((1 - f.b / f.a) * 100).toFixed(1)} %`);
+  }
+
+  // user rotation around the record centre
+  const rr = userRot * Math.PI / 180, rc = Math.cos(rr), rs = Math.sin(rr);
+  const map = (x, y) => toPx(x * rc - y * rs, x * rs + y * rc);
+
+  // 2. The two crops, both centred on the record
+  const fullImg = render(sd, map, FULL_MM, OUT);
+  const labelImg = render(sd, map, LABEL_MM, OUT);
+
+  // 3. Light: a plane per channel fitted on the paper around the record, divided out of both crops
+  if ($('optLight').checked) {
+    const planes = fitPaper(fullImg, FULL_MM);
+    if (planes) {
+      evenOut(fullImg, FULL_MM, planes); evenOut(labelImg, LABEL_MM, planes);
+      notes.push(`Light: paper was rgb(${planes.map(p => Math.round(p[0])).join(', ')}) → now ${PAPER}`);
+    } else notes.push('Light: no paper visible around the record, skipped');
+  }
+  $('full').getContext('2d').putImageData(fullImg, 0, 0);
+  $('label').getContext('2d').putImageData(labelImg, 0, 0);
+
+  const a = map(-10, 0), b = map(10, 0), pxmm = Math.hypot(b[0] - a[0], b[1] - a[1]) / 20;
+  const fullSrc = Math.round(FULL_MM * pxmm), labelSrc = Math.round(LABEL_MM * pxmm);
+  notes.push(`Photo resolution on the record: ${pxmm.toFixed(1)} px/mm`);
+  notes.push(`Full: ${fullSrc} px of photo → 1600 ${fullSrc >= OUT ? '✓' : '✗ upscaled'}`);
+  notes.push(`Label: ${labelSrc} px of photo → 1600 ${labelSrc >= OUT ? '✓' : '(upscaled ' + Math.round(OUT / labelSrc * 100 - 100) + ' %)'}`);
+  notes.push(`Rotation ${userRot}° · ${Math.round(performance.now() - t0)} ms`);
+  log('fix', notes.join('\n'));
+
+  $('full').toBlob(b => { const el = $('saveFull'); el.href = URL.createObjectURL(b); el.hidden = false; }, 'image/webp', 0.9);
+  $('label').toBlob(b => { const el = $('saveLabel'); el.href = URL.createObjectURL(b); el.hidden = false; }, 'image/webp', 0.9);
+}
+
+// ── Helpers
+function downscale(src, W) {
+  const H = Math.round(src.height * W / src.width);
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const g = c.getContext('2d'); g.drawImage(src, 0, 0, W, H);
-  const d = g.getImageData(0, 0, W, H).data, N = W * H;
-  const lum = new Uint8Array(N);
-  for (let p = 0; p < N; p++) lum[p] = (d[p * 4] * 0.299 + d[p * 4 + 1] * 0.587 + d[p * 4 + 2] * 0.114) | 0;
+  const d = g.getImageData(0, 0, W, H).data;
+  const lum = new Uint8Array(W * H);
+  for (let p = 0; p < W * H; p++) lum[p] = (d[p * 4] * 0.299 + d[p * 4 + 1] * 0.587 + d[p * 4 + 2] * 0.114) | 0;
+  return { width: W, height: H, data: d, lum, thr: otsu(lum) };
+}
 
-  // (a) dark mask, Otsu threshold
-  const hist = new Array(256).fill(0); for (let p = 0; p < N; p++) hist[lum[p]]++;
+function otsu(lum) {
+  const N = lum.length, hist = new Array(256).fill(0);
+  for (let p = 0; p < N; p++) hist[lum[p]]++;
   let sum = 0; for (let t = 0; t < 256; t++) sum += t * hist[t];
   let wB = 0, sB = 0, best = 0, thr = 60;
   for (let t = 0; t < 256; t++) {
     wB += hist[t]; if (!wB) continue; const wF = N - wB; if (!wF) break;
-    sB += t * hist[t]; const mB = sB / wB, mF = (sum - sB) / wF, v = wB * wF * (mB - mF) ** 2;
+    sB += t * hist[t]; const v = wB * wF * (sB / wB - (sum - sB) / wF) ** 2;
     if (v > best) { best = v; thr = t; }
   }
-  const dark = new Uint8Array(N); for (let p = 0; p < N; p++) dark[p] = lum[p] <= thr ? 1 : 0;
+  return thr;
+}
 
-  // (b) differs from the border colour
-  const br = [], bg = [], bb = [];
-  const push = (x, y) => { const i = (y * W + x) * 4; br.push(d[i]); bg.push(d[i + 1]); bb.push(d[i + 2]); };
-  for (let x = 0; x < W; x++) { push(x, 0); push(x, H - 1); }
-  for (let y = 0; y < H; y++) { push(0, y); push(W - 1, y); }
-  const med = a => a.sort((p, q) => p - q)[a.length >> 1];
-  const R = med(br), G = med(bg), B = med(bb);
-  const diff = new Uint8Array(N);
-  for (let p = 0; p < N; p++) { const i = p * 4, a = d[i] - R, b = d[i + 1] - G, e = d[i + 2] - B; diff[p] = a * a + b * b + e * e > 45 * 45 ? 1 : 0; }
-
-  let pick = null;
-  for (const [name, mask] of [['dark vinyl', dark], ['differs from background', diff]]) {
-    // erode a little too, so a record touching a dark table or the sleeve edge comes loose
-    for (const e of [0, 3, 6, 10]) for (const f of components(erode(mask, W, H, e), W, H)) {
-      f.a += e; f.b += e; f.fill = Math.min(1, f.fill * 1.02);
-      f.score = f.fill * Math.min(1, f.n / (N * 0.08)); // disc-shaped and big enough
-      f.method = name;
-      if (!pick || f.score > pick.score) pick = f;
+// 4-connected components of a mask: bounding box, centroid, row spans, touches the frame
+function components(mask, W, H, minN) {
+  const N = W * H, lab = new Int32Array(N), out = [], stack = [];
+  let cur = 0;
+  for (let p = 0; p < N; p++) {
+    if (!mask[p] || lab[p]) continue;
+    cur++; let n = 0, edge = false, x0 = W, x1 = 0, y0 = H, y1 = 0, sx = 0, sy = 0;
+    stack.push(p); lab[p] = cur;
+    const rows = new Map();
+    while (stack.length) {
+      const q = stack.pop(); n++;
+      const x = q % W, y = (q / W) | 0;
+      sx += x; sy += y;
+      if (x === 0 || y === 0 || x === W - 1 || y === H - 1) edge = true;
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+      const r = rows.get(y); if (!r) rows.set(y, [x, x]); else { if (x < r[0]) r[0] = x; if (x > r[1]) r[1] = x; }
+      if (x > 0 && mask[q - 1] && !lab[q - 1]) { lab[q - 1] = cur; stack.push(q - 1); }
+      if (x < W - 1 && mask[q + 1] && !lab[q + 1]) { lab[q + 1] = cur; stack.push(q + 1); }
+      if (y > 0 && mask[q - W] && !lab[q - W]) { lab[q - W] = cur; stack.push(q - W); }
+      if (y < H - 1 && mask[q + W] && !lab[q + W]) { lab[q + W] = cur; stack.push(q + W); }
     }
+    if (n >= minN) out.push({ n, edge, x0, x1, y0, y1, cx: sx / n, cy: sy / n, rows });
   }
-  if (!pick || pick.score < 0.5) return null;
-  return { cx: pick.cx * k, cy: pick.cy * k, a: pick.a * k, b: pick.b * k, theta: pick.theta, method: pick.method, fill: pick.fill };
+  return out;
 }
 
 function erode(mask, W, H, r) {
@@ -173,131 +267,179 @@ function erode(mask, W, H, r) {
   return m;
 }
 
-// connected components not touching the frame, each with its row-filled ellipse moments
-function components(mask, W, H) {
-  const N = W * H, lab = new Int32Array(N), out = [], stack = [];
-  let cur = 0;
-  for (let p = 0; p < N; p++) {
-    if (!mask[p] || lab[p]) continue;
-    cur++; let n = 0, edge = false; stack.push(p); lab[p] = cur;
-    const rows = new Map();
-    while (stack.length) {
-      const q = stack.pop(); n++;
-      const x = q % W, y = (q / W) | 0;
-      if (x === 0 || y === 0 || x === W - 1 || y === H - 1) edge = true;
-      const r = rows.get(y); if (!r) rows.set(y, [x, x]); else { if (x < r[0]) r[0] = x; if (x > r[1]) r[1] = x; }
-      if (x > 0 && mask[q - 1] && !lab[q - 1]) { lab[q - 1] = cur; stack.push(q - 1); }
-      if (x < W - 1 && mask[q + 1] && !lab[q + 1]) { lab[q + 1] = cur; stack.push(q + 1); }
-      if (y > 0 && mask[q - W] && !lab[q - W]) { lab[q - W] = cur; stack.push(q - W); }
-      if (y < H - 1 && mask[q + W] && !lab[q + W]) { lab[q + W] = cur; stack.push(q + W); }
-    }
-    if (edge || n < N * 0.02) continue;
-    // fill holes row by row (label, spindle hole, reflections)
-    let m = 0, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
-    for (const [y, [x0, x1]] of rows) for (let x = x0; x <= x1; x++) { m++; sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y; }
-    const cx = sx / m, cy = sy / m;
-    const vxx = sxx / m - cx * cx, vyy = syy / m - cy * cy, vxy = sxy / m - cx * cy;
-    const tr = vxx + vyy, det = vxx * vyy - vxy * vxy, disc = Math.sqrt(Math.max(0, tr * tr / 4 - det));
-    const a = 2 * Math.sqrt(tr / 2 + disc), b = 2 * Math.sqrt(Math.max(1e-6, tr / 2 - disc));
-    // a filled ellipse has area π a b; a square scores 4/π·… lower once its corners stick out
-    const area = Math.PI * a * b, fill = Math.min(m, area) / Math.max(m, area);
-    // squares and rectangles have the same area as their moment ellipse (≈0.95), so also test the outline
-    let outside = 0;
-    const th = 0.5 * Math.atan2(2 * vxy, vxx - vyy), co = Math.cos(th), si = Math.sin(th);
-    for (const [y, [x0, x1]] of rows) for (const x of [x0, x1]) {
-      const u = ((x - cx) * co + (y - cy) * si) / a, v = (-(x - cx) * si + (y - cy) * co) / b;
-      if (u * u + v * v > 1.12) outside++;
-    }
-    const round = 1 - outside / (rows.size * 2);
-    out.push({ n: m, cx, cy, a, b, theta: th, fill: fill * round });
+// ellipse of the row-filled component (label and spindle hole filled) and how round it is
+function ellipseOf(c) {
+  let m = 0, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
+  for (const [y, [x0, x1]] of c.rows) for (let x = x0; x <= x1; x++) { m++; sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y; }
+  const cx = sx / m, cy = sy / m;
+  const vxx = sxx / m - cx * cx, vyy = syy / m - cy * cy, vxy = sxy / m - cx * cy;
+  const tr = vxx + vyy, det = vxx * vyy - vxy * vxy, disc = Math.sqrt(Math.max(0, tr * tr / 4 - det));
+  const a = 2 * Math.sqrt(tr / 2 + disc), b = 2 * Math.sqrt(Math.max(1e-6, tr / 2 - disc));
+  const theta = 0.5 * Math.atan2(2 * vxy, vxx - vyy), co = Math.cos(theta), si = Math.sin(theta);
+  const area = Math.PI * a * b, fillA = Math.min(m, area) / Math.max(m, area);
+  let outside = 0;
+  for (const [y, [x0, x1]] of c.rows) for (const x of [x0, x1]) {
+    const u = ((x - cx) * co + (y - cy) * si) / a, v = (-(x - cx) * si + (y - cy) * co) / b;
+    if (u * u + v * v > 1.12) outside++;
   }
-  return out;
+  return { n: m, cx, cy, a, b, theta, fill: fillA * (1 - outside / (c.rows.size * 2)) };
 }
 
-function process(src) {
-  source = src;
-  const raw = $('raw'); raw.width = 800; raw.height = Math.round(src.height * 800 / src.width);
-  raw.getContext('2d').drawImage(src, 0, 0, raw.width, raw.height);
-
-  const t0 = performance.now();
-  const f = detect(src);
-  const out = $('result'), S = out.width, o = out.getContext('2d');
-  o.setTransform(1, 0, 0, 1, 0, 0); o.fillStyle = '#808080'; o.fillRect(0, 0, S, S);
-  if (!f) { log('fix', 'Record not found: use a plain card that contrasts with the record.'); return; }
-
-  const persp = $('optPersp').checked;
-  const fill = 0.94;                       // record edge at 94 % of the square, like the Scanner guide
-  const scale = (S / 2 * fill) / f.a;
-  o.imageSmoothingQuality = 'high';
-  o.translate(S / 2, S / 2);
-  o.rotate(userRot * Math.PI / 180);
-  o.scale(scale, scale);
-  if (persp) { o.rotate(f.theta); o.scale(1, f.a / f.b); o.rotate(-f.theta); }
-  o.translate(-f.cx, -f.cy);
-  o.drawImage(src, 0, 0);
-  o.setTransform(1, 0, 0, 1, 0, 0);
-
-  const srcPx = Math.round(f.a * 2 / fill);
-  let lightNote = 'off';
-  if ($('optLight').checked) lightNote = evenLight(o, S, S / 2 * fill * 1.03);
-
-  log('fix',
-    `Record found (${f.method}, roundness ${(f.fill * 100).toFixed(0)} %): centre ${Math.round(f.cx)}, ${Math.round(f.cy)} · diameter ${Math.round(f.a * 2)} px in the photo` +
-    `\nTilt: ${((1 - f.b / f.a) * 100).toFixed(1)} % squash` + (persp ? ' → fixed' : ' (not fixed)') +
-    `\nSource pixels for the square: ${srcPx}` + (srcPx >= 1600 ? ' ✓ sharp at 1600' : ' ✗ upscaled to 1600') +
-    `\nLight: ${lightNote}` +
-    `\nTime: ${Math.round(performance.now() - t0)} ms`);
-  $('resCap').textContent = `Fixed, 1600 × 1600, rotation ${userRot}°`;
-  out.toBlob(b => { const a = $('save'); a.href = URL.createObjectURL(b); a.hidden = false; }, 'image/webp', 0.9);
+// best disc among: dark vinyl (Otsu) and "differs from the frame border", at a few erosion levels
+function detectEllipse(s) {
+  const { width: W, height: H, data: d, lum, thr } = s, N = W * H;
+  const dark = new Uint8Array(N); for (let p = 0; p < N; p++) dark[p] = lum[p] <= thr ? 1 : 0;
+  const br = [], bg = [], bb = [];
+  const push = (x, y) => { const i = (y * W + x) * 4; br.push(d[i]); bg.push(d[i + 1]); bb.push(d[i + 2]); };
+  for (let x = 0; x < W; x++) { push(x, 0); push(x, H - 1); }
+  for (let y = 0; y < H; y++) { push(0, y); push(W - 1, y); }
+  const med = a => a.sort((p, q) => p - q)[a.length >> 1];
+  const R = med(br), G = med(bg), B = med(bb);
+  const diff = new Uint8Array(N);
+  for (let p = 0; p < N; p++) { const i = p * 4, a = d[i] - R, b = d[i + 1] - G, e = d[i + 2] - B; diff[p] = a * a + b * b + e * e > 45 * 45 ? 1 : 0; }
+  let pick = null;
+  for (const [name, mask] of [['dark vinyl', dark], ['differs from background', diff]]) {
+    for (const e of [0, 3, 6, 10]) for (const c of components(erode(mask, W, H, e), W, H, N * 0.02)) {
+      if (c.edge) continue;
+      const f = ellipseOf(c);
+      f.a += e; f.b += e; f.method = name;
+      f.score = f.fill * Math.min(1, f.n / (N * 0.08));
+      if (!pick || f.score > pick.score) pick = f;
+    }
+  }
+  return pick && pick.score >= 0.5 ? pick : null;
 }
 
-// ── Even out light: fit a plane per channel to the card around the record, divide it out,
-// so exposure, white balance and a side light come out the same in every photo.
-function evenLight(o, S, rIn) {
-  const img = o.getImageData(0, 0, S, S), d = img.data, c = S / 2, rOut = rIn * 1.3;
-  const ring = [];
-  for (let y = 0; y < S; y += 8) for (let x = 0; x < S; x += 8) {
-    const dx = x - c, dy = y - c, r2 = dx * dx + dy * dy;
-    if (r2 >= rIn * rIn && r2 <= rOut * rOut) { const i = (y * S + x) * 4; ring.push(d[i] + d[i + 1] + d[i + 2]); }
+// the sheet's four black squares: small, square, solid dark components; the outermost four win
+function findMarkers(s, sd) {
+  const { width: W, height: H, lum, thr } = s, N = W * H;
+  const dark = new Uint8Array(N); for (let p = 0; p < N; p++) dark[p] = lum[p] <= thr ? 1 : 0;
+  const cand = components(dark, W, H, Math.max(12, N * 0.00015)).filter(c => {
+    if (c.edge || c.n > N * 0.01) return false;
+    const w = c.x1 - c.x0 + 1, h = c.y1 - c.y0 + 1;
+    return w >= 4 && h >= 4 && w / h > 0.5 && w / h < 2 && c.n / (w * h) > 0.7;
+  });
+  if (cand.length < 4) return null;
+  const pickBy = f => cand.reduce((p, c) => (f(c) > f(p) ? c : p));
+  const tl = pickBy(c => -(c.cx + c.cy)), tr = pickBy(c => c.cx - c.cy), brc = pickBy(c => c.cx + c.cy), bl = pickBy(c => c.cy - c.cx);
+  let quad = [tl, tr, brc, bl];
+  if (new Set(quad).size < 4) return null;
+  const ns = quad.map(c => c.n);
+  if (Math.min(...ns) < Math.max(...ns) * 0.35) return null;
+  const area = Math.abs(quad.reduce((a, c, i) => { const n = quad[(i + 1) % 4]; return a + c.cx * n.cy - n.cx * c.cy; }, 0)) / 2;
+  if (area < N * 0.15) return null;
+  // the sheet is portrait (160 × 240 mm between markers): if the photo shows it sideways, turn the order
+  const dist = (p, q) => Math.hypot(p.cx - q.cx, p.cy - q.cy);
+  if (dist(quad[0], quad[1]) > dist(quad[1], quad[2])) quad = [quad[3], quad[0], quad[1], quad[2]];
+  // refine each centre on the full photo: centroid of the dark pixels in its box
+  const k = sd.width / W, D = sd.data, SW = sd.width;
+  const points = quad.map(c => {
+    const pad = (c.x1 - c.x0 + 1) * 0.4;
+    const X0 = Math.max(0, Math.floor((c.x0 - pad) * k)), X1 = Math.min(SW - 1, Math.ceil((c.x1 + 1 + pad) * k));
+    const Y0 = Math.max(0, Math.floor((c.y0 - pad) * k)), Y1 = Math.min(sd.height - 1, Math.ceil((c.y1 + 1 + pad) * k));
+    let n = 0, sx = 0, sy = 0;
+    for (let y = Y0; y <= Y1; y++) for (let x = X0; x <= X1; x++) {
+      const i = (y * SW + x) * 4;
+      if (D[i] * 0.299 + D[i + 1] * 0.587 + D[i + 2] * 0.114 <= thr) { n++; sx += x; sy += y; }
+    }
+    return n ? [sx / n + 0.5, sy / n + 0.5] : [(c.cx + 0.5) * k, (c.cy + 0.5) * k];
+  });
+  return { points };
+}
+
+// straighten the sheet at 2 px/mm (±105 × ±115 mm, inside the markers) and find the vinyl there
+function findRecordOnSheet(sd, sheetToPx) {
+  const hx = 105, hy = 114, W = hx * 4, H = hy * 4;
+  const d = new Uint8ClampedArray(W * H * 4), lum = new Uint8Array(W * H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const [px, py] = sheetToPx(x / 2 - hx, y / 2 - hy);
+    const X = Math.min(sd.width - 1, Math.max(0, px | 0)), Y = Math.min(sd.height - 1, Math.max(0, py | 0));
+    const i = (Y * sd.width + X) * 4, o = (y * W + x) * 4;
+    d[o] = sd.data[i]; d[o + 1] = sd.data[i + 1]; d[o + 2] = sd.data[i + 2]; d[o + 3] = 255;
+    lum[y * W + x] = (d[o] * 0.299 + d[o + 1] * 0.587 + d[o + 2] * 0.114) | 0;
   }
-  ring.sort((p, q) => p - q);
-  const medL = ring[ring.length >> 1] || 1;
-  // least squares v = p0 + p1 x + p2 y on background samples (corners outside the record)
+  const f = detectEllipse({ width: W, height: H, data: d, lum, thr: otsu(lum) });
+  if (!f) return null;
+  return { x: f.cx / 2 - hx, y: f.cy / 2 - hy, r: (f.a + f.b) / 4 };
+}
+
+// homography from 4 point pairs (DLT, h33 = 1)
+function homography(from, to) {
+  const A = [], b = [];
+  for (let i = 0; i < 4; i++) {
+    const [x, y] = from[i], [u, v] = to[i];
+    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+    A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
+  }
+  const h = solve(A, b); h.push(1);
+  return h;
+}
+function applyH(h, x, y) {
+  const w = h[6] * x + h[7] * y + h[8];
+  return [(h[0] * x + h[1] * y + h[2]) / w, (h[3] * x + h[4] * y + h[5]) / w];
+}
+function solve(A, b) {
+  const n = b.length, m = A.map((r, i) => [...r, b[i]]);
+  for (let i = 0; i < n; i++) {
+    let p = i; for (let r = i + 1; r < n; r++) if (Math.abs(m[r][i]) > Math.abs(m[p][i])) p = r;
+    [m[i], m[p]] = [m[p], m[i]];
+    for (let r = 0; r < n; r++) if (r !== i) { const f = m[r][i] / m[i][i]; for (let q = i; q <= n; q++) m[r][q] -= f * m[i][q]; }
+  }
+  return m.map((r, i) => r[n] / r[i]);
+}
+
+// a square crop of `mm` millimetres centred on the record, bilinear from the photo
+function render(sd, map, mm, out) {
+  const img = new ImageData(out, out), o = img.data, D = sd.data, SW = sd.width, SH = sd.height;
+  for (let y = 0; y < out; y++) for (let x = 0; x < out; x++) {
+    const [px, py] = map(((x + 0.5) / out - 0.5) * mm, ((y + 0.5) / out - 0.5) * mm);
+    const fx = px - 0.5, fy = py - 0.5, x0 = Math.floor(fx), y0 = Math.floor(fy), ax = fx - x0, ay = fy - y0;
+    const j = (y * out + x) * 4;
+    o[j + 3] = 255;
+    if (x0 < 0 || y0 < 0 || x0 + 1 >= SW || y0 + 1 >= SH) { o[j] = o[j + 1] = o[j + 2] = 128; continue; }
+    const i00 = (y0 * SW + x0) * 4, i10 = i00 + 4, i01 = i00 + SW * 4, i11 = i01 + 4;
+    for (let c = 0; c < 3; c++) {
+      o[j + c] = (D[i00 + c] * (1 - ax) + D[i10 + c] * ax) * (1 - ay) + (D[i01 + c] * (1 - ax) + D[i11 + c] * ax) * ay;
+    }
+  }
+  return img;
+}
+
+// paper around the record (outside 89 mm), near the median brightness only (skips shadows, the table)
+function fitPaper(img, mm) {
+  const S = img.width, d = img.data, toMM = v => (v / S - 0.5) * mm;
+  const samples = [];
+  for (let y = 0; y < S; y += 6) for (let x = 0; x < S; x += 6) {
+    const u = toMM(x), v = toMM(y);
+    if (u * u + v * v < 89 * 89) continue;
+    const i = (y * S + x) * 4;
+    samples.push([u, v, d[i], d[i + 1], d[i + 2]]);
+  }
+  if (samples.length < 200) return null;
+  const Ls = samples.map(s => s[2] + s[3] + s[4]).sort((a, b) => a - b), med = Ls[Ls.length >> 1];
   const A = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], bv = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
   let n = 0;
-  for (let y = 0; y < S; y += 4) for (let x = 0; x < S; x += 4) {
-    const dx = x - c, dy = y - c;
-    const r2 = dx * dx + dy * dy;
-    if (r2 < rIn * rIn || r2 > rOut * rOut) continue;
-    const i = (y * S + x) * 4, L = d[i] + d[i + 1] + d[i + 2];
-    if (Math.abs(L - medL) > medL * 0.25) continue;   // skip the table, a sleeve edge, shadows
-    const u = x / S, v = y / S, f = [1, u, v];
-    for (let r = 0; r < 3; r++) { for (let q = 0; q < 3; q++) A[r][q] += f[r] * f[q]; for (let ch = 0; ch < 3; ch++) bv[ch][r] += f[r] * d[i + ch]; }
+  for (const [u, v, r, g, b] of samples) {
+    if (Math.abs(r + g + b - med) > med * 0.15) continue;
+    const f = [1, u / 100, v / 100], c = [r, g, b];
+    for (let i = 0; i < 3; i++) { for (let j = 0; j < 3; j++) A[i][j] += f[i] * f[j]; for (let ch = 0; ch < 3; ch++) bv[ch][i] += f[i] * c[ch]; }
     n++;
   }
-  if (n < 300) return 'skipped (no card visible around the record)';
-  const planes = bv.map(b => solve3(A, b));
-  const target = 205; // card ends up the same light neutral grey in every photo
-  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
-    const i = (y * S + x) * 4, u = x / S, v = y / S;
-    for (let ch = 0; ch < 3; ch++) {
-      const p = planes[ch], base = Math.max(8, p[0] + p[1] * u + p[2] * v);
-      d[i + ch] = Math.min(255, d[i + ch] * target / base);
+  if (n < 100) return null;
+  return bv.map(b => solve(A.map(r => [...r]), b));
+}
+function evenOut(img, mm, planes) {
+  const S = img.width, d = img.data;
+  for (let y = 0; y < S; y++) {
+    const v = ((y + 0.5) / S - 0.5) * mm / 100;
+    for (let x = 0; x < S; x++) {
+      const u = ((x + 0.5) / S - 0.5) * mm / 100, i = (y * S + x) * 4;
+      for (let c = 0; c < 3; c++) {
+        const p = planes[c], base = Math.max(8, p[0] + p[1] * u + p[2] * v);
+        d[i + c] = d[i + c] * PAPER / base;
+      }
     }
   }
-  o.putImageData(img, 0, 0);
-  const mid = planes.map(p => Math.round(p[0] + p[1] / 2 + p[2] / 2));
-  const spread = Math.round(Math.max(...planes.map(p => Math.abs(p[1]) + Math.abs(p[2]))));
-  return `card was rgb(${mid.join(', ')}), side-to-side change ${spread} → now neutral ${target}`;
-}
-function solve3(A, b) {
-  const m = A.map((r, i) => [...r, b[i]]);
-  for (let i = 0; i < 3; i++) {
-    let p = i; for (let r = i + 1; r < 3; r++) if (Math.abs(m[r][i]) > Math.abs(m[p][i])) p = r;
-    [m[i], m[p]] = [m[p], m[i]];
-    for (let r = 0; r < 3; r++) if (r !== i) { const f = m[r][i] / m[i][i]; for (let q = i; q < 4; q++) m[r][q] -= f * m[i][q]; }
-  }
-  return [m[0][3] / m[0][0], m[1][3] / m[1][1], m[2][3] / m[2][2]];
 }
 </script>
 </body>
