@@ -228,3 +228,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0205](0205-crate-photo-scanner-look.md) | Take photo / Create bargain: colour, contrast and sharpness matched to the Scanner, one fit per camera (phone, live) | proposed |
 | [0206](0206-listing-paid-private.md) | Paid: what Gio paid for a copy, Input after Price in admin; private table `listing_costs` (0048), admin-only, never in the shop or the Scanner | accepted |
 | [0207](0207-unset-grading.md) | Side A grading "Unset" (null on a live copy, migration 0049): publish before grading; Unset copies may go live without a price (no price, no Add to bag); Listings Grading column "Unset", search "unset" | accepted |
+| [0208](0208-create-bargain-phone-camera-only.md) | Create bargain: the phone's own camera only, Live viewer removed | decided |

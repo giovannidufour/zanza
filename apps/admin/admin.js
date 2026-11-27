@@ -573,7 +573,7 @@
     var streamRef = useRef(null), flashRef = useRef({ text: null, until: 0 });
     var fl = useState(0), setFlashTick = fl[1];
     useEffect(function () {
-      if (on === false) { setStatus(null); return; }   // Create bargain → Phone camera: the live camera is not used
+      if (on === false) { setStatus(null); return; }   // Create bargain: the live camera is not used
       var stopped = false, timer = null;
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setStatus('No camera here: use From library'); return; }
       setStatus('Starting the camera…');
@@ -727,20 +727,18 @@
 
   /* Create bargain (decisions 0203, 0204; Figma `Crate photo` → Create bargain screens): admin mobile Menu → Create
      bargain (#bargain). One record = side A, then side B (or No side B), then one check where each label is turned on
-     its own; Save & next opens the camera for the next record at once while the record is saved in the background:
+     its own; Save & next moves to the next record at once while the record is saved in the background:
      a draft that already has its SKU, flagged Bargain crate (0201), line 1 "Untitled bargain", 7", For sale,
-     Label A → photo 1, Label B → photo 2, both Fulls → original_keys (0045). The camera stays on for the whole session
-     (asked once). No toasts: the viewer pill and the note under the slots say what happens (Gio 2026-11-27). */
+     Label A → photo 1, Label B → photo 2, both Fulls → original_keys (0045). Photos come from the phone's own camera
+     (Open camera) or the library; no live viewer (0205). No toasts: the line above the slots and the note under them
+     say what happens (Gio 2026-11-27). */
   var BARGAIN_TITLE = 'Untitled bargain';
   var PREVIEW = 600;   // px of the check-screen canvases (the saved photos are CP.OUT = 1600)
   function BargainCapture() {
     var videoRef = useRef(null), fileRef = useRef(null), canvasRefs = { A: useRef(null), B: useRef(null) }, thumbRef = useRef(null);
-    // Live (the viewer with the guides) or Phone camera (the phone's own camera app, Gio 2026-11-27: with the sheet the
-    // guides are not needed, and it focuses and steadies better); remembered on this device
-    var md = useState(function () { try { return localStorage.getItem('hm-bargain-camera') === 'phone' ? 'phone' : 'live'; } catch (e) { return 'live'; } });
-    var mode = md[0], setMode = md[1];
-    function chooseMode(m) { setMode(m); try { localStorage.setItem('hm-bargain-camera', m); } catch (e) { /* remembered for this visit only */ } }
-    var cam = useCrateCamera(videoRef, mode === 'live');
+    // the phone's own camera app only (Gio 2026-11-27: with the sheet the guides are not needed, it focuses and steadies
+    // better; "I only ever want to use that one": the Live viewer is gone). The hook is kept for its flash messages.
+    var cam = useCrateCamera(videoRef, false);
     var nativeRef = useRef(null);
     var nr = useState(1), recordNo = nr[0], setRecordNo = nr[1];
     var sp = useState('A'), step = sp[0], setStep = sp[1];                 // A | B | review
@@ -752,7 +750,7 @@
     var queue = useRef(Promise.resolve());
 
     function nextStep(s) { return !s.A ? 'A' : !s.B ? 'B' : 'review'; }
-    function process(pixels, camera) {   // camera: 'live' (this page) | 'phone' (Open camera, From library): its colour fix
+    function process(pixels, camera) {   // camera: 'phone' (Open camera, From library): its colour fix
       setWorking(true);
       setTimeout(function () {    // let "Working…" paint first: the analysis takes a second or two on a phone
         var a = CP.analyse(pixels);
@@ -762,7 +760,6 @@
         setShots(s); setStep(nextStep(s));
       }, 30);
     }
-    function takePhoto() { var v = videoRef.current; if (v && v.videoWidth) process(cratePixels(v, v.videoWidth, v.videoHeight), 'live'); }
     function fromLibrary(e) {
       var file = e.target.files[0]; e.target.value = '';
       if (!file) return;
@@ -883,10 +880,6 @@
         side === 'A' && state === 'taken' ? h('canvas', { ref: thumbRef }) : null);
     }
     var head = h(Z.CratePhotoHead, { title: 'Create bargain', listing: 'Record ' + recordNo + ' · 7″ · ' + (review ? 'check and save' : 'side ' + step) });
-    var phone = mode === 'phone';
-    var modeSwitch = review ? null : h(Z.SideSwitch, { value: mode, onChange: chooseMode, sides: [['live', 'Live'], ['phone', 'Phone camera']], 'aria-label': 'Camera' });
-    var viewer = phone ? null : h('div', { className: 'admin-crate__frame', hidden: review },
-      h(Z.CameraViewer, { status: working ? 'Working…' : cam.status }, h('video', { ref: videoRef, playsInline: true, muted: true, autoPlay: true })));
     var body = review
       ? h(React.Fragment, null,
           h('div', { className: 'admin-crate__crops' }, ['A', 'B'].map(function (side) {
@@ -899,19 +892,17 @@
           h('p', { className: 'admin-crate__hint body-small' }, 'Drag a label to turn it'),
           checks.length ? h('div', { className: 'admin-crate__checks' }, checks.map(function (c, i) { return h(Z.CheckLine, { key: i, state: c.state }, c.text); })) : null)
       : h(React.Fragment, null,
-          phone && (working || cam.flashing) ? h(Z.CheckLine, { state: 'warning' }, working ? 'Working…' : cam.flashing) : null,
+          working || cam.flashing ? h(Z.CheckLine, { state: 'warning' }, working ? 'Working…' : cam.flashing) : null,
           h(Z.CaptureProgress, { note: note }, slot('A'), slot('B')));
     var actions = review
       ? [h(Z.Button, { key: 'save', hierarchy: 'primary', disabled: working, onClick: saveAndNext }, 'Save & next'),
          h(Z.Button, { key: 'discard', hierarchy: 'secondary', disabled: working, onClick: discard }, 'Discard')]
-      : [phone
-           ? h(Z.Button, { key: 'open', hierarchy: 'primary', disabled: working, onClick: function () { nativeRef.current.click(); } }, 'Open camera')
-           : h(Z.Button, { key: 'take', hierarchy: 'primary', disabled: working || !cam.streamRef.current, onClick: takePhoto }, 'Take photo'),
+      : [h(Z.Button, { key: 'open', hierarchy: 'primary', disabled: working, onClick: function () { nativeRef.current.click(); } }, 'Open camera'),
          step === 'B'
            ? h(Z.Button, { key: 'skip', hierarchy: 'secondary', disabled: working, onClick: noSideB }, 'No side B')
            : h(Z.Button, { key: 'library', hierarchy: 'secondary', disabled: working, onClick: function () { fileRef.current.click(); } }, 'From library')];
-    return h('div', { className: 'admin-crate' + (review || phone ? '' : ' admin-crate--camera') },
-      h('div', { className: 'admin-crate__body' }, head, modeSwitch, viewer, body),
+    return h('div', { className: 'admin-crate' },
+      h('div', { className: 'admin-crate__body' }, head, body),
       h('input', { ref: fileRef, type: 'file', accept: 'image/*', hidden: true, tabIndex: -1, onChange: fromLibrary }),
       h('input', { ref: nativeRef, type: 'file', accept: 'image/*', capture: 'environment', hidden: true, tabIndex: -1, onChange: fromLibrary }),
       h(Z.ActionBar, null, actions));
