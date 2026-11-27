@@ -428,8 +428,18 @@
      its inner 80 %, 75th percentile) keeps only `HOLE_KEEP` of its darkness: the shadow stays, softer, however far it
      reaches (a lamp far away casts a long one). From 0.5 mm to 0.05 mm before the edge the effect fades out, so the thin
      dark line of the edge itself stays. Then the hole is toned to `HOLE_GREY`, the Scanner's lid seen through the hole
-     (median of 8 scans, Gio: "the Scanner's centre is a touch darker"), with the same fade. Runs after the look. */
-  var HOLE_KEEP = 0.15, HOLE_GREY = [216, 217, 217];
+     (median of 8 scans, Gio: "the Scanner's centre is a touch darker"), with the same fade, and given the lid's grain
+     (Gio: "the grey looks flat, unnatural"; the phone's white there is clipped, no texture left): measured on the scans,
+     σ 0.75 per pixel at 1600 px of Label plus σ 0.4 over ~1 mm; seeded, so every render of a photo is the same. Last,
+     the Scanner's soft shade along the inside of the edge (median of 8 scans: −3 at 2 mm from the edge, −8 at 1.25 mm,
+     −16 at 0.75 mm ≈ 32·e^(−d / 0.9 mm) of 217), on the hole's light neutral pixels only (not on label paper).
+     Runs after the look. */
+  var HOLE_KEEP = 0.15, HOLE_GREY = [216, 217, 217], HOLE_GRAIN = 0.75, HOLE_MOTTLE = 0.4, HOLE_SHADE = 32 / 217;
+  function seeded(seed) {                 // mulberry32 → normal (Box–Muller)
+    var a = seed >>> 0;
+    function u() { a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return (((t ^ (t >>> 14)) >>> 0) + 0.5) / 4294967296; }
+    return function () { return Math.sqrt(-2 * Math.log(u())) * Math.cos(2 * Math.PI * u()); };
+  }
   function softenHole(img, mm, holeR) {
     var W = img.width, d = img.data, ppm = W / mm, c = W / 2, R = holeR * ppm, inner = 0.8 * R;
     var r0 = Math.max(0, R - 0.5 * ppm), r1 = R - 0.05 * ppm;     // full effect inside r0, none from r1 out
@@ -441,9 +451,12 @@
     }
     if (!vals[0].length) return;
     for (ch = 0; ch < 3; ch++) { var v = vals[ch].sort(function (a, b) { return a - b; }); fill[ch] = v[Math.floor(v.length * 0.75)]; }
+    var rnd = seeded(7243), grain = HOLE_GRAIN * Math.min(2, ppm / 16.58);    // finer pixels see more of the grain
+    var G = Math.ceil(2 * R / ppm) + 2, mot = new Float32Array(G * G);      // 1 mm grid, bilinear
+    for (var g = 0; g < mot.length; g++) mot[g] = rnd() * HOLE_MOTTLE;
     for (y = x0; y <= x1; y++) for (x = x0; x <= x1; x++) {
       var r = Math.hypot(x + 0.5 - c, y + 0.5 - c);
-      if (r >= r1) continue;
+      if (r >= r1) { rnd(); continue; }
       var w = r <= r0 ? 1 : (r1 - r) / (r1 - r0);
       i = (y * W + x) * 4;
       for (ch = 0; ch < 3; ch++) {
@@ -452,6 +465,15 @@
         v2 *= HOLE_GREY[ch] / Math.max(1, fill[ch]);
         d[i + ch] += (v2 - d[i + ch]) * w;
       }
+      var gx = (x - x0) / ppm, gy = (y - x0) / ppm, ix = gx | 0, iy = gy | 0, fx = gx - ix, fy = gy - iy;
+      var m = mot[iy * G + ix] * (1 - fx) * (1 - fy) + mot[iy * G + ix + 1] * fx * (1 - fy)
+            + mot[(iy + 1) * G + ix] * (1 - fx) * fy + mot[(iy + 1) * G + ix + 1] * fx * fy;
+      var n = (m + rnd() * grain) * w;                                       // the lid's grain is grey: same on R, G, B
+      var R0 = d[i], G0 = d[i + 1], B0 = d[i + 2];
+      var lum = (R0 + G0 + B0) / 3, sat = Math.max(R0, G0, B0) - Math.min(R0, G0, B0);
+      var hole = Math.min(1, Math.max(0, (lum - 150) / 40)) * Math.min(1, Math.max(0, 1 - (sat - 8) / 20));
+      var k = 1 - HOLE_SHADE * Math.exp(-(R - r) / (0.9 * ppm)) * hole;
+      d[i] = (R0 + n) * k; d[i + 1] = (G0 + n) * k; d[i + 2] = (B0 + n) * k;
     }
   }
 
