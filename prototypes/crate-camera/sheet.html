@@ -8,16 +8,28 @@
 </style></head><body>
 <!-- 1 unit = 1 mm. Only four 7 mm markers, centred at (±80, ±120) mm from the sheet centre (105, 148.5):
      far above and below the 180 mm full crop, so nothing printed ends up in the photos.
-     The page finds the record and centres the crops by itself. -->
+     The page finds the record and centres the crops by itself.
+     v2 (2026-11-27, decision 0200): a grey scale of 6 patches (18 × 7 mm, 2 mm apart: black, 4 greys, white = bare paper
+     framed) in the top band, between the markers and the Full crop (y −111…−104 mm; the crop ends at −90 even with the
+     record 10 mm off centre). It tells the page the contrast of each photo; scanned once with the Scanner, it gives the
+     values the phone photos must match. Patches are wider than 2:1 so they are never taken for markers. -->
 <svg viewBox="0 0 210 297" xmlns="http://www.w3.org/2000/svg">
   <g transform="translate(105 148.5)">
     <rect x="-83.5" y="-123.5" width="7" height="7"/>
     <rect x="76.5" y="-123.5" width="7" height="7"/>
     <rect x="-83.5" y="116.5" width="7" height="7"/>
     <rect x="76.5" y="116.5" width="7" height="7"/>
+    <g transform="translate(-59 -111)">
+      <rect x="0" width="18" height="7" fill="#000"/>
+      <rect x="20" width="18" height="7" fill="#404040"/>
+      <rect x="40" width="18" height="7" fill="#808080"/>
+      <rect x="60" width="18" height="7" fill="#b0b0b0"/>
+      <rect x="80" width="18" height="7" fill="#d8d8d8"/>
+      <rect x="100.15" y="0.15" width="17.7" height="6.7" fill="none" stroke="#000" stroke-width="0.3"/>
+    </g>
   </g>
   <g transform="translate(40 283)" font-size="2.6" fill="#999">
-    <text>HIGHMUZIK crate photo sheet · print at 100 % · this bar = 100 mm</text>
+    <text>HIGHMUZIK crate photo sheet v2 · print at 100 %, no colour adjustments · this bar = 100 mm</text>
     <rect x="0" y="3" width="100" height="0.8" fill="#999"/>
   </g>
 </svg>
