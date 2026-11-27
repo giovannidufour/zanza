@@ -288,13 +288,13 @@ struct SelectField: View {
     let options: [(String, String)]
     /// an empty first choice (grades are optional on a draft)
     var empty = false
+    @StateObject private var anchor = MenuAnchor()
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             FieldHead(label: label, optional: optional)
-            Menu {
-                if empty { Button("—") { value = "" } }
-                ForEach(options, id: \.0) { o in Button(o.1) { value = o.0 } }
-            } label: {
+            // The field is drawn here (border, ground, chevron: Figma `input` select); a click opens the native menu over
+            // it. SwiftUI's Menu would draw its own popup and drop the border (Gio 2026-11-26/27).
+            Button { anchor.pop(items: (empty ? [("", "—")] : []) + options, selected: value) { value = $0 } } label: {
                 HStack {
                     Text(options.first { $0.0 == value }?.1 ?? "").bodyStyle(16)
                     Spacer()
@@ -305,8 +305,8 @@ struct SelectField: View {
                 .overlay(Rectangle().stroke(Theme.divider, lineWidth: 1))
                 .contentShape(Rectangle())
             }
-            // .button + .plain: macOS draws our label (border, ground, chevron) instead of its own popup (Gio 2026-11-26)
-            .menuStyle(.button).buttonStyle(.plain).menuIndicator(.hidden)
+            .buttonStyle(.plain)
+            .background(MenuAnchorView(anchor: anchor))
             .accessibilityLabel(label)
         }
         .frame(maxWidth: width ?? .infinity, alignment: .leading)
@@ -372,4 +372,41 @@ struct PriceChip: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Price and grading \(text): \(note)")
     }
+}
+
+/// Opens a native NSMenu over a SwiftUI view (the select's field): the selected item sits on the field, like a popup
+final class MenuAnchor: ObservableObject {
+    weak var view: NSView?
+    func pop(items: [(String, String)], selected: String, pick: @escaping (String) -> Void) {
+        guard let view else { return }
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        var current: NSMenuItem?
+        for (v, title) in items {
+            let item = ClosureMenuItem(title: title) { pick(v) }
+            item.state = v == selected ? .on : .off
+            if v == selected { current = item }
+            menu.addItem(item)
+        }
+        menu.minimumWidth = view.bounds.width
+        menu.font = NSFont(name: "Inter-Regular", size: 14) ?? .menuFont(ofSize: 14)
+        menu.popUp(positioning: current, at: NSPoint(x: 4, y: view.isFlipped ? 9 : view.bounds.height - 9), in: view)
+    }
+}
+
+final class ClosureMenuItem: NSMenuItem {
+    private let run: () -> Void
+    init(title: String, run: @escaping () -> Void) {
+        self.run = run
+        super.init(title: title, action: #selector(fire), keyEquivalent: "")
+        target = self
+    }
+    required init(coder: NSCoder) { fatalError("not used") }
+    @objc private func fire() { run() }
+}
+
+struct MenuAnchorView: NSViewRepresentable {
+    let anchor: MenuAnchor
+    func makeNSView(context: Context) -> NSView { let v = NSView(); anchor.view = v; return v }
+    func updateNSView(_ v: NSView, context: Context) { anchor.view = v }
 }
