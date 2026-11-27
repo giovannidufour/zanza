@@ -417,6 +417,7 @@ function fitPaper(img, mm) {
   }
   if (samples.length < 200) return null;
   const Ls = samples.map(s => s[2] + s[3] + s[4]).sort((a, b) => a - b), med = Ls[Ls.length >> 1];
+  if (med < 3 * 110) return null;                     // what surrounds the record is not paper (dark table)
   const A = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], bv = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
   let n = 0;
   for (const [u, v, r, g, b] of samples) {
