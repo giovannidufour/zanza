@@ -16,7 +16,8 @@
   var LD = window.HighmuzikListingDraft;
   var FORMATS = LD.FORMATS, MACRO_GENRES = LD.MACRO_GENRES, COUNTRIES = LD.COUNTRIES;
   var textToCents = LD.textToCents, discogsId = LD.discogsId, newLine = LD.newLine, namesOf = LD.namesOf, findEntity = LD.findEntity,
-      differs = LD.differs, emptyForm = LD.emptyForm, formatOf = LD.formatOf, positionsOf = LD.positionsOf,
+      differs = LD.differs, emptyForm = function () { return Object.assign(LD.emptyForm(), { paid: '' }); },   // + Paid (0206), admin only: the shared model and the Edge Functions don't carry it
+      formatOf = LD.formatOf, positionsOf = LD.positionsOf,
       patchFromDiscogs = LD.patchFromDiscogs, parseYear = LD.parseYear, yearText = LD.yearText, payloadOf = LD.payloadOf, priceModeOf = LD.priceModeOf;
   var STATUS_LABEL = { draft: 'Draft', available: 'Available', reserved: 'Reserved', sold: 'Sold', traded: 'Traded', archived: 'Archived' };
   var STATUS_DONE = { draft: 'Unpublished.', available: 'Available again.', reserved: 'Reserved until you release it.', sold: 'Marked as sold.', traded: 'Marked as traded.' };
@@ -416,6 +417,7 @@
     f.labelSpelled = !!le && differs(r.label, le.name); f.labelCredit = f.labelSpelled ? r.label : ''; f.country = r.country || ''; f.year = yearText(r.year, r.year_precision); f.format = r.format || '';
     f.section = row.section; f.priceMode = row.price_mode || 'fixed'; f.price = centsToText(row.price_cents);
     f.bargain = !!row.bargain;   // Bargain crate (migration 0046, decision 0201)
+    f.paid = centsToText(row.cost ? row.cost.paid_cents : null);   // Paid (migration 0048, decision 0206): admin-only table
     var byPos = function (a, b) { return a.position - b.position; };
     var genreRows = (r.genre_rows || []).slice().sort(byPos);
     f.genres = genreRows.length ? genreRows.map(function (t) { return chip(t.genre); }) : (r.genres || []).map(function (n) { return { id: null, name: n }; });
@@ -445,6 +447,7 @@
     var cents = textToCents(f.price);
     if (publish && f.section === 'sale' && priceModeOf(f) === 'fixed' && cents === null) e.price = 'Enter a price.';
     else if (Number.isNaN(cents)) e.price = 'Use a number, e.g. 12 or 12.50.';
+    if (Number.isNaN(textToCents(f.paid))) e.paid = 'Use a number, e.g. 5 or 4.50.';
     if (f.year.trim() && !parseYear(f.year)) e.year = 'Use a year (1983) or a decade (1990s).';
     if (f.discogs && discogsId(f.discogs) === null) e.discogs = 'Pick a release from the list, paste its link or number, or empty the field.';
     if (f.images.some(function (x) { return x.uploading; }) || f.samples.some(function (x) { return x.uploading; }) || f.originalsPending) e.uploads = 'Wait for the uploads to finish.';
@@ -1102,6 +1105,11 @@
       extra.bargain = cur.section === 'sale' && priceModeOf(cur) === 'fixed' && !!cur.bargain;
       var tl = await sb.from('listings').update(extra).eq('id', d.listing_id);
       if (tl.error) toast('Title links, Bargain crate or Full photos not saved: ' + tl.error.message);
+      // Paid (decision 0206): private, in listing_costs (migration 0048), out of reach of the publishable key; empty = no row
+      var paidCents = textToCents(cur.paid);
+      var pc = paidCents === null ? await sb.from('listing_costs').delete().eq('listing_id', d.listing_id)
+        : await sb.from('listing_costs').upsert({ listing_id: d.listing_id, paid_cents: paidCents, updated_at: new Date(now).toISOString() });
+      if (pc.error) toast('Paid not saved: ' + pc.error.message);
       baseline.current = formSnapshot(cur);
       setSavedAt(now);
       set(function (x) { return { listingId: d.listing_id, sku: d.sku, status: d.status, slug: d.slug,
@@ -1586,6 +1594,8 @@
             opts([['sale', 'For sale'], ['offers', 'Best offer']].concat(tradeOn !== false || f.section === 'trade' ? [['trade', 'For trade']] : []))),
           note: priceModeOf(f) === 'offers' ? 'No fixed price: buyers send offers, you accept or decline them in Offers.' : null,
           price: h(Z.Input, Object.assign({ id: 'price', label: 'Price', suffix: '€', inputMode: 'decimal', optional: f.section === 'trade' }, bind('price'))),
+          // Paid (Gio 2026-11-27, decision 0206; Figma `price fields` boolean `paid`): what Gio paid, never shown in the shop
+          paid: h(Z.Input, Object.assign({ id: 'paid', label: 'Paid', suffix: '€', inputMode: 'decimal', optional: true }, bind('paid'))),
           // Bargain crate (Gio 2026-11-27, decision 0201; Figma `price fields` boolean `bargain crate`): fixed-price sale only
           bargain: f.section === 'sale' && priceModeOf(f) === 'fixed' ? h(Z.Checkbox, { label: 'Bargain crate', checked: !!f.bargain,
             onChange: function (e) { set({ bargain: e.target.checked }); } }) : null
@@ -2139,7 +2149,7 @@
     var st = useState(null), initial = st[0], setInitial = st[1];
     var er = useState(null), error = er[0], setError = er[1];
     useEffect(function () {
-      sb.from('listings').select('*,release:releases(*,label_entity:labels(id,name),genre_rows:release_genres(position,genre:genres(id,name)),tag_rows:release_tags(position,tag:tags(id,name)),lines:release_lines(*,credits:release_line_artists(position,artist:artists(id,name))),samples(*))').eq('id', props.id).single()
+      sb.from('listings').select('*,release:releases(*,label_entity:labels(id,name),genre_rows:release_genres(position,genre:genres(id,name)),tag_rows:release_tags(position,tag:tags(id,name)),lines:release_lines(*,credits:release_line_artists(position,artist:artists(id,name))),samples(*)),cost:listing_costs(paid_cents)').eq('id', props.id).single()
         .then(function (res) { if (res.error) setError(res.error.message); else setInitial(formFromRow(res.data)); });
     }, [props.id]);
     if (error) return h('p', { className: 'body-medium admin-status--error', role: 'alert' }, 'Could not open this listing: ' + error);

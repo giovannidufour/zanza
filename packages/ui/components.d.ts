@@ -1627,6 +1627,8 @@ export interface PriceFieldsProps extends HTMLAttributes<HTMLDivElement> {
   price?: ReactNode;
   /** price=offers (decision 0158): a note in place of Price (Best offer has no price). Desktop: 6 of 8 columns. */
   note?: ReactNode;
+  /** Figma boolean `paid` (decision 0206): the "Paid" Input (what the seller paid, private). Desktop: 2 of 8 columns, after Price or after the note (the note then takes 4). Omit = off. */
+  paid?: ReactNode;
   /** Figma boolean `bargain crate` (decision 0201): the "Bargain crate" Checkbox, on a row of its own under the fields. Omit = off. */
   bargain?: ReactNode;
 }
