@@ -168,6 +168,31 @@ final class Backend {
         return key
     }
 
+    // MARK: Originals (0202): listings.original_keys (migration 0045), read and written directly (PostgREST, RLS listings_admin)
+
+    struct ListingOriginals { let id: String; let keys: [String] }
+
+    /// The listing of each SKU (any status) with its original_keys, by 5-digit SKU text
+    func originals(skus: [String]) async throws -> [String: ListingOriginals] {
+        let numbers = skus.compactMap { Int($0) }
+        var out: [String: ListingOriginals] = [:]
+        for chunk in stride(from: 0, to: numbers.count, by: 100).map({ Array(numbers[$0..<min($0 + 100, numbers.count)]) }) {
+            let q = "/rest/v1/listings?select=id,sku,original_keys&sku=in.(\(chunk.map(String.init).joined(separator: ",")))"
+            let rows = (try JSONSerialization.jsonObject(with: try await rest("GET", q, nil))) as? [[String: Any]] ?? []
+            for r in rows {
+                guard let id = r["id"] as? String, let sku = r["sku"] as? Int else { continue }
+                out[String(format: "%05d", sku)] = ListingOriginals(id: id, keys: (r["original_keys"] as? [String]) ?? [])
+            }
+        }
+        return out
+    }
+
+    func setOriginals(_ id: String, keys: [String]) async throws {
+        let data = try await rest("PATCH", "/rest/v1/listings?id=eq.\(id)&select=id", ["original_keys": keys])
+        let rows = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] ?? []
+        if rows.isEmpty { throw BackendError.server("The listing is no longer in the admin") }
+    }
+
     // MARK: New draft from Discogs (0145)
 
     func discogsSearch(_ query: String) async throws -> [DiscogsResult] {

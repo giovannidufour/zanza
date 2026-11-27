@@ -544,6 +544,15 @@ final class AppModel: ObservableObject {
         }
         await MainActor.run { self.pushed[plan.draft.id] = plan.snapshot }
         var r = "Pushed \(photoKeys.count) image\(photoKeys.count == 1 ? "" : "s") and \(clipKeys.count) clip\(clipKeys.count == 1 ? "" : "s")"
+        // the whole-record originals of this SKU (0202): kept with the listing, never shown; a failure never fails the push
+        // (the backfill at the next launch sends them)
+        progress(0.99, "originals")
+        let originals = await MainActor.run { self.originalsFolder }
+        do {
+            let o = try await Originals.sync(folder: originals, sku: plan.draft.skuText)
+            if o.uploaded > 0 { r += " · \(o.uploaded) original\(o.uploaded == 1 ? "" : "s")" }
+            if !o.failed.isEmpty { r += " · originals not uploaded: " + o.failed.joined(separator: " · ") }
+        } catch { r += " · originals not uploaded: \(error.localizedDescription)" }
         let kept = (plan.images.count - images.count) + (plan.clips.count - clips.count)
         if kept > 0 { r += " · \(kept) kept as in the admin" }
         if plan.missingLines > 0 { r += " · \(plan.missingLines) clip(s) skipped: no line yet (scan-targets)" }
@@ -583,6 +592,35 @@ final class AppModel: ObservableObject {
                 if !ok { plan.discard(); return ("Cancelled: nothing changed in the admin", nil) }
             }
             return (try await self.send(plan, fill: false, has: c.has, progress: progress), nil)
+        }
+    }
+
+    // MARK: Originals backfill (0202)
+
+    private var originalsChecked = false
+    /// Once per launch, signed in: every original of the Originals folder whose listing exists (any status) and that
+    /// is not online yet goes up, on the push lane (one job, only when there is something to send)
+    func backfillOriginals() {
+        guard !originalsChecked, Backend.shared.signedIn else { return }
+        originalsChecked = true
+        let folder = originalsFolder
+        Task { @MainActor in
+            do {
+                let files = Originals.files(in: folder)
+                guard !files.isEmpty else { return }
+                let listings = try await Backend.shared.originals(skus: Array(Set(files.map(\.sku))))
+                let todo = Originals.pending(files, ledger: Originals.ledger(in: folder), listings: listings)
+                guard !todo.isEmpty else { return }
+                self.jobs.enqueue(draftID: "originals", sku: "", kind: .push) { progress in
+                    let r = try await Originals.sync(folder: folder) { done, total in
+                        progress(Double(done) / Double(max(1, total)), "\(done) of \(total) originals")
+                    }
+                    if !r.failed.isEmpty && r.uploaded == 0 { throw ScanError.message(r.summary) }
+                    return (r.summary, nil)
+                }
+            } catch {
+                self.originalsChecked = false   // try again at the next sign-in or draft search
+            }
         }
     }
 

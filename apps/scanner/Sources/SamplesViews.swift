@@ -342,11 +342,12 @@ struct ActivityBar: View {
     }
     func text(_ j: JobQueue.Job) -> String {
         let verb = j.kind == .export ? "Exporting" : "Pushing"
+        let what = j.sku.isEmpty ? "originals" : "SKU \(j.sku)"   // the originals backfill (0202) has no SKU of its own
         switch j.state {
-        case .waiting: return "Waiting · SKU \(j.sku)"
-        case .running: return "\(verb) SKU \(j.sku)" + (j.detail.isEmpty ? "" : " · \(j.detail)")
-        case .done: return "SKU \(j.sku) · \(j.result)"
-        case .failed(let m): return "SKU \(j.sku) · \(j.kind == .export ? "Export" : "Push") failed: \(m)"
+        case .waiting: return "Waiting · \(what)"
+        case .running: return j.sku.isEmpty ? "Uploading originals" + (j.detail.isEmpty ? "" : " · \(j.detail)") : "\(verb) \(what)" + (j.detail.isEmpty ? "" : " · \(j.detail)")
+        case .done: return (j.sku.isEmpty ? "Originals" : what) + " · \(j.result)"
+        case .failed(let m): return (j.sku.isEmpty ? "Originals" : what) + " · \(j.sku.isEmpty ? "Upload" : j.kind == .export ? "Export" : "Push") failed: \(m)"
         }
     }
 }

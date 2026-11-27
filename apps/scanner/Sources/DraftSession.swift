@@ -131,6 +131,7 @@ final class DraftSession: ObservableObject {
         run { let found = try await Backend.shared.drafts(matching: q); return {
             guard self.query == q else { return }
             self.results = found
+            self.app?.backfillOriginals()   // 0202: once per launch, signed in
             if let open = self.draft, let fresh = found.first(where: { $0.id == open.id }) { self.draft = fresh }   // renamed (0196)
             self.restoreLastDraft()
         } }
