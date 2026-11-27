@@ -1037,6 +1037,8 @@ export interface ReleaseOptionProps extends HTMLAttributes<HTMLLIElement> {
   thumb?: string;
   /** the keyboard/hover active option (aria-activedescendant points to it) */
   highlighted?: boolean;
+  /** Figma state=current (decision 0199): the item on screen, title underlined (JumpTo) */
+  current?: boolean;
 }
 export declare function ReleaseOption(props: ReleaseOptionProps): JSX.Element;
 
@@ -1069,13 +1071,52 @@ export interface ChosenReleaseProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function ChosenRelease(props: ChosenReleaseProps): JSX.Element;
 
-/** Figma `file name` (Create, decision 0136): a name to give a scan or a clip of a listing, with Copy. An <li>: wrap in a <ul>. */
-export interface BackLinkProps extends HTMLAttributes<HTMLAnchorElement> {
-  href: string;
-  /** the destination, without the arrow: "Drafts", "Listings" */
-  label: ReactNode;
+/** Figma `admin` → `listing nav` (decision 0199): the top of Edit listing. Back (Button secondary small, leading chevron-left, a link) + an optional JumpTo. */
+export interface ListingNavProps extends HTMLAttributes<HTMLDivElement> {
+  /** where Back goes: the Listings tab that holds the listing. `label` is the tab ("Drafts"); screen readers hear "Back to Drafts". */
+  back: { href: string; label: string };
+  /** a JumpTo. Figma boolean `show jump to` (on); leave it out on Create listing. */
+  jumpTo?: ReactNode;
 }
-export declare function BackLink(props: BackLinkProps): JSX.Element;
+export declare function ListingNav(props: ListingNavProps): JSX.Element;
+
+export interface JumpToItem {
+  id: string;
+  /** "Artist - Title" */
+  title: string;
+  /** SKU · price */
+  meta?: string;
+  /** 40 px thumbnail URL; without it, the empty square */
+  thumb?: string;
+  /** where picking it goes ("#edit-<id>") */
+  href?: string;
+  /** the item on screen: title underlined, highlighted when the menu opens (Figma release option state=current) */
+  current?: boolean;
+  /** text the search matches (accents and case ignored); default title + meta */
+  search?: string;
+}
+/** Figma `listing nav` › jump to + `jump to menu` (content results | no results, decision 0199): a Button that opens a menu with a search (combobox) over a listbox of ReleaseOption rows. Arrows / Home / End, Enter opens, Escape closes (focus back on the button). */
+export interface JumpToProps {
+  id?: string;
+  className?: string;
+  /** button text. @default "Jump to" */
+  label?: string;
+  /** the dialog and listbox name, e.g. "Jump to a draft". @default label */
+  menuLabel?: string;
+  /** @default "Search listings" */
+  placeholder?: string;
+  /** null / undefined = loading */
+  items?: JumpToItem[] | null;
+  /** called when the menu opens (load the items then) */
+  onOpen?: () => void;
+  /** picking an item; default: go to item.href */
+  onPick?: (item: JumpToItem) => void;
+  /** @default "No listings match." */
+  emptyMessage?: string;
+  /** @default "Loading…" */
+  loadingMessage?: string;
+}
+export declare function JumpTo(props: JumpToProps): JSX.Element;
 
 /** Figma `discogs link` (BACKEND → Create, decision 0150): the Discogs release a listing is matched to, "On Discogs ↗", new tab. An <a>. */
 export interface DiscogsLinkProps extends HTMLAttributes<HTMLAnchorElement> {
