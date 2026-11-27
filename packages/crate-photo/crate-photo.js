@@ -7,6 +7,7 @@
         no sheet → the record outline (an ellipse) is made a circle
      2. centre: the spindle hole (7.24 mm, or 38.2 mm for a large-hole 7"), else the record outline
      3. light: a plane per channel fitted on the paper around the record is divided out (paper → 240)
+     4. the Scanner look: an affine colour transform per camera (live | phone) + softening for the phone camera
    The user turns both crops together (drag, 90°) around the hole: `crop(…, angle)`.
    Pure JavaScript on ImageData-like objects { width, height, data: RGBA }: no DOM, so Node can test it.
    Classic script (window.HighmuzikCratePhoto) and CommonJS. Ported from prototypes/crate-camera (2026-11-27). */
@@ -376,11 +377,63 @@
     }
   }
 
-  // both crops at `size` px, turned by `angle`, light evened out (planes fitted on the Full crop, applied to both)
-  function render(sd, an, size, angle) {
+  /* 4. the Scanner look (Gio 2026-11-27: phone photos too bright, too contrasty, too saturated, too sharp). A colour
+     transform per camera, fitted on 8 phone/Scanner pairs of the same records (Label crops aligned to the pixel,
+     label + vinyl, hole left out). Each output channel = m · [r, g, b, r², g², b², r³, g³, b³, 1], in 0–1: the cubic
+     terms bend the tone curve (paper to the Scanner's grey-white, black lifted to the Scanner's dark grey) without
+     dulling saturated inks the way a plain matrix does. Median ΔE76 to the scan on records left out of the fit:
+     phone 3.6 (from 10–16), live 2.7 (from 11–19). `phone` = the phone's own camera (Create bargain → Phone camera),
+     fitted on photos as they come out of the camera; at full resolution it is sharper than the Scanner, so it is
+     softened with a Gaussian of `soften` × (1 − 7.4 / photo px per mm) mm: 0 for a photo of ~7 px/mm (already as soft
+     as a scan), 0.048 mm (0.8 px of a 1600 px Label) at ~15 px/mm, the iPhone's 12 MP. `live` = the page's camera. */
+  var LOOK = {
+    phone: { m: [[0.7168, 0.9052, -0.7160, 0.0640, -1.5219, 1.1866, 0.0354, 0.7319, -0.6287, 0.1136], [0.3211, 1.2937, -0.7068, -1.0385, -0.2916, 1.1391, 0.6345, -0.0018, -0.5738, 0.1082], [0.7032, 0.4512, -0.3691, -1.4189, -1.4905, 3.0967, 0.7430, 1.0362, -1.9898, 0.1307]], soften: 0.096 },
+    live:  { m: [[0.3518, 0.4871, -0.5573, 1.0418, -1.0953, 1.0452, -0.6220, 0.6663, -0.5625, 0.1347], [-0.0247, 0.9775, -0.6808, 0.1300, -0.4037, 1.2711, -0.1649, 0.3147, -0.6682, 0.1295], [-0.0974, 0.3638, 0.1786, 0.0306, -0.7906, 1.4769, 0.0414, 0.5383, -0.9508, 0.1287]], soften: 0 }
+  };
+  function scannerLook(img, mm, look, pxPerMm) {
+    // the terms are per input channel, so each output channel = 3 lookup tables (r, g, b) + the constant
+    var m = look.m, lut = [], d = img.data;
+    for (var c = 0; c < 3; c++) for (var ch = 0; ch < 3; ch++) {
+      var t = new Float32Array(256);
+      for (var n = 0; n < 256; n++) { var x = n / 255; t[n] = 255 * (m[c][ch] * x + m[c][ch + 3] * x * x + m[c][ch + 6] * x * x * x); }
+      lut.push(t);
+    }
+    var k0 = 255 * m[0][9], k1 = 255 * m[1][9], k2 = 255 * m[2][9];
+    for (var i = 0; i < d.length; i += 4) {
+      var r = d[i], g = d[i + 1], b = d[i + 2];
+      d[i] = k0 + lut[0][r] + lut[1][g] + lut[2][b];          // Uint8Clamped clamps
+      d[i + 1] = k1 + lut[3][r] + lut[4][g] + lut[5][b];
+      d[i + 2] = k2 + lut[6][r] + lut[7][g] + lut[8][b];
+    }
+    var sigma = look.soften * Math.max(0, 1 - 7.4 / pxPerMm) * img.width / mm;   // mm → px of this crop
+    if (sigma >= 0.25) blur(img, sigma);
+  }
+  function blur(img, sigma) {      // separable Gaussian, RGB only
+    var W = img.width, H = img.height, d = img.data, r = Math.ceil(sigma * 3), k = [], sum = 0;
+    for (var t = -r; t <= r; t++) { var w = Math.exp(-t * t / (2 * sigma * sigma)); k.push(w); sum += w; }
+    k = k.map(function (w) { return w / sum; });
+    var tmp = new Float32Array(W * H * 3);
+    for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) for (var c = 0; c < 3; c++) {
+      var a = 0; for (var j = -r; j <= r; j++) { var xx = Math.min(W - 1, Math.max(0, x + j)); a += k[j + r] * d[(y * W + xx) * 4 + c]; }
+      tmp[(y * W + x) * 3 + c] = a;
+    }
+    for (var y2 = 0; y2 < H; y2++) for (var x2 = 0; x2 < W; x2++) for (var c2 = 0; c2 < 3; c2++) {
+      var a2 = 0; for (var j2 = -r; j2 <= r; j2++) { var yy = Math.min(H - 1, Math.max(0, y2 + j2)); a2 += k[j2 + r] * tmp[(yy * W + x2) * 3 + c2]; }
+      d[(y2 * W + x2) * 4 + c2] = a2;
+    }
+  }
+
+  // both crops at `size` px, turned by `angle`, light evened out (planes fitted on the Full crop, applied to both),
+  // then the Scanner look of the camera that took the photo (`camera`: 'live' default | 'phone' | 'none')
+  function render(sd, an, size, angle, camera) {
     var full = crop(sd, an, FULL_MM, size, angle), label = crop(sd, an, LABEL_MM, size, angle);
     var planes = fitPaper(full);
     if (planes) { evenOut(full, FULL_MM, planes); evenOut(label, LABEL_MM, planes); }
+    var look = LOOK[camera || 'live'];
+    if (look) {
+      var a = an.toPx(-10, 0), b = an.toPx(10, 0), pxPerMm = Math.hypot(b[0] - a[0], b[1] - a[1]) / 20;
+      scannerLook(full, FULL_MM, look, pxPerMm); scannerLook(label, LABEL_MM, look, pxPerMm);
+    }
     return { full: full, label: label, light: !!planes };
   }
 
@@ -407,6 +460,6 @@
   function angleText(d) { var v = (((d % 360) + 540) % 360) - 180; v = Math.round(v * 10) / 10; return (v > 0 ? '+' : '') + v.toFixed(1) + '°'; }
 
   return { FULL_MM: FULL_MM, LABEL_MM: LABEL_MM, OUT: OUT, MARKERS: MARKERS, RECORD_R: RECORD_R,
-           analyse: analyse, render: render, sheetIn: sheetIn, checks: checks, angleText: angleText,
+           analyse: analyse, render: render, LOOK: LOOK, sheetIn: sheetIn, checks: checks, angleText: angleText,
            _internal: { downscale: downscale, homography: homography, applyH: applyH, findHole: findHole, detectEllipse: detectEllipse } };
 });

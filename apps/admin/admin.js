@@ -610,7 +610,7 @@
     var bz = useState(false), busy = bz[0], setBusy = bz[1];
     var videoRef = useRef(null), fileRef = useRef(null);
     var fullRef = useRef(null), labelRef = useRef(null);
-    var shot = useRef(null);       // { sd: ImageData of the photo, an: CP.analyse result }
+    var shot = useRef(null);       // { sd: ImageData of the photo, an: CP.analyse result, camera: 'live' | 'phone' }
     var angleRef = useRef(0); angleRef.current = angle;
 
     var cam = useCrateCamera(videoRef), camStatus = cam.status, streamRef = cam.streamRef;
@@ -618,17 +618,17 @@
     function draw(size) {
       var s = shot.current;
       if (!s) return null;
-      var r = CP.render(s.sd, s.an, size, angleRef.current);
+      var r = CP.render(s.sd, s.an, size, angleRef.current, s.camera);
       paint(fullRef.current, r.full); paint(labelRef.current, r.label);
       return r;
     }
     // after the shot: find the record, then the two crops at 1600
-    function process(pixels) {
+    function process(pixels, camera) {
       setPhase('working'); setAngle(0); angleRef.current = 0;
       setTimeout(function () {    // let "Working…" paint first: the analysis takes a second or two on a phone
         var a = CP.analyse(pixels);
         if (!a) { shot.current = null; setPhase('camera'); cam.flash('Record not found: lay it on the sheet'); return; }
-        shot.current = { sd: pixels, an: a };
+        shot.current = { sd: pixels, an: a, camera: camera };
         setPhase('result');
       }, 30);
     }
@@ -640,12 +640,12 @@
     function takePhoto() {
       var v = videoRef.current;
       if (!v || !v.videoWidth) return;
-      process(cratePixels(v, v.videoWidth, v.videoHeight));
+      process(cratePixels(v, v.videoWidth, v.videoHeight), 'live');
     }
     function fromLibrary(e) {
       var file = e.target.files[0]; e.target.value = '';
       if (!file) return;
-      createImageBitmap(file, { imageOrientation: 'from-image' }).then(function (bmp) { process(cratePixels(bmp, bmp.width, bmp.height)); },
+      createImageBitmap(file, { imageOrientation: 'from-image' }).then(function (bmp) { process(cratePixels(bmp, bmp.width, bmp.height), 'phone'); },
         function () { toast(file.name + ' is not a readable image.'); });
     }
     // turn: drag on either crop (both turn together, live at 400 px, 1600 on release), 90°, Reset
@@ -735,7 +735,7 @@
     var nativeRef = useRef(null);
     var nr = useState(1), recordNo = nr[0], setRecordNo = nr[1];
     var sp = useState('A'), step = sp[0], setStep = sp[1];                 // A | B | review
-    var sh = useState({ A: null, B: null }), shots = sh[0], setShots = sh[1];   // side → { sd, an, angle } | 'skip' (B only)
+    var sh = useState({ A: null, B: null }), shots = sh[0], setShots = sh[1];   // side → { sd, an, angle, camera } | 'skip' (B only)
     var wk = useState(false), working = wk[0], setWorking = wk[1];
     var nt = useState(null), note = nt[0], setNote = nt[1];
     var ck = useState([]), checks = ck[0], setChecks = ck[1];
@@ -743,21 +743,21 @@
     var queue = useRef(Promise.resolve());
 
     function nextStep(s) { return !s.A ? 'A' : !s.B ? 'B' : 'review'; }
-    function process(pixels) {
+    function process(pixels, camera) {   // camera: 'live' (this page) | 'phone' (Open camera, From library): its colour fix
       setWorking(true);
       setTimeout(function () {    // let "Working…" paint first: the analysis takes a second or two on a phone
         var a = CP.analyse(pixels);
         setWorking(false);
         if (!a) { cam.flash('Record not found: lay it on the sheet'); return; }
-        var s = Object.assign({}, shotsRef.current); s[step] = { sd: pixels, an: a, angle: 0 };
+        var s = Object.assign({}, shotsRef.current); s[step] = { sd: pixels, an: a, angle: 0, camera: camera };
         setShots(s); setStep(nextStep(s));
       }, 30);
     }
-    function takePhoto() { var v = videoRef.current; if (v && v.videoWidth) process(cratePixels(v, v.videoWidth, v.videoHeight)); }
+    function takePhoto() { var v = videoRef.current; if (v && v.videoWidth) process(cratePixels(v, v.videoWidth, v.videoHeight), 'live'); }
     function fromLibrary(e) {
       var file = e.target.files[0]; e.target.value = '';
       if (!file) return;
-      createImageBitmap(file, { imageOrientation: 'from-image' }).then(function (bmp) { process(cratePixels(bmp, bmp.width, bmp.height)); },
+      createImageBitmap(file, { imageOrientation: 'from-image' }).then(function (bmp) { process(cratePixels(bmp, bmp.width, bmp.height), 'phone'); },
         function () { cam.flash(file.name + ' is not a readable image'); });
     }
     function retake(side) { var s = Object.assign({}, shotsRef.current); s[side] = null; setShots(s); setStep(side); }
@@ -767,7 +767,7 @@
     function drawSide(side, size) {
       var s = shotsRef.current[side], c = canvasRefs[side].current;
       if (!s || s === 'skip' || !c) return null;
-      var r = CP.render(s.sd, s.an, size, s.angle);
+      var r = CP.render(s.sd, s.an, size, s.angle, s.camera);
       paint(c, r.label);
       return r;
     }
@@ -785,7 +785,7 @@
     useEffect(function () {   // side B: the thumb of side A
       var s = shots.A, c = thumbRef.current;
       if (step === 'review' || !s || !c) return;
-      paint(c, CP.render(s.sd, s.an, 80, s.angle).label);
+      paint(c, CP.render(s.sd, s.an, 80, s.angle, s.camera).label);
     }, [step, shots.A]);
     function turnSide(side, deg, live) {
       var s = Object.assign({}, shotsRef.current), one = Object.assign({}, s[side], { angle: deg });
@@ -840,7 +840,7 @@
         for (var side of ['A', 'B']) {
           var one = s[side];
           if (!one || one === 'skip') continue;
-          var r = CP.render(one.sd, one.an, CP.OUT, one.angle);
+          var r = CP.render(one.sd, one.an, CP.OUT, one.angle, one.camera);
           var lc = document.createElement('canvas'), fc = document.createElement('canvas');
           paint(lc, r.label); paint(fc, r.full);
           made.push({ side: side, label: await canvasBlob(lc), full: await canvasBlob(fc) });
