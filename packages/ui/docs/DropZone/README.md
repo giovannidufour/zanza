@@ -14,6 +14,8 @@ The upload area under each file list of the admin: a dashed box with a secondary
 | `onFiles` | `(files: File[]) => void` |  | Called with the picked or dropped files. Filter by type in the handler: `accept` does not apply to drops. |
 | `disabled` | `boolean` |  | Disables the button and ignores drops. |
 | `name` | `string` |  | Name of the hidden file input. |
+| `onTakePhoto` | `() => void` |  | Shows a second button "Take photo" (Figma boolean `take photo`, on only in the Images zone, decision 0200). |
+| `takePhotoLabel` | `ReactNode` |  | @default "Take photo" |
 
 `*` required.
 <!-- /api -->

@@ -283,3 +283,16 @@ body[data-player-open] .hm-action-bar { bottom: var(--admin-player-height, 0px);
 
 /* Settings → Records per page (Figma `number setting`, decision 0179): the field is 120 wide */
 .admin-settings__number { width: 120px; }
+
+/* ── Take photo (decision 0200, Figma BACKEND → Crate photo): one column, gap 16 (Figma `body`), the actions in the
+   ActionBar at the bottom of the viewport on every width (Figma has the mobile frames only: on desktop the same
+   column, capped at 560, see design/open.md). The Edit form stays mounted under it, hidden: the page scrolls normally. */
+.admin:has(.admin-crate) { height: auto; min-height: 100vh; min-height: 100dvh; }   /* the ActionBar sits at the bottom of the screen */
+.admin-crate { flex: 1 1 auto; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+.admin-crate__body { flex: 1 1 auto; display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 560px; }
+.admin-crate > .hm-action-bar { margin: 0 -24px -24px; }
+.admin-crate__crops { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.admin-crate__turn { touch-action: none; cursor: grab; }
+.admin-crate__turn:active { cursor: grabbing; }
+.admin-crate__checks, .admin-crate__keep { display: flex; flex-direction: column; gap: 8px; }
+@media (--mobile) { .admin-crate > .hm-action-bar { margin: 0 -16px -16px; } }

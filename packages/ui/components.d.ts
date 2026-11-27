@@ -511,6 +511,10 @@ export interface DropZoneProps extends Omit<HTMLAttributes<HTMLDivElement>, "onD
   disabled?: boolean;
   /** Name of the hidden file input. */
   name?: string;
+  /** Shows a second button "Take photo" (Figma boolean `take photo`, on only in the Images zone, decision 0200). */
+  onTakePhoto?: () => void;
+  /** @default "Take photo" */
+  takePhotoLabel?: ReactNode;
 }
 export declare function DropZone(props: DropZoneProps): JSX.Element;
 
@@ -1259,6 +1263,73 @@ export interface StatProps extends HTMLAttributes<HTMLDivElement> {
   linkLabel?: ReactNode;
 }
 export declare function Stat(props: StatProps): JSX.Element;
+
+/** Mirrors the Figma component `crate photo head` (page BACKEND → Crate photo, decision 0200): page title + the listing it adds photos to. */
+export interface CratePhotoHeadProps extends HTMLAttributes<HTMLDivElement> {
+  /** h1, label/extra-large. @default "Take photo" */
+  title?: ReactNode;
+  /** "SKU · Artist – Title" (body/small, text-moderate). Omit → no line. */
+  listing?: ReactNode;
+}
+export declare function CratePhotoHead(props: CratePhotoHeadProps): JSX.Element;
+
+/** Mirrors the Figma component `side switch` (Crate photo, 0200): which label side the photo is, two secondary Buttons, the chosen one state=active. */
+export interface SideSwitchProps extends Omit<HTMLAttributes<HTMLDivElement>, "onChange"> {
+  /** The chosen side, e.g. "A". */
+  value: string;
+  onChange?: (side: string) => void;
+  /** [value, label] pairs. @default [["A", "Label A"], ["B", "Label B"]] */
+  sides?: [string, ReactNode][];
+}
+export declare function SideSwitch(props: SideSwitchProps): JSX.Element;
+
+/** Mirrors the Figma component `camera viewer` (Crate photo, 0200): the 3:4 live camera with an on-screen guide (record edge 7",
+ *  label crop 3.8", the 4 markers of the optional A4 sheet) that is never in the photo, and a status pill. */
+export interface CameraViewerProps extends HTMLAttributes<HTMLDivElement> {
+  /** Status pill text, e.g. "Sheet found". Figma `status`. */
+  status?: ReactNode;
+  /** Figma `show status`. @default true (shown when `status` is set) */
+  showStatus?: boolean;
+  /** Figma `guide`. @default true */
+  guide?: boolean;
+  /** The feed: a <video> (or a <canvas>), covers the viewer. Figma `feed`. */
+  children?: ReactNode;
+}
+export declare function CameraViewer(props: CameraViewerProps): JSX.Element;
+
+/** Mirrors the Figma component `crop preview` (Crate photo, 0200): a square crop and its caption. */
+export interface CropPreviewProps extends HTMLAttributes<HTMLElement> {
+  /** "Full · 180 mm" (body/small, text-moderate). */
+  caption: ReactNode;
+  /** The image: a <canvas> or <img>, fills the square (surface/media while empty). Figma `photo`. */
+  children?: ReactNode;
+}
+export declare function CropPreview(props: CropPreviewProps): JSX.Element;
+
+/** Mirrors the Figma component `turn bar` (Crate photo, 0200): hint · angle · 90° · Reset. */
+export interface TurnBarProps extends HTMLAttributes<HTMLDivElement> {
+  /** @default "Drag a photo to turn" */
+  hint?: ReactNode;
+  /** The angle, e.g. "+12.5°". Figma `angle`. */
+  angle: ReactNode;
+  onTurn?: () => void;
+  onReset?: () => void;
+  /** @default "90°" */
+  turnLabel?: ReactNode;
+  /** @default "Reset" */
+  resetLabel?: ReactNode;
+  disabled?: boolean;
+}
+export declare function TurnBar(props: TurnBarProps): JSX.Element;
+
+/** Mirrors the Figma component `check line` (Crate photo, 0200): what was applied (done) or which fallback was used (warning). */
+export interface CheckLineProps extends HTMLAttributes<HTMLDivElement> {
+  /** done = check-circle, warning = warning-circle and moderate text. @default "done" */
+  state?: "done" | "warning";
+  /** The message (body/small). */
+  children: ReactNode;
+}
+export declare function CheckLine(props: CheckLineProps): JSX.Element;
 
 /** Mirrors the Figma component `listings filter` (page BACKEND → Listings, device=desktop | mobile, one responsive markup,
  *  decision 0128): the status tabs of the Listings page + the search that filters its rows. Desktop = one row, search

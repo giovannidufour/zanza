@@ -16,6 +16,7 @@ on:
       - 'packages/images/**'
       - 'packages/file-names/**'
       - 'packages/listing-draft/**'
+      - 'packages/crate-photo/**'
       - 'apps/storefront/site.json'
       - 'apps/storefront/content/legal/**'
       - '.github/workflows/deploy-admin.yml'
