@@ -385,14 +385,25 @@
      phone 3.6 (from 10–16), live 2.7 (from 11–19). `phone` = the phone's own camera (Create bargain → Phone camera),
      fitted on photos as they come out of the camera; at full resolution it is sharper than the Scanner, so it is
      softened with a Gaussian of `soften` × (1 − 7.4 / photo px per mm) mm: 0 for a photo of ~7 px/mm (already as soft
-     as a scan), 0.048 mm (0.8 px of a 1600 px Label) at ~15 px/mm, the iPhone's 12 MP. `live` = the page's camera. */
+     as a scan), 0.048 mm (0.8 px of a 1600 px Label) at ~15 px/mm, the iPhone's 12 MP. `live` = the page's camera.
+     `post` (phone, Gio 2026-11-27: "still a bit too saturated, the yellows above all"): photos taken through the admin
+     come out brighter and more saturated than the ones the first fit was made on, so a second cubic of the same form,
+     fitted on 14 admin Phone-camera photos and their scans, runs after `m`. Median ΔE76 left out: 3.7; Studio One
+     yellow 5.1 (from 15.9), DSL red 6.5 (from 15.0). */
   var LOOK = {
-    phone: { m: [[0.7168, 0.9052, -0.7160, 0.0640, -1.5219, 1.1866, 0.0354, 0.7319, -0.6287, 0.1136], [0.3211, 1.2937, -0.7068, -1.0385, -0.2916, 1.1391, 0.6345, -0.0018, -0.5738, 0.1082], [0.7032, 0.4512, -0.3691, -1.4189, -1.4905, 3.0967, 0.7430, 1.0362, -1.9898, 0.1307]], soften: 0.096 },
+    phone: { m: [[0.7168, 0.9052, -0.7160, 0.0640, -1.5219, 1.1866, 0.0354, 0.7319, -0.6287, 0.1136], [0.3211, 1.2937, -0.7068, -1.0385, -0.2916, 1.1391, 0.6345, -0.0018, -0.5738, 0.1082], [0.7032, 0.4512, -0.3691, -1.4189, -1.4905, 3.0967, 0.7430, 1.0362, -1.9898, 0.1307]],
+             post: [[0.6476, -0.1736, 0.1955, 0.7950, 0.0164, 0.2086, -0.6168, 0.2033, -0.3727, 0.0165], [0.2522, 0.0553, 0.5399, 0.1326, 0.8557, -0.4557, -0.3183, -0.1450, 0.0380, -0.0074], [-0.0829, -0.7113, 1.6940, 0.2800, 1.2224, -0.9575, -0.1324, -0.5769, 0.2164, -0.0191]],
+             soften: 0.096 },
     live:  { m: [[0.3518, 0.4871, -0.5573, 1.0418, -1.0953, 1.0452, -0.6220, 0.6663, -0.5625, 0.1347], [-0.0247, 0.9775, -0.6808, 0.1300, -0.4037, 1.2711, -0.1649, 0.3147, -0.6682, 0.1295], [-0.0974, 0.3638, 0.1786, 0.0306, -0.7906, 1.4769, 0.0414, 0.5383, -0.9508, 0.1287]], soften: 0 }
   };
   function scannerLook(img, mm, look, pxPerMm) {
+    [look.m].concat(look.post ? [look.post] : []).forEach(function (m) { cubic(img, m); });
+    var sigma = look.soften * Math.max(0, 1 - 7.4 / pxPerMm) * img.width / mm;   // mm → px of this crop
+    if (sigma >= 0.25) blur(img, sigma);
+  }
+  function cubic(img, m) {
     // the terms are per input channel, so each output channel = 3 lookup tables (r, g, b) + the constant
-    var m = look.m, lut = [], d = img.data;
+    var lut = [], d = img.data;
     for (var c = 0; c < 3; c++) for (var ch = 0; ch < 3; ch++) {
       var t = new Float32Array(256);
       for (var n = 0; n < 256; n++) { var x = n / 255; t[n] = 255 * (m[c][ch] * x + m[c][ch + 3] * x * x + m[c][ch + 6] * x * x * x); }
@@ -405,8 +416,6 @@
       d[i + 1] = k1 + lut[3][r] + lut[4][g] + lut[5][b];
       d[i + 2] = k2 + lut[6][r] + lut[7][g] + lut[8][b];
     }
-    var sigma = look.soften * Math.max(0, 1 - 7.4 / pxPerMm) * img.width / mm;   // mm → px of this crop
-    if (sigma >= 0.25) blur(img, sigma);
   }
   function blur(img, sigma) {      // separable Gaussian, RGB only
     var W = img.width, H = img.height, d = img.data, r = Math.ceil(sigma * 3), k = [], sum = 0;
