@@ -427,8 +427,9 @@
      the hole; the Scanner's flat light barely does. Inside the hole every pixel darker than the hole's own fill (from
      its inner 80 %, 75th percentile) keeps only `HOLE_KEEP` of its darkness: the shadow stays, softer, however far it
      reaches (a lamp far away casts a long one). From 0.5 mm to 0.05 mm before the edge the effect fades out, so the thin
-     dark line of the edge itself stays. */
-  var HOLE_KEEP = 0.15;
+     dark line of the edge itself stays. Then the hole is toned to `HOLE_GREY`, the Scanner's lid seen through the hole
+     (median of 8 scans, Gio: "the Scanner's centre is a touch darker"), with the same fade. Runs after the look. */
+  var HOLE_KEEP = 0.15, HOLE_GREY = [216, 217, 217];
   function softenHole(img, mm, holeR) {
     var W = img.width, d = img.data, ppm = W / mm, c = W / 2, R = holeR * ppm, inner = 0.8 * R;
     var r0 = Math.max(0, R - 0.5 * ppm), r1 = R - 0.05 * ppm;     // full effect inside r0, none from r1 out
@@ -445,22 +446,27 @@
       if (r >= r1) continue;
       var w = r <= r0 ? 1 : (r1 - r) / (r1 - r0);
       i = (y * W + x) * 4;
-      for (ch = 0; ch < 3; ch++) if (d[i + ch] < fill[ch]) d[i + ch] += (fill[ch] - d[i + ch]) * (1 - HOLE_KEEP) * w;
+      for (ch = 0; ch < 3; ch++) {
+        var v2 = d[i + ch];
+        if (v2 < fill[ch]) v2 += (fill[ch] - v2) * (1 - HOLE_KEEP);
+        v2 *= HOLE_GREY[ch] / Math.max(1, fill[ch]);
+        d[i + ch] += (v2 - d[i + ch]) * w;
+      }
     }
   }
 
-  // both crops at `size` px, turned by `angle`, light evened out (planes fitted on the Full crop, applied to both), the
-  // hole's shadow softened,
-  // then the Scanner look of the camera that took the photo (`camera`: 'live' default | 'phone' | 'none')
+  // both crops at `size` px, turned by `angle`, light evened out (planes fitted on the Full crop, applied to both),
+  // then the Scanner look of the camera that took the photo (`camera`: 'live' default | 'phone' | 'none') and, with a
+  // look, the hole's shadow softened and the hole toned like the Scanner's
   function render(sd, an, size, angle, camera) {
     var full = crop(sd, an, FULL_MM, size, angle), label = crop(sd, an, LABEL_MM, size, angle);
     var planes = fitPaper(full);
     if (planes) { evenOut(full, FULL_MM, planes); evenOut(label, LABEL_MM, planes); }
-    if (an.hole) { softenHole(full, FULL_MM, an.hole.r); softenHole(label, LABEL_MM, an.hole.r); }
     var look = LOOK[camera || 'live'];
     if (look) {
       var a = an.toPx(-10, 0), b = an.toPx(10, 0), pxPerMm = Math.hypot(b[0] - a[0], b[1] - a[1]) / 20;
       scannerLook(full, FULL_MM, look, pxPerMm); scannerLook(label, LABEL_MM, look, pxPerMm);
+      if (an.hole) { softenHole(full, FULL_MM, an.hole.r); softenHole(label, LABEL_MM, an.hole.r); }
     }
     return { full: full, label: label, light: !!planes };
   }
