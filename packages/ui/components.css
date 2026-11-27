@@ -1517,6 +1517,20 @@ button.hm-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .hm-crop-preview__image { position: relative; aspect-ratio: 1; background: var(--surface-media); overflow: hidden; }
 .hm-crop-preview__image > canvas, .hm-crop-preview__image > img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .hm-crop-preview__caption { color: var(--text-moderate); }
+/* Create bargain capture (Figma `capture slot`, `capture progress`, `label review`, decision 0204) */
+.hm-capture-slot { display: inline-flex; align-items: center; gap: 8px; margin: 0; padding: 0; border: 0; background: none; color: var(--text-strong); font: inherit; text-align: left; }
+button.hm-capture-slot { cursor: pointer; }
+.hm-capture-slot__thumb { position: relative; flex: 0 0 auto; width: 40px; height: 40px; overflow: hidden; border: 1px dashed var(--action-secondary-border-default); }
+.hm-capture-slot[data-state="now"] .hm-capture-slot__thumb { border: 1px solid var(--icon-strong); }
+.hm-capture-slot[data-state="taken"] .hm-capture-slot__thumb { border: 0; background: var(--surface-media); }
+.hm-capture-slot__thumb > canvas, .hm-capture-slot__thumb > img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.hm-capture-slot__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hm-capture-slot__state { color: var(--text-moderate); }
+.hm-capture-progress { display: flex; flex-direction: column; gap: 8px; }
+.hm-capture-progress__slots { display: flex; gap: 24px; }
+.hm-capture-progress__note { margin: 0; color: var(--text-moderate); }
+.hm-label-review { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.hm-label-review__actions { display: flex; gap: 8px; }
 .hm-turn-bar { display: flex; align-items: center; gap: 8px; }
 .hm-turn-bar > p { margin: 0; }
 .hm-turn-bar__hint { flex: 1 1 auto; min-width: 0; color: var(--text-moderate); }

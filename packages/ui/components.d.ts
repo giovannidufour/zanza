@@ -1331,6 +1331,34 @@ export interface CheckLineProps extends HTMLAttributes<HTMLDivElement> {
 }
 export declare function CheckLine(props: CheckLineProps): JSX.Element;
 
+/** Create bargain capture (Figma `capture slot`, decision 0204). With onClick it renders a button (taken: retake). */
+export interface CaptureSlotProps extends HTMLAttributes<HTMLElement> {
+  /** "Label A" | "Label B" */
+  side: ReactNode;
+  /** default "next" */
+  state?: 'now' | 'taken' | 'next' | 'skipped';
+  /** replaces the default state line ("Now", "Taken · tap to retake", "Next", "Skipped") */
+  stateText?: ReactNode;
+  /** taken: the photo (a canvas or img) in the 40 px thumb */
+  children?: ReactNode;
+}
+export declare function CaptureSlot(props: CaptureSlotProps): JSX.Element;
+/** Figma `capture progress`: the two CaptureSlots + an optional note (what is saving / saved). */
+export interface CaptureProgressProps extends HTMLAttributes<HTMLDivElement> {
+  note?: ReactNode;
+  children?: ReactNode;
+}
+export declare function CaptureProgress(props: CaptureProgressProps): JSX.Element;
+/** Figma `label review`: a CropPreview (children = the canvas) + 90° and Retake. */
+export interface LabelReviewProps extends HTMLAttributes<HTMLDivElement> {
+  caption?: ReactNode;
+  onTurn?: () => void;
+  onRetake?: () => void;
+  disabled?: boolean;
+  children?: ReactNode;
+}
+export declare function LabelReview(props: LabelReviewProps): JSX.Element;
+
 /** Mirrors the Figma component `listings filter` (page BACKEND → Listings, device=desktop | mobile, one responsive markup,
  *  decision 0128): the status tabs of the Listings page + the search that filters its rows. Desktop = one row, search
  *  280 on the right; mobile = tabs, then the search full width. */
