@@ -226,3 +226,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0203](0203-admin-create-bargain.md) | Admin Create bargain: mobile Menu → `#bargain` opens Take photo; Create draft = Label + Full uploaded, draft saved with SKU ("Untitled bargain", 7″, For sale, `bargain`), camera again for the next record | proposed |
 | [0204](0204-create-bargain-two-sides.md) | Create bargain: side A → side B → one check, Save & next saves in the background; camera on for the session, viewfinder fits the screen, no toasts; Live or Phone camera (native) | proposed |
 | [0205](0205-crate-photo-scanner-look.md) | Take photo / Create bargain: colour, contrast and sharpness matched to the Scanner, one fit per camera (phone, live) | proposed |
+| [0206](0206-listing-paid-private.md) | Paid: what Gio paid for a copy, Input after Price in admin; private table `listing_costs` (0048), admin-only, never in the shop or the Scanner | accepted |

@@ -1494,14 +1494,16 @@
   }
   /* ── PriceFields (Figma page `Create` → `price fields`, device=desktop | mobile, Gio 2026-11-17) ──
      Marker ("€€") + Sale type + Price. desktop: an 8-column grid gap 16, each field 2 columns; mobile: stacked, gap 16.
-     price=offers (decision 0158): a note (body-small, text/strong) instead of Price, 6 columns, centred on the select. */
+     price=offers (decision 0158): a note (body-small, text/strong) instead of Price, 6 columns, centred on the select.
+     Figma boolean `paid` (decision 0206): a third field after Price (or after the note, which then takes 4 columns). */
   function PriceFields(props) {
-    return h('div', Object.assign({}, omit(props, ['marker', 'saleType', 'price', 'note', 'bargain', 'className']), { className: cx('hm-price-fields', props.className) }),
+    return h('div', Object.assign({}, omit(props, ['marker', 'saleType', 'price', 'note', 'paid', 'bargain', 'className']), { className: cx('hm-price-fields', props.className, props.note && props.paid ? 'hm-price-fields--note-paid' : null) }),
       h(Marker, null, props.marker === undefined ? '€€' : props.marker),
       h('div', { className: 'hm-price-fields__row' },
         props.saleType ? h('div', { className: 'hm-price-fields__field' }, props.saleType) : null,
         props.note ? h('p', { className: 'hm-price-fields__note body-small' }, props.note)
           : props.price ? h('div', { className: 'hm-price-fields__field' }, props.price) : null,
+        props.paid ? h('div', { className: 'hm-price-fields__field' }, props.paid) : null,
         // Figma boolean `bargain crate` (decision 0201): the Checkbox on a row of its own, under the fields
         props.bargain ? h('div', { className: 'hm-price-fields__bargain' }, props.bargain) : null));
   }

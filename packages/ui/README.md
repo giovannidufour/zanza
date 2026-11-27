@@ -89,7 +89,7 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | OrderBlock | page `Orders` (BACKEND) → `order block` | ported (0100): title, body (line breaks kept), optional action |
 | FormSectionHead | page `Create` (BACKEND) → `form section head` | ported (0113): heading of a Create / Edit listing section |
 | Marker | page `listing form` → `marker` | ported (0114): 48px circle before a form block (line number, €€), aria-hidden |
-| PriceFields | page `Create` (BACKEND) → `price fields` | ported (0114): Marker + Sale type + Price, desktop grid / mobile stacked |
+| PriceFields | page `Create` (BACKEND) → `price fields` | ported (0114): Marker + Sale type + Price (+ `bargain` 0201, `paid` 0206), desktop grid / mobile stacked |
 | ActionBar | page `admin` → `action bar` | ported (0089): form actions sticky at the bottom on mobile, optional status line |
 | Checkbox | page `controls` → `checkbox` | ported: state default / active (= checked) / indeterminate, `label` boolean (hideLabel), native input |
 | Dialog · NewsletterDialog | page `dialog` → `dialog`, `newsletter dialog` | ported: native `<dialog>` + showModal, surface-base, backdrop surface-scrim, `choices` (radio group); NewsletterDialog = head with close + FooterNewsletter (0121) |
