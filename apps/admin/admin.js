@@ -667,12 +667,12 @@
         var name = (props.sku ? props.sku + '_' : '') + (side === 'A' ? '1' : '2') + '_label.webp';
         var label = useLabel ? new File([await canvasBlob(labelRef.current)], name, { type: 'image/webp' }) : null;
         var full = useFull ? await canvasBlob(fullRef.current) : null;
-        props.onAdd({ side: side, label: label, full: full });
+        await props.onAdd({ side: side, label: label, full: full });
       } catch (e) { toast(e.message); setBusy(false); }
     }
 
     var result = phase === 'result';
-    var head = h(Z.CratePhotoHead, { title: 'Take photo', listing: props.listing });
+    var head = h(Z.CratePhotoHead, { title: props.title || 'Take photo', listing: props.listing });
     var sideSwitch = h(Z.SideSwitch, { value: side, onChange: setSide, 'aria-label': 'Label side' });
     var body = result
       ? h(React.Fragment, null,
@@ -687,7 +687,7 @@
       : h(Z.CameraViewer, { status: phase === 'working' ? 'Working…' : camStatus },
           h('video', { ref: videoRef, playsInline: true, muted: true, autoPlay: true }));
     var actions = result
-      ? [h(Z.Button, { key: 'add', hierarchy: 'primary', disabled: busy || (!useLabel && !useFull), onClick: add }, 'Add to listing'),
+      ? [h(Z.Button, { key: 'add', hierarchy: 'primary', disabled: busy || (!useLabel && !useFull), onClick: add }, props.addLabel || 'Add to listing'),
          h(Z.Button, { key: 'retake', hierarchy: 'secondary', disabled: busy, onClick: function () { shot.current = null; setChecks([]); setPhase('camera'); } }, 'Retake')]
       : [h(Z.Button, { key: 'take', hierarchy: 'primary', disabled: phase !== 'camera' || !streamRef.current, onClick: takePhoto }, 'Take photo'),
          h(Z.Button, { key: 'library', hierarchy: 'secondary', disabled: phase !== 'camera', onClick: function () { fileRef.current.click(); } }, 'From library')];
@@ -695,6 +695,30 @@
       h('div', { className: 'admin-crate__body' }, head, sideSwitch, body),
       h('input', { ref: fileRef, type: 'file', accept: 'image/*', hidden: true, tabIndex: -1, onChange: fromLibrary }),
       h(Z.ActionBar, null, actions));
+  }
+
+  /* Create bargain (Gio 2026-11-27, decision 0203; Figma `Crate photo` → Create bargain screens): admin mobile Menu →
+     Create bargain (#bargain) opens Take photo straight away. Create draft uploads the Label (photo 1) and the Full
+     (original_keys), saves a draft that already has its SKU, flagged Bargain crate (0201): line 1 "Untitled bargain",
+     7" (the crops are a 7"'s), For sale. Then the camera opens again for the next record; the rest is filled later,
+     from the computer (Listings → Drafts). */
+  var BARGAIN_TITLE = 'Untitled bargain';
+  function BargainCapture() {
+    var rd = useState(0), round = rd[0], setRound = rd[1];
+    async function create(taken) {
+      var photoKey = taken.label ? await uploadFile('photo', taken.label) : null;
+      var fullKey = taken.full ? await upload('original', taken.full, null) : null;
+      var f = emptyForm();
+      f.lines[0].title = BARGAIN_TITLE; f.format = '7"'; f.section = 'sale';
+      if (photoKey) f.images = [{ key: photoKey }];
+      var res = await sb.rpc('admin_save_listing', { payload: payloadOf(f, 'draft') });
+      if (res.error) throw new Error('Draft not created: ' + res.error.message);
+      var up = await sb.from('listings').update({ bargain: true, original_keys: fullKey ? [fullKey] : [] }).eq('id', res.data.listing_id);
+      toast(up.error ? 'Draft created · SKU ' + res.data.sku + ', but not flagged Bargain crate: ' + up.error.message
+        : 'Bargain draft saved · SKU ' + res.data.sku + '. Next record.');
+      setRound(function (n) { return n + 1; });   // a fresh camera for the next record
+    }
+    return h(CratePhoto, { key: round, title: 'Create bargain', listing: 'New bargain draft \u00b7 7\u2033', addLabel: 'Create draft', onAdd: create });
   }
 
   function ListingForm(props) {
@@ -3776,6 +3800,7 @@
     else if (isAdmin === null) body = h('p', { className: 'body-medium' }, 'Checking access…');
     else if (!isAdmin) body = h('p', { className: 'body-medium', role: 'alert' }, 'This account has no admin access.');
     else if (hash === '#new') body = h(ListingForm, { key: 'new-' + route.visit, initial: emptyForm() });
+    else if (hash === '#bargain') body = h(BargainCapture, { key: 'bargain-' + route.visit });   // decision 0203
     else if (/^#edit-/.test(hash)) body = h(EditLoader, { key: hash + route.visit, id: hash.slice(6) });
     else if (/^#attributes\/[a-z]+\/[^/]+$/.test(hash)) body = h(AttributeForm, { key: hash + route.visit, kind: hash.split('/')[1], id: hash.split('/')[2] });
     else if (/^#attributes/.test(hash)) body = h(Attributes, { key: 'attributes', kind: hash.split('/')[1] || 'artist' });
@@ -3802,6 +3827,7 @@
   var SECTIONS = [['dashboard', 'Dashboard', '#dashboard'], ['listings', 'Listings', '#listings'], ['orders', 'Orders', '#orders'], ['offers', 'Offers', '#offers'], ['attributes', 'Attributes', '#attributes'], ['collections', 'Collections', '#collections'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings'], ['content', 'Content', '#content']];
   function sectionOf(hash) {
     if (!hash || hash === '#' || hash === '#dashboard') return 'dashboard';
+    if (hash === '#bargain') return 'bargain';   // Create bargain (0203): an action, no section lit
     if (/^#orders/.test(hash)) return 'orders';
     if (hash === '#offers') return 'offers';
     if (/^#attributes/.test(hash)) return 'attributes';
@@ -3834,6 +3860,8 @@
       h('dialog', { id: 'admin-menu', className: 'admin-menu', 'aria-label': 'Menu', tabIndex: -1, ref: dialogRef,
         onClick: function (e) { if (e.target.closest && e.target.closest('a[href]')) closeMenu(); } },
         h(Z.MenuLayer, { title: 'Menu', closeLabel: 'Close menu', onClose: closeMenu },
+          // Create bargain (Gio 2026-11-27, decision 0203; Figma `admin menu` → actions): the phone's shortcut to Take photo
+          h(Z.MenuGroup, null, h(Z.MenuItem, { href: '#bargain', label: 'Create bargain', current: props.hash === '#bargain' })),
           h(Z.MenuGroup, null, SECTIONS.map(function (x) { return h(Z.MenuItem, { key: x[0], href: x[2], label: x[1], current: x[0] === current }); })),
           h(Z.MenuGroup, null, h(Z.MenuItem, { label: 'Sign out', detail: props.email, onClick: signOut })))));
   }
