@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Crate camera test</title>
+<style>
+  /* Technical prototype only: no design tokens on purpose, the real page is designed in Figma first. */
+  :root { color-scheme: light dark; --fg: #111; --bg: #fff; --muted: #666; --line: #ccc; }
+  @media (prefers-color-scheme: dark) { :root { --fg: #eee; --bg: #111; --muted: #999; --line: #444; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.4 -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--fg);
+         padding: env(safe-area-inset-top) max(16px, env(safe-area-inset-right)) 32px max(16px, env(safe-area-inset-left)); }
+  h1 { font-size: 18px; margin: 16px 0 4px; }
+  p.note { color: var(--muted); margin: 0 0 12px; font-size: 13px; }
+  .viewer { position: relative; width: 100%; aspect-ratio: 1; background: #000; overflow: hidden; border-radius: 4px; }
+  .viewer video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .viewer svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  button, label.btn { font: inherit; padding: 10px 14px; border: 1px solid var(--fg); background: var(--bg); color: var(--fg); border-radius: 4px; }
+  button.primary { background: var(--fg); color: var(--bg); }
+  button:disabled { opacity: .4; }
+  label.btn input { display: none; }
+  pre { font: 12px/1.5 ui-monospace, monospace; background: color-mix(in srgb, var(--fg) 6%, var(--bg)); padding: 10px; border-radius: 4px; white-space: pre-wrap; margin: 0; }
+  .out { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .out figure { margin: 0; min-width: 0; }
+  .out img, .out canvas { width: 100%; display: block; border: 1px solid var(--line); }
+  figcaption { font-size: 12px; color: var(--muted); }
+  .opts { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>Crate camera test</h1>
+<p class="note">Prototype to check what the phone camera gives a web page. Put the record on a plain grey or white card, shoot from above, fill the circle.</p>
+
+<div class="viewer" id="viewer">
+  <video id="video" playsinline muted autoplay></video>
+  <svg viewBox="0 0 100 100" aria-hidden="true">
+    <circle cx="50" cy="50" r="47" fill="none" stroke="#fff" stroke-width=".4" stroke-dasharray="1.5 1.5"/>
+    <circle cx="50" cy="50" r="17" fill="none" stroke="#fff" stroke-width=".3" stroke-dasharray="1 1"/>
+    <line x1="50" y1="46" x2="50" y2="54" stroke="#fff" stroke-width=".3"/>
+    <line x1="46" y1="50" x2="54" y2="50" stroke="#fff" stroke-width=".3"/>
+  </svg>
+</div>
+
+<div class="row">
+  <button id="start" class="primary">Start camera</button>
+  <button id="shoot" disabled>Take photo</button>
+  <label class="btn">Native camera<input id="native" type="file" accept="image/*" capture="environment"></label>
+</div>
+
+<div class="opts">
+  <label><input type="checkbox" id="optPersp" checked> Fix tilt</label>
+  <label><input type="checkbox" id="optLight" checked> Even out light</label>
+  <span>Rotate <button id="rotL">−5°</button> <button id="rotR">+5°</button> <button id="rot90">90°</button></span>
+</div>
+
+<div class="row"><pre id="info">Camera not started.</pre></div>
+
+<div class="out">
+  <figure><canvas id="raw"></canvas><figcaption>As shot</figcaption></figure>
+  <figure><canvas id="result" width="1600" height="1600"></canvas><figcaption id="resCap">Fixed, 1600 × 1600</figcaption></figure>
+</div>
+<div class="row"><a id="save" download="crate-test.webp" hidden><button>Save result</button></a></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const video = $('video'), info = $('info');
+const lines = {};
+function log(key, text) { lines[key] = text; info.textContent = Object.values(lines).join('\n'); }
+
+let stream = null, source = null, userRot = 0;
+
+$('start').onclick = async () => {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 4032 }, height: { ideal: 3024 } }
+    });
+    video.srcObject = stream;
+    await video.play();
+    const track = stream.getVideoTracks()[0];
+    const s = track.getSettings();
+    const caps = track.getCapabilities ? track.getCapabilities() : {};
+    log('live', `Live camera: ${s.width} × ${s.height}` +
+      (caps.width ? ` (max ${caps.width.max} × ${caps.height.max})` : '') +
+      `\nSquare crop from live camera: ${Math.min(s.width, s.height)} px` +
+      (Math.min(s.width, s.height) >= 1600 ? ' ✓ enough for 1600' : ' ✗ below 1600'));
+    $('shoot').disabled = false;
+  } catch (e) {
+    log('live', 'Live camera refused: ' + e.name + ' ' + e.message);
+  }
+};
+
+$('shoot').onclick = () => {
+  const c = document.createElement('canvas');
+  c.width = video.videoWidth; c.height = video.videoHeight;
+  c.getContext('2d').drawImage(video, 0, 0);
+  log('src', `Photo from live camera: ${c.width} × ${c.height}`);
+  process(c);
+};
+
+$('native').onchange = async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const bmp = await createImageBitmap(file); // honours EXIF orientation
+  const c = document.createElement('canvas');
+  c.width = bmp.width; c.height = bmp.height;
+  c.getContext('2d').drawImage(bmp, 0, 0);
+  log('src', `Photo from native camera: ${c.width} × ${c.height}`);
+  process(c);
+};
+
+for (const [id, d] of [['rotL', -5], ['rotR', 5], ['rot90', 90]]) $(id).onclick = () => { userRot += d; if (source) process(source); };
+$('optPersp').onchange = $('optLight').onchange = () => { if (source) process(source); };
+
+// ── Find the record: pixels that differ from the background (estimated from the frame border)
+function detect(src) {
+  const W = 400, H = Math.round(src.height * W / src.width), k = src.width / W;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d'); g.drawImage(src, 0, 0, W, H);
+  const d = g.getImageData(0, 0, W, H).data;
+  // background colour = median of the border pixels
+  const br = [], bg = [], bb = [];
+  for (let x = 0; x < W; x++) for (const y of [0, 1, H - 2, H - 1]) { const i = (y * W + x) * 4; br.push(d[i]); bg.push(d[i + 1]); bb.push(d[i + 2]); }
+  for (let y = 0; y < H; y++) for (const x of [0, 1, W - 2, W - 1]) { const i = (y * W + x) * 4; br.push(d[i]); bg.push(d[i + 1]); bb.push(d[i + 2]); }
+  const med = a => a.sort((p, q) => p - q)[a.length >> 1];
+  const R = med(br), G = med(bg), B = med(bb);
+  const mask = new Uint8Array(W * H);
+  for (let p = 0; p < W * H; p++) {
+    const i = p * 4, dr = d[i] - R, dg = d[i + 1] - G, db = d[i + 2] - B;
+    mask[p] = (dr * dr + dg * dg + db * db) > 45 * 45 ? 1 : 0;
+  }
+  // largest connected component (4-neighbour flood fill)
+  const lab = new Int32Array(W * H); let best = 0, bestN = 0, cur = 0; const stack = [];
+  for (let p = 0; p < W * H; p++) {
+    if (!mask[p] || lab[p]) continue;
+    cur++; let n = 0; stack.push(p); lab[p] = cur;
+    while (stack.length) {
+      const q = stack.pop(); n++;
+      const x = q % W, y = (q / W) | 0;
+      if (x > 0 && mask[q - 1] && !lab[q - 1]) { lab[q - 1] = cur; stack.push(q - 1); }
+      if (x < W - 1 && mask[q + 1] && !lab[q + 1]) { lab[q + 1] = cur; stack.push(q + 1); }
+      if (y > 0 && mask[q - W] && !lab[q - W]) { lab[q - W] = cur; stack.push(q - W); }
+      if (y < H - 1 && mask[q + W] && !lab[q + W]) { lab[q + W] = cur; stack.push(q + W); }
+    }
+    if (n > bestN) { bestN = n; best = cur; }
+  }
+  if (bestN < W * H * 0.05) return null;
+  // fill holes row by row (label, reflections) so the moments see a solid disc
+  let n = 0, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
+  for (let y = 0; y < H; y++) {
+    let x0 = -1, x1 = -1;
+    for (let x = 0; x < W; x++) if (lab[y * W + x] === best) { if (x0 < 0) x0 = x; x1 = x; }
+    if (x0 < 0) continue;
+    for (let x = x0; x <= x1; x++) { n++; sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y; }
+  }
+  const cx = sx / n, cy = sy / n;
+  const vxx = sxx / n - cx * cx, vyy = syy / n - cy * cy, vxy = sxy / n - cx * cy;
+  const tr = vxx + vyy, det = vxx * vyy - vxy * vxy, disc = Math.sqrt(Math.max(0, tr * tr / 4 - det));
+  const l1 = tr / 2 + disc, l2 = tr / 2 - disc;
+  const theta = 0.5 * Math.atan2(2 * vxy, vxx - vyy);
+  // uniform ellipse: variance along an axis = (semi-axis)² / 4
+  return { cx: cx * k, cy: cy * k, a: 2 * Math.sqrt(l1) * k, b: 2 * Math.sqrt(l2) * k, theta, bg: [R, G, B] };
+}
+
+function process(src) {
+  source = src;
+  const raw = $('raw'); raw.width = 800; raw.height = Math.round(src.height * 800 / src.width);
+  raw.getContext('2d').drawImage(src, 0, 0, raw.width, raw.height);
+
+  const t0 = performance.now();
+  const f = detect(src);
+  const out = $('result'), S = out.width, o = out.getContext('2d');
+  o.setTransform(1, 0, 0, 1, 0, 0); o.fillStyle = '#808080'; o.fillRect(0, 0, S, S);
+  if (!f) { log('fix', 'Record not found: use a plain card that contrasts with the record.'); return; }
+
+  const persp = $('optPersp').checked;
+  const fill = 0.94;                       // record edge at 94 % of the square, like the Scanner guide
+  const scale = (S / 2 * fill) / f.a;
+  o.imageSmoothingQuality = 'high';
+  o.translate(S / 2, S / 2);
+  o.rotate(userRot * Math.PI / 180);
+  o.scale(scale, scale);
+  if (persp) { o.rotate(f.theta); o.scale(1, f.a / f.b); o.rotate(-f.theta); }
+  o.translate(-f.cx, -f.cy);
+  o.drawImage(src, 0, 0);
+  o.setTransform(1, 0, 0, 1, 0, 0);
+
+  const srcPx = Math.round(f.a * 2 / fill);
+  let lightNote = 'off';
+  if ($('optLight').checked) lightNote = evenLight(o, S, S / 2 * fill * 1.03);
+
+  log('fix',
+    `Record found: centre ${Math.round(f.cx)}, ${Math.round(f.cy)} · diameter ${Math.round(f.a * 2)} px in the photo` +
+    `\nTilt: ${((1 - f.b / f.a) * 100).toFixed(1)} % squash` + (persp ? ' → fixed' : ' (not fixed)') +
+    `\nSource pixels for the square: ${srcPx}` + (srcPx >= 1600 ? ' ✓ sharp at 1600' : ' ✗ upscaled to 1600') +
+    `\nLight: ${lightNote}` +
+    `\nTime: ${Math.round(performance.now() - t0)} ms`);
+  $('resCap').textContent = `Fixed, 1600 × 1600, rotation ${userRot}°`;
+  out.toBlob(b => { const a = $('save'); a.href = URL.createObjectURL(b); a.hidden = false; }, 'image/webp', 0.9);
+}
+
+// ── Even out light: fit a plane per channel to the card around the record, divide it out,
+// so exposure, white balance and a side light come out the same in every photo.
+function evenLight(o, S, rIn) {
+  const img = o.getImageData(0, 0, S, S), d = img.data, c = S / 2;
+  // least squares v = p0 + p1 x + p2 y on background samples (corners outside the record)
+  const A = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], bv = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+  let n = 0;
+  for (let y = 0; y < S; y += 4) for (let x = 0; x < S; x += 4) {
+    const dx = x - c, dy = y - c;
+    if (dx * dx + dy * dy < rIn * rIn) continue;
+    const i = (y * S + x) * 4, u = x / S, v = y / S, f = [1, u, v];
+    for (let r = 0; r < 3; r++) { for (let q = 0; q < 3; q++) A[r][q] += f[r] * f[q]; for (let ch = 0; ch < 3; ch++) bv[ch][r] += f[r] * d[i + ch]; }
+    n++;
+  }
+  if (n < 500) return 'skipped (no card visible around the record)';
+  const planes = bv.map(b => solve3(A, b));
+  const target = 205; // card ends up the same light neutral grey in every photo
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const i = (y * S + x) * 4, u = x / S, v = y / S;
+    for (let ch = 0; ch < 3; ch++) {
+      const p = planes[ch], base = Math.max(8, p[0] + p[1] * u + p[2] * v);
+      d[i + ch] = Math.min(255, d[i + ch] * target / base);
+    }
+  }
+  o.putImageData(img, 0, 0);
+  const mid = planes.map(p => Math.round(p[0] + p[1] / 2 + p[2] / 2));
+  const spread = Math.round(Math.max(...planes.map(p => Math.abs(p[1]) + Math.abs(p[2]))));
+  return `card was rgb(${mid.join(', ')}), side-to-side change ${spread} → now neutral ${target}`;
+}
+function solve3(A, b) {
+  const m = A.map((r, i) => [...r, b[i]]);
+  for (let i = 0; i < 3; i++) {
+    let p = i; for (let r = i + 1; r < 3; r++) if (Math.abs(m[r][i]) > Math.abs(m[p][i])) p = r;
+    [m[i], m[p]] = [m[p], m[i]];
+    for (let r = 0; r < 3; r++) if (r !== i) { const f = m[r][i] / m[i][i]; for (let q = i; q < 4; q++) m[r][q] -= f * m[i][q]; }
+  }
+  return [m[0][3] / m[0][0], m[1][3] / m[1][1], m[2][3] / m[2][2]];
+}
+</script>
+</body>
+</html>
