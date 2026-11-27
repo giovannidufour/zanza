@@ -1844,9 +1844,9 @@ button.hm-capture-slot { cursor: pointer; }
 .hm-price {
   display: inline-flex; align-items: center; justify-content: center;
   box-sizing: border-box;
-  padding: 1px 0;
+  height: calc(1lh + 4px);   /* fixed: the slot's line height + 1px gap + 1px stroke top and bottom (Figma: 24 at body/medium 20) */
+  padding: 0 0.5em;          /* TEST (Gio 2026-11-27: "ovale, altezza fissa, larghezza che si adatta"): room for the ellipse's curve; not in Figma */
   border: 1px solid var(--border-divider-strong);
-  border-radius: 1000px;
-  min-width: calc(1lh + 4px);   /* TEST: never narrower than tall, so 1–2 characters read as a circle (Gio: "in un cerchio"); not in Figma */
+  border-radius: 50%;        /* a true ellipse: the width follows the text */
   white-space: nowrap;
 }
