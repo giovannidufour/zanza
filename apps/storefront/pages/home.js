@@ -82,7 +82,8 @@ function Shelf({ id, title, meta, items, url, divider, viewAll }) {
 }
 
 function Home({ products, site, url, collections = [], now = Date.now() }) {
-  const sale = products.filter((p) => p.listing.section === 'sale');
+  // the Bargain crate stays off the home (decision 0201): the curated part stays clean
+  const sale = products.filter((p) => p.listing.section === 'sale' && !p.listing.bargain);
   // the shelves are about what is new (decision 0129): newest published first, not Gio's order of the shop lists
   const newest = (x, y) => String(y.listing.published_at || '').localeCompare(String(x.listing.published_at || ''));
   const onSale = sale.filter((p) => ['available', 'reserved'].includes(p.listing.status)).sort(newest);

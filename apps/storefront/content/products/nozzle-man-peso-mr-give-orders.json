@@ -8,6 +8,7 @@
       "amount": 300,
       "currency": "EUR"
     },
+    "bargain": true,
     "source": {
       "shop": "jammersrecord.com",
       "url": "https://jammersrecord.com/?pid=194309337",

@@ -285,6 +285,7 @@ function relatedTo(product) {
   const rank = (p) => (p.listing.status === 'available' ? 0 : 2) + (p.listing.section === product.listing.section ? 0 : 1);
   return products
     .filter(p => p !== product)   // trade copies are already out of `products` while trade is off
+    .filter(p => product.listing.bargain || !p.listing.bargain)   // a curated record never suggests the Bargain crate (0201)
     .map(p => ({ p, rank: rank(p), score: (p.release.genres || []).filter(g => genres.has(g)).length }))
     .sort((a, b) => a.rank - b.rank || b.score - a.score || order.get(a.p) - order.get(b.p))
     .slice(0, RELATED_COUNT).map(x => x.p);
@@ -300,6 +301,11 @@ for (const product of products) {
 // Every PLP: for sale first, sold at the end (Gio 2026-11-24, decision 0174: Plp.soldLast)
 const forSale = Plp.soldLast(products.filter(p => p.listing.section === 'sale' && ['available', 'reserved', 'sold'].includes(p.listing.status)));
 write('sale/index.html', page({ template: 'plp', title: Plp.title('sale'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'sale', products: forSale, allProducts: products, site, url })) }));
+
+// Bargain crate (Gio 2026-11-27, decision 0201; Figma PLP - desktop / bargain crate): the sale records flagged in the
+// admin, the third header tab. On the other PLPs they stay hidden until "Show bargain crate" is ticked (pages/plp.js).
+const bargain = forSale.filter(p => p.listing.bargain);
+write('bargain-crate/index.html', page({ template: 'plp', title: Plp.title('bargain'), body: renderToStaticMarkup(React.createElement(Plp.Plp, { section: 'bargain', products: bargain, allProducts: products, site, url })) }));
 
 // For trade (Figma page `Trade`, decision 0068): the trade PLP, one offer page per trade listing, How trading works, About.
 // Traded copies stay on the list like sold ones (behind "Show sold out").
@@ -378,6 +384,6 @@ write('index.html', page({ template: 'home', title: Home.title, body: renderToSt
 // Cloudflare Pages response headers (target pages only). Until launch the shop lives on staging.highmuzik.com
 // (behind Cloudflare Access) and store-front-6fx.pages.dev: neither may be indexed (site.json → noindex).
 if (targetArg === 'pages' && site.noindex) write('_headers', '/*\n  X-Robots-Tag: noindex\n');
-console.log(`done: ${products.length} product page(s), ${forSale.length} for sale` + (site.tradeEnabled ? `, ${forTrade.length} for trade` : ', trade off'));
+console.log(`done: ${products.length} product page(s), ${forSale.length} for sale (${bargain.length} in the bargain crate)` + (site.tradeEnabled ? `, ${forTrade.length} for trade` : ', trade off'));
 }
 main().catch((err) => { console.error(err.message || err); process.exit(1); });

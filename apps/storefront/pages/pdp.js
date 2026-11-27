@@ -26,7 +26,7 @@ function Pdp({ product, related = [], site, url }) {
   const { listing, release, copy, samples } = product;
   const trade = listing.section === 'trade';
   return h('div', { className: 'hm-page' },
-    h(SiteHeader, { site, url, section: listing.section }),
+    h(SiteHeader, { site, url, section: listing.bargain ? 'bargain' : listing.section }),   // a bargain record lights the Bargain crate tab (0201)
     h(Z.Breadcrumbs, { items: breadcrumbItems(product, url) }),
 
     // Figma: `pdp content` — 12-col grid (desktop) / 4-col (mobile), gap gutter-small, padding-y small

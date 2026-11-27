@@ -80,14 +80,20 @@ const isSold = (p) => SOLD_STATUSES.indexOf(p.listing.status) !== -1;
 // Hidden while the page has no sold copy (Gio 2026-11-23, decision 0161; Figma boolean `show sold out`): a build-time
 // check, the shop rebuilds when a listing's sale state changes, so the tick comes back with the first sold record.
 const ShowSold = () => h(Z.Filter, { name: 'sold', value: 'show', label: 'Show sold out', defaultChecked: true, 'data-show-sold': '' });
+// Bargain crate (Gio 2026-11-27, decision 0201; Figma `filters` / `filters layer` boolean `show bargain crate`): the
+// cheap records flagged in the admin live on /bargain-crate/; on every other PLP they are hidden until this row is
+// ticked (?bargain=show). Unticked by default, never an applied filter; the row shows only when the page has one.
+const isBargain = (p) => !!p.listing.bargain;
+const ShowBargain = () => h(Z.Filter, { name: 'bargain', value: 'show', label: 'Show bargain crate', defaultChecked: false, 'data-show-bargain': '' });
 
-function PlpFilters({ facets, hidden, sorts, showSold }) {
+function PlpFilters({ facets, hidden, sorts, showSold, showBargain }) {
   // Figma: `filters` > sort (Gio 2026-11-10: button hug, prefix "Sort:") + `filter block` per facet > `filter` (content=label, count)
   return h('aside', { className: 'plp-filters', 'aria-label': 'Filters', 'data-plp-filters': '',
     'data-hidden-facets': JSON.stringify(hidden) },
     h(Z.Filters, null,
       h(Z.SelectButton, { prefix: 'Sort:', className: 'plp-filters__sort', 'aria-label': 'Sort', 'data-plp-sort': '', defaultValue: 'newest', options: sorts }),
       showSold ? h(ShowSold) : null,
+      showBargain ? h(ShowBargain) : null,
       facets.map((f) => h(Z.FilterBlock, { key: f.key, label: f.label },
         f.options.map((o) => h(Z.Filter, {
           key: o.value, name: f.key, value: o.value, label: optionLabel(f.key, o.value), count: o.count,
@@ -99,11 +105,12 @@ function PlpFilters({ facets, hidden, sorts, showSold }) {
 
 // Mobile filters (Figma `filters layer`, 2026-11-10): the same facets as the column, in a full-screen native dialog.
 // Its checkboxes are a draft: site.js copies the column's state in when it opens and back on Apply.
-function PlpLayer({ facets, showSold }) {
+function PlpLayer({ facets, showSold, showBargain }) {
   return h('dialog', { className: 'plp-layer', 'aria-label': 'Filter', tabIndex: -1, 'data-plp-layer': '' },
     h(Z.FiltersLayer, { level: 'main', title: 'Filter', applied: null, appliedLabel: 'Applied', applyCount: null },
       // level=main: one row per facet (value = its ticked options, written by site.js)
       showSold ? h('div', { className: 'plp-layer__sold', 'data-layer-sold': '' }, h(ShowSold)) : null,
+      showBargain ? h('div', { className: 'plp-layer__sold', 'data-layer-sold': '' }, h(ShowBargain)) : null,
       h('div', { className: 'plp-layer__facets', 'data-layer-facets': '' },
         facets.map((f) => h(Z.FilterFacet, { key: f.key, label: f.label, 'data-facet': f.key, 'data-facet-label': f.label }))),
       // level=facet: the options of one facet; the bar title names it, so the legend is for screen readers only
@@ -123,7 +130,8 @@ const SORTS = [
   { value: 'price-desc', label: 'Highest price', section: 'sale' }
 ];
 
-const sortsFor = (section) => SORTS.filter((o) => !o.section || o.section === section);
+// the Bargain crate is a page of sale records: the price sorts too
+const sortsFor = (section) => SORTS.filter((o) => !o.section || o.section === (section === 'bargain' ? 'sale' : section));
 
 // allProducts: every product with a page (also sold / reserved / trade), so a chip reached from any PDP shows the name.
 // search (Figma page `Search`, 2026-11-12): the results page /search/?q=… — the same page with no section tab, the
@@ -182,6 +190,11 @@ function Plp({ section, products, allProducts = products, site, url, search = fa
   const perPage = (site && site.perPage) || Pages.DEFAULT_PER_PAGE;
   const facets = facetsOf(products);
   const showSold = products.some(isSold);
+  // /bargain-crate/ (section 'bargain') holds only bargain records: no tick there
+  const showBargain = section !== 'bargain' && products.some(isBargain);
+  // page 1 as built: the records shown before site.js runs (bargain ones are hidden by default, decision 0201)
+  let shownIndex = 0;
+  const builtHidden = products.map((p) => (showBargain && isBargain(p)) || shownIndex++ >= perPage);
   const hint = 'Search by artist, title, label or catalogue number.';
   return h('div', { className: 'hm-page', 'data-search-page': search ? '' : undefined, 'data-wantlist-page': wantlist ? '' : undefined },
     h(SiteHeader, { site, url, section: search || wantlist ? undefined : section, current: wantlist ? 'wantlist' : undefined }),
@@ -211,15 +224,15 @@ function Plp({ section, products, allProducts = products, site, url, search = fa
 
     // Figma: `pdp content` (sic) — 12-col grid, gap gutter-small, padding-y small; filters cols 1–3, list cols 4–12
     h('div', { className: 'plp-content', 'data-search-results': search ? '' : undefined },
-      facets.length ? h(PlpFilters, { facets, hidden: hiddenFacetsOf(allProducts), sorts: sortsFor(section), showSold }) : null,
+      facets.length ? h(PlpFilters, { facets, hidden: hiddenFacetsOf(allProducts), sorts: sortsFor(section), showSold, showBargain }) : null,
       h('main', { className: 'plp-list', 'data-per-page': perPage },
         search || wantlist || collection ? null : h('h1', { className: 'plp-list__title' }, SECTION_LABEL[section]),
         wantlist ? groupHeading('exact', 'Exact matches') : null,
         wantlist ? groupHeading('other', 'Other pressings') : null,
         // no device: responsive card (desktop variant on PLP - desktop, mobile variant on PLP - mobile)
         products.map((product, i) => h('div', Object.assign({ key: product.listing.slug, className: 'plp-item',
-          hidden: i >= perPage || undefined,   // page 1 as built; site.js takes over (filters, ?page=)
-          'data-order': i, 'data-sold': isSold(product) ? '' : undefined, 'data-price': product.listing.price ? product.listing.price.amount : undefined,
+          hidden: builtHidden[i] || undefined,   // page 1 as built; site.js takes over (filters, ?page=)
+          'data-order': i, 'data-sold': isSold(product) ? '' : undefined, 'data-bargain': showBargain && isBargain(product) ? '' : undefined, 'data-price': product.listing.price ? product.listing.price.amount : undefined,
           'data-search': search ? searchTextOf(product) : undefined,
           // Discogs ids, matched against the visitor's wantlist in their browser (decision 0152)
           'data-release': wantlist && product.release.discogs_release_id ? product.release.discogs_release_id : undefined,
@@ -241,10 +254,11 @@ function Plp({ section, products, allProducts = products, site, url, search = fa
               ? h('div', { className: 'search-message plp-list__empty' },
                 h('p', { className: 'body-medium' }, 'Nothing in this collection right now. Come back soon.'),
                 h(Z.Button, { hierarchy: 'secondary', href: url('/sale/') }, 'Browse all records'))
-            : h('p', { className: 'plp-list__empty body-medium' }, section === 'trade' ? 'Nothing up for trade right now. Come back soon.' : 'No records right now.'),
-        products.length ? PlpPagination({ count: products.length, perPage }) : null),
-      facets.length ? h(PlpLayer, { facets, showSold }) : null)
+            : h('p', { className: 'plp-list__empty body-medium' }, section === 'trade' ? 'Nothing up for trade right now. Come back soon.'
+              : section === 'bargain' ? 'Nothing in the bargain crate right now. Come back soon.' : 'No records right now.'),
+        products.length ? PlpPagination({ count: shownIndex, perPage }) : null),
+      facets.length ? h(PlpLayer, { facets, showSold, showBargain }) : null)
   );
 }
 
-module.exports = { Plp, title: (section) => SECTION_LABEL[section], facetsOf, searchTextOf, searchWords, isSold, soldLast };
+module.exports = { Plp, title: (section) => SECTION_LABEL[section], facetsOf, searchTextOf, searchWords, isSold, isBargain, soldLast };

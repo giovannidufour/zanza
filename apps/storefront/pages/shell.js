@@ -9,7 +9,8 @@ const { queries } = require('../../../packages/ui/media.js');
 const h = React.createElement;
 
 // catalog = every record, sale and trade mixed (/catalog/, reached only from the home's "See all", decision 0085)
-const SECTION_LABEL = { sale: 'For sale', trade: 'For trade', catalog: 'Catalog' };
+// bargain = the Bargain crate, /bargain-crate/ (decision 0201): the sale records flagged in the admin
+const SECTION_LABEL = { sale: 'For sale', trade: 'For trade', bargain: 'Bargain crate', catalog: 'Catalog' };
 
 // ── photo sizes (decision 0108) ──
 // How wide each spot draws a photo, for <img sizes>: measured on the page grids (card = 2 of 12 columns, 96 px on
@@ -216,7 +217,9 @@ function SiteHeader({ site, url, section, current }) {
       // trade off (admin → Settings, decision 0102): only "For sale", still the desktop way to /sale/
       tabs: h(Z.Tabs, { as: 'nav', value: section, 'aria-label': 'Section' },
         h(Z.Tab, { value: 'sale', href: url('/sale/') }, 'For sale'),
-        tradeOn(site) ? h(Z.Tab, { value: 'trade', href: url('/trade/') }, 'For trade') : null),
+        tradeOn(site) ? h(Z.Tab, { value: 'trade', href: url('/trade/') }, 'For trade') : null,
+        // Bargain crate (Gio 2026-11-27, decision 0201): a third tab for now, Gio will move it later
+        h(Z.Tab, { value: 'bargain', href: url('/bargain-crate/') }, 'Bargain crate')),
       actions: h(React.Fragment, null,
         // Account (decision 0101): the customer's orders; state active on /account/ pages, as Bag on /bag/ (0045)
         h(Z.Button, { hierarchy: 'secondary', className: 'hm-header__account', href: url('/account/'),
@@ -252,6 +255,7 @@ function SiteMenu({ site, url, current }) {
       // Figma `menu layer`: the search field on top of the body (Gio 2026-11-12: mobile search in the menu, not the header)
       h(SearchForm, { url, id: 'site-search-menu', className: 'site-menu__search' }),
       h(Z.MenuGroup, null, item('sale', 'For sale', '/sale/'), trade ? item('trade', 'For trade', '/trade/') : null,
+        item('bargain', 'Bargain crate', '/bargain-crate/'),
         wantlistOn(site) ? item('wantlist', 'Check your wantlist', '/wantlist/') : null),
       // the detail becomes the signed-in email (scripts/account.js, [data-account-email]); decision 0101
       h(Z.MenuGroup, null, item('account', 'Account', '/account/', h('span', { 'data-account-email': '' }, 'Sign in to see your orders'))),
@@ -281,7 +285,7 @@ function SiteFooter({ site, url, newsletter = true }) {
     legal: LEGAL_LINKS.map(([text, href]) => h('a', { key: href, href: url(href) }, text)),
     copyright: `\u00a9 ${new Date().getFullYear()} ${site.storeName}`
   },
-  h(Z.FooterLinks, { label: 'Shop', links: [link('For sale', '/sale/'), tradeOn(site) && link('For trade', '/trade/'),
+  h(Z.FooterLinks, { label: 'Shop', links: [link('For sale', '/sale/'), tradeOn(site) && link('For trade', '/trade/'), link('Bargain crate', '/bargain-crate/'),
     wantlistOn(site) && link('Check your wantlist', '/wantlist/')].filter(Boolean) }),
   h(Z.FooterLinks, { label: 'Info', links: [link('About', '/about/'), tradeOn(site) && link('How trading works', '/how-trading-works/'),
     link('Grading', '/grading/'), link('Shipping', '/shipping/'), link('Contact', '/contact/')].filter(Boolean) }),

@@ -1599,5 +1599,7 @@ export interface PriceFieldsProps extends HTMLAttributes<HTMLDivElement> {
   price?: ReactNode;
   /** price=offers (decision 0158): a note in place of Price (Best offer has no price). Desktop: 6 of 8 columns. */
   note?: ReactNode;
+  /** Figma boolean `bargain crate` (decision 0201): the "Bargain crate" Checkbox, on a row of its own under the fields. Omit = off. */
+  bargain?: ReactNode;
 }
 export declare function PriceFields(props: PriceFieldsProps): JSX.Element;

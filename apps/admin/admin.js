@@ -415,6 +415,7 @@
     f.preRelease = !!r.pre_release;
     f.labelSpelled = !!le && differs(r.label, le.name); f.labelCredit = f.labelSpelled ? r.label : ''; f.country = r.country || ''; f.year = yearText(r.year, r.year_precision); f.format = r.format || '';
     f.section = row.section; f.priceMode = row.price_mode || 'fixed'; f.price = centsToText(row.price_cents);
+    f.bargain = !!row.bargain;   // Bargain crate (migration 0046, decision 0201)
     var byPos = function (a, b) { return a.position - b.position; };
     var genreRows = (r.genre_rows || []).slice().sort(byPos);
     f.genres = genreRows.length ? genreRows.map(function (t) { return chip(t.genre); }) : (r.genres || []).map(function (n) { return { id: null, name: n }; });
@@ -886,8 +887,10 @@
       // custom title links (0147): a column of their own, written right after the listing (same row, same rebuild)
       var extra = { custom_title_links: titleLinksRow(cur.customTitle, cur.titleLinks || []) };
       if (cur.originals) extra.original_keys = cur.originals;   // Take photo (0200): the Full photos, kept with the SKU
+      // Bargain crate (0201): only a fixed-price sale copy can be in it
+      extra.bargain = cur.section === 'sale' && priceModeOf(cur) === 'fixed' && !!cur.bargain;
       var tl = await sb.from('listings').update(extra).eq('id', d.listing_id);
-      if (tl.error) toast('Title links or Full photos not saved: ' + tl.error.message);
+      if (tl.error) toast('Title links, Bargain crate or Full photos not saved: ' + tl.error.message);
       baseline.current = formSnapshot(cur);
       setSavedAt(now);
       set(function (x) { return { listingId: d.listing_id, sku: d.sku, status: d.status, slug: d.slug,
@@ -1371,7 +1374,10 @@
             onChange: function (e) { var v = e.target.value; set(v === 'offers' ? { section: 'sale', priceMode: 'offers' } : { section: v, priceMode: 'fixed' }); } },
             opts([['sale', 'For sale'], ['offers', 'Best offer']].concat(tradeOn !== false || f.section === 'trade' ? [['trade', 'For trade']] : []))),
           note: priceModeOf(f) === 'offers' ? 'No fixed price: buyers send offers, you accept or decline them in Offers.' : null,
-          price: h(Z.Input, Object.assign({ id: 'price', label: 'Price', suffix: '€', inputMode: 'decimal', optional: f.section === 'trade' }, bind('price')))
+          price: h(Z.Input, Object.assign({ id: 'price', label: 'Price', suffix: '€', inputMode: 'decimal', optional: f.section === 'trade' }, bind('price'))),
+          // Bargain crate (Gio 2026-11-27, decision 0201; Figma `price fields` boolean `bargain crate`): fixed-price sale only
+          bargain: f.section === 'sale' && priceModeOf(f) === 'fixed' ? h(Z.Checkbox, { label: 'Bargain crate', checked: !!f.bargain,
+            onChange: function (e) { set({ bargain: e.target.checked }); } }) : null
         })),
       h(Z.Divider),
 
@@ -2212,7 +2218,7 @@
     var row = { slug: base + '-' + n, release_id: l.release_id, section: l.section, status: 'draft', price_mode: l.price_mode || 'fixed', price_cents: l.price_cents,
       currency: l.currency, condition_media: l.condition_media, condition_media_b: l.condition_media_b, sleeve_type: l.sleeve_type,
       condition_sleeve: l.condition_sleeve, condition_notes: l.condition_notes, notes: l.notes, photo_keys: l.photo_keys,
-      weight_g: l.weight_g, custom_title: l.custom_title };
+      weight_g: l.weight_g, custom_title: l.custom_title, bargain: !!l.bargain };
     var res = await sb.from('listings').insert(row).select('id,sku').single();
     if (res.error) throw new Error(res.error.message);
     return res.data;
