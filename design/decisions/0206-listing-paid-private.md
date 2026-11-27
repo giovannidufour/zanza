@@ -8,5 +8,5 @@
 - **Admin**: Create / Edit listing → Price → Input `Paid` (€, optional) after Price, for every sale type (fixed, Best offer, trade). Saved right after the listing (like the title links): a value upserts the row, an empty field deletes it. Not in the `admin_save_listing` payload, not copied by Sell again (a twin is another copy, bought for another price).
 - **Shop / Scanner**: never read. The Scanner Price tab does not show it (Figma `paid` off in its `price panel`).
 **Rule.** A private number of a listing goes in an admin-only table (no anon grant, `is_admin()` policy), never in a column of `listings` or of a view the shop reads.
-**Open.** (1) Margin (Price − Paid) in Listings or Dashboard: not asked · (2) Scanner Price tab: only if Gio wants it.
+**Open.** (1) Margin (Price − Paid) in Listings or Dashboard: not asked. The Scanner Price tab stays without it (Gio, 2026-11-27: admin only).
 **Where.** `supabase/migrations/20261127300000_listing_costs.sql`, `apps/admin/admin.js` (empty form, load, validate, save, Price block; kept out of `packages/listing-draft` so the Edge Function copies stay as they are), `packages/ui` (`PriceFields` `paid`).
