@@ -165,7 +165,8 @@
       }),
       listing: {
         section: f.section, status: status, price_mode: mode, price_cents: mode === 'offers' ? null : textToCents(f.price),
-        condition_media: f.condition, condition_media_b: f.conditionB, condition_notes: f.conditionNotes,
+        condition_media: f.condition === 'unset' ? '' : f.condition,   // side A "Unset" = no grading (decision 0207)
+        condition_media_b: f.conditionB, condition_notes: f.conditionNotes,
         sleeve_type: f.sleeveType, condition_sleeve: f.sleeveType === 'none' ? '' : f.sleeveCondition,
         notes: f.notes, custom_title: f.customTitle,
         photo_keys: f.images.map(function (x) { return x.key; })

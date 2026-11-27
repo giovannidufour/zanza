@@ -33,6 +33,7 @@ One markup for both variants; CSS grid places the blocks ([0016](../../../../des
 | `addHref` | `string` |  | Makes the add button a link (trade listings: the offer page, label "Make an offer" / "Offer"). |
 | `addLabel` | `string` |  | Desktop button label (Figma: "Add to bag"). Default "Add to bag". |
 | `addLabelShort` | `string` |  | Mobile button label (Figma: "Add"). Default "Add". |
+| `button` | `boolean` | `true` | Figma `button`. false: no add button (a sale copy without a price, decision 0207). |
 
 ### ProductCardImage
 

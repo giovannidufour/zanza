@@ -297,6 +297,8 @@ export interface ProductCardProps extends HTMLAttributes<HTMLElement> {
   addLabel?: string;
   /** Mobile button label (Figma: "Add"). Default "Add". */
   addLabelShort?: string;
+  /** Figma `button`. false: no add button (a sale copy without a price, decision 0207). @default true */
+  button?: boolean;
 }
 export declare function ProductCard(props: ProductCardProps): JSX.Element;
 

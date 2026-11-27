@@ -1,0 +1,13 @@
+# 0207 — Side A grading "Unset": publish before grading and pricing
+
+`2026-11-27` · accepted · Figma: BACKEND → `Create` → `Side A grading · Unset (0207)` (2626:49649); BACKEND → `Listings` → `Listings · Unset grading (0207)` (2626:49741); COMPONENTS → `product card` boolean `button` (on in the main component)
+
+**Context.** Gio (2026-11-27): an "Unset" in the side A grading list of Create / Edit listing, to publish a record (e.g. on staging) before giving it a grading and a price, and to find later the copies whose grading is still temporary.
+**Decision.**
+- **Admin form**: Side A conditions lists `Unset` first, then M … F. It is an explicit choice: an empty select still asks "Choose the condition of side A, or Unset to grade it later" on publish. With Unset, a sale copy at a fixed price may also go live without a price; with a grade, the price is required as before.
+- **Data**: Unset is not a grade, it is `condition_media = null` on a published copy (migration 0049: `draft_or_graded` dropped, `sale_needs_price` and `listing_publish_check` let an ungraded copy go without a price; the trigger also fires on `condition_media` and `price_cents`). A draft with no grading still counts as Incomplete (Missing → Grading), so bulk Publish never publishes an ungraded draft by accident; reopened in the form, a published ungraded copy shows Unset.
+- **Listings**: the Grading column reads `Unset` (text) on a published copy without grading (drafts keep the em dash of a missing value); searching `unset` finds them (also in Jump to). A sale copy without a price keeps the em dash in Price.
+- **Shop**: no grading line (the conditions comment waits too, unless the cover line carries it). Without a price: no price, no add button on the card (`ProductCard button={false}`), no Add to bag on the PDP or the home tile, the player hides its Add to bag (`data-price-mode="none"`). Checkout already ignores copies without a price.
+**Rule.** A missing grading on a published copy means "Unset" (to grade later), never an error; a sale copy without a price is visible but never buyable.
+**Open.** (1) Best offer could replace "no price" (a "Make an offer" link instead of nothing): not chosen, it would invite real offers on a record not yet graded. (2) The Listings filter column exists only on Drafts; if Unset copies become many, an `Unset` facet on Live.
+**Where.** `supabase/migrations/20261127400000_unset_grading.sql`, `apps/admin/admin.js` (UNSET, load, validate, select options, preview, `gradingOf`, search), `packages/listing-draft` (payload: Unset → empty), `packages/ui` (`ProductCard` `button`), `apps/storefront/pages/shell.js` (`isUnpriced`, `grading`, `gradingProps`, `sampleAttrs`, card), `pdp.js`, `home.js`, `scripts/site.js` (player).

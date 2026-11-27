@@ -471,7 +471,7 @@
       'data-state': props.state && props.state !== 'default' ? props.state : undefined,   // doc-only pin (0009)
       'aria-labelledby': titleId
     }, omit(props, ['device', 'state', 'image', 'href', 'title', 'releaseInfo', 'price', 'description', 'grading', 'cover', 'conditions', 'tags', 'samples',
-                    'onAdd', 'addHref', 'addLabel', 'addLabelShort', 'headingLevel', 'className', 'children'])),
+                    'onAdd', 'addHref', 'addLabel', 'addLabelShort', 'button', 'headingLevel', 'className', 'children'])),
       // href: the cover becomes the link to the product page (no visual change; the link style is not designed yet)
       h(props.href ? 'a' : 'div', props.href ? { className: 'hm-product-card__image', href: props.href, 'aria-labelledby': titleId } : { className: 'hm-product-card__image' },
         img && img.src ? h('img', { src: img.src, srcSet: img.srcSet, sizes: img.srcSet ? img.sizes : undefined, alt: img.alt || '', loading: 'lazy' }) : null),
@@ -486,7 +486,8 @@
           })) : null,
         props.samples ? h('div', { className: 'hm-product-card__samples' }, props.samples) : null),
       h('div', { className: 'hm-product-card__purchase' },
-        device === 'responsive' ? [addButton('desktop'), addButton('mobile')] : addButton(device),
+        props.button === false ? null   // Figma `button` off (decision 0207: a sale copy without a price)
+          : device === 'responsive' ? [addButton('desktop'), addButton('mobile')] : addButton(device),
         props.price != null ? h('p', { className: cx('hm-product-card__price', t.head) }, props.price) : null),
       (props.description || props.grading || props.cover || props.conditions)
         ? h('div', { className: 'hm-product-card__description' },

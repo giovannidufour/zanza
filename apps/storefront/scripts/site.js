@@ -140,7 +140,8 @@
       href: btn.getAttribute('data-product-href') || '',
       listing: btn.getAttribute('data-listing-id') || '',
       section: btn.getAttribute('data-listing-section') || 'sale',
-      offers: btn.getAttribute('data-price-mode') === 'offers'   // best offer (0158): no Add to bag, as trade
+      offers: btn.getAttribute('data-price-mode') === 'offers',   // best offer (0158): no Add to bag, as trade
+      unpriced: btn.getAttribute('data-price-mode') === 'none'   // no price yet (0207): no Add to bag
     };
   }
   // the queue of a sample button = the playable sample buttons of the same group (ProductInfo samples)
@@ -186,7 +187,7 @@
       // trade listings (decision 0068): no "Add to bag" in the player, the offer is made on the record's page
       // best offer (decision 0158): no "Add to bag" either, the offer is made on the record's page; reserved or sold, its
       // button acts as any copy's: "(Reserved) Notify me", "Sold out" (0189)
-      var noBag = cur.section === 'trade' || (cur.offers && statusFor(cur.listing) === 'available');
+      var noBag = cur.section === 'trade' || cur.unpriced || (cur.offers && statusFor(cur.listing) === 'available');
       if (add) {
         if (cur.offers) add.setAttribute('data-offer-href', (cur.href || '').replace(/\/?$/, '/') + 'offer/'); else add.removeAttribute('data-offer-href');
         add.hidden = noBag; add.disabled = !cur.listing; if (!noBag) syncAddButton(add, cur.listing);
@@ -1631,7 +1632,7 @@
     });
     var add = player && player.querySelector('.site-player__add');
     var cur = typeof current === 'function' ? current() : null;
-    if (add && cur && cur.section !== 'trade' && !(cur.offers && statusFor(cur.listing) === 'available')) syncAddButton(add, cur.listing, ids);
+    if (add && cur && cur.section !== 'trade' && !cur.unpriced && !(cur.offers && statusFor(cur.listing) === 'available')) syncAddButton(add, cur.listing, ids);
   }
   // the Add buttons: Add to bag, or open the bag when the copy is already in it (decision 0058). The header Bag link
   // does the opening, so the soft navigation keeps the player; no toast (decision 0050)
