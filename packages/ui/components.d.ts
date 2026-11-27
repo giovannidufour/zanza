@@ -1588,6 +1588,15 @@ export interface ProductTileProps extends HTMLAttributes<HTMLElement> {
 }
 export declare function ProductTile(props: ProductTileProps): JSX.Element;
 
+/** Figma `price` (page product card; decision 0210): a store price in a 1px border/divider/strong ellipse, height = line height + 4, width hugs the text. The type style comes from the slot (Figma `size`). Not used in the Bag or the order history. */
+export interface PriceProps extends HTMLAttributes<HTMLSpanElement> {
+  /** Figma `price`, e.g. "12€". */
+  children?: ReactNode;
+  /** Figma `outline`: false = plain text in the price slot ("Trade only"). @default true */
+  outline?: boolean;
+}
+export declare function Price(props: PriceProps): JSX.Element;
+
 /** Figma `gallery counter`: "1/3" on a photo, body/extra-small text/strong on surface/accent. */
 export interface GalleryCounterProps extends HTMLAttributes<HTMLSpanElement> {
   /** Figma `count`, e.g. "1/3". */

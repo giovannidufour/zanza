@@ -1837,16 +1837,18 @@ button.hm-capture-slot { cursor: pointer; }
   .hm-pagination__item[data-device="desktop"] { display: none; }
 }
 
-/* ── Price pill: TEST, Gio 2026-11-27 (Figma 2629:35192, a loose frame, not a component yet; no decision yet) ──
-   A store price (card, tile, PDP, return card; never the Bag) inside a fully rounded 1px border/divider/strong stroke.
-   Figma: stroke inside, text box 28×22 inside a 30×24 frame = 1px around the text, the stroke drawn over it; radius 1000.
-   The type style stays the slot's own (body-extra-large on the PDP, body-medium on tiles…). */
+/* ── Price (Figma page `product card` → `price`, decision 0210) ──
+   A store price (card, tile, PDP, return card; never the Bag) in a 1px border/divider/strong ellipse.
+   Figma: auto-layout hug, padding 2 top/bottom and font-size / 2 + 1 left/right, the outline an ellipse that stretches
+   with the frame (a radius can only draw a pill). Here: the border counts as the 1px of padding it replaces.
+   The type style is the slot's own (Figma `size`). */
 .hm-price {
   display: inline-flex; align-items: center; justify-content: center;
   box-sizing: border-box;
-  height: calc(1lh + 4px);   /* fixed: the slot's line height + 1px gap + 1px stroke top and bottom (Figma: 24 at body/medium 20) */
-  padding: 0 0.5em;          /* TEST (Gio 2026-11-27: "ovale, altezza fissa, larghezza che si adatta"): room for the ellipse's curve; not in Figma */
+  height: calc(1lh + 4px);   /* line height + 1px gap + 1px stroke, top and bottom (24 at body/medium 20) */
+  padding: 0 0.5em;
   border: 1px solid var(--border-divider-strong);
-  border-radius: 50%;        /* a true ellipse: the width follows the text */
+  border-radius: 50%;        /* a true ellipse */
   white-space: nowrap;
 }
+.hm-price[data-outline="false"] { height: auto; padding: 0; border: 0; border-radius: 0; }   /* Figma outline=off */
