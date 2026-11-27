@@ -1836,3 +1836,17 @@ button.hm-capture-slot { cursor: pointer; }
   .hm-pagination__item[data-device="mobile"] { display: flex; }
   .hm-pagination__item[data-device="desktop"] { display: none; }
 }
+
+/* ── Price pill: TEST, Gio 2026-11-27 (Figma 2629:35192, a loose frame, not a component yet; no decision yet) ──
+   A store price (card, tile, PDP, return card; never the Bag) inside a fully rounded 1px border/divider/strong stroke.
+   Figma: stroke inside, text box 28×22 inside a 30×24 frame = 1px around the text, the stroke drawn over it; radius 1000.
+   The type style stays the slot's own (body-extra-large on the PDP, body-medium on tiles…). */
+.hm-price {
+  display: inline-flex; align-items: center; justify-content: center;
+  box-sizing: border-box;
+  padding: 1px 0;
+  border: 1px solid var(--border-divider-strong);
+  border-radius: 1000px;
+  min-width: calc(1lh + 4px);   /* TEST: never narrower than tall, so 1–2 characters read as a circle (Gio: "in un cerchio"); not in Figma */
+  white-space: nowrap;
+}
