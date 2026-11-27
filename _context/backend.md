@@ -92,7 +92,7 @@ Chiavi casuali e immutabili (2026-11-10): l'upload avviene prima che il listing 
 ### Stati di vendita (0004)
 ```
 draft ──► available ──► reserved ──► sold (sale) / traded (trade)
-(una bozza può essere incompleta: senza grading, formato, prezzo, artista della riga 1 — nata da Bulk create 0107, rimosso con 0172; oggi le bozze dello Scanner, migrazione 0026; il trigger `listings_publish_check` li pretende appena esce da draft)
+(una bozza può essere incompleta: senza grading, formato, prezzo, artista della riga 1 — nata da Bulk create 0107, rimosso con 0172; oggi le bozze dello Scanner, migrazione 0026; il trigger `listings_publish_check` pretende formato e artista appena esce da draft; grading e prezzo no se il grading è "Unset", migrazione 0049, decisione 0207)
   ▲          │  ▲           │                │
   └──────────┘  └───────────┴────────────────┘   unpublish · release · annulla vendita
 available ──► sold / traded diretto (venduto fuori dal sito: fiera, Discogs, di persona)

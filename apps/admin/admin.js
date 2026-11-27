@@ -12,6 +12,9 @@
 
   // ── vocabularies ──────────────────────────────────────────────────────────
   var GRADES = ['M', 'NM', 'NM-', 'EX+', 'EX', 'EX-', 'VG+', 'VG', 'VG-', 'G+', 'G', 'G-', 'F'];   // Q8, table public.grades
+  /* decision 0207: side A can be "Unset" (graded later). Not a grade: a published copy with condition_media null.
+     The form keeps it as this value so that an empty select still asks for a choice on publish. */
+  var UNSET = 'unset';
   // the listing model shared with the Scanner's Edge Function scanner-draft (packages/listing-draft, decision 0145)
   var LD = window.HighmuzikListingDraft;
   var FORMATS = LD.FORMATS, MACRO_GENRES = LD.MACRO_GENRES, COUNTRIES = LD.COUNTRIES;
@@ -57,6 +60,8 @@
   function effectiveStatus(row) {
     return row.status === 'reserved' && row.reserved_until && new Date(row.reserved_until) <= new Date() ? 'available' : row.status;
   }
+  // a draft, or a draft moved to Archived (0035): what it lacks is still to fill in, not "Unset" (decision 0207)
+  function isDraftRow(row) { return row.status === 'draft' || (row.status === 'archived' && row.archived_from === 'draft'); }
   function checkoutUntil(row) {
     return effectiveStatus(row) === 'reserved' && row.stripe_session_id && row.reserved_until ? new Date(row.reserved_until) : null;
   }
@@ -423,7 +428,7 @@
     f.genres = genreRows.length ? genreRows.map(function (t) { return chip(t.genre); }) : (r.genres || []).map(function (n) { return { id: null, name: n }; });
     f.tags = (r.tag_rows || []).slice().sort(byPos).map(function (t) { return chip(t.tag); });
     f.macroGenre = (r.macro_genre || [])[0] || '';
-    f.condition = row.condition_media || ''; f.conditionB = row.condition_media_b || ''; f.conditionNotes = row.condition_notes || '';
+    f.condition = row.condition_media || (isDraftRow(row) ? '' : UNSET); f.conditionB = row.condition_media_b || ''; f.conditionNotes = row.condition_notes || '';
     f.sleeveType = row.sleeve_type || 'original'; f.sleeveCondition = row.condition_sleeve || '';
     f.notes = row.notes || '';
     f.images = (row.photo_keys || []).map(function (k) { return { id: nextId(), key: k, name: fileNameOf(k), url: mediaUrl(k) }; });
@@ -443,9 +448,10 @@
     if (publish && !f.lines[0].artists.length) e['artist-0'] = 'Pick or create the artist.';
     f.lines.forEach(function (l, i) { if (!l.title.trim()) e['title-' + i] = 'Enter the title.'; });
     if (publish && !f.format) e.format = 'Choose a format.';
-    if (publish && !f.condition) e.condition = 'Choose the condition of side A.';
+    if (publish && !f.condition) e.condition = 'Choose the condition of side A, or Unset to grade it later.';
     var cents = textToCents(f.price);
-    if (publish && f.section === 'sale' && priceModeOf(f) === 'fixed' && cents === null) e.price = 'Enter a price.';
+    // decision 0207: an Unset copy may go live without a price (no price and no Add to bag in the shop)
+    if (publish && f.section === 'sale' && priceModeOf(f) === 'fixed' && cents === null && f.condition !== UNSET) e.price = 'Enter a price, or set side A to Unset.';
     else if (Number.isNaN(cents)) e.price = 'Use a number, e.g. 12 or 12.50.';
     if (Number.isNaN(textToCents(f.paid))) e.paid = 'Use a number, e.g. 5 or 4.50.';
     if (f.year.trim() && !parseYear(f.year)) e.year = 'Use a year (1983) or a decade (1990s).';
@@ -1618,7 +1624,7 @@
         h(Z.FormSectionHead, { id: 'section-conditions-title' }, FORM_SECTION_LABEL['conditions']),
         // Figma 2095:20560: media graded per side (side B optional, migration 0013), comment on its own row
         h('div', { className: 'admin-row' },
-          h(Z.Input, Object.assign({ className: 'span-4', id: 'condition', label: 'Side A conditions', variant: 'select', placeholder: '' }, bind('condition')), opts(GRADES)),
+          h(Z.Input, Object.assign({ className: 'span-4', id: 'condition', label: 'Side A conditions', variant: 'select', placeholder: '' }, bind('condition')), opts([[UNSET, 'Unset']].concat(GRADES))),
           h(Z.Input, Object.assign({ className: 'span-4', id: 'condition-b', label: 'Side B conditions', optional: true, variant: 'select', placeholder: '' }, bind('conditionB')), opts(GRADES))),
         h('div', { className: 'admin-row' },
           h(Z.Input, Object.assign({ className: 'span-8', id: 'condition-notes', label: 'Conditions comment', optional: true }, bind('conditionNotes')))),
@@ -1677,7 +1683,7 @@
             tags: tags.length ? h(Z.TagGroup, null, tags.map(function (n, i) { return h(Z.Tag, { key: i, size: 'large' }, n); })) : null,
             description: f.notes.trim() || null,
             // same lines as the shop (gradingProps in apps/storefront/pages/shell.js, decision 0042)
-            grading: f.condition ? 'Record: ' + [f.condition, f.conditionB].filter(Boolean).join(' / ') + (previewNote && !previewCover ? ' ' + previewNote : '') : null,
+            grading: f.condition && f.condition !== UNSET ? 'Record: ' + [f.condition, f.conditionB].filter(Boolean).join(' / ') + (previewNote && !previewCover ? ' ' + previewNote : '') : null,
             cover: previewCover,
             conditions: previewCover ? previewNote : null,
             samples: f.samples.length ? f.samples.map(function (s, i) {
@@ -1788,7 +1794,7 @@
   function fold(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
   function haystack(r) {
     var rel = r.release || {};
-    return fold([r.sku, nameOf(r), (rel.label_entity || {}).name].concat((rel.lines || []).map(function (l) { return l.artist; })).join(' '));
+    return fold([r.sku, nameOf(r), (rel.label_entity || {}).name, gradingOf(r) === 'Unset' ? 'unset' : ''].concat((rel.lines || []).map(function (l) { return l.artist; })).join(' '));
   }
   function matches(r, words) { if (!words.length) return true; var hs = haystack(r); return words.every(function (w) { return hs.indexOf(w) >= 0; }); }
   /* decision 0162: the Drafts filter column (Figma BACKEND → Listings → `drafts filters`). Facets of what a draft
@@ -1852,7 +1858,7 @@
     var focusAfter = useRef(null);
 
     function load() {
-      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_mode,price_cents,condition_media,sleeve_type,condition_sleeve,custom_title,photo_keys,created_at,sort_order,orders:order_items(count),release:releases(format,year,year_precision,genres,tag_rows:release_tags(tag:tags(name)),samples(count),label_entity:labels(name),lines:release_lines(position,artist,title))')
+      return sb.from('listings').select('id,sku,slug,status,reserved_until,published_at,section,price_mode,price_cents,condition_media,archived_from,sleeve_type,condition_sleeve,custom_title,photo_keys,created_at,sort_order,orders:order_items(count),release:releases(format,year,year_precision,genres,tag_rows:release_tags(tag:tags(name)),samples(count),label_entity:labels(name),lines:release_lines(position,artist,title))')
         // decision 0129: one global order, Gio's (sort_order, lower = first); each tab shows it filtered
         .order('sort_order', { ascending: true }).order('created_at', { ascending: false })
         .then(function (res) { if (res.error) setError(res.error.message); else setRows(res.data); });
@@ -2069,7 +2075,7 @@
   /* decision 0163: the overview columns between Section and Price, what is already filled in for each copy
      [key, head, numeric, value of the row or null when missing] (Figma `listings table row`, Format … Samples; Year since 0166) */
   function gradingOf(r) {
-    if (!r.condition_media) return null;
+    if (!r.condition_media) return isDraftRow(r) ? null : 'Unset';   // decision 0207: a published copy without a grading
     var sleeve = r.sleeve_type === 'generic' ? 'generic' : r.sleeve_type === 'none' ? 'no sleeve' : r.condition_sleeve;
     return sleeve ? r.condition_media + ' / ' + sleeve : r.condition_media;
   }
@@ -2131,7 +2137,7 @@
     var tab = TABS.filter(function (t) { return t[0] === props.tab[0]; })[0];
     function load() {
       setFailed(false);
-      sb.from('listings').select('id,sku,slug,status,reserved_until,price_mode,price_cents,custom_title,photo_keys,sort_order,created_at,release:releases(label_entity:labels(name),lines:release_lines(position,artist,title))')
+      sb.from('listings').select('id,sku,slug,status,reserved_until,price_mode,price_cents,condition_media,archived_from,custom_title,photo_keys,sort_order,created_at,release:releases(label_entity:labels(name),lines:release_lines(position,artist,title))')
         .order('sort_order', { ascending: true }).order('created_at', { ascending: false })
         .then(function (res) {
           if (res.error) { setFailed(true); setItems([]); return; }

@@ -16,7 +16,7 @@ const React = require('react');
 const Z = require('../../../packages/ui/components.js');
 const h = React.createElement;
 const { SiteHeader, ProductCardFor, plpHref, textOf, imageOf, IMAGE_SIZES, productNameLinked, releaseInfoLinked,
-  productHref, productName, formatPrice, sampleAttrs, isOffers, priceText } = require('./shell.js');
+  productHref, productName, formatPrice, sampleAttrs, isOffers, isUnpriced, priceText } = require('./shell.js');
 
 const SHELF_COUNT = 6;    // This week, Figma: 2 rows of 3 tiles on desktop
 const RECENT_COUNT = 12;  // Recent, Figma `home shelf` more records: 4 rows of 3 (decision 0167)
@@ -57,6 +57,7 @@ function TileFor({ product, url }) {
         ? h(Z.Button, { hierarchy: 'secondary', href: url(`/products/${listing.slug}/offer/`) }, 'Make an offer')
         : h(Z.Button, { hierarchy: 'secondary', 'data-add-to-bag': listing.id, 'data-listing-status': listing.status,
             'data-offer-href': url(`/products/${listing.slug}/offer/`), disabled: listing.status === 'sold' }, listing.status === 'sold' ? 'Sold out' : 'Make an offer'))
+      : isUnpriced(listing) ? null   // no price yet (decision 0207)
       : h(Z.Button, { hierarchy: 'secondary', 'data-add-to-bag': listing.id, 'data-listing-status': listing.status }, 'Add to bag')
   });
 }

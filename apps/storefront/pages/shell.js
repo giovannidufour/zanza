@@ -36,11 +36,14 @@ function smallImageUrl(product, src, px, url) {
 const formatPrice = (p) => `${p.amount % 100 === 0 ? p.amount / 100 : (p.amount / 100).toFixed(2)}€`;
 // best offer (migration 0034, decision 0158): a sale copy with no price, buyers make an offer on /products/<slug>/offer/
 const isOffers = (listing) => listing.section === 'sale' && listing.price_mode === 'offers';
+// decision 0207: a sale copy at a fixed price with no price yet (side A "Unset" in the admin): no price, no Add to bag
+const isUnpriced = (listing) => listing.section === 'sale' && !isOffers(listing) && !listing.price;
 // the price slot of a card, tile, PDP: the price or "Trade only"; best offer has none (the "Make an offer" CTA says it, Gio 2026-11-23),
 // except for the buyer of an accepted offer: an empty hidden slot that scripts/site.js fills with "Your offer · 25€" (decision
 // 0191; base.css hides the slot while it is empty)
 const priceText = (listing) => listing.section !== 'sale' ? 'Trade only'
-  : isOffers(listing) ? React.createElement('span', { 'data-offer-price': listing.id, hidden: true }) : formatPrice(listing.price);
+  : isOffers(listing) ? React.createElement('span', { 'data-offer-price': listing.id, hidden: true })
+  : isUnpriced(listing) ? null : formatPrice(listing.price);
 // `name` comes from the database (custom title or the release lines, see data/products.js); JSON test content has none
 const productName = (r) => r.name || `${r.artist} - ${r.title}`;
 // a pre-release ("blank") of the label: "Pre" right after the label name (Gio, 2026-11-10)
@@ -163,7 +166,8 @@ const releaseInfoLinked = (r, url) => {
   return [entityLink(url, 'label', ref, r.label, 'label'), (r.pre_release ? ' Pre' : '') + (rest ? ' ' + rest : '')];
 };
 // the record graded per side: "Record: VG+ / VG", only side A when side B is not graded (Gio, 2026-11-10)
-const grading = (c) => `Record: ${[c.condition_media, c.condition_media_b].filter(Boolean).join(' / ')}`;
+// no side A grading = "Unset" in the admin (decision 0207): no grading line (null)
+const grading = (c) => !c.condition_media ? null : `Record: ${[c.condition_media, c.condition_media_b].filter(Boolean).join(' / ')}`;
 // the cover/sleeve grade on its own line, only when there is one (Gio, 2026-11-10)
 const coverGrading = (c) => (c.condition_sleeve && c.sleeve_type !== 'none' ? `Cover: ${c.condition_sleeve}` : null);
 // the conditions comment, value only (Gio 2026-11-10): right after the record grade; when the cover is graded,
@@ -174,6 +178,8 @@ function gradingProps(c) {
   const record = grading(c);
   const cover = coverGrading(c);
   if (!note) return { grading: record, cover, conditions: null };
+  // Unset (0207): the comment is about the grading, so it waits for it unless the cover line carries it
+  if (!record) return { grading: null, cover, conditions: cover ? note : null };
   if (!cover) return { grading: `${record} ${note}`, cover: null, conditions: null };
   // stacked: its own line, so it keeps the 4px gap of the other lines (Figma `conditions`, decision 0042)
   return { grading: record, cover, conditions: note };
@@ -304,7 +310,7 @@ function sampleAttrs(product, s, url) {
     'data-product-href': productHref(product, url),
     'data-listing-id': product.listing.id,   // the player's "Add to bag" adds the playing product
     'data-listing-section': product.listing.section,   // trade listings: no Add to bag in the player
-    'data-price-mode': isOffers(product.listing) ? 'offers' : undefined,   // best offer (0158): no Add to bag either
+    'data-price-mode': isOffers(product.listing) ? 'offers' : isUnpriced(product.listing) ? 'none' : undefined,   // best offer (0158) or no price yet (0207): no Add to bag either
     'data-listing-status': product.listing.status   // sold / traded: the player's button reads "Sold out", disabled
   };
 }
@@ -341,6 +347,7 @@ function ProductCardFor({ product, url, headingLevel }) {
     releaseInfo: releaseInfoLinked(release, url),
     'data-price-mode': isOffers(listing) ? 'offers' : undefined,   // best offer: site.js leaves its button alone (0158)
     price: priceText(listing),
+    button: !isUnpriced(listing),   // no price yet (0207): no add button
     // trade (Figma page Trade) and best offer (Figma page Offers, 0158): the card button is a link to the offer page,
     // not a bag button (only while available: a reserved, sold or traded copy shows its state, and site.js ignores its button)
     // A reserved best-offer copy (decision 0189) has a button like any copy: site.js makes it "(Reserved) Notify me"
@@ -361,4 +368,4 @@ function ProductCardFor({ product, url, headingLevel }) {
   });
 }
 
-module.exports = { isOffers, priceText, IMAGE_SIZES, imageOf, smallImageUrl, tradeOn, identityOn, wantlistOn, textOf, Paragraphs, SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor };
+module.exports = { isOffers, isUnpriced, priceText, IMAGE_SIZES, imageOf, smallImageUrl, tradeOn, identityOn, wantlistOn, textOf, Paragraphs, SearchForm, SECTION_LABEL, labelRef, artistRefs, productNameLinked, tagsOf, tagLinksOf, plpHref, formatPrice, productName, releaseInfo, releaseInfoLinked, grading, coverGrading, gradingProps, productHref, SiteHeader, SiteFooter, sampleAttrs, ProductCardFor };
