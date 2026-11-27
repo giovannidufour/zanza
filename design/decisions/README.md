@@ -230,3 +230,4 @@ One file per decision, numbered, append-only. This is the record of **why** the 
 | [0207](0207-unset-grading.md) | Side A grading "Unset" (null on a live copy, migration 0049): publish before grading; Unset copies may go live without a price (no price, no Add to bag); Listings Grading column "Unset", search "unset" | accepted |
 | [0208](0208-create-bargain-phone-camera-only.md) | Create bargain: the phone's own camera only, Live viewer removed | decided |
 | [0209](0209-admin-tabs-in-url.md) | Admin: the current tab is in the URL (#listings/draft, #orders/shipped, #offers/all, #dashboard/year); refresh keeps it, Back / Forward step through tabs | accepted |
+| [0210](0210-price-ellipse.md) | Store prices in an ellipse: Figma `price` (size × outline), code `Price`; card, tile, PDP, return card; Bag and order history stay plain | accepted |

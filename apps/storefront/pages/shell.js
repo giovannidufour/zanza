@@ -40,11 +40,11 @@ const isOffers = (listing) => listing.section === 'sale' && listing.price_mode =
 const isUnpriced = (listing) => listing.section === 'sale' && !isOffers(listing) && !listing.price;
 // the price slot of a card, tile, PDP: the price or "Trade only"; best offer has none (the "Make an offer" CTA says it, Gio 2026-11-23),
 // except for the buyer of an accepted offer: an empty hidden slot that scripts/site.js fills with "Your offer · 25€" (decision
-// 0191; base.css hides the slot while it is empty). TEST (Gio 2026-11-27, not yet in Figma): a fixed price sits in a
-// black-bordered pill, `.hm-price` in packages/ui/components.css; Bag prices stay plain (they use formatPrice)
+// 0191; base.css hides the slot while it is empty). a fixed price is a Price (an ellipse, decision 0210);
+// "Trade only" stays plain text (Figma price outline=off); Bag prices stay plain (they use formatPrice)
 const priceText = (listing) => listing.section !== 'sale' ? 'Trade only'
   : isOffers(listing) ? React.createElement('span', { 'data-offer-price': listing.id, hidden: true })
-  : isUnpriced(listing) ? null : React.createElement('span', { className: 'hm-price' }, formatPrice(listing.price));
+  : isUnpriced(listing) ? null : React.createElement(Z.Price, null, formatPrice(listing.price));
 // `name` comes from the database (custom title or the release lines, see data/products.js); JSON test content has none
 const productName = (r) => r.name || `${r.artist} - ${r.title}`;
 // a pre-release ("blank") of the label: "Pre" right after the label name (Gio, 2026-11-10)
