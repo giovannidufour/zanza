@@ -1,7 +1,7 @@
 // supabase/functions/sign-upload — returns a short-lived URL to PUT one file straight into R2 (bucket store-media).
 // Admin only: the caller's Supabase session must belong to a row of public.admins.
 // Keys are random and immutable (never overwritten): photos/<uuid>.<ext>, samples/<uuid>.<ext>,
-// originals/<uuid>.<ext> (listings.original_keys, migration 0044: kept with the SKU, never shown in the shop).
+// originals/<uuid>.<ext> (listings.original_keys, migration 0045: kept with the SKU, never shown in the shop).
 // A smaller copy of a photo (decision 0108, images.js = packages/images/images.js, copied by sync-functions.js):
 // { kind: "photo", of: "photos/<uuid>.webp", width: 400 } signs photos/<uuid>-w400.webp, next to its photo.
 // The database stores only the key; the public base URL lives in config (backend.md → Storage).

@@ -995,6 +995,7 @@ a.hm-product-card__image { display: block; color: inherit; }
   background-size: 100% 1px, 100% 1px, 1px 100%, 1px 100%;
   background-position: 0 0, 0 100%, 0 0, 100% 0;
 }
+.hm-drop-zone__buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }   /* Figma `buttons` (0200) */
 
 /* ── FileList / FileItem (Figma: `uploads` → `file item`; the list is a layout frame) ──
    List gap 8. Row: gap 16 between handle · content · remove; content gap 8, top-aligned (image rows),
@@ -1496,6 +1497,34 @@ button.hm-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .hm-listings-head__title { flex: 1 1 auto; min-width: 0; margin: 0; overflow-wrap: anywhere; }
 .hm-listings-head__actions { flex: none; display: flex; flex-wrap: wrap; gap: 16px; }
 @media (--mobile) { .hm-listings-head { flex-direction: column; align-items: flex-start; } }
+/* ── Crate photo (Figma BACKEND → Crate photo, decision 0200): admin → Take photo ── */
+.hm-crate-head { display: flex; flex-direction: column; gap: 4px; color: var(--text-strong); min-width: 0; }
+.hm-crate-head > * { margin: 0; overflow-wrap: anywhere; }
+.hm-crate-head__listing { color: var(--text-moderate); }
+.hm-side-switch { display: flex; gap: 8px; }
+.hm-camera-viewer { position: relative; aspect-ratio: 3 / 4; overflow: hidden; background: var(--surface-base); }
+.hm-camera-viewer__feed, .hm-camera-viewer__feed > video, .hm-camera-viewer__feed > canvas, .hm-camera-viewer__guide { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hm-camera-viewer__feed > video, .hm-camera-viewer__feed > canvas { object-fit: cover; display: block; }
+.hm-camera-viewer__guide { pointer-events: none; fill: none; }
+/* strokes: 1px on screen whatever the viewer size (non-scaling), dashes 4 4 as Figma */
+.hm-camera-viewer__guide > * { vector-effect: non-scaling-stroke; stroke-width: 1px; }
+.hm-camera-viewer__edge { stroke: var(--text-strong); stroke-dasharray: 4 4; }
+.hm-camera-viewer__label { stroke: var(--text-strong-invert); stroke-dasharray: 4 4; }
+.hm-camera-viewer__marker { stroke: var(--text-strong); }
+.hm-camera-viewer__status { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); margin: 0; padding: 4px 8px; white-space: nowrap;
+  background: var(--surface-scrim); color: var(--text-strong-invert); }
+.hm-crop-preview { display: flex; flex-direction: column; gap: 8px; margin: 0; min-width: 0; }
+.hm-crop-preview__image { position: relative; aspect-ratio: 1; background: var(--surface-media); overflow: hidden; }
+.hm-crop-preview__image > canvas, .hm-crop-preview__image > img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.hm-crop-preview__caption { color: var(--text-moderate); }
+.hm-turn-bar { display: flex; align-items: center; gap: 8px; }
+.hm-turn-bar > p { margin: 0; }
+.hm-turn-bar__hint { flex: 1 1 auto; min-width: 0; color: var(--text-moderate); }
+.hm-turn-bar__angle { color: var(--text-strong); font-variant-numeric: tabular-nums; }
+.hm-check-line { display: flex; align-items: center; gap: 8px; color: var(--text-strong); }
+.hm-check-line__icon { flex: none; display: flex; width: 24px; height: 24px; color: var(--icon-strong); }
+.hm-check-line__message { margin: 0; min-width: 0; }
+.hm-check-line[data-state="warning"] .hm-check-line__message { color: var(--text-moderate); }
 /* ── ListingsFilter (Figma BACKEND → Listings → `listings filter`, decision 0128): tabs + search ── */
 .hm-listings-filter { display: flex; align-items: center; gap: 16px; }
 .hm-listings-filter__tabs { flex: 1 1 auto; min-width: 0; }

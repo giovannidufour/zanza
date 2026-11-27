@@ -424,6 +424,7 @@
     f.sleeveType = row.sleeve_type || 'original'; f.sleeveCondition = row.condition_sleeve || '';
     f.notes = row.notes || '';
     f.images = (row.photo_keys || []).map(function (k) { return { id: nextId(), key: k, name: fileNameOf(k), url: mediaUrl(k) }; });
+    f.originals = (row.original_keys || []).slice();   // Full photos of Take photo (0200, migration 0045): kept, not shown
     f.samples = (r.samples || []).slice().sort(function (a, b) { return a.sort - b.sort; }).map(function (s) {
       return { id: nextId(), key: s.audio_key, name: fileNameOf(s.audio_key), title: s.title, url: mediaUrl(s.audio_key), line: s.line_id ? lineIdToPos[s.line_id] || null : null };
     });
@@ -445,7 +446,7 @@
     else if (Number.isNaN(cents)) e.price = 'Use a number, e.g. 12 or 12.50.';
     if (f.year.trim() && !parseYear(f.year)) e.year = 'Use a year (1983) or a decade (1990s).';
     if (f.discogs && discogsId(f.discogs) === null) e.discogs = 'Pick a release from the list, paste its link or number, or empty the field.';
-    if (f.images.some(function (x) { return x.uploading; }) || f.samples.some(function (x) { return x.uploading; })) e.uploads = 'Wait for the uploads to finish.';
+    if (f.images.some(function (x) { return x.uploading; }) || f.samples.some(function (x) { return x.uploading; }) || f.originalsPending) e.uploads = 'Wait for the uploads to finish.';
     return e;
   }
 
@@ -518,7 +519,7 @@
   /* decision 0118: what the form would save, to tell "Unsaved changes". Leaves out what the database sets (status, SKU,
      dates) and what only the page needs (local ids, preview URLs, upload progress). */
   var META_KEYS = { listingId: 1, sku: 1, status: 1, slug: 1, checkoutUntil: 1, soldAt: 1, publishedAt: 1, createdAt: 1 };
-  var VOLATILE_KEYS = { id: 1, url: 1, uploading: 1, progress: 1, phase: 1, duration: 1, videoImage: 1, videoProgress: 1 };   // video of a sample (0180): never saved
+  var VOLATILE_KEYS = { id: 1, url: 1, uploading: 1, progress: 1, phase: 1, duration: 1, videoImage: 1, videoProgress: 1, originalsPending: 1 };   // video of a sample (0180): never saved
   function formSnapshot(f) {
     var o = {};
     Object.keys(f).forEach(function (k) { if (!META_KEYS[k]) o[k] = f[k]; });
@@ -534,6 +535,167 @@
     ['genres', 'Genres & tags'], ['conditions', 'Conditions'], ['description', 'Description'], ['samples', 'Samples']];
   var FORM_SECTION_LABEL = {};
   FORM_SECTIONS.forEach(function (s) { FORM_SECTION_LABEL[s[0]] = s[1]; });
+  /* ── Take photo (decision 0200, Figma BACKEND → Crate photo) ─────────────────────────────────────────────────────
+     From Create / Edit listing → Images → Take photo. A phone photo of a 7" record (live camera, or From library) made
+     into the Scanner's two crops (0153) by packages/crate-photo: perspective from the optional A4 sheet or the record
+     outline, centred on the spindle hole, light evened out on the paper. Drag either crop to turn both; 90°, Reset.
+     Add to listing: the Label → photo 1 (Label A) or 2 (Label B), the Full → kept with the SKU, not shown (0045). */
+  var CP = window.HighmuzikCratePhoto;
+  function cratePixels(source, w, hgt) {
+    var c = document.createElement('canvas'); c.width = w; c.height = hgt;
+    var g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(source, 0, 0, w, hgt);
+    return g.getImageData(0, 0, w, hgt);
+  }
+  function paint(canvas, img) {
+    if (!canvas) return;
+    if (canvas.width !== img.width) { canvas.width = img.width; canvas.height = img.height; }
+    canvas.getContext('2d').putImageData(new ImageData(img.data, img.width, img.height), 0, 0);
+  }
+  function canvasBlob(canvas) {
+    return new Promise(function (resolve, reject) { canvas.toBlob(function (b) { b ? resolve(b) : reject(new Error('Could not make the photo.')); }, 'image/webp', 0.9); });
+  }
+  function CratePhoto(props) {
+    var sd = useState('A'), side = sd[0], setSide = sd[1];
+    var ph = useState('camera'), phase = ph[0], setPhase = ph[1];          // camera | working | result
+    var cs = useState(null), camStatus = cs[0], setCamStatus = cs[1];     // the pill on the viewer
+    var ck = useState([]), checks = ck[0], setChecks = ck[1];
+    var an = useState(0), angle = an[0], setAngle = an[1];
+    var ul = useState(true), useLabel = ul[0], setUseLabel = ul[1];
+    var uf = useState(true), useFull = uf[0], setUseFull = uf[1];
+    var bz = useState(false), busy = bz[0], setBusy = bz[1];
+    var videoRef = useRef(null), streamRef = useRef(null), fileRef = useRef(null);
+    var fullRef = useRef(null), labelRef = useRef(null);
+    var shot = useRef(null);       // { sd: ImageData of the photo, an: CP.analyse result }
+    var angleRef = useRef(0); angleRef.current = angle;
+
+    // the live camera (back camera, full resolution: 3024 × 4032 on an iPhone 13 mini), only on the camera screen
+    useEffect(function () {
+      if (phase !== 'camera') return;
+      var stopped = false, timer = null;
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setCamStatus('No camera here: use From library'); return; }
+      setCamStatus('Starting the camera…');
+      navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 4032 }, height: { ideal: 3024 } } })
+        .then(function (stream) {
+          if (stopped) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
+          streamRef.current = stream;
+          var v = videoRef.current; v.srcObject = stream;
+          return v.play().then(function () {
+            // the status follows the sheet: its 4 markers in view or not (a small frame, twice a second)
+            function look() {
+              if (stopped || !v.videoWidth) return;
+              var w = 320, hh = Math.round(v.videoHeight * w / v.videoWidth);
+              setCamStatus(CP.sheetIn(cratePixels(v, w, hh)) ? 'Sheet found' : 'No sheet: fill the circle with the record');
+              timer = setTimeout(look, 500);
+            }
+            look();
+          });
+        })
+        .catch(function (e) { if (!stopped) setCamStatus(e && e.name === 'NotAllowedError' ? 'Camera not allowed: use From library' : 'Camera not available: use From library'); });
+      return function () {
+        stopped = true; clearTimeout(timer);
+        if (streamRef.current) { streamRef.current.getTracks().forEach(function (t) { t.stop(); }); streamRef.current = null; }
+      };
+    }, [phase]);
+
+    function draw(size) {
+      var s = shot.current;
+      if (!s) return null;
+      var r = CP.render(s.sd, s.an, size, angleRef.current);
+      paint(fullRef.current, r.full); paint(labelRef.current, r.label);
+      return r;
+    }
+    // after the shot: find the record, then the two crops at 1600
+    function process(pixels) {
+      setPhase('working'); setAngle(0); angleRef.current = 0;
+      setTimeout(function () {    // let "Working…" paint first: the analysis takes a second or two on a phone
+        var a = CP.analyse(pixels);
+        if (!a) { shot.current = null; setPhase('camera'); toast('Record not found: lay it on the sheet, or on a plain card that contrasts with it.'); return; }
+        shot.current = { sd: pixels, an: a };
+        setPhase('result');
+      }, 30);
+    }
+    useEffect(function () {   // the result screen is mounted: draw the crops
+      if (phase !== 'result' || !shot.current) return;
+      var r = draw(CP.OUT);
+      setChecks(CP.checks(shot.current.an, r.light));
+    }, [phase]);
+    function takePhoto() {
+      var v = videoRef.current;
+      if (!v || !v.videoWidth) return;
+      process(cratePixels(v, v.videoWidth, v.videoHeight));
+    }
+    function fromLibrary(e) {
+      var file = e.target.files[0]; e.target.value = '';
+      if (!file) return;
+      createImageBitmap(file, { imageOrientation: 'from-image' }).then(function (bmp) { process(cratePixels(bmp, bmp.width, bmp.height)); },
+        function () { toast(file.name + ' is not a readable image.'); });
+    }
+    // turn: drag on either crop (both turn together, live at 400 px, 1600 on release), 90°, Reset
+    var drag = useRef(null), raf = useRef(0);
+    function pointerAngle(el, e) { var r = el.getBoundingClientRect(); return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI; }
+    function turnTo(deg, live) {
+      angleRef.current = deg; setAngle(deg);
+      if (live) { if (!raf.current) raf.current = requestAnimationFrame(function () { raf.current = 0; draw(400); }); }
+      else setTimeout(function () { draw(CP.OUT); }, 0);
+    }
+    function dragProps() {
+      return {
+        onPointerDown: function (e) { e.currentTarget.setPointerCapture(e.pointerId); drag.current = { start: pointerAngle(e.currentTarget, e), from: angleRef.current }; },
+        onPointerMove: function (e) {
+          if (!drag.current) return;
+          var d = pointerAngle(e.currentTarget, e) - drag.current.start;
+          if (d > 180) d -= 360; if (d < -180) d += 360;
+          turnTo(Math.round((drag.current.from + d) * 10) / 10, true);
+        },
+        onPointerUp: endDrag, onPointerCancel: endDrag,
+        // keyboard: ← → turn by 1°, Shift by 10°
+        tabIndex: 0, 'aria-label': 'Turn the photos: drag, or use the arrow keys',
+        onKeyDown: function (e) {
+          var k = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+          if (!k) return;
+          e.preventDefault(); turnTo(Math.round((angleRef.current + k * (e.shiftKey ? 10 : 1)) * 10) / 10, false);
+        }
+      };
+    }
+    function endDrag() { if (!drag.current) return; drag.current = null; cancelAnimationFrame(raf.current); raf.current = 0; turnTo(angleRef.current, false); }
+
+    async function add() {
+      setBusy(true);
+      try {
+        var name = (props.sku ? props.sku + '_' : '') + (side === 'A' ? '1' : '2') + '_label.webp';
+        var label = useLabel ? new File([await canvasBlob(labelRef.current)], name, { type: 'image/webp' }) : null;
+        var full = useFull ? await canvasBlob(fullRef.current) : null;
+        props.onAdd({ side: side, label: label, full: full });
+      } catch (e) { toast(e.message); setBusy(false); }
+    }
+
+    var result = phase === 'result';
+    var head = h(Z.CratePhotoHead, { title: 'Take photo', listing: props.listing });
+    var sideSwitch = h(Z.SideSwitch, { value: side, onChange: setSide, 'aria-label': 'Label side' });
+    var body = result
+      ? h(React.Fragment, null,
+          h('div', { className: 'admin-crate__crops' },
+            h(Z.CropPreview, { caption: 'Full · 180 mm' }, h('canvas', Object.assign({ ref: fullRef, className: 'admin-crate__turn' }, dragProps()))),
+            h(Z.CropPreview, { caption: 'Label · 3.8″ · 96.52 mm' }, h('canvas', Object.assign({ ref: labelRef, className: 'admin-crate__turn' }, dragProps())))),
+          h(Z.TurnBar, { angle: CP.angleText(angle), onTurn: function () { turnTo(angleRef.current + 90, false); }, onReset: function () { turnTo(0, false); } }),
+          checks.length ? h('div', { className: 'admin-crate__checks' }, checks.map(function (c, i) { return h(Z.CheckLine, { key: i, state: c.state }, c.text); })) : null,
+          h('div', { className: 'admin-crate__keep' },
+            h(Z.Checkbox, { checked: useLabel, onChange: function (e) { setUseLabel(e.target.checked); }, label: 'Label → photo ' + (side === 'A' ? '1 (Label A)' : '2 (Label B)') }),
+            h(Z.Checkbox, { checked: useFull, onChange: function (e) { setUseFull(e.target.checked); }, label: 'Full record → kept with the SKU, not shown' })))
+      : h(Z.CameraViewer, { status: phase === 'working' ? 'Working…' : camStatus },
+          h('video', { ref: videoRef, playsInline: true, muted: true, autoPlay: true }));
+    var actions = result
+      ? [h(Z.Button, { key: 'add', hierarchy: 'primary', disabled: busy || (!useLabel && !useFull), onClick: add }, 'Add to listing'),
+         h(Z.Button, { key: 'retake', hierarchy: 'secondary', disabled: busy, onClick: function () { shot.current = null; setChecks([]); setPhase('camera'); } }, 'Retake')]
+      : [h(Z.Button, { key: 'take', hierarchy: 'primary', disabled: phase !== 'camera' || !streamRef.current, onClick: takePhoto }, 'Take photo'),
+         h(Z.Button, { key: 'library', hierarchy: 'secondary', disabled: phase !== 'camera', onClick: function () { fileRef.current.click(); } }, 'From library')];
+    return h('div', { className: 'admin-crate' },
+      h('div', { className: 'admin-crate__body' }, head, sideSwitch, body),
+      h('input', { ref: fileRef, type: 'file', accept: 'image/*', hidden: true, tabIndex: -1, onChange: fromLibrary }),
+      h(Z.ActionBar, null, actions));
+  }
+
   function ListingForm(props) {
     var mobile = useIsMobile();
     var tradeOn = useTradeEnabled();   // trade off (Settings, decision 0102): "For trade" only for a listing that already is one
@@ -573,6 +735,12 @@
     }, [openId, mobile]);
     useEffect(function () { return function () { document.documentElement.style.removeProperty('--admin-player-height'); document.body.removeAttribute('data-player-open'); }; }, []);
     var fRef = useRef(f); fRef.current = f;
+    var cm = useState(false), camera = cm[0], setCamera = cm[1];   // Take photo (decision 0200) open over the form
+    useEffect(function () {   // the phone's Back closes Take photo and returns to the form, unsaved edits kept
+      function onPop() { setCamera(false); }
+      window.addEventListener('popstate', onPop);
+      return function () { window.removeEventListener('popstate', onPop); };
+    }, []);
     var fd = useState(false), fetching = fd[0], setFetching = fd[1];
     var pf = useState(null), photoFound = pf[0], setPhotoFound = pf[1];   // releases from a photo of the label (0092)
     var en = useState(null), entities = en[0], setEntities = en[1];
@@ -666,6 +834,36 @@
         });
       };
     }
+    // Take photo (decision 0200): one entry in history, so Back returns to the form
+    function openCamera() { history.pushState({ cratePhoto: true }, '', location.href); setCamera(true); window.scrollTo(0, 0); }
+    function closeCamera() { if (history.state && history.state.cratePhoto) history.back(); else setCamera(false); }
+    /* the two crops of Take photo: the Label becomes photo 1 (Label A) or 2 (Label B), the photos already there move down
+       one place; the Full goes up to originals/ and into original_keys (migration 0045): kept with the SKU, not shown */
+    function addTaken(taken) {
+      if (taken.label) {
+        var file = taken.label, item = { id: nextId(), key: null, name: file.name, url: URL.createObjectURL(file), uploading: true, line: null };
+        set(function (cur) { var n = cur.images.slice(); n.splice(taken.side === 'B' ? Math.min(1, n.length) : 0, 0, item); return { images: n }; });
+        uploadFile('photo', file, function (st) { patchItem('images', item.id, { phase: st.phase, progress: st.value }); })
+          .then(function (key) { patchItem('images', item.id, { key: key, uploading: false, phase: null, progress: null }); })
+          .catch(function (err) {
+            set(function (cur) { return { images: cur.images.filter(function (x) { return x.id !== item.id; }) }; });
+            setMessage({ error: true, text: 'Label ' + taken.side + ': ' + err.message });
+          });
+      }
+      if (taken.full) {
+        set(function (cur) { return { originalsPending: (cur.originalsPending || 0) + 1 }; });
+        upload('original', taken.full, null)
+          .then(function (key) { set(function (cur) { return { originals: (cur.originals || []).concat([key]), originalsPending: cur.originalsPending - 1 }; }); })
+          .catch(function (err) {
+            set(function (cur) { return { originalsPending: cur.originalsPending - 1 }; });
+            setMessage({ error: true, text: 'Full photo not kept: ' + err.message });
+          });
+      }
+      var n = (taken.label ? 1 : 0) + (taken.full ? 1 : 0);
+      closeCamera();
+      toast(n === 1 ? (taken.label ? 'Label ' + taken.side + ' added' : 'Full photo added') + ': save the listing to keep it.'
+                    : n + ' photos added: save the listing to keep them.');
+    }
     // andNew (decision 0155): Save draft and new, after the save a blank Create listing opens, to make drafts back to back
     async function save(status, andNew) {
       var cur = fRef.current, e = validate(cur, status);
@@ -686,8 +884,10 @@
       if (res.error) { setMessage({ error: true, text: (status === 'available' ? 'Not published: ' : 'Not saved: ') + res.error.message }); return; }
       var d = res.data, now = Date.now(), wasPublic = cur.status !== 'draft';
       // custom title links (0147): a column of their own, written right after the listing (same row, same rebuild)
-      var tl = await sb.from('listings').update({ custom_title_links: titleLinksRow(cur.customTitle, cur.titleLinks || []) }).eq('id', d.listing_id);
-      if (tl.error) toast('Title links not saved: ' + tl.error.message);
+      var extra = { custom_title_links: titleLinksRow(cur.customTitle, cur.titleLinks || []) };
+      if (cur.originals) extra.original_keys = cur.originals;   // Take photo (0200): the Full photos, kept with the SKU
+      var tl = await sb.from('listings').update(extra).eq('id', d.listing_id);
+      if (tl.error) toast('Title links or Full photos not saved: ' + tl.error.message);
       baseline.current = formSnapshot(cur);
       setSavedAt(now);
       set(function (x) { return { listingId: d.listing_id, sku: d.sku, status: d.status, slug: d.slug,
@@ -1107,7 +1307,7 @@
         f.images.length ? h(Z.FileList, { onMove: moveIn('images') }, f.images.map(function (x, i) {
           return fileItem('images', x, { image: { src: x.url }, featured: i === 0 });
         })) : null,
-        h(Z.DropZone, { label: 'Browse image', accept: 'image/jpeg,image/png,image/webp', multiple: true, onFiles: addFiles('photo') })),
+        h(Z.DropZone, { label: 'Browse image', accept: 'image/jpeg,image/png,image/webp', multiple: true, onFiles: addFiles('photo'), onTakePhoto: openCamera })),
       h(Z.Divider),
 
       h('section', sectionProps('lines'),
@@ -1310,9 +1510,11 @@
         onClose: closePlayer
       }));
 
-    return h('div', { className: 'admin-page admin-page--edit' }, main, side,
+    // Take photo (0200) covers the form; the form stays mounted (hidden), so its edits, uploads and player go on
+    var page = h('div', { className: 'admin-page admin-page--edit', style: camera ? { display: 'none' } : undefined }, main, side,
       // mobile: the status block scrolls away with the form, so the bar repeats Unsaved changes above the buttons
       mobile && (publishBtn || draftBtn) ? h(Z.ActionBar, { status: note || (!isNew && dirty ? h(Z.Alert, null, 'Unsaved changes') : null) }, publishBtn, draftBtn) : null, player);
+    return h(React.Fragment, null, camera ? h(CratePhoto, { sku: f.sku, listing: [f.sku, previewName(f)].filter(Boolean).join(' · ') || 'New listing', onAdd: addTaken }) : null, page);
   }
 
   // ── Listings ──────────────────────────────────────────────────────────────

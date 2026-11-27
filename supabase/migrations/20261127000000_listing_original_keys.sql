@@ -1,4 +1,4 @@
--- 0044 listing original_keys (Gio, 2026-11-27): the "Full" record photos of a copy (admin → Take photo; later the
+-- 0045 listing original_keys (Gio, 2026-11-27): the "Full" record photos of a copy (admin → Take photo; later the
 -- Scanner's originals too) are kept online with the SKU but not shown in the shop. They can feed the record videos.
 -- Keys live in R2 under originals/<uuid>.<ext>. The shop build never reads this column.
 -- Removed or deleted originals go to media_trash like photos (purge-media, 7 days, only if nothing references them).

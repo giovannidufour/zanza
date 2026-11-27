@@ -32,6 +32,8 @@
      To update an icon after it changes in Figma, replace its entry here; every component follows. */
   var ICONS = {
     'icon-bars-three': [24, 24, '<path d="M0 8H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M0 12H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M0 16H24" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/>'],
+    'icon-check-circle': [24, 24, '<defs><clipPath id="hm-icon-check-circle-clip"><path d="M0 12A12 12 0 1 0 24 12A12 12 0 1 0 0 12Z"/></clipPath></defs><path d="M0 12A12 12 0 1 0 24 12A12 12 0 1 0 0 12Z" clip-path="url(#hm-icon-check-circle-clip)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/><path transform="translate(4 5.875)" d="M 0 6.857 L 5.1 12 L 17 0" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="square"/>'],
+    'icon-warning-circle': [24, 24, '<path d="M3 12A9 9 0 1 0 21 12A9 9 0 1 0 3 12Z" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"/><path d="M12 12.75V7.5" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round"/><path d="M10.875 16.125A1.125 1.125 0 1 0 13.125 16.125A1.125 1.125 0 1 0 10.875 16.125Z" fill="currentColor"/>'],
     'icon-chevron-down-large-thin': [24, 24, '<path transform="matrix(0 -1 1 0 2 17.5)" d="M 10 0 L 0 10 L 10 20" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>'],
     'icon-chevron-down-small-thin': [24, 24, '<path transform="matrix(0 -1 1 0 6 15.5)" d="M 6 0 L 0 6 L 6 12" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>'],
     'icon-chevron-up-small-thin': [24, 24, '<path d="M 6 15 L 12 9 L 18 15" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>'],
@@ -776,8 +778,11 @@
       className: cx('hm-drop-zone', props.className),
       onDragOver: function (e) { if (!props.disabled) e.preventDefault(); },
       onDrop: function (e) { e.preventDefault(); if (!props.disabled) pick(e.dataTransfer.files); }
-    }, omit(props, ['label', 'accept', 'multiple', 'onFiles', 'disabled', 'className', 'name'])),
-      h(Button, { hierarchy: 'secondary', size: 'medium', disabled: props.disabled, onClick: function () { inputRef.current && inputRef.current.click(); } }, props.label),
+    }, omit(props, ['label', 'accept', 'multiple', 'onFiles', 'disabled', 'className', 'name', 'onTakePhoto', 'takePhotoLabel'])),
+      // Figma `buttons` row (gap 8): Browse … + the boolean `take photo` (admin → Take photo, decision 0200) = onTakePhoto set
+      h('div', { className: 'hm-drop-zone__buttons' },
+        h(Button, { hierarchy: 'secondary', size: 'medium', disabled: props.disabled, onClick: function () { inputRef.current && inputRef.current.click(); } }, props.label),
+        props.onTakePhoto ? h(Button, { hierarchy: 'secondary', size: 'medium', disabled: props.disabled, onClick: props.onTakePhoto }, props.takePhotoLabel || 'Take photo') : null),
       h('input', { ref: inputRef, type: 'file', name: props.name, accept: props.accept, multiple: props.multiple, hidden: true, tabIndex: -1,
         onChange: function (e) { pick(e.target.files); e.target.value = ''; } }));
   }
@@ -1269,6 +1274,63 @@
       h('p', { className: 'hm-stat__value label-extra-large' }, props.value),
       props.note ? h('p', { className: 'hm-stat__note body-small' }, props.note) : null,
       props.href ? h('a', { className: 'hm-stat__link body-small', href: props.href }, props.linkLabel || 'View') : null);
+  }
+  /* ── Crate photo (Figma BACKEND → Crate photo, decision 0200): admin → Take photo, a phone photo of a 7" record
+     made into the Scanner's two crops. Page pieces, all body/small (12) unless said:
+     CratePhotoHead (`crate photo head`): h1 label-extra-large + listing line (moderate), gap 4.
+     SideSwitch (`side switch`): two secondary Buttons, Label A | Label B, the chosen one state=active, gap 8.
+     CameraViewer (`camera viewer`): 3:4 on surface/base, the live feed (children) under an on-screen guide that is
+       never in the photo: record edge 7" (strong, dashed 4 4), label crop 3.8" (strong-invert, dashed 4 4), the 4
+       markers of the optional A4 sheet (strong); booleans guide / show status; status = a pill on surface/scrim
+       (strong-invert, padding 4 8), 16 from the bottom. Geometry in mm of the portrait frame 202 × 270 (prototype).
+     CropPreview (`crop preview`): square image slot on surface/media (children: the canvas) + caption (moderate), gap 8.
+     TurnBar (`turn bar`): hint (moderate, fills) · angle (strong) · 90° · Reset (small secondary Buttons), gap 8, centred.
+     CheckLine (`check line`, state done | warning): icon check-circle | warning-circle (24) + message, gap 8;
+       warning = message moderate. */
+  function CratePhotoHead(props) {
+    return h('div', Object.assign({}, omit(props, ['title', 'listing', 'className']), { className: cx('hm-crate-head', props.className) }),
+      h('h1', { className: 'label-extra-large' }, props.title || 'Take photo'),
+      props.listing ? h('p', { className: 'hm-crate-head__listing body-small' }, props.listing) : null);
+  }
+  function SideSwitch(props) {
+    var sides = props.sides || [['A', 'Label A'], ['B', 'Label B']];
+    return h('div', Object.assign({ role: 'group', 'aria-label': props['aria-label'] || 'Side' }, omit(props, ['value', 'onChange', 'sides', 'className', 'aria-label']),
+      { className: cx('hm-side-switch', props.className) }),
+      sides.map(function (s) {
+        var on = props.value === s[0];
+        return h(Button, { key: s[0], hierarchy: 'secondary', size: 'medium', state: on ? 'active' : undefined, 'aria-current': on ? 'true' : undefined,
+          'aria-pressed': on, onClick: function () { if (!on && props.onChange) props.onChange(s[0]); } }, s[1]);
+      }));
+  }
+  var CRATE_FRAME = { w: 202, h: 270 };   // mm seen by the 3:4 viewer, centred on the sheet
+  function CameraViewer(props) {
+    var guide = props.guide !== false, showStatus = props.showStatus !== false && props.status;
+    var m = [[-80, -120], [80, -120], [80, 120], [-80, 120]];
+    return h('div', Object.assign({}, omit(props, ['status', 'showStatus', 'guide', 'children', 'className']), { className: cx('hm-camera-viewer', props.className) }),
+      h('div', { className: 'hm-camera-viewer__feed' }, props.children),
+      guide ? h('svg', { className: 'hm-camera-viewer__guide', viewBox: (-CRATE_FRAME.w / 2) + ' ' + (-CRATE_FRAME.h / 2) + ' ' + CRATE_FRAME.w + ' ' + CRATE_FRAME.h, 'aria-hidden': 'true' },
+        h('circle', { className: 'hm-camera-viewer__edge', r: 87.5 }),
+        h('rect', { className: 'hm-camera-viewer__label', x: -48.26, y: -48.26, width: 96.52, height: 96.52 }),
+        m.map(function (p, i) { return h('rect', { key: i, className: 'hm-camera-viewer__marker', x: p[0] - 3.5, y: p[1] - 3.5, width: 7, height: 7 }); })) : null,
+      showStatus ? h('p', { className: 'hm-camera-viewer__status body-small', role: 'status' }, props.status) : null);
+  }
+  function CropPreview(props) {
+    return h('figure', Object.assign({}, omit(props, ['caption', 'children', 'className']), { className: cx('hm-crop-preview', props.className) }),
+      h('div', { className: 'hm-crop-preview__image' }, props.children),
+      h('figcaption', { className: 'hm-crop-preview__caption body-small' }, props.caption));
+  }
+  function TurnBar(props) {
+    return h('div', Object.assign({}, omit(props, ['hint', 'angle', 'onTurn', 'onReset', 'turnLabel', 'resetLabel', 'disabled', 'className']), { className: cx('hm-turn-bar', props.className) }),
+      h('p', { className: 'hm-turn-bar__hint body-small' }, props.hint || 'Drag a photo to turn'),
+      h('p', { className: 'hm-turn-bar__angle body-small', 'aria-live': 'polite' }, props.angle),
+      h(Button, { hierarchy: 'secondary', size: 'small', disabled: props.disabled, onClick: props.onTurn, 'aria-label': 'Turn 90° clockwise' }, props.turnLabel || '90°'),
+      h(Button, { hierarchy: 'secondary', size: 'small', disabled: props.disabled, onClick: props.onReset }, props.resetLabel || 'Reset'));
+  }
+  function CheckLine(props) {
+    var state = props.state === 'warning' ? 'warning' : 'done';
+    return h('div', Object.assign({}, omit(props, ['state', 'children', 'className']), { className: cx('hm-check-line', props.className), 'data-state': state }),
+      h('span', { className: 'hm-check-line__icon', 'aria-hidden': 'true' }, icon(state === 'warning' ? 'icon-warning-circle' : 'icon-check-circle')),
+      h('p', { className: 'hm-check-line__message body-small' }, h('span', { className: 'hm-visually-hidden' }, state === 'warning' ? 'Note: ' : 'Done: '), props.children));
   }
   /* ── ListingsFilter (Figma BACKEND → Listings → `listings filter`, device=desktop | mobile, decision 0128) ──
      The status tabs of the Listings page (Live · Drafts · Sold · Archived, a <Tabs>) + the search field that filters
@@ -2148,6 +2210,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, Step: Step,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, ListingNav: ListingNav, JumpTo: JumpTo, DiscogsLink: DiscogsLink, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, useDragOrder: useDragOrder, DragHandle: DragHandle, AdminBar: AdminBar, ListingsHead: ListingsHead, ListingsFilter: ListingsFilter, Stat: Stat, Thumbnail: Thumbnail, ListingRow: ListingRow, OfferRow: OfferRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, ListingNav: ListingNav, JumpTo: JumpTo, DiscogsLink: DiscogsLink, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, useDragOrder: useDragOrder, DragHandle: DragHandle, AdminBar: AdminBar, ListingsHead: ListingsHead, ListingsFilter: ListingsFilter, Stat: Stat, CratePhotoHead: CratePhotoHead, SideSwitch: SideSwitch, CameraViewer: CameraViewer, CropPreview: CropPreview, TurnBar: TurnBar, CheckLine: CheckLine, Thumbnail: Thumbnail, ListingRow: ListingRow, OfferRow: OfferRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
            NewsletterDialog: NewsletterDialog, SectionHead: SectionHead, GenreLinks: GenreLinks, HomeIntro: HomeIntro, HomeNewsletter: HomeNewsletter, CollectionCard: CollectionCard, HomeCollections: HomeCollections, ProductTile: ProductTile, GalleryCounter: GalleryCounter, ViewToggle: ViewToggle };
 });

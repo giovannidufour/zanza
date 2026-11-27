@@ -1,7 +1,7 @@
 // supabase/functions/purge-media — deletes from R2 the files nothing uses any more (migration 0009, public.media_trash).
 // Admin only (the caller's session must belong to public.admins). The admin calls it when the Listings page opens.
 // What to delete is decided by the database (admin_media_to_purge): trashed more than 7 days ago AND referenced by no
-// listing photo, no listing original (migration 0044) and no sample. A key R2 answers 204 or 404 for is gone: it leaves the trash (admin_media_purged).
+// listing photo, no listing original (migration 0045) and no sample. A key R2 answers 204 or 404 for is gone: it leaves the trash (admin_media_purged).
 // A photo goes with its smaller copies (decision 0108, images.js = packages/images/images.js): they are deleted first,
 // and the photo leaves the trash only when they are gone too.
 // Secrets: the same as sign-upload (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET).
