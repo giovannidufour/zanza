@@ -111,6 +111,7 @@ final class AppModel: ObservableObject {
         session.inJob = { [weak self] f in self?.jobs.uses(f) ?? false }
         jobs.onIdle = { [weak self] in self?.session.flushPendingRemovals(); self?.refreshDisk() }
         session.onChange = { [weak self] in self?.scheduleSync() }
+        pricing.onTitleChanged = { [weak self] in self?.drafts.search() }
         // draft rows read jobs and session (progress, push state, counts): redraw them when those change
         refreshDisk()
         forward = [jobs.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() },

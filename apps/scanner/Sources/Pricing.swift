@@ -6,7 +6,7 @@ import SwiftUI
 
 /// The listing columns of the admin's Price and Conditions blocks (Supabase public.listings)
 struct ListingTerms: Codable, Equatable {
-    static let columns = "id,section,price_mode,price_cents,condition_media,condition_media_b,condition_notes,sleeve_type,condition_sleeve"
+    static let columns = "id,section,price_mode,price_cents,condition_media,condition_media_b,condition_notes,sleeve_type,condition_sleeve,custom_title,notes,custom_title_links"
     let id: String
     var section: String
     var price_mode: String?
@@ -16,13 +16,19 @@ struct ListingTerms: Codable, Equatable {
     var condition_notes: String?
     var sleeve_type: String?
     var condition_sleeve: String?
+    /// Title block (custom title, 0111/0147) and Description block (notes) of the admin form (Gio 2026-11-27)
+    var custom_title: String?
+    var notes: String?
+    /// artist links over the custom title (0147); nil = never set (the shop derives them, 0111)
+    var custom_title_links: [TitleLink]?
 
     /// The body of the PATCH: every column of the two blocks, null when empty (as admin_save_listing stores them)
     var patch: [String: Any] {
         func v(_ s: String?) -> Any { (s?.isEmpty == false) ? s! : NSNull() }
         return ["section": section, "price_mode": price_mode ?? "fixed", "price_cents": price_cents.map { $0 as Any } ?? NSNull(),
                 "condition_media": v(condition_media), "condition_media_b": v(condition_media_b), "condition_notes": v(condition_notes),
-                "sleeve_type": sleeve_type ?? "original", "condition_sleeve": sleeve_type == "none" ? NSNull() : v(condition_sleeve)]
+                "sleeve_type": sleeve_type ?? "original", "condition_sleeve": sleeve_type == "none" ? NSNull() : v(condition_sleeve),
+                "custom_title": v(custom_title), "notes": v(notes)]
     }
 
     var isOffers: Bool { section == "sale" && price_mode == "offers" }
@@ -40,6 +46,7 @@ struct PriceForm: Equatable {
     var price = ""
     var sideA = "", sideB = "", notes = ""
     var sleeveType = "generic", sleeveCondition = ""
+    var title = "", description = ""
 
     init() {}
     init(_ t: ListingTerms) {
@@ -47,6 +54,7 @@ struct PriceForm: Equatable {
         price = t.price_cents.map(PriceForm.centsText) ?? ""
         sideA = t.condition_media ?? ""; sideB = t.condition_media_b ?? ""; notes = t.condition_notes ?? ""
         sleeveType = t.sleeve_type ?? "original"; sleeveCondition = t.condition_sleeve ?? ""
+        title = t.custom_title ?? ""; description = t.notes ?? ""
     }
 
     /// as the admin's centsToText: 25, 25.5 → "25.50"
@@ -72,7 +80,9 @@ struct PriceForm: Equatable {
         let note = notes.trimmingCharacters(in: .whitespacesAndNewlines)
         return ListingTerms(id: id, section: saleType == "offers" ? "sale" : saleType, price_mode: saleType == "offers" ? "offers" : "fixed",
                             price_cents: cents, condition_media: sideA, condition_media_b: sideB, condition_notes: note,
-                            sleeve_type: sleeveType, condition_sleeve: sleeveType == "none" ? "" : sleeveCondition)
+                            sleeve_type: sleeveType, condition_sleeve: sleeveType == "none" ? "" : sleeveCondition,
+                            custom_title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+                            notes: description.trimmingCharacters(in: .whitespacesAndNewlines), custom_title_links: nil)
     }
 }
 
@@ -86,6 +96,8 @@ final class PricingModel: ObservableObject {
     @Published var saving: String?
     @Published var error: String?
     @Published var savedAt: [String: Date] = [:]
+    /// a saved custom title changes the draft's name in the list (scan-targets reads it)
+    var onTitleChanged: (() -> Void)?
 
     private var tradeRead = false
     func load(_ ids: [String]) {
@@ -118,10 +130,21 @@ final class PricingModel: ObservableObject {
         saving = id; error = nil
         Task { @MainActor in
             do {
+                var t = t
+                let old = self.saved[id]
+                let oldTitle = old?.custom_title ?? "", newTitle = t.custom_title ?? ""
+                if newTitle != oldTitle {   // the title changed: its artist links follow it (Gio's card, 2026-11-27)
+                    if let links = old?.custom_title_links, !links.isEmpty {
+                        t.custom_title_links = TitleLink.shift(links, from: oldTitle, to: newTitle)
+                    } else {
+                        t.custom_title_links = TitleLink.auto(newTitle, artists: try await Backend.shared.lineArtists(of: id))
+                    }
+                }
                 let s = try await Backend.shared.saveTerms(t)
                 self.saved[id] = s
                 if let now = self.edits[id], now == f { self.edits[id] = nil }   // typed meanwhile: keep the newer text
                 self.savedAt[id] = Date()
+                if newTitle != oldTitle { self.onTitleChanged?() }
                 self.saving = nil
                 then?()
             } catch {
@@ -153,6 +176,11 @@ struct PricePanel: View {
             let f = Binding(get: { pricing.form(d.id) }, set: { pricing.set(d.id, $0) })
             ScrollView {
                 VStack(alignment: .leading, spacing: 32) {
+                    VStack(alignment: .leading, spacing: 16) {   // Title block (admin: Custom title, Gio 2026-11-27)
+                        Text("Title").labelStyle(16)
+                        TextInput(label: "Custom title", optional: true, text: f.title)
+                    }
+                    Rectangle().fill(Theme.divider).frame(height: 1)
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Price").labelStyle(16)
                         HStack(alignment: .top, spacing: 0) {
@@ -185,6 +213,11 @@ struct PricePanel: View {
                                 SelectField(label: "Cover conditions", optional: true, value: f.sleeveCondition, options: PriceForm.grades.map { ($0, $0) }, empty: true)
                             } else { Color.clear.frame(maxWidth: .infinity, maxHeight: 1) }
                         }
+                    }
+                    Rectangle().fill(Theme.divider).frame(height: 1)
+                    VStack(alignment: .leading, spacing: 16) {   // Description block (admin: notes)
+                        Text("Description").labelStyle(16)
+                        TextInput(label: "Description / comment", optional: true, text: f.description)
                     }
                 }
                 .padding(24)
@@ -409,4 +442,48 @@ struct MenuAnchorView: NSViewRepresentable {
     let anchor: MenuAnchor
     func makeNSView(context: Context) -> NSView { let v = NSView(); anchor.view = v; return v }
     func updateNSView(_ v: NSView, context: Context) { anchor.view = v }
+}
+
+/// One artist link over the custom title (listings.custom_title_links, 0147): UTF-16 offsets, as the admin's LinkedInput
+struct TitleLink: Codable, Equatable {
+    var start: Int
+    var end: Int
+    var artist_id: String?
+    var name: String
+
+    var json: [String: Any] { ["start": start, "end": end, "artist_id": artist_id.map { $0 as Any } ?? NSNull(), "name": name] }
+
+    /// The record's artists found as whole words in the title, first match each (admin autoTitleLinks + LinkedInput.find)
+    static func auto(_ title: String, artists: [(id: String, name: String)]) -> [TitleLink] {
+        let t = title as NSString, lower = title.lowercased() as NSString
+        var out: [TitleLink] = []
+        for a in artists where !a.name.isEmpty && !out.contains(where: { $0.artist_id == a.id }) {
+            let part = a.name.lowercased() as NSString
+            var from = 0
+            while from < lower.length {
+                let r = lower.range(of: part as String, range: NSRange(location: from, length: lower.length - from))
+                if r.location == NSNotFound { break }
+                let before = r.location > 0 ? t.substring(with: NSRange(location: r.location - 1, length: 1)) : ""
+                let afterAt = r.location + r.length
+                let after = afterAt < t.length ? t.substring(with: NSRange(location: afterAt, length: 1)) : ""
+                if !word(before) && !word(after) && !out.contains(where: { r.location < $0.end && afterAt > $0.start }) {
+                    out.append(TitleLink(start: r.location, end: afterAt, artist_id: a.id, name: a.name)); break
+                }
+                from = r.location + 1
+            }
+        }
+        return out.sorted { $0.start < $1.start }
+    }
+    private static func word(_ c: String) -> Bool { c.range(of: #"[\p{L}\p{N}]"#, options: .regularExpression) != nil }
+
+    /// Links follow an edit of the title (admin LinkedInput.shift): text before and after the change keeps its links
+    static func shift(_ links: [TitleLink], from a: String, to b: String) -> [TitleLink] {
+        let x = Array(a.utf16), y = Array(b.utf16)
+        var pre = 0; while pre < x.count && pre < y.count && x[pre] == y[pre] { pre += 1 }
+        var suf = 0; while suf < x.count - pre && suf < y.count - pre && x[x.count - 1 - suf] == y[y.count - 1 - suf] { suf += 1 }
+        let oldEnd = x.count - suf, newEnd = y.count - suf, delta = y.count - x.count
+        func ms(_ v: Int) -> Int { v >= oldEnd ? v + delta : v <= pre ? v : newEnd }
+        func me(_ v: Int) -> Int { v <= pre ? v : v >= oldEnd ? v + delta : pre }
+        return links.map { TitleLink(start: ms($0.start), end: me($0.end), artist_id: $0.artist_id, name: $0.name) }.filter { $0.end > $0.start }
+    }
 }

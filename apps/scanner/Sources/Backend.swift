@@ -195,11 +195,28 @@ final class Backend {
 
     /// Writes only these columns of one listing; answers the row as saved
     func saveTerms(_ t: ListingTerms) async throws -> ListingTerms {
-        let data = try await rest("PATCH", "/rest/v1/listings?id=eq.\(t.id)&select=\(ListingTerms.columns)", t.patch)
+        var body = t.patch
+        if let links = t.custom_title_links { body["custom_title_links"] = links.map(\.json) }   // only when the title changed
+        let data = try await rest("PATCH", "/rest/v1/listings?id=eq.\(t.id)&select=\(ListingTerms.columns)", body)
         guard let saved = try JSONDecoder().decode([ListingTerms].self, from: data).first else {
             throw BackendError.server("The draft was not saved: it is no longer in the admin")
         }
         return saved
+    }
+
+    /// The artists of the record's lines, in line order (release_line_artists), for the custom title links
+    func lineArtists(of id: String) async throws -> [(id: String, name: String)] {
+        let q = "/rest/v1/listings?id=eq.\(id)&select=release:releases(lines:release_lines(position,credits:release_line_artists(position,artist:artists(id,name))))"
+        let rows = (try JSONSerialization.jsonObject(with: try await rest("GET", q, nil))) as? [[String: Any]] ?? []
+        let lines = ((rows.first?["release"] as? [String: Any])?["lines"] as? [[String: Any]] ?? [])
+            .sorted { ($0["position"] as? Int ?? 0) < ($1["position"] as? Int ?? 0) }
+        var out: [(id: String, name: String)] = []
+        for l in lines {
+            for c in ((l["credits"] as? [[String: Any]]) ?? []).sorted(by: { ($0["position"] as? Int ?? 0) < ($1["position"] as? Int ?? 0) }) {
+                if let a = c["artist"] as? [String: Any], let i = a["id"] as? String, let n = a["name"] as? String { out.append((i, n)) }
+            }
+        }
+        return out
     }
 
     /// shop_settings.trade_enabled (0102): For trade is offered only while trade is on

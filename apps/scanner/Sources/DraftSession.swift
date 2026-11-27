@@ -128,7 +128,12 @@ final class DraftSession: ObservableObject {
 
     func search() {
         let q = query
-        run { let found = try await Backend.shared.drafts(matching: q); return { if self.query == q { self.results = found; self.restoreLastDraft() } } }
+        run { let found = try await Backend.shared.drafts(matching: q); return {
+            guard self.query == q else { return }
+            self.results = found
+            if let open = self.draft, let fresh = found.first(where: { $0.id == open.id }) { self.draft = fresh }   // renamed (0196)
+            self.restoreLastDraft()
+        } }
     }
 
     /// Picking a draft rebuilds the list from that draft only (bug 2026-11-22: the previous draft's scans stayed in the
