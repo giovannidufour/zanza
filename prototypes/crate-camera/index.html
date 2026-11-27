@@ -158,9 +158,10 @@ function process(src) {
     if (Math.abs(det.y) + FULL_MM / 2 > 116.5) notes.push('⚠️ Record too far up or down: a marker is inside the full crop');
     else if (Math.abs(det.x) + FULL_MM / 2 > 105) notes.push('⚠️ Record too far to the side: the sheet edge is inside the full crop');
   } else {
-    const f = detectEllipse(small);
+    const small4 = downscale(src, 400);      // the outline search runs many masks: 400 px is plenty
+    const f = detectEllipse(small4);
     if (!f) { log('fix', 'Record not found. Use the printed sheet, or a plain card that contrasts with the record.'); return; }
-    const k = src.width / small.width;
+    const k = src.width / small4.width;
     const cx = f.cx * k, cy = f.cy * k;
     const sa = f.a * k / RECORD_R, sb = (persp ? f.b : f.a) * k / RECORD_R;
     const co = Math.cos(f.theta), si = Math.sin(f.theta);
@@ -285,10 +286,15 @@ function ellipseOf(c) {
   return { n: m, cx, cy, a, b, theta, fill: fillA * (1 - outside / (c.rows.size * 2)) };
 }
 
-// best disc among: dark vinyl (Otsu) and "differs from the frame border", at a few erosion levels
+// best disc, whatever its colour: "darker than t" masks at several levels (black vinyl, grey vinyl,
+// coloured vinyl on white paper…) plus "differs from the frame border", each at a few erosion levels
+// (so a record touching a dark table comes loose). Label and spindle hole are filled row by row.
 function detectEllipse(s) {
   const { width: W, height: H, data: d, lum, thr } = s, N = W * H;
-  const dark = new Uint8Array(N); for (let p = 0; p < N; p++) dark[p] = lum[p] <= thr ? 1 : 0;
+  const masks = [];
+  const levels = new Set([thr]);
+  for (let t = 32; t <= 224; t += 16) levels.add(t);
+  for (const t of levels) { const m = new Uint8Array(N); for (let p = 0; p < N; p++) m[p] = lum[p] <= t ? 1 : 0; masks.push([t === thr ? 'dark vinyl' : 'darker than ' + t, m]); }
   const br = [], bg = [], bb = [];
   const push = (x, y) => { const i = (y * W + x) * 4; br.push(d[i]); bg.push(d[i + 1]); bb.push(d[i + 2]); };
   for (let x = 0; x < W; x++) { push(x, 0); push(x, H - 1); }
@@ -297,12 +303,14 @@ function detectEllipse(s) {
   const R = med(br), G = med(bg), B = med(bb);
   const diff = new Uint8Array(N);
   for (let p = 0; p < N; p++) { const i = p * 4, a = d[i] - R, b = d[i + 1] - G, e = d[i + 2] - B; diff[p] = a * a + b * b + e * e > 45 * 45 ? 1 : 0; }
+  masks.push(['differs from background', diff]);
   let pick = null;
-  for (const [name, mask] of [['dark vinyl', dark], ['differs from background', diff]]) {
-    for (const e of [0, 3, 6, 10]) for (const c of components(erode(mask, W, H, e), W, H, N * 0.02)) {
-      if (c.edge) continue;
+  for (const [name, mask] of masks) {
+    for (const e of [0, 3, 6]) for (const c of components(erode(mask, W, H, e), W, H, N * 0.03)) {
+      if (c.edge || c.n > N * 0.9) continue;
       const f = ellipseOf(c);
       f.a += e; f.b += e; f.method = name;
+      if (f.b / f.a < 0.6) continue;         // more squashed than any photo from above
       f.score = f.fill * Math.min(1, f.n / (N * 0.08));
       if (!pick || f.score > pick.score) pick = f;
     }
