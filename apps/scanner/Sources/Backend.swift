@@ -205,16 +205,46 @@ final class Backend {
     }
 
     /// The artists of the record's lines, in line order (release_line_artists), for the custom title links
-    func lineArtists(of id: String) async throws -> [(id: String, name: String)] {
-        let q = "/rest/v1/listings?id=eq.\(id)&select=release:releases(lines:release_lines(position,credits:release_line_artists(position,artist:artists(id,name))))"
+    func lineArtists(of id: String) async throws -> [(id: String, name: String)] { try await recordInfo(of: id).artists }
+
+    /// The record's artists in line order and its Discogs release id (From Discogs is offered only with one)
+    func recordInfo(of id: String) async throws -> (artists: [(id: String, name: String)], discogs: Int?) {
+        let q = "/rest/v1/listings?id=eq.\(id)&select=release:releases(discogs_release_id,lines:release_lines(position,credits:release_line_artists(position,artist:artists(id,name))))"
         let rows = (try JSONSerialization.jsonObject(with: try await rest("GET", q, nil))) as? [[String: Any]] ?? []
-        let lines = ((rows.first?["release"] as? [String: Any])?["lines"] as? [[String: Any]] ?? [])
+        let release = rows.first?["release"] as? [String: Any]
+        let lines = (release?["lines"] as? [[String: Any]] ?? [])
             .sorted { ($0["position"] as? Int ?? 0) < ($1["position"] as? Int ?? 0) }
         var out: [(id: String, name: String)] = []
         for l in lines {
             for c in ((l["credits"] as? [[String: Any]]) ?? []).sorted(by: { ($0["position"] as? Int ?? 0) < ($1["position"] as? Int ?? 0) }) {
                 if let a = c["artist"] as? [String: Any], let i = a["id"] as? String, let n = a["name"] as? String { out.append((i, n)) }
             }
+        }
+        return (out, release?["discogs_release_id"] as? Int)
+    }
+
+    /// From Discogs (0111): "Artist - Title" as Discogs titles the release (artist as printed), via discogs-lookup
+    func discogsTitle(_ releaseId: Int) async throws -> String {
+        let d = try await post("/functions/v1/discogs-lookup", ["releaseId": releaseId], auth: true)
+        let artist = ((d["artistCredit"] as? String).flatMap { $0.isEmpty ? nil : $0 }) ?? (d["artist"] as? String) ?? ""
+        let title = [artist, (d["title"] as? String) ?? ""].filter { !$0.isEmpty }.joined(separator: " - ")
+        guard !title.isEmpty else { throw BackendError.server("Discogs: the release has no title") }
+        return title
+    }
+
+    /// Artists whose name or alias contains `q` (the link menu, as the admin's entityMatches): official name, alias as note
+    func searchArtists(_ q: String) async throws -> [ArtistRef] {
+        let enc = q.replacingOccurrences(of: "*", with: "").addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? ""
+        let names = try JSONSerialization.jsonObject(with: try await rest("GET", "/rest/v1/artists?select=id,name&name=ilike.*\(enc)*&order=name&limit=8", nil)) as? [[String: Any]] ?? []
+        var out = names.compactMap { r -> ArtistRef? in
+            guard let i = r["id"] as? String, let n = r["name"] as? String else { return nil }
+            return ArtistRef(id: i, name: n, note: nil)
+        }
+        let aliases = (try? JSONSerialization.jsonObject(with: try await rest("GET", "/rest/v1/artist_aliases?select=name,artist:artists(id,name)&name=ilike.*\(enc)*&limit=8", nil))) as? [[String: Any]] ?? []
+        for r in aliases {
+            guard let a = r["artist"] as? [String: Any], let i = a["id"] as? String, let n = a["name"] as? String,
+                  !out.contains(where: { $0.id == i }) else { continue }
+            out.append(ArtistRef(id: i, name: n, note: r["name"] as? String))
         }
         return out
     }

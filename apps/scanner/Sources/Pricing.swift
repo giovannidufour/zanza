@@ -47,6 +47,10 @@ struct PriceForm: Equatable {
     var sideA = "", sideB = "", notes = ""
     var sleeveType = "generic", sleeveCondition = ""
     var title = "", description = ""
+    /// artist links over `title` (0147), edited like the admin's LinkedInput (Gio's card 2026-11-27: "Come in admin")
+    var links: [TitleLink] = []
+    /// the listing has no stored links yet (null): the record's artists found in the title are offered, as in the admin
+    var linksDerived = false
 
     init() {}
     init(_ t: ListingTerms) {
@@ -55,6 +59,7 @@ struct PriceForm: Equatable {
         sideA = t.condition_media ?? ""; sideB = t.condition_media_b ?? ""; notes = t.condition_notes ?? ""
         sleeveType = t.sleeve_type ?? "original"; sleeveCondition = t.condition_sleeve ?? ""
         title = t.custom_title ?? ""; description = t.notes ?? ""
+        links = t.custom_title_links ?? []; linksDerived = t.custom_title_links == nil
     }
 
     /// as the admin's centsToText: 25, 25.5 → "25.50"
@@ -74,6 +79,16 @@ struct PriceForm: Equatable {
         return PriceForm.cents(price) == nil ? "Enter a price like 25 or 25.50." : nil
     }
 
+    /// the links as stored: offsets in the trimmed title (admin titleLinksRow)
+    var storedLinks: [TitleLink] {
+        let u = Array(title.utf16)
+        let lead = u.prefix { $0 == 32 || $0 == 9 || $0 == 10 }.count
+        let len = title.trimmingCharacters(in: .whitespacesAndNewlines).utf16.count
+        guard len > 0 else { return [] }
+        return links.map { TitleLink(start: max(0, $0.start - lead), end: min(len, $0.end - lead), artist_id: $0.artist_id, name: $0.name) }
+            .filter { $0.end > $0.start }
+    }
+
     func terms(id: String) -> ListingTerms? {
         guard priceError == nil else { return nil }
         let cents = saleType == "offers" ? nil : (PriceForm.cents(price) ?? nil)
@@ -82,7 +97,7 @@ struct PriceForm: Equatable {
                             price_cents: cents, condition_media: sideA, condition_media_b: sideB, condition_notes: note,
                             sleeve_type: sleeveType, condition_sleeve: sleeveType == "none" ? "" : sleeveCondition,
                             custom_title: title.trimmingCharacters(in: .whitespacesAndNewlines),
-                            notes: description.trimmingCharacters(in: .whitespacesAndNewlines), custom_title_links: nil)
+                            notes: description.trimmingCharacters(in: .whitespacesAndNewlines), custom_title_links: storedLinks)
     }
 }
 
@@ -116,9 +131,46 @@ final class PricingModel: ObservableObject {
         }
     }
 
-    func form(_ id: String) -> PriceForm { edits[id] ?? saved[id].map(PriceForm.init) ?? PriceForm() }
+    /// the record's artists by listing id (release_line_artists): suggested first in the link menu, derived links
+    @Published var artists: [String: [ArtistRef]] = [:]
+    /// the Discogs release id of each listing (nil = none: no From Discogs)
+    @Published var discogs: [String: Int] = [:]
+    @Published var titling: String?
+    func loadArtists(_ id: String) {
+        guard artists[id] == nil else { return }
+        Task { @MainActor in
+            if let r = try? await Backend.shared.recordInfo(of: id) {
+                self.artists[id] = r.artists.map { ArtistRef(id: $0.id, name: $0.name, note: nil) }
+                if let d = r.discogs { self.discogs[id] = d }
+            }
+        }
+    }
+    /// From Discogs (admin, 0111): Custom title = "Artist - Title" of the release; links = its artists found in it
+    func titleFromDiscogs(_ id: String) {
+        guard let rid = discogs[id], titling == nil else { return }
+        titling = id; error = nil
+        Task { @MainActor in
+            do {
+                let t = try await Backend.shared.discogsTitle(rid)
+                var f = self.form(id)
+                f.title = t
+                f.links = TitleLink.auto(t, artists: (self.artists[id] ?? []).map { ($0.id, $0.name) })
+                self.set(id, f)
+            } catch { self.error = error.localizedDescription }
+            self.titling = nil
+        }
+    }
+
+    /// the saved form; a listing without stored links shows the record's artists found in its title (admin autoTitleLinks)
+    func baseline(_ id: String) -> PriceForm? {
+        guard let s = saved[id] else { return nil }
+        var f = PriceForm(s)
+        if f.linksDerived, let a = artists[id] { f.links = TitleLink.auto(f.title, artists: a.map { ($0.id, $0.name) }) }
+        return f
+    }
+    func form(_ id: String) -> PriceForm { edits[id] ?? baseline(id) ?? PriceForm() }
     func set(_ id: String, _ f: PriceForm) {
-        if let s = saved[id], PriceForm(s) == f { edits[id] = nil } else { edits[id] = f }
+        if let b = baseline(id), b == f { edits[id] = nil } else { edits[id] = f }
         error = nil
     }
     func dirty(_ id: String) -> Bool { edits[id] != nil }
@@ -130,16 +182,7 @@ final class PricingModel: ObservableObject {
         saving = id; error = nil
         Task { @MainActor in
             do {
-                var t = t
-                let old = self.saved[id]
-                let oldTitle = old?.custom_title ?? "", newTitle = t.custom_title ?? ""
-                if newTitle != oldTitle {   // the title changed: its artist links follow it (Gio's card, 2026-11-27)
-                    if let links = old?.custom_title_links, !links.isEmpty {
-                        t.custom_title_links = TitleLink.shift(links, from: oldTitle, to: newTitle)
-                    } else {
-                        t.custom_title_links = TitleLink.auto(newTitle, artists: try await Backend.shared.lineArtists(of: id))
-                    }
-                }
+                let oldTitle = self.saved[id]?.custom_title ?? "", newTitle = t.custom_title ?? ""
                 let s = try await Backend.shared.saveTerms(t)
                 self.saved[id] = s
                 if let now = self.edits[id], now == f { self.edits[id] = nil }   // typed meanwhile: keep the newer text
@@ -178,7 +221,11 @@ struct PricePanel: View {
                 VStack(alignment: .leading, spacing: 32) {
                     VStack(alignment: .leading, spacing: 16) {   // Title block (admin: Custom title, Gio 2026-11-27)
                         Text("Title").labelStyle(16)
-                        TextInput(label: "Custom title", optional: true, text: f.title)
+                        LinkedTitleInput(label: "Custom title", text: f.title, links: f.links, suggested: pricing.artists[d.id] ?? [])
+                        if pricing.discogs[d.id] != nil {   // `custom title` boolean `from discogs` (0111)
+                            Button(pricing.titling == d.id ? "From Discogs…" : "From Discogs") { pricing.titleFromDiscogs(d.id) }
+                                .buttonStyle(ZButtonStyle(primary: false)).disabled(pricing.titling != nil)
+                        }
                     }
                     Rectangle().fill(Theme.divider).frame(height: 1)
                     VStack(alignment: .leading, spacing: 16) {
@@ -223,6 +270,7 @@ struct PricePanel: View {
                 .padding(24)
             }
             .disabled(pricing.saved[d.id] == nil)   // not read yet: nothing to overwrite with blanks
+            .task(id: d.id) { pricing.loadArtists(d.id) }
         } else {
             Text("Pick a draft on the left").bodyStyle(14, color: Theme.textModerate).padding(24)
             Spacer(minLength: 0)
@@ -485,5 +533,31 @@ struct TitleLink: Codable, Equatable {
         func ms(_ v: Int) -> Int { v >= oldEnd ? v + delta : v <= pre ? v : newEnd }
         func me(_ v: Int) -> Int { v <= pre ? v : v >= oldEnd ? v + delta : pre }
         return links.map { TitleLink(start: ms($0.start), end: me($0.end), artist_id: $0.artist_id, name: $0.name) }.filter { $0.end > $0.start }
+    }
+}
+
+/// An artist the title can link to: id + official name; `note` = the alias that matched a search
+struct ArtistRef: Hashable { let id: String; let name: String; let note: String? }
+
+extension TitleLink {
+    /// admin linksCut: the characters [s, e) leave their links (a link can split)
+    static func cut(_ links: [TitleLink], _ s: Int, _ e: Int) -> [TitleLink] {
+        var out: [TitleLink] = []
+        for l in links {
+            if l.end <= s || l.start >= e { out.append(l); continue }
+            if l.start < s { out.append(TitleLink(start: l.start, end: s, artist_id: l.artist_id, name: l.name)) }
+            if l.end > e { out.append(TitleLink(start: e, end: l.end, artist_id: l.artist_id, name: l.name)) }
+        }
+        return tidy(out)
+    }
+    /// admin linksTidy: sorted, no empty link, the same artist touching = one link
+    static func tidy(_ links: [TitleLink]) -> [TitleLink] {
+        var out: [TitleLink] = []
+        for l in links.filter({ $0.end > $0.start }).sorted(by: { $0.start < $1.start }) {
+            if var p = out.last, (p.artist_id != nil && l.artist_id != nil ? p.artist_id == l.artist_id : p.name == l.name), p.end >= l.start {
+                p.end = max(p.end, l.end); out[out.count - 1] = p
+            } else { out.append(l) }
+        }
+        return out
     }
 }
