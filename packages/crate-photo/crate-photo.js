@@ -426,12 +426,12 @@
   /* 5. the hole's shadow (Gio 2026-11-27): the phone's light casts a dark crescent from the label edge onto what is under
      the hole; the Scanner's flat light barely does. Inside the hole every pixel darker than the hole's own fill (from
      its inner 80 %, 75th percentile) keeps only `HOLE_KEEP` of its darkness: the shadow stays, softer, however far it
-     reaches (a lamp far away casts a long one). From 0.8 mm to 0.2 mm before the edge the effect fades out, so the thin
+     reaches (a lamp far away casts a long one). From 0.5 mm to 0.05 mm before the edge the effect fades out, so the thin
      dark line of the edge itself stays. */
-  var HOLE_KEEP = 0.35;
+  var HOLE_KEEP = 0.15;
   function softenHole(img, mm, holeR) {
     var W = img.width, d = img.data, ppm = W / mm, c = W / 2, R = holeR * ppm, inner = 0.8 * R;
-    var r0 = Math.max(0, R - 0.8 * ppm), r1 = R - 0.2 * ppm;     // full effect inside r0, none from r1 out
+    var r0 = Math.max(0, R - 0.5 * ppm), r1 = R - 0.05 * ppm;     // full effect inside r0, none from r1 out
     var x0 = Math.max(0, Math.floor(c - R)), x1 = Math.min(W - 1, Math.ceil(c + R)), x, y, i, ch;
     var fill = [0, 0, 0], vals = [[], [], []];
     for (y = x0; y <= x1; y += 2) for (x = x0; x <= x1; x += 2) {
