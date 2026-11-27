@@ -71,7 +71,8 @@ Inter is loaded from Google Fonts; no font files are shipped.
 | ReleaseOption | page `Trade` → `release option` | ported (0069) |
 | ReleaseList | page `Trade` → `release list` | ported (0069) |
 | ChosenRelease | page `Trade` → `chosen release` | ported (0069) |
-| BackLink | page `admin` → `back link` | ported (0146): ← + label, body/small text/moderate, hover underline; admin Edit listing → Listings tab |
+| ListingNav | page `admin` → `listing nav` | ported (0199, replaces BackLink of 0146): Back = Button secondary small + leading chevron-left → Listings tab; boolean `show jump to` |
+| JumpTo | page `admin` → `listing nav` › jump to + `jump to menu` | ported (0199): Button + menu, search combobox over ReleaseOption rows (state current) |
 | DiscogsLink | page `Create` (BACKEND) → `discogs link` | ported (0150): "On Discogs ↗", body/small underlined, new tab; admin Create / Edit listing under Discogs match |
 | ContentGroupHead | page `Content` (BACKEND) → `content group head` | ported (0106): heading + help of an admin Content group |
 | ContentRow | page `Content` (BACKEND) → `content row` | ported (0106): device mobile / desktop (responsive), where, edited, condition, Edit link |

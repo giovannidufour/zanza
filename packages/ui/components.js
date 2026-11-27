@@ -1043,8 +1043,9 @@
      ChosenRelease: same row in a 1px border-divider/strong box, Discogs link under the text, Change at the end. */
   function ReleaseOption(props) {
     return h('li', Object.assign({ role: 'option', 'aria-selected': props.highlighted ? 'true' : 'false' },
-      omit(props, ['title', 'meta', 'thumb', 'highlighted', 'className']),
-      { className: cx('hm-release-option', props.className), 'data-highlighted': props.highlighted ? 'true' : undefined }),
+      omit(props, ['title', 'meta', 'thumb', 'highlighted', 'current', 'className']),
+      { className: cx('hm-release-option', props.className), 'data-highlighted': props.highlighted ? 'true' : undefined,
+        'data-current': props.current ? 'true' : undefined }),   // Figma state=current (decision 0199): title underlined
       props.thumb ? h('img', { className: 'hm-release-option__thumb', src: props.thumb, alt: '', width: 40, height: 40, loading: 'lazy' })
         : h('span', { className: 'hm-release-option__thumb', 'aria-hidden': 'true' }),
       h('span', { className: 'hm-release-option__text' },
@@ -1070,12 +1071,95 @@
           props.linkLabel || 'On Discogs', h('span', { 'aria-hidden': 'true' }, ' ↗'), h('span', { className: 'hm-visually-hidden' }, ' (opens in a new tab)')) : null),
       h('button', { type: 'button', className: 'hm-chosen-release__change body-small', onClick: props.onChange }, props.changeLabel || 'Change'));
   }
-  /* BackLink (Figma `admin` → `back link`): a text link back to a list, above a detail/edit page title. An <a>,
-     body/small text/moderate, "← " + label; hover underlines. Used by Edit listing (→ the matching Listings tab). */
-  function BackLink(props) {
-    return h('a', Object.assign({}, omit(props, ['href', 'label', 'className']),
-      { className: cx('hm-back-link body-small', props.className), href: props.href }),
-      '\u2190 ', props.label);
+  /* ListingNav (Figma `admin` → `listing nav`, decision 0199): the top of Edit listing. Back = Button secondary small
+     with the leading chevron-left, a link to the Listings tab that holds the listing (label = the tab: "Drafts", "Live"…;
+     screen readers hear "Back to Drafts"). `jumpTo` (Figma boolean `show jump to`, on) = a JumpTo next to it, gap small. */
+  function ListingNav(props) {
+    var back = props.back || {};
+    return h('div', Object.assign({}, omit(props, ['back', 'jumpTo', 'className']), { className: cx('hm-listing-nav', props.className) }),
+      h(Button, { href: back.href, hierarchy: 'secondary', size: 'small', leadingIcon: h(ChevronLeftIcon), 'aria-label': 'Back to ' + back.label }, back.label),
+      props.jumpTo || null);
+  }
+  /* JumpTo (Figma `admin` → `listing nav` › jump to + `jump to menu`, decision 0199): a Button secondary small with the
+     trailing chevron-down that opens a menu: a search field (WAI-ARIA combobox) over a listbox of ReleaseOption rows
+     (thumb 40 · title · meta). The item on screen is `current` (title underlined) and is highlighted when the menu
+     opens. Keyboard: arrows / Home / End move the highlight, Enter opens it, Escape closes and gives focus back to
+     the button, Tab closes. Pointer: hover highlights, click opens; a click outside closes. `items` null = loading. */
+  function foldText(t) { return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  function JumpTo(props) {
+    var id = useStableId(props.id);
+    var os = React.useState(false), open = os[0], setOpen = os[1];
+    var qs = React.useState(''), q = qs[0], setQ = qs[1];
+    var as = React.useState(-1), active = as[0], setActive = as[1];
+    var wrap = React.useRef(null), input = React.useRef(null);
+    var buttonId = id + '-button', menuId = id + '-menu', listId = id + '-list';
+    var words = foldText(q).split(/\s+/).filter(Boolean);
+    var items = props.items || [];
+    var list = items.filter(function (it) {
+      var hs = foldText(it.search !== undefined ? it.search : [it.title, it.meta].join(' '));
+      return words.every(function (w) { return hs.indexOf(w) >= 0; });
+    });
+    var currentAt = -1; list.forEach(function (it, i) { if (it.current && currentAt < 0) currentAt = i; });
+    var cur = list.length ? Math.min(active < 0 ? Math.max(currentAt, 0) : active, list.length - 1) : -1;
+
+    function close(refocus) {
+      setOpen(false); setQ(''); setActive(-1);
+      if (refocus) { var b = document.getElementById(buttonId); if (b) b.focus(); }
+    }
+    function toggle() {
+      if (open) { close(false); return; }
+      setOpen(true);
+      if (props.onOpen) props.onOpen();
+    }
+    function go(it) {
+      if (!it) return;
+      close(false);
+      if (props.onPick) props.onPick(it); else if (it.href) window.location.href = it.href;
+    }
+    React.useEffect(function () {
+      if (!open) return;
+      if (input.current) input.current.focus();
+      function off(e) { if (wrap.current && !wrap.current.contains(e.target)) close(false); }
+      document.addEventListener('mousedown', off);
+      return function () { document.removeEventListener('mousedown', off); };
+    }, [open]);
+    // keep the highlighted row in view (the list scrolls past its max height)
+    React.useEffect(function () {
+      if (!open || cur < 0) return;
+      var el = document.getElementById(listId + '-' + cur);
+      if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+    }, [open, cur, props.items]);
+    function onKeyDown(e) {
+      var n = list.length;
+      if (e.key === 'ArrowDown') { e.preventDefault(); if (n) setActive((cur + 1) % n); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); if (n) setActive((cur - 1 + n) % n); }
+      else if (e.key === 'Home' && n) { e.preventDefault(); setActive(0); }
+      else if (e.key === 'End' && n) { e.preventDefault(); setActive(n - 1); }
+      else if (e.key === 'Enter') { e.preventDefault(); go(list[cur]); }
+      else if (e.key === 'Escape') { e.preventDefault(); close(true); }
+      else if (e.key === 'Tab') close(false);
+    }
+    var label = props.label || 'Jump to';
+    var message = props.items === null || props.items === undefined ? (props.loadingMessage || 'Loading…')
+      : !list.length ? (props.emptyMessage || 'No listings match.') : null;
+    return h('div', { className: cx('hm-jump-to', props.className), ref: wrap },
+      h(Button, { id: buttonId, hierarchy: 'secondary', size: 'small', trailingIcon: h(ChevronDownLargeIcon),
+        'aria-haspopup': 'dialog', 'aria-expanded': open ? 'true' : 'false', 'aria-controls': open ? menuId : undefined,
+        onClick: toggle, onKeyDown: function (e) { if (e.key === 'Escape' && open) { e.preventDefault(); close(true); } } }, label),
+      open ? h('div', { id: menuId, className: 'hm-jump-to__menu', role: 'dialog', 'aria-label': props.menuLabel || label },
+        h('input', { ref: input, type: 'text', className: 'hm-jump-to__search body-medium', placeholder: props.placeholder || 'Search listings',
+          'aria-label': props.placeholder || 'Search listings', role: 'combobox', 'aria-expanded': list.length ? 'true' : 'false',
+          'aria-controls': listId, 'aria-autocomplete': 'list', autoComplete: 'off',
+          'aria-activedescendant': cur >= 0 ? listId + '-' + cur : undefined,
+          value: q, onChange: function (e) { setQ(e.target.value); setActive(0); }, onKeyDown: onKeyDown }),
+        h('ul', { id: listId, role: 'listbox', className: 'hm-jump-to__options', 'aria-label': props.menuLabel || label, hidden: !list.length || undefined },
+          list.map(function (it, i) {
+            return h(ReleaseOption, { key: it.id, id: listId + '-' + i, title: it.title, meta: it.meta, thumb: it.thumb,
+              highlighted: i === cur, current: !!it.current, 'aria-current': it.current ? 'page' : undefined,
+              onMouseDown: function (e) { e.preventDefault(); }, onMouseEnter: function () { setActive(i); },
+              onClick: function () { go(it); } });
+          })),
+        message ? h('p', { className: 'hm-jump-to__message body-small', role: 'status' }, message) : null) : null);
   }
   /* DiscogsLink (Figma BACKEND → Create › `discogs link`, decision 0150): the Discogs release a listing is matched to,
      opening in a new tab. Same grammar as the "On Discogs ↗" link of ChosenRelease: body/small, underlined,
@@ -2064,6 +2148,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, Step: Step,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, BackLink: BackLink, DiscogsLink: DiscogsLink, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, useDragOrder: useDragOrder, DragHandle: DragHandle, AdminBar: AdminBar, ListingsHead: ListingsHead, ListingsFilter: ListingsFilter, Stat: Stat, Thumbnail: Thumbnail, ListingRow: ListingRow, OfferRow: OfferRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, ListingNav: ListingNav, JumpTo: JumpTo, DiscogsLink: DiscogsLink, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, useDragOrder: useDragOrder, DragHandle: DragHandle, AdminBar: AdminBar, ListingsHead: ListingsHead, ListingsFilter: ListingsFilter, Stat: Stat, Thumbnail: Thumbnail, ListingRow: ListingRow, OfferRow: OfferRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
            NewsletterDialog: NewsletterDialog, SectionHead: SectionHead, GenreLinks: GenreLinks, HomeIntro: HomeIntro, HomeNewsletter: HomeNewsletter, CollectionCard: CollectionCard, HomeCollections: HomeCollections, ProductTile: ProductTile, GalleryCounter: GalleryCounter, ViewToggle: ViewToggle };
 });

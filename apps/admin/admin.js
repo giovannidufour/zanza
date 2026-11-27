@@ -1064,7 +1064,10 @@
     var backTab = isNew ? null : f.status === 'draft' ? ['draft', 'Drafts']
       : f.status === 'sold' || f.status === 'traded' ? ['sold', 'Sold']
       : f.status === 'archived' ? ['archived', 'Archived'] : ['live', 'Live'];
-    var back = h(Z.BackLink, { href: backTab && backTab[0] !== 'live' ? '#listings/' + backTab[0] : '#listings', label: backTab ? backTab[1] : 'Listings' });
+    // decision 0199 (Figma `listing nav`): Back is a Button with the leading chevron; Jump to (not on Create listing)
+    // opens the other listings of the same tab
+    var back = h(Z.ListingNav, { back: { href: backTab && backTab[0] !== 'live' ? '#listings/' + backTab[0] : '#listings', label: backTab ? backTab[1] : 'Listings' },
+      jumpTo: backTab ? h(ListingJump, { tab: backTab, currentId: f.listingId }) : null });
     var main = h('div', { className: 'admin-main' },
       back,
       h('h1', { className: 'label-extra-large' }, isNew ? 'Create listing' : 'Edit listing'),
@@ -1689,6 +1692,28 @@
         INFO_COLUMNS.map(function (c) { var v = c[3](r); return h('td', { key: c[0], className: c[0] + (c[2] ? ' num' : '') }, v || missingMark()); }),
         h('td', { className: 'num price' }, listPrice(r) || (missingOf(r).indexOf('price') >= 0 ? missingMark() : '')));
     }) : h('tr', null, h('td', { colSpan: 15 }, props.empty))))), status);
+  }
+
+  /* decision 0199: Jump to on Edit listing. The listings of the same Listings tab (Live, Drafts, Sold, Archived), in
+     Gio's order (0129), with the 40 px thumbnail; the search matches as the Listings search (0128). Loaded on open. */
+  function ListingJump(props) {
+    var st = useState(null), items = st[0], setItems = st[1];
+    var er = useState(false), failed = er[0], setFailed = er[1];
+    var tab = TABS.filter(function (t) { return t[0] === props.tab[0]; })[0];
+    function load() {
+      setFailed(false);
+      sb.from('listings').select('id,sku,slug,status,reserved_until,price_mode,price_cents,custom_title,photo_keys,sort_order,created_at,release:releases(label_entity:labels(name),lines:release_lines(position,artist,title))')
+        .order('sort_order', { ascending: true }).order('created_at', { ascending: false })
+        .then(function (res) {
+          if (res.error) { setFailed(true); setItems([]); return; }
+          setItems(res.data.filter(function (r) { return tab[2](effectiveStatus(r)); }).map(function (r) {
+            return { id: r.id, title: nameOf(r), meta: [r.sku, listPrice(r)].filter(Boolean).join(' · '), thumb: thumbOf(r).src,
+              href: '#edit-' + r.id, current: r.id === props.currentId, search: haystack(r) };
+          }));
+        });
+    }
+    return h(Z.JumpTo, { items: items, onOpen: load, menuLabel: 'Jump to a listing in ' + props.tab[1],
+      emptyMessage: failed ? 'Could not load the listings.' : undefined });
   }
 
   function EditLoader(props) {
