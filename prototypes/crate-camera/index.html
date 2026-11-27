@@ -114,54 +114,104 @@ $('native').onchange = async e => {
 for (const [id, d] of [['rotL', -5], ['rotR', 5], ['rot90', 90]]) $(id).onclick = () => { userRot += d; if (source) process(source); };
 $('optPersp').onchange = $('optLight').onchange = () => { if (source) process(source); };
 
-// ── Find the record: pixels that differ from the background (estimated from the frame border)
+// ── Find the record. Two candidates, the most disc-shaped wins:
+// (a) the dark vinyl (luminance below an Otsu threshold), (b) whatever differs from the frame border.
+// Components touching the frame are skipped (table, sleeve running off the edge).
 function detect(src) {
   const W = 400, H = Math.round(src.height * W / src.width), k = src.width / W;
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const g = c.getContext('2d'); g.drawImage(src, 0, 0, W, H);
-  const d = g.getImageData(0, 0, W, H).data;
-  // background colour = median of the border pixels
+  const d = g.getImageData(0, 0, W, H).data, N = W * H;
+  const lum = new Uint8Array(N);
+  for (let p = 0; p < N; p++) lum[p] = (d[p * 4] * 0.299 + d[p * 4 + 1] * 0.587 + d[p * 4 + 2] * 0.114) | 0;
+
+  // (a) dark mask, Otsu threshold
+  const hist = new Array(256).fill(0); for (let p = 0; p < N; p++) hist[lum[p]]++;
+  let sum = 0; for (let t = 0; t < 256; t++) sum += t * hist[t];
+  let wB = 0, sB = 0, best = 0, thr = 60;
+  for (let t = 0; t < 256; t++) {
+    wB += hist[t]; if (!wB) continue; const wF = N - wB; if (!wF) break;
+    sB += t * hist[t]; const mB = sB / wB, mF = (sum - sB) / wF, v = wB * wF * (mB - mF) ** 2;
+    if (v > best) { best = v; thr = t; }
+  }
+  const dark = new Uint8Array(N); for (let p = 0; p < N; p++) dark[p] = lum[p] <= thr ? 1 : 0;
+
+  // (b) differs from the border colour
   const br = [], bg = [], bb = [];
-  for (let x = 0; x < W; x++) for (const y of [0, 1, H - 2, H - 1]) { const i = (y * W + x) * 4; br.push(d[i]); bg.push(d[i + 1]); bb.push(d[i + 2]); }
-  for (let y = 0; y < H; y++) for (const x of [0, 1, W - 2, W - 1]) { const i = (y * W + x) * 4; br.push(d[i]); bg.push(d[i + 1]); bb.push(d[i + 2]); }
+  const push = (x, y) => { const i = (y * W + x) * 4; br.push(d[i]); bg.push(d[i + 1]); bb.push(d[i + 2]); };
+  for (let x = 0; x < W; x++) { push(x, 0); push(x, H - 1); }
+  for (let y = 0; y < H; y++) { push(0, y); push(W - 1, y); }
   const med = a => a.sort((p, q) => p - q)[a.length >> 1];
   const R = med(br), G = med(bg), B = med(bb);
-  const mask = new Uint8Array(W * H);
-  for (let p = 0; p < W * H; p++) {
-    const i = p * 4, dr = d[i] - R, dg = d[i + 1] - G, db = d[i + 2] - B;
-    mask[p] = (dr * dr + dg * dg + db * db) > 45 * 45 ? 1 : 0;
+  const diff = new Uint8Array(N);
+  for (let p = 0; p < N; p++) { const i = p * 4, a = d[i] - R, b = d[i + 1] - G, e = d[i + 2] - B; diff[p] = a * a + b * b + e * e > 45 * 45 ? 1 : 0; }
+
+  let pick = null;
+  for (const [name, mask] of [['dark vinyl', dark], ['differs from background', diff]]) {
+    // erode a little too, so a record touching a dark table or the sleeve edge comes loose
+    for (const e of [0, 3, 6, 10]) for (const f of components(erode(mask, W, H, e), W, H)) {
+      f.a += e; f.b += e; f.fill = Math.min(1, f.fill * 1.02);
+      f.score = f.fill * Math.min(1, f.n / (N * 0.08)); // disc-shaped and big enough
+      f.method = name;
+      if (!pick || f.score > pick.score) pick = f;
+    }
   }
-  // largest connected component (4-neighbour flood fill)
-  const lab = new Int32Array(W * H); let best = 0, bestN = 0, cur = 0; const stack = [];
-  for (let p = 0; p < W * H; p++) {
+  if (!pick || pick.score < 0.5) return null;
+  return { cx: pick.cx * k, cy: pick.cy * k, a: pick.a * k, b: pick.b * k, theta: pick.theta, method: pick.method, fill: pick.fill };
+}
+
+function erode(mask, W, H, r) {
+  let m = mask;
+  for (let i = 0; i < r; i++) {
+    const o = new Uint8Array(W * H);
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+      const p = y * W + x;
+      o[p] = m[p] && m[p - 1] && m[p + 1] && m[p - W] && m[p + W] ? 1 : 0;
+    }
+    m = o;
+  }
+  return m;
+}
+
+// connected components not touching the frame, each with its row-filled ellipse moments
+function components(mask, W, H) {
+  const N = W * H, lab = new Int32Array(N), out = [], stack = [];
+  let cur = 0;
+  for (let p = 0; p < N; p++) {
     if (!mask[p] || lab[p]) continue;
-    cur++; let n = 0; stack.push(p); lab[p] = cur;
+    cur++; let n = 0, edge = false; stack.push(p); lab[p] = cur;
+    const rows = new Map();
     while (stack.length) {
       const q = stack.pop(); n++;
       const x = q % W, y = (q / W) | 0;
+      if (x === 0 || y === 0 || x === W - 1 || y === H - 1) edge = true;
+      const r = rows.get(y); if (!r) rows.set(y, [x, x]); else { if (x < r[0]) r[0] = x; if (x > r[1]) r[1] = x; }
       if (x > 0 && mask[q - 1] && !lab[q - 1]) { lab[q - 1] = cur; stack.push(q - 1); }
       if (x < W - 1 && mask[q + 1] && !lab[q + 1]) { lab[q + 1] = cur; stack.push(q + 1); }
       if (y > 0 && mask[q - W] && !lab[q - W]) { lab[q - W] = cur; stack.push(q - W); }
       if (y < H - 1 && mask[q + W] && !lab[q + W]) { lab[q + W] = cur; stack.push(q + W); }
     }
-    if (n > bestN) { bestN = n; best = cur; }
+    if (edge || n < N * 0.02) continue;
+    // fill holes row by row (label, spindle hole, reflections)
+    let m = 0, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
+    for (const [y, [x0, x1]] of rows) for (let x = x0; x <= x1; x++) { m++; sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y; }
+    const cx = sx / m, cy = sy / m;
+    const vxx = sxx / m - cx * cx, vyy = syy / m - cy * cy, vxy = sxy / m - cx * cy;
+    const tr = vxx + vyy, det = vxx * vyy - vxy * vxy, disc = Math.sqrt(Math.max(0, tr * tr / 4 - det));
+    const a = 2 * Math.sqrt(tr / 2 + disc), b = 2 * Math.sqrt(Math.max(1e-6, tr / 2 - disc));
+    // a filled ellipse has area π a b; a square scores 4/π·… lower once its corners stick out
+    const area = Math.PI * a * b, fill = Math.min(m, area) / Math.max(m, area);
+    // squares and rectangles have the same area as their moment ellipse (≈0.95), so also test the outline
+    let outside = 0;
+    const th = 0.5 * Math.atan2(2 * vxy, vxx - vyy), co = Math.cos(th), si = Math.sin(th);
+    for (const [y, [x0, x1]] of rows) for (const x of [x0, x1]) {
+      const u = ((x - cx) * co + (y - cy) * si) / a, v = (-(x - cx) * si + (y - cy) * co) / b;
+      if (u * u + v * v > 1.12) outside++;
+    }
+    const round = 1 - outside / (rows.size * 2);
+    out.push({ n: m, cx, cy, a, b, theta: th, fill: fill * round });
   }
-  if (bestN < W * H * 0.05) return null;
-  // fill holes row by row (label, reflections) so the moments see a solid disc
-  let n = 0, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
-  for (let y = 0; y < H; y++) {
-    let x0 = -1, x1 = -1;
-    for (let x = 0; x < W; x++) if (lab[y * W + x] === best) { if (x0 < 0) x0 = x; x1 = x; }
-    if (x0 < 0) continue;
-    for (let x = x0; x <= x1; x++) { n++; sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y; }
-  }
-  const cx = sx / n, cy = sy / n;
-  const vxx = sxx / n - cx * cx, vyy = syy / n - cy * cy, vxy = sxy / n - cx * cy;
-  const tr = vxx + vyy, det = vxx * vyy - vxy * vxy, disc = Math.sqrt(Math.max(0, tr * tr / 4 - det));
-  const l1 = tr / 2 + disc, l2 = tr / 2 - disc;
-  const theta = 0.5 * Math.atan2(2 * vxy, vxx - vyy);
-  // uniform ellipse: variance along an axis = (semi-axis)² / 4
-  return { cx: cx * k, cy: cy * k, a: 2 * Math.sqrt(l1) * k, b: 2 * Math.sqrt(l2) * k, theta, bg: [R, G, B] };
+  return out;
 }
 
 function process(src) {
@@ -192,7 +242,7 @@ function process(src) {
   if ($('optLight').checked) lightNote = evenLight(o, S, S / 2 * fill * 1.03);
 
   log('fix',
-    `Record found: centre ${Math.round(f.cx)}, ${Math.round(f.cy)} · diameter ${Math.round(f.a * 2)} px in the photo` +
+    `Record found (${f.method}, roundness ${(f.fill * 100).toFixed(0)} %): centre ${Math.round(f.cx)}, ${Math.round(f.cy)} · diameter ${Math.round(f.a * 2)} px in the photo` +
     `\nTilt: ${((1 - f.b / f.a) * 100).toFixed(1)} % squash` + (persp ? ' → fixed' : ' (not fixed)') +
     `\nSource pixels for the square: ${srcPx}` + (srcPx >= 1600 ? ' ✓ sharp at 1600' : ' ✗ upscaled to 1600') +
     `\nLight: ${lightNote}` +
@@ -204,18 +254,28 @@ function process(src) {
 // ── Even out light: fit a plane per channel to the card around the record, divide it out,
 // so exposure, white balance and a side light come out the same in every photo.
 function evenLight(o, S, rIn) {
-  const img = o.getImageData(0, 0, S, S), d = img.data, c = S / 2;
+  const img = o.getImageData(0, 0, S, S), d = img.data, c = S / 2, rOut = rIn * 1.3;
+  const ring = [];
+  for (let y = 0; y < S; y += 8) for (let x = 0; x < S; x += 8) {
+    const dx = x - c, dy = y - c, r2 = dx * dx + dy * dy;
+    if (r2 >= rIn * rIn && r2 <= rOut * rOut) { const i = (y * S + x) * 4; ring.push(d[i] + d[i + 1] + d[i + 2]); }
+  }
+  ring.sort((p, q) => p - q);
+  const medL = ring[ring.length >> 1] || 1;
   // least squares v = p0 + p1 x + p2 y on background samples (corners outside the record)
   const A = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], bv = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
   let n = 0;
   for (let y = 0; y < S; y += 4) for (let x = 0; x < S; x += 4) {
     const dx = x - c, dy = y - c;
-    if (dx * dx + dy * dy < rIn * rIn) continue;
-    const i = (y * S + x) * 4, u = x / S, v = y / S, f = [1, u, v];
+    const r2 = dx * dx + dy * dy;
+    if (r2 < rIn * rIn || r2 > rOut * rOut) continue;
+    const i = (y * S + x) * 4, L = d[i] + d[i + 1] + d[i + 2];
+    if (Math.abs(L - medL) > medL * 0.25) continue;   // skip the table, a sleeve edge, shadows
+    const u = x / S, v = y / S, f = [1, u, v];
     for (let r = 0; r < 3; r++) { for (let q = 0; q < 3; q++) A[r][q] += f[r] * f[q]; for (let ch = 0; ch < 3; ch++) bv[ch][r] += f[r] * d[i + ch]; }
     n++;
   }
-  if (n < 500) return 'skipped (no card visible around the record)';
+  if (n < 300) return 'skipped (no card visible around the record)';
   const planes = bv.map(b => solve3(A, b));
   const target = 205; // card ends up the same light neutral grey in every photo
   for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
