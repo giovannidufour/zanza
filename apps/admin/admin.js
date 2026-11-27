@@ -1889,7 +1889,7 @@
       setSelected(function (cur) { return on ? cur.concat([id]) : cur.filter(function (x) { return x !== id; }); });
     }
     function toggleAll() { setSelected(allOn ? [] : visible.map(function (r) { return r.id; })); }
-    function pickTab(v) { setTab(v); setSelected([]); }
+    function pickTab(v) { setTab(v); setSelected([]); tabToUrl('#listings', v, 'live'); }
     function summary(n, action, skipped) {
       var text = plural(n, 'listing') + ' ' + DONE_VERB[action] + '.';
       if (n === 1) text = '“' + nameOf(byId[arguments[3]] || {}) + '” ' + DONE_VERB[action] + '.';
@@ -2178,10 +2178,11 @@
     return o.state;
   }
 
-  function Offers() {
+  function Offers(props) {
     var st = useState(null), rows = st[0], setRows = st[1];
     var er = useState(null), error = er[0], setError = er[1];
-    var tb = useState('new'), tab = tb[0], setTab = tb[1];
+    var tb = useState(props.tab || 'new'), tab = tb[0], setTab = tb[1];
+    function pickTab(v) { setTab(v); tabToUrl('#offers', v, 'new'); }
     var cf = useState(null), confirm = cf[0], setConfirm = cf[1];   // { offer, accept }
     var dm = useState(''), declineNote = dm[0], setDeclineNote = dm[1];   // the Decline dialog's optional message (0187)
     var bz = useState(false), busy = bz[0], setBusy = bz[1];
@@ -2232,7 +2233,7 @@
     return h('div', { className: 'admin-section admin-listings' },
       h('h1', { className: 'label-extra-large' }, 'Offers'),
       message ? h('p', { className: 'body-medium' + (message.error ? ' admin-status--error' : ''), role: message.error ? 'alert' : 'status' }, message.text) : null,
-      h(Z.Tabs, { value: tab, onValueChange: setTab, 'aria-label': 'Filter by status' },
+      h(Z.Tabs, { value: tab, onValueChange: pickTab, 'aria-label': 'Filter by status' },
         OFFER_TABS.map(function (t) { return h(Z.Tab, { key: t[0], value: t[0], suffix: String(counts[t[0]]), 'aria-controls': 'offers-list' }, t[1]); })),
       h('ul', { id: 'offers-list', className: 'admin-rows' }, visible.length ? visible.map(function (o) {
         var pending = o.state === 'pending', live = o.listing_status === 'available';
@@ -2269,11 +2270,12 @@
   function shortDate(t) { return new Date(t).toLocaleDateString([], { day: 'numeric', month: 'short' }); }
   function buyerOf(o) { return o.customer_name || (o.shipping_address && o.shipping_address.name) || o.email; }
 
-  function Orders() {
+  function Orders(props) {
     var mobile = useIsMobile();
     var st = useState(null), rows = st[0], setRows = st[1];
     var er = useState(null), error = er[0], setError = er[1];
-    var tb = useState('toship'), tab = tb[0], setTab = tb[1];
+    var tb = useState(props.tab || 'toship'), tab = tb[0], setTab = tb[1];
+    function pickTab(v) { setTab(v); tabToUrl('#orders', v, 'toship'); }
     useEffect(function () {
       sb.from('orders').select('id,created_at,email,customer_name,shipping_address,total_cents,status,attention')
         .order('created_at', { ascending: false })
@@ -2287,7 +2289,7 @@
     var empty = rows.length ? 'No orders here.' : 'No orders yet. They arrive here when someone pays on Stripe.';
     return h('div', { className: 'admin-section admin-listings' },
       h('h1', { className: 'label-extra-large' }, 'Orders'),
-      h(Z.Tabs, { value: tab, onValueChange: setTab, 'aria-label': 'Filter by status' },
+      h(Z.Tabs, { value: tab, onValueChange: pickTab, 'aria-label': 'Filter by status' },
         ORDER_TABS.map(function (t) { return h(Z.Tab, { key: t[0], value: t[0], suffix: String(counts[t[0]]), 'aria-controls': 'orders-table' }, t[1]); })),
       mobile ? h('ul', { id: 'orders-table', className: 'admin-rows' }, visible.length ? visible.map(function (o) {
         // the order ref is the link (Gio 2026-11-24): title = ref, the buyer goes into the meta
@@ -3911,10 +3913,11 @@
       days: med === null ? null : Math.round(med), listed: listed
     };
   }
-  function Dashboard() {
+  function Dashboard(props) {
     var st = useState(null), data = st[0], setData = st[1];
     var er = useState(null), error = er[0], setError = er[1];
-    var pd = useState('month'), period = pd[0], setPeriod = pd[1];
+    var pd = useState(props.period || 'month'), period = pd[0], setPeriod = pd[1];
+    function pickPeriod(v) { setPeriod(v); tabToUrl('#dashboard', v, 'month'); }
     useEffect(function () {
       Promise.all([
         sb.from('listings').select('id,status,reserved_until,section,price_mode,price_cents,published_at,sold_at,condition_media,release:releases(format,lines:release_lines(position,artist))'),
@@ -3951,7 +3954,7 @@
         h(Z.Stat, { key: 'drafts', label: 'Drafts', value: statCount(f.drafts), note: statCount(f.drafts - f.incomplete) + ' ready to publish · ' + statCount(f.incomplete) + ' incomplete', href: '#listings/draft', linkLabel: 'View drafts' })
       ]),
       section('dashboard-sales', 'Sales',
-        h(Z.Tabs, { value: period, onValueChange: setPeriod, 'aria-label': 'Period' },
+        h(Z.Tabs, { value: period, onValueChange: pickPeriod, 'aria-label': 'Period' },
           PERIODS.map(function (p) { return h(Z.Tab, { key: p[0], value: p[0], 'aria-controls': 'dashboard-sales-stats' }, p[1]); })),
         [
           h(Z.Stat, { key: 'sold', label: 'Sold', value: statCount(f.sold), note: soldNote, href: '#listings/sold', linkLabel: 'View sold' }),
@@ -3963,6 +3966,14 @@
   }
 
   // ── App ───────────────────────────────────────────────────────────────────
+  /* A tab inside a page goes into the URL (#listings/draft, #orders/shipped, #offers/all, #dashboard/year), so a refresh
+     keeps it and Back / Forward step through the tabs; the default tab has no suffix. pushState fires no hashchange:
+     clicking a tab only switches it in place (no reload); Back / Forward do fire one and remount the page on that tab. */
+  function tabToUrl(base, value, fallback) {
+    var next = value === fallback ? base : base + '/' + value;
+    if (location.hash !== next) history.pushState(null, '', next);
+  }
+
   // [hash, visit]: visit changes on every navigation, so "Create listing" always opens an empty form
   function useHash() {
     var st = useState({ hash: location.hash, visit: 0 }), v = st[0], setV = st[1];
@@ -4004,10 +4015,11 @@
     else if (hash === '#settings') body = h(Settings, { key: 'settings-' + route.visit });
     else if (hash === '#content') body = h(Content, { key: 'content-' + route.visit });
     else if (/^#content\/[a-z_.]+$/.test(hash)) body = h(ContentEditor, { key: hash + route.visit, blockKey: hash.slice(9) });
-    else if (hash === '#orders') body = h(Orders, { key: 'orders-' + route.visit });
-    else if (hash === '#offers') body = h(Offers, { key: 'offers-' + route.visit });
+    else if (/^#orders(\/(shipped|all))?$/.test(hash)) body = h(Orders, { key: hash + route.visit, tab: hash.split('/')[1] || 'toship' });
+    else if (/^#offers(\/(accepted|all))?$/.test(hash)) body = h(Offers, { key: hash + route.visit, tab: hash.split('/')[1] || 'new' });
     else if (/^#orders\/[^/]+$/.test(hash)) body = h(OrderDetail, { key: hash + route.visit, id: hash.split('/')[1] });
     else if (/^#listings(\/(live|draft|sold|archived))?$/.test(hash)) body = h(Listings, { key: hash + route.visit, tab: hash.split('/')[1] || 'live' });
+    else if (/^#dashboard\/(year|all)$/.test(hash)) body = h(Dashboard, { key: hash + route.visit, period: hash.split('/')[1] });
     else body = h(Dashboard, { key: 'dashboard-' + route.visit });   // '', '#', #dashboard: the landing page (decision 0169)
 
     return h('div', { className: 'admin' },
@@ -4020,10 +4032,10 @@
      following a link closes it, focus goes back to the Menu button. */
   var SECTIONS = [['dashboard', 'Dashboard', '#dashboard'], ['listings', 'Listings', '#listings'], ['orders', 'Orders', '#orders'], ['offers', 'Offers', '#offers'], ['attributes', 'Attributes', '#attributes'], ['collections', 'Collections', '#collections'], ['shipping', 'Shipping', '#shipping'], ['settings', 'Settings', '#settings'], ['content', 'Content', '#content']];
   function sectionOf(hash) {
-    if (!hash || hash === '#' || hash === '#dashboard') return 'dashboard';
+    if (!hash || hash === '#' || /^#dashboard/.test(hash)) return 'dashboard';
     if (hash === '#bargain') return 'bargain';   // Create bargain (0203): an action, no section lit
     if (/^#orders/.test(hash)) return 'orders';
-    if (hash === '#offers') return 'offers';
+    if (/^#offers/.test(hash)) return 'offers';
     if (/^#attributes/.test(hash)) return 'attributes';
     if (/^#collections/.test(hash)) return 'collections';
     if (hash === '#shipping') return 'shipping';
