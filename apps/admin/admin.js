@@ -556,48 +556,64 @@
   function canvasBlob(canvas) {
     return new Promise(function (resolve, reject) { canvas.toBlob(function (b) { b ? resolve(b) : reject(new Error('Could not make the photo.')); }, 'image/webp', 0.9); });
   }
-  function CratePhoto(props) {
-    var sd = useState('A'), side = sd[0], setSide = sd[1];
-    var ph = useState('camera'), phase = ph[0], setPhase = ph[1];          // camera | working | result
-    var cs = useState(null), camStatus = cs[0], setCamStatus = cs[1];     // the pill on the viewer
-    var ck = useState([]), checks = ck[0], setChecks = ck[1];
-    var an = useState(0), angle = an[0], setAngle = an[1];
-    var ul = useState(true), useLabel = ul[0], setUseLabel = ul[1];
-    var uf = useState(true), useFull = uf[0], setUseFull = uf[1];
-    var bz = useState(false), busy = bz[0], setBusy = bz[1];
-    var videoRef = useRef(null), streamRef = useRef(null), fileRef = useRef(null);
-    var fullRef = useRef(null), labelRef = useRef(null);
-    var shot = useRef(null);       // { sd: ImageData of the photo, an: CP.analyse result }
-    var angleRef = useRef(0); angleRef.current = angle;
-
-    // the live camera (back camera, full resolution: 3024 × 4032 on an iPhone 13 mini), only on the camera screen
+  // the live camera (back camera, full resolution: 3024 × 4032 on an iPhone 13 mini). Started once per page and kept on
+  // between shots, so the browser asks for it once (Gio 2026-11-27). status = the viewer pill: the sheet's 4 markers in
+  // view or not (a small frame, twice a second); flash(text) shows a message there for 4 s instead.
+  function useCrateCamera(videoRef, on) {
+    var st = useState(null), status = st[0], setStatus = st[1];
+    var streamRef = useRef(null), flashRef = useRef({ text: null, until: 0 });
+    var fl = useState(0), setFlashTick = fl[1];
     useEffect(function () {
-      if (phase !== 'camera') return;
+      if (on === false) { setStatus(null); return; }   // Create bargain → Phone camera: the live camera is not used
       var stopped = false, timer = null;
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setCamStatus('No camera here: use From library'); return; }
-      setCamStatus('Starting the camera…');
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setStatus('No camera here: use From library'); return; }
+      setStatus('Starting the camera…');
       navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 4032 }, height: { ideal: 3024 } } })
         .then(function (stream) {
           if (stopped) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
           streamRef.current = stream;
           var v = videoRef.current; v.srcObject = stream;
           return v.play().then(function () {
-            // the status follows the sheet: its 4 markers in view or not (a small frame, twice a second)
             function look() {
-              if (stopped || !v.videoWidth) return;
-              var w = 320, hh = Math.round(v.videoHeight * w / v.videoWidth);
-              setCamStatus(CP.sheetIn(cratePixels(v, w, hh)) ? 'Sheet found' : 'No sheet: fill the circle with the record');
+              if (stopped) return;
               timer = setTimeout(look, 500);
+              if (!v.videoWidth || v.offsetParent === null) return;   // hidden (result screen): nothing to say
+              var w = 320, hh = Math.round(v.videoHeight * w / v.videoWidth);
+              var text = CP.sheetIn(cratePixels(v, w, hh)) ? 'Sheet found' : 'No sheet: fill the circle';
+              setStatus(function (old) { return old === text ? old : text; });
             }
             look();
           });
         })
-        .catch(function (e) { if (!stopped) setCamStatus(e && e.name === 'NotAllowedError' ? 'Camera not allowed: use From library' : 'Camera not available: use From library'); });
+        .catch(function (e) { if (!stopped) setStatus(e && e.name === 'NotAllowedError' ? 'Camera not allowed: use From library' : 'Camera not available: use From library'); });
       return function () {
         stopped = true; clearTimeout(timer);
         if (streamRef.current) { streamRef.current.getTracks().forEach(function (t) { t.stop(); }); streamRef.current = null; }
       };
-    }, [phase]);
+    }, [on]);
+    function flash(text) {
+      flashRef.current = { text: text, until: Date.now() + 4000 };
+      setFlashTick(function (n) { return n + 1; });
+      setTimeout(function () { setFlashTick(function (n) { return n + 1; }); }, 4050);
+    }
+    var f = flashRef.current;
+    var flashing = f.text && Date.now() < f.until ? f.text : null;
+    return { status: flashing || status, flashing: flashing, streamRef: streamRef, flash: flash };
+  }
+  function CratePhoto(props) {
+    var sd = useState('A'), side = sd[0], setSide = sd[1];
+    var ph = useState('camera'), phase = ph[0], setPhase = ph[1];          // camera | working | result
+    var ck = useState([]), checks = ck[0], setChecks = ck[1];
+    var an = useState(0), angle = an[0], setAngle = an[1];
+    var ul = useState(true), useLabel = ul[0], setUseLabel = ul[1];
+    var uf = useState(true), useFull = uf[0], setUseFull = uf[1];
+    var bz = useState(false), busy = bz[0], setBusy = bz[1];
+    var videoRef = useRef(null), fileRef = useRef(null);
+    var fullRef = useRef(null), labelRef = useRef(null);
+    var shot = useRef(null);       // { sd: ImageData of the photo, an: CP.analyse result }
+    var angleRef = useRef(0); angleRef.current = angle;
+
+    var cam = useCrateCamera(videoRef), camStatus = cam.status, streamRef = cam.streamRef;
 
     function draw(size) {
       var s = shot.current;
@@ -611,7 +627,7 @@
       setPhase('working'); setAngle(0); angleRef.current = 0;
       setTimeout(function () {    // let "Working…" paint first: the analysis takes a second or two on a phone
         var a = CP.analyse(pixels);
-        if (!a) { shot.current = null; setPhase('camera'); toast('Record not found: lay it on the sheet, or on a plain card that contrasts with it.'); return; }
+        if (!a) { shot.current = null; setPhase('camera'); cam.flash('Record not found: lay it on the sheet'); return; }
         shot.current = { sd: pixels, an: a };
         setPhase('result');
       }, 30);
@@ -684,41 +700,212 @@
           h('div', { className: 'admin-crate__keep' },
             h(Z.Checkbox, { checked: useLabel, onChange: function (e) { setUseLabel(e.target.checked); }, label: 'Label → photo ' + (side === 'A' ? '1 (Label A)' : '2 (Label B)') }),
             h(Z.Checkbox, { checked: useFull, onChange: function (e) { setUseFull(e.target.checked); }, label: 'Full record → kept with the SKU, not shown' })))
-      : h(Z.CameraViewer, { status: phase === 'working' ? 'Working…' : camStatus },
-          h('video', { ref: videoRef, playsInline: true, muted: true, autoPlay: true }));
+      : null;
+    // the camera stays mounted (hidden on the result) so it is asked for once, not at every Retake (Gio 2026-11-27)
+    var viewer = h('div', { className: 'admin-crate__frame', hidden: result },   // the whole viewfinder fits the screen, no scrolling
+      h(Z.CameraViewer, { status: phase === 'working' ? 'Working…' : camStatus },
+        h('video', { ref: videoRef, playsInline: true, muted: true, autoPlay: true })));
     var actions = result
       ? [h(Z.Button, { key: 'add', hierarchy: 'primary', disabled: busy || (!useLabel && !useFull), onClick: add }, props.addLabel || 'Add to listing'),
          h(Z.Button, { key: 'retake', hierarchy: 'secondary', disabled: busy, onClick: function () { shot.current = null; setChecks([]); setPhase('camera'); } }, 'Retake')]
       : [h(Z.Button, { key: 'take', hierarchy: 'primary', disabled: phase !== 'camera' || !streamRef.current, onClick: takePhoto }, 'Take photo'),
          h(Z.Button, { key: 'library', hierarchy: 'secondary', disabled: phase !== 'camera', onClick: function () { fileRef.current.click(); } }, 'From library')];
-    return h('div', { className: 'admin-crate' },
-      h('div', { className: 'admin-crate__body' }, head, sideSwitch, body),
+    return h('div', { className: 'admin-crate' + (result ? '' : ' admin-crate--camera') },
+      h('div', { className: 'admin-crate__body' }, head, sideSwitch, viewer, body),
       h('input', { ref: fileRef, type: 'file', accept: 'image/*', hidden: true, tabIndex: -1, onChange: fromLibrary }),
       h(Z.ActionBar, null, actions));
   }
 
-  /* Create bargain (Gio 2026-11-27, decision 0203; Figma `Crate photo` → Create bargain screens): admin mobile Menu →
-     Create bargain (#bargain) opens Take photo straight away. Create draft uploads the Label (photo 1) and the Full
-     (original_keys), saves a draft that already has its SKU, flagged Bargain crate (0201): line 1 "Untitled bargain",
-     7" (the crops are a 7"'s), For sale. Then the camera opens again for the next record; the rest is filled later,
-     from the computer (Listings → Drafts). */
+  /* Create bargain (decisions 0203, 0204; Figma `Crate photo` → Create bargain screens): admin mobile Menu → Create
+     bargain (#bargain). One record = side A, then side B (or No side B), then one check where each label is turned on
+     its own; Save & next opens the camera for the next record at once while the record is saved in the background:
+     a draft that already has its SKU, flagged Bargain crate (0201), line 1 "Untitled bargain", 7", For sale,
+     Label A → photo 1, Label B → photo 2, both Fulls → original_keys (0045). The camera stays on for the whole session
+     (asked once). No toasts: the viewer pill and the note under the slots say what happens (Gio 2026-11-27). */
   var BARGAIN_TITLE = 'Untitled bargain';
+  var PREVIEW = 600;   // px of the check-screen canvases (the saved photos are CP.OUT = 1600)
   function BargainCapture() {
-    var rd = useState(0), round = rd[0], setRound = rd[1];
-    async function create(taken) {
-      var photoKey = taken.label ? await uploadFile('photo', taken.label) : null;
-      var fullKey = taken.full ? await upload('original', taken.full, null) : null;
+    var videoRef = useRef(null), fileRef = useRef(null), canvasRefs = { A: useRef(null), B: useRef(null) }, thumbRef = useRef(null);
+    // Live (the viewer with the guides) or Phone camera (the phone's own camera app, Gio 2026-11-27: with the sheet the
+    // guides are not needed, and it focuses and steadies better); remembered on this device
+    var md = useState(function () { try { return localStorage.getItem('hm-bargain-camera') === 'phone' ? 'phone' : 'live'; } catch (e) { return 'live'; } });
+    var mode = md[0], setMode = md[1];
+    function chooseMode(m) { setMode(m); try { localStorage.setItem('hm-bargain-camera', m); } catch (e) { /* remembered for this visit only */ } }
+    var cam = useCrateCamera(videoRef, mode === 'live');
+    var nativeRef = useRef(null);
+    var nr = useState(1), recordNo = nr[0], setRecordNo = nr[1];
+    var sp = useState('A'), step = sp[0], setStep = sp[1];                 // A | B | review
+    var sh = useState({ A: null, B: null }), shots = sh[0], setShots = sh[1];   // side → { sd, an, angle } | 'skip' (B only)
+    var wk = useState(false), working = wk[0], setWorking = wk[1];
+    var nt = useState(null), note = nt[0], setNote = nt[1];
+    var ck = useState([]), checks = ck[0], setChecks = ck[1];
+    var shotsRef = useRef(shots); shotsRef.current = shots;
+    var queue = useRef(Promise.resolve());
+
+    function nextStep(s) { return !s.A ? 'A' : !s.B ? 'B' : 'review'; }
+    function process(pixels) {
+      setWorking(true);
+      setTimeout(function () {    // let "Working…" paint first: the analysis takes a second or two on a phone
+        var a = CP.analyse(pixels);
+        setWorking(false);
+        if (!a) { cam.flash('Record not found: lay it on the sheet'); return; }
+        var s = Object.assign({}, shotsRef.current); s[step] = { sd: pixels, an: a, angle: 0 };
+        setShots(s); setStep(nextStep(s));
+      }, 30);
+    }
+    function takePhoto() { var v = videoRef.current; if (v && v.videoWidth) process(cratePixels(v, v.videoWidth, v.videoHeight)); }
+    function fromLibrary(e) {
+      var file = e.target.files[0]; e.target.value = '';
+      if (!file) return;
+      createImageBitmap(file, { imageOrientation: 'from-image' }).then(function (bmp) { process(cratePixels(bmp, bmp.width, bmp.height)); },
+        function () { cam.flash(file.name + ' is not a readable image'); });
+    }
+    function retake(side) { var s = Object.assign({}, shotsRef.current); s[side] = null; setShots(s); setStep(side); }
+    function noSideB() { var s = Object.assign({}, shotsRef.current, { B: 'skip' }); setShots(s); setStep(nextStep(s)); }
+
+    // the check screen: both labels, each turned on its own (drag live at 300 px, then PREVIEW)
+    function drawSide(side, size) {
+      var s = shotsRef.current[side], c = canvasRefs[side].current;
+      if (!s || s === 'skip' || !c) return null;
+      var r = CP.render(s.sd, s.an, size, s.angle);
+      paint(c, r.label);
+      return r;
+    }
+    useEffect(function () {
+      if (step !== 'review') return;
+      var lines = [];
+      ['A', 'B'].forEach(function (side) {
+        var r = drawSide(side, PREVIEW);
+        if (!r) return;
+        CP.checks(shotsRef.current[side].an, r.light).filter(function (c) { return c.state === 'warning'; })
+          .forEach(function (c) { lines.push({ state: 'warning', text: 'Label ' + side + ': ' + c.text }); });
+      });
+      setChecks(lines);
+    }, [step]);
+    useEffect(function () {   // side B: the thumb of side A
+      var s = shots.A, c = thumbRef.current;
+      if (step === 'review' || !s || !c) return;
+      paint(c, CP.render(s.sd, s.an, 80, s.angle).label);
+    }, [step, shots.A]);
+    function turnSide(side, deg, live) {
+      var s = Object.assign({}, shotsRef.current), one = Object.assign({}, s[side], { angle: deg });
+      s[side] = one; shotsRef.current = s; setShots(s);
+      if (live) { if (!raf.current) raf.current = requestAnimationFrame(function () { raf.current = 0; drawSide(side, 300); }); }
+      else drawSide(side, PREVIEW);
+    }
+    var drag = useRef(null), raf = useRef(0);
+    function pointerAngle(el, e) { var r = el.getBoundingClientRect(); return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI; }
+    function dragProps(side) {
+      function end() { if (!drag.current) return; drag.current = null; cancelAnimationFrame(raf.current); raf.current = 0; turnSide(side, shotsRef.current[side].angle, false); }
+      return {
+        className: 'admin-crate__turn', tabIndex: 0, 'aria-label': 'Turn label ' + side + ': drag, or use the arrow keys',
+        onPointerDown: function (e) { e.currentTarget.setPointerCapture(e.pointerId); drag.current = { start: pointerAngle(e.currentTarget, e), from: shotsRef.current[side].angle }; },
+        onPointerMove: function (e) {
+          if (!drag.current) return;
+          var d = pointerAngle(e.currentTarget, e) - drag.current.start;
+          if (d > 180) d -= 360; if (d < -180) d += 360;
+          turnSide(side, Math.round((drag.current.from + d) * 10) / 10, true);
+        },
+        onPointerUp: end, onPointerCancel: end,
+        onKeyDown: function (e) {
+          var k = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+          if (!k) return;
+          e.preventDefault(); turnSide(side, Math.round((shotsRef.current[side].angle + k * (e.shiftKey ? 10 : 1)) * 10) / 10, false);
+        }
+      };
+    }
+
+    // Save & next: the photos are made now (1600), the uploads and the draft run in the background, one record at a time
+    async function saveRecord(no, made) {
+      var keys = [], originals = [];
+      for (var i = 0; i < made.length; i++) {
+        var m = made[i];   // keys kept on the record: a retry uploads only what is missing
+        if (!m.labelKey) m.labelKey = await uploadFile('photo', new File([m.label], no + '_' + m.side.toLowerCase() + '_label.webp', { type: 'image/webp' }));
+        if (!m.fullKey) m.fullKey = await upload('original', m.full, null);
+        keys.push(m.labelKey); originals.push(m.fullKey);
+      }
       var f = emptyForm();
       f.lines[0].title = BARGAIN_TITLE; f.format = '7"'; f.section = 'sale';
-      if (photoKey) f.images = [{ key: photoKey }];
+      f.images = keys.map(function (k) { return { key: k }; });
       var res = await sb.rpc('admin_save_listing', { payload: payloadOf(f, 'draft') });
-      if (res.error) throw new Error('Draft not created: ' + res.error.message);
-      var up = await sb.from('listings').update({ bargain: true, original_keys: fullKey ? [fullKey] : [] }).eq('id', res.data.listing_id);
-      toast(up.error ? 'Draft created · SKU ' + res.data.sku + ', but not flagged Bargain crate: ' + up.error.message
-        : 'Bargain draft saved · SKU ' + res.data.sku + '. Next record.');
-      setRound(function (n) { return n + 1; });   // a fresh camera for the next record
+      if (res.error) throw new Error(res.error.message);
+      var up = await sb.from('listings').update({ bargain: true, original_keys: originals }).eq('id', res.data.listing_id);
+      return { sku: res.data.sku, flagError: up.error ? up.error.message : null };
     }
-    return h(CratePhoto, { key: round, title: 'Create bargain', listing: 'New bargain draft \u00b7 7\u2033', addLabel: 'Create draft', onAdd: create });
+    async function saveAndNext() {
+      var no = recordNo, s = shotsRef.current, made = [];
+      setWorking(true);
+      await new Promise(function (r) { setTimeout(r, 30); });
+      try {
+        for (var side of ['A', 'B']) {
+          var one = s[side];
+          if (!one || one === 'skip') continue;
+          var r = CP.render(one.sd, one.an, CP.OUT, one.angle);
+          var lc = document.createElement('canvas'), fc = document.createElement('canvas');
+          paint(lc, r.label); paint(fc, r.full);
+          made.push({ side: side, label: await canvasBlob(lc), full: await canvasBlob(fc) });
+        }
+      } catch (e) { setWorking(false); cam.flash(e.message); return; }
+      setWorking(false);
+      setShots({ A: null, B: null }); setChecks([]); setStep('A'); setRecordNo(no + 1);
+      setNote('Saving record ' + no + '…');
+      queue.current = queue.current.then(async function () {
+        for (var attempt = 1; ; attempt++) {
+          try {
+            var out = await saveRecord(no, made);
+            setNote(out.flagError ? 'Record ' + no + ' saved · SKU ' + out.sku + ', but not flagged Bargain crate: ' + out.flagError
+              : 'Record ' + no + ' saved · SKU ' + out.sku + ' · in Drafts');
+            return;
+          } catch (e) {
+            if (attempt >= 5) { setNote('Record ' + no + ' not saved: ' + e.message); return; }
+            setNote('Record ' + no + ' not saved yet: trying again');
+            await new Promise(function (r) { setTimeout(r, 3000 * attempt); });
+          }
+        }
+      });
+    }
+    function discard() { setShots({ A: null, B: null }); setChecks([]); setStep('A'); }
+
+    var review = step === 'review';
+    function slot(side) {
+      var v = shots[side], state = v === 'skip' ? 'skipped' : v ? 'taken' : step === side ? 'now' : 'next';
+      return h(Z.CaptureSlot, { key: side, side: 'Label ' + side, state: state, onClick: v && v !== 'skip' ? function () { retake(side); } : undefined,
+        'aria-label': v && v !== 'skip' ? 'Label ' + side + ' taken: retake it' : undefined },
+        side === 'A' && state === 'taken' ? h('canvas', { ref: thumbRef }) : null);
+    }
+    var head = h(Z.CratePhotoHead, { title: 'Create bargain', listing: 'Record ' + recordNo + ' · 7″ · ' + (review ? 'check and save' : 'side ' + step) });
+    var phone = mode === 'phone';
+    var modeSwitch = review ? null : h(Z.SideSwitch, { value: mode, onChange: chooseMode, sides: [['live', 'Live'], ['phone', 'Phone camera']], 'aria-label': 'Camera' });
+    var viewer = phone ? null : h('div', { className: 'admin-crate__frame', hidden: review },
+      h(Z.CameraViewer, { status: working ? 'Working…' : cam.status }, h('video', { ref: videoRef, playsInline: true, muted: true, autoPlay: true })));
+    var body = review
+      ? h(React.Fragment, null,
+          h('div', { className: 'admin-crate__crops' }, ['A', 'B'].map(function (side) {
+            var v = shots[side];
+            if (v === 'skip') return h(Z.CropPreview, { key: side, caption: 'Label ' + side + ' · none' });
+            return h(Z.LabelReview, { key: side, caption: 'Label ' + side + ' · ' + CP.angleText(v ? v.angle : 0), disabled: working,
+              onTurn: function () { turnSide(side, shotsRef.current[side].angle + 90, false); }, onRetake: function () { retake(side); } },
+              h('canvas', Object.assign({ ref: canvasRefs[side] }, dragProps(side))));
+          })),
+          h('p', { className: 'admin-crate__hint body-small' }, 'Drag a label to turn it'),
+          checks.length ? h('div', { className: 'admin-crate__checks' }, checks.map(function (c, i) { return h(Z.CheckLine, { key: i, state: c.state }, c.text); })) : null)
+      : h(React.Fragment, null,
+          phone && (working || cam.flashing) ? h(Z.CheckLine, { state: 'warning' }, working ? 'Working…' : cam.flashing) : null,
+          h(Z.CaptureProgress, { note: note }, slot('A'), slot('B')));
+    var actions = review
+      ? [h(Z.Button, { key: 'save', hierarchy: 'primary', disabled: working, onClick: saveAndNext }, 'Save & next'),
+         h(Z.Button, { key: 'discard', hierarchy: 'secondary', disabled: working, onClick: discard }, 'Discard')]
+      : [phone
+           ? h(Z.Button, { key: 'open', hierarchy: 'primary', disabled: working, onClick: function () { nativeRef.current.click(); } }, 'Open camera')
+           : h(Z.Button, { key: 'take', hierarchy: 'primary', disabled: working || !cam.streamRef.current, onClick: takePhoto }, 'Take photo'),
+         step === 'B'
+           ? h(Z.Button, { key: 'skip', hierarchy: 'secondary', disabled: working, onClick: noSideB }, 'No side B')
+           : h(Z.Button, { key: 'library', hierarchy: 'secondary', disabled: working, onClick: function () { fileRef.current.click(); } }, 'From library')];
+    return h('div', { className: 'admin-crate' + (review || phone ? '' : ' admin-crate--camera') },
+      h('div', { className: 'admin-crate__body' }, head, modeSwitch, viewer, body),
+      h('input', { ref: fileRef, type: 'file', accept: 'image/*', hidden: true, tabIndex: -1, onChange: fromLibrary }),
+      h('input', { ref: nativeRef, type: 'file', accept: 'image/*', capture: 'environment', hidden: true, tabIndex: -1, onChange: fromLibrary }),
+      h(Z.ActionBar, null, actions));
   }
 
   function ListingForm(props) {

@@ -1,6 +1,6 @@
 # 0203 — Admin Create bargain: from the phone menu, one photo = one draft with its SKU in the Bargain crate
 
-`2026-11-27` · proposed · Figma: `admin menu` (2299:1884) → new group `actions` with `create bargain` on top; page `Crate photo` → `Create bargain - camera` (2620:948), `Create bargain - result` (2620:1022), `Create bargain - draft created (toast), camera again` (2620:1269); notes 2612:5477
+`2026-11-27` · proposed (screens and capture step replaced by [0204](0204-create-bargain-two-sides.md)) · Figma: `admin menu` (2299:1884) → new group `actions` with `create bargain` on top; page `Crate photo` → `Create bargain - camera` (2620:948), `Create bargain - result` (2620:1022), `Create bargain - draft created (toast), camera again` (2620:1269); notes 2612:5477
 
 **Context.** Gio (2026-11-27): in the admin's mobile hamburger menu, a "Create bargain" button that opens Take photo (0200); taking the photo creates a SKU even with no title, so the record is registered, and he completes it later from the computer with the photos at hand.
 **Decision.**

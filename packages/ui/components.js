@@ -1332,6 +1332,37 @@
       h('span', { className: 'hm-check-line__icon', 'aria-hidden': 'true' }, icon(state === 'warning' ? 'icon-warning-circle' : 'icon-check-circle')),
       h('p', { className: 'hm-check-line__message body-small' }, h('span', { className: 'hm-visually-hidden' }, state === 'warning' ? 'Note: ' : 'Done: '), props.children));
   }
+  /* ── Create bargain capture (Figma BACKEND → Crate photo, decision 0204): one record = side A, side B, one check.
+     CaptureSlot (`capture slot`, state now | taken | next | skipped): 40 thumb + side (label-extra-small, strong) over
+       state (body/small, moderate), gap 8, centred. now = thumb outlined icon/strong; next | skipped = thumb dashed
+       4 4 action/secondary/border/default; taken = the photo (children) on surface/media. With onClick (taken: retake)
+       it is a <button>.
+     CaptureProgress (`capture progress`): the two slots in a row (gap 24) + note (body/small, moderate, boolean show note), gap 8.
+     LabelReview (`label review`): a CropPreview (caption = side · angle; children: the canvas) + 90° and Retake
+       (small secondary Buttons, gap 8), gap 8. */
+  var CAPTURE_STATE = { now: 'Now', taken: 'Taken \u00b7 tap to retake', next: 'Next', skipped: 'Skipped' };
+  function CaptureSlot(props) {
+    var state = CAPTURE_STATE[props.state] ? props.state : 'next';
+    var tag = props.onClick ? 'button' : 'div';
+    return h(tag, Object.assign(props.onClick ? { type: 'button' } : {}, omit(props, ['state', 'side', 'stateText', 'children', 'className']),
+      { className: cx('hm-capture-slot', props.className), 'data-state': state, 'aria-current': state === 'now' ? 'step' : undefined }),
+      h('span', { className: 'hm-capture-slot__thumb', 'aria-hidden': 'true' }, state === 'taken' ? props.children : null),
+      h('span', { className: 'hm-capture-slot__text' },
+        h('span', { className: 'hm-capture-slot__side label-extra-small' }, props.side),
+        h('span', { className: 'hm-capture-slot__state body-small' }, props.stateText || CAPTURE_STATE[state])));
+  }
+  function CaptureProgress(props) {
+    return h('div', Object.assign({}, omit(props, ['note', 'children', 'className']), { className: cx('hm-capture-progress', props.className) }),
+      h('div', { className: 'hm-capture-progress__slots' }, props.children),
+      props.note ? h('p', { className: 'hm-capture-progress__note body-small', role: 'status' }, props.note) : null);
+  }
+  function LabelReview(props) {
+    return h('div', Object.assign({}, omit(props, ['caption', 'onTurn', 'onRetake', 'disabled', 'children', 'className']), { className: cx('hm-label-review', props.className) }),
+      h(CropPreview, { caption: props.caption }, props.children),
+      h('div', { className: 'hm-label-review__actions' },
+        h(Button, { hierarchy: 'secondary', size: 'small', disabled: props.disabled, onClick: props.onTurn, 'aria-label': 'Turn 90° clockwise' }, '90°'),
+        h(Button, { hierarchy: 'secondary', size: 'small', disabled: props.disabled, onClick: props.onRetake }, 'Retake')));
+  }
   /* ── ListingsFilter (Figma BACKEND → Listings → `listings filter`, device=desktop | mobile, decision 0128) ──
      The status tabs of the Listings page (Live · Drafts · Sold · Archived, a <Tabs>) + the search field that filters
      the rows (an <Input variant="search">). Desktop: one row, tabs left, search 280 right, centred, gap 16.
@@ -2212,6 +2243,6 @@
            Filter: Filter, FilterBlock: FilterBlock, Filters: Filters,
            FilterFacet: FilterFacet, FiltersLayer: FiltersLayer, PlpHeader: PlpHeader, MenuItem: MenuItem, MenuGroup: MenuGroup, MenuLayer: MenuLayer, Footer: Footer, FooterLinks: FooterLinks, FooterNewsletter: FooterNewsletter, SelectButton: SelectButton, ChevronRightIcon: ChevronRightIcon, ChevronLeftIcon: ChevronLeftIcon,
            TradeNote: TradeNote, DiscogsCard: DiscogsCard, Step: Step,
-           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, ListingNav: ListingNav, JumpTo: JumpTo, DiscogsLink: DiscogsLink, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, useDragOrder: useDragOrder, DragHandle: DragHandle, AdminBar: AdminBar, ListingsHead: ListingsHead, ListingsFilter: ListingsFilter, Stat: Stat, CratePhotoHead: CratePhotoHead, SideSwitch: SideSwitch, CameraViewer: CameraViewer, CropPreview: CropPreview, TurnBar: TurnBar, CheckLine: CheckLine, Thumbnail: Thumbnail, ListingRow: ListingRow, OfferRow: OfferRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
+           ReleaseOption: ReleaseOption, ReleaseList: ReleaseList, ChosenRelease: ChosenRelease, ListingNav: ListingNav, JumpTo: JumpTo, DiscogsLink: DiscogsLink, ContentGroupHead: ContentGroupHead, ContentRow: ContentRow, ContentEditorHead: ContentEditorHead, LinkRow: LinkRow, SectionRow: SectionRow, ProgressBar: ProgressBar, useDragOrder: useDragOrder, DragHandle: DragHandle, AdminBar: AdminBar, ListingsHead: ListingsHead, ListingsFilter: ListingsFilter, Stat: Stat, CratePhotoHead: CratePhotoHead, SideSwitch: SideSwitch, CameraViewer: CameraViewer, CropPreview: CropPreview, TurnBar: TurnBar, CheckLine: CheckLine, CaptureSlot: CaptureSlot, CaptureProgress: CaptureProgress, LabelReview: LabelReview, Thumbnail: Thumbnail, ListingRow: ListingRow, OfferRow: OfferRow, ActionBar: ActionBar, OrderBlock: OrderBlock, FormSectionHead: FormSectionHead, Marker: Marker, PriceFields: PriceFields,
            NewsletterDialog: NewsletterDialog, SectionHead: SectionHead, GenreLinks: GenreLinks, HomeIntro: HomeIntro, HomeNewsletter: HomeNewsletter, CollectionCard: CollectionCard, HomeCollections: HomeCollections, ProductTile: ProductTile, GalleryCounter: GalleryCounter, ViewToggle: ViewToggle };
 });

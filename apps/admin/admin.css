@@ -291,6 +291,14 @@ body[data-player-open] .hm-action-bar { bottom: var(--admin-player-height, 0px);
 .admin-crate { flex: 1 1 auto; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
 .admin-crate__body { flex: 1 1 auto; display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 560px; }
 .admin-crate > .hm-action-bar { margin: 0 -24px -24px; }
+/* camera: the page is exactly the screen and the 3:4 viewfinder takes what is left, whole (Gio 2026-11-27: he had to
+   scroll to see the frame). Width = min(column, height × 3/4), centred. */
+.admin:has(.admin-crate--camera) { height: 100vh; height: 100dvh; min-height: 0; }
+.admin-crate--camera, .admin-crate--camera > .admin-crate__body { min-height: 0; }
+.admin-crate__frame { flex: 1 1 0; min-height: 160px; container-type: size; display: flex; justify-content: center; }
+.admin-crate__frame > .hm-camera-viewer { width: min(100cqw, 75cqh); align-self: flex-start; }
+.admin-crate__hint { color: var(--text-moderate); }   /* Create bargain check screen: "Drag a label to turn it" */
+.admin-crate__frame[hidden] { display: none; }
 .admin-crate__crops { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .admin-crate__turn { touch-action: none; cursor: grab; }
 .admin-crate__turn:active { cursor: grabbing; }
