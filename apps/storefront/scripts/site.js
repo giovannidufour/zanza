@@ -550,7 +550,9 @@
     // "Show sold out" (owner 2026-11-12): not a facet. Ticked by default; unticked = ?sold=hide. It never counts as an
     // applied filter and Reset ticks it again.
     var soldBox = root.querySelector('input[data-show-sold]');
-    var boxes = Array.prototype.slice.call(root.querySelectorAll('input[type="checkbox"]')).filter(function (b) { return b !== soldBox; });
+    // "Show bargain crate" (decision 0201): the same kind of row, unticked by default; ticked = ?bargain=show
+    var bargainBox = root.querySelector('input[data-show-bargain]');
+    var boxes = Array.prototype.slice.call(root.querySelectorAll('input[type="checkbox"]')).filter(function (b) { return b !== soldBox && b !== bargainBox; });
     var keys = []; boxes.forEach(function (b) { if (keys.indexOf(b.name) === -1) keys.push(b.name); });
     // hidden facets (label): no checkbox; the value comes from the URL and shows as a removable chip
     var hidden = []; try { hidden = JSON.parse(root.getAttribute('data-hidden-facets') || '[]'); } catch (e) { hidden = []; }
@@ -567,6 +569,7 @@
     var values = items.map(function (el) {
       var v = {}; keys.forEach(function (k) { try { v[k] = JSON.parse(el.getAttribute('data-' + k) || '[]'); } catch (e) { v[k] = []; } });
       v.__q = !searchPage || (!!matcher && matcher(el.getAttribute('data-search') || ''));
+      v.__bargain = el.hasAttribute('data-bargain');
       return v;
     });
     // sold: read from the card at each apply (site.js updates data-listing-status live)
@@ -579,6 +582,7 @@
       });
     }
     if (soldBox) soldBox.checked = params.get('sold') !== 'hide';
+    if (bargainBox) bargainBox.checked = params.get('bargain') === 'show';
     if (params.has('subgenre')) {   // subgenre was renamed genre (0048): old shared links keep working
       params.getAll('subgenre').forEach(function (v) { params.append('genre', v); });
       params.delete('subgenre');
@@ -604,19 +608,21 @@
     var perPage = list ? parseInt(list.getAttribute('data-per-page'), 10) || 0 : 0;
     var page = parseInt(params.get('page'), 10) || 1, pages = 1, lastShown = 0;
 
-    function selectionOf(checkboxes, hiddenState, sold) {
+    function selectionOf(checkboxes, hiddenState, sold, bargain) {
       var s = {}; keys.forEach(function (k) { s[k] = []; });
       s.__showSold = sold ? sold.checked : true;
+      s.__showBargain = bargain ? bargain.checked : true;
       checkboxes.forEach(function (b) { if (b.checked) s[b.name].push(b.value); });
       hidden.forEach(function (f) { s[f.key] = hiddenState[f.key].slice(); });
       return s;
     }
-    function selected() { return selectionOf(boxes, hiddenSel, soldBox); }
+    function selected() { return selectionOf(boxes, hiddenSel, soldBox, bargainBox); }
     var lastSel = null;   // the selection of the last apply(), for analytics
     function matches(v, s, skip) {
       if (!v.__q) return false;
       if (wantPage && !v.__want) return false;
       if (v.__sold && !s.__showSold) return false;
+      if (v.__bargain && !s.__showBargain) return false;
       return keys.every(function (k) {
         if (k === skip || !s[k].length) return true;
         return s[k].some(function (x) { return v[k].indexOf(x) !== -1; });
@@ -746,6 +752,7 @@
       if (query) q.set('q', query);
       keys.forEach(function (k) { s[k].forEach(function (x) { q.append(k, x); }); });
       if (!s.__showSold) q.set('sold', 'hide');
+      if (bargainBox && s.__showBargain) q.set('bargain', 'show');
       if (sort !== 'newest') q.set('sort', sort);
       var qs = q.toString();   // without the page: the collection chip's link and the pagination's links start from it
       renderPagination(qs);
@@ -853,7 +860,8 @@
     });
     if (layer && trigger && layer.showModal) {
       var draftSold = layer.querySelector('input[data-show-sold]');
-      var draftBoxes = Array.prototype.slice.call(layer.querySelectorAll('input[type="checkbox"]')).filter(function (b) { return b !== draftSold; });
+      var draftBargain = layer.querySelector('input[data-show-bargain]');
+      var draftBoxes = Array.prototype.slice.call(layer.querySelectorAll('input[type="checkbox"]')).filter(function (b) { return b !== draftSold && b !== draftBargain; });
       var draftHidden = {};
       var rows = Array.prototype.slice.call(layer.querySelectorAll('[data-facet]'));
       var blocks = Array.prototype.slice.call(layer.querySelectorAll('[data-facet-block]'));
@@ -865,7 +873,7 @@
       var applyBtn = layer.querySelector('[data-layer-apply]');
       var layerChip = layer.querySelector('template[data-layer-chip]');
       var currentFacet = null;
-      var draft = function () { return selectionOf(draftBoxes, draftHidden, draftSold); };
+      var draft = function () { return selectionOf(draftBoxes, draftHidden, draftSold, draftBargain); };
       var labelOf = function (b) { return b.getAttribute('data-facet-label') || b.value; };
 
       var renderDraft = function () {
@@ -911,7 +919,7 @@
         title.textContent = key ? row.getAttribute('data-facet-label') : 'Filter';   // owner 2026-11-10: "Filter", as the trigger
         back.hidden = !key;
         layer.querySelector('[data-layer-facets]').hidden = !!key;
-        var soldRow = layer.querySelector('[data-layer-sold]'); if (soldRow) soldRow.hidden = !!key;
+        Array.prototype.forEach.call(layer.querySelectorAll('[data-layer-sold]'), function (row) { row.hidden = !!key; });
         blocks.forEach(function (bl) { bl.hidden = bl.getAttribute('data-facet-block') !== key; });
         renderDraft();
         layer.querySelector('.hm-filters-layer__body').scrollTop = 0;
@@ -922,6 +930,7 @@
         });
         hidden.forEach(function (f) { draftHidden[f.key] = hiddenSel[f.key].slice(); });
         if (draftSold) draftSold.checked = soldBox ? soldBox.checked : true;
+        if (draftBargain) draftBargain.checked = bargainBox ? bargainBox.checked : false;
         showLevel(null);
         layer.showModal();
         // no control is focused on open (decision 0043): the dialog itself takes focus, so screen readers hear
@@ -952,6 +961,7 @@
         draftBoxes.forEach(function (d) { d.checked = false; });
         hidden.forEach(function (f) { draftHidden[f.key] = []; });
         if (draftSold) draftSold.checked = true;
+        if (draftBargain) draftBargain.checked = false;
         renderDraft();
       });
       applyBtn.addEventListener('click', function () {
@@ -960,6 +970,7 @@
         });
         hidden.forEach(function (f) { hiddenSel[f.key] = draftHidden[f.key].slice(); });
         if (soldBox && draftSold) soldBox.checked = draftSold.checked;
+        if (bargainBox && draftBargain) bargainBox.checked = draftBargain.checked;
         apply(true);
         close();
         window.scrollTo(0, 0);

@@ -1764,6 +1764,7 @@ button.hm-menu-item { width: 100%; margin: 0; border-width: 0 0 1px; border-styl
 .hm-price-fields__row { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 16px; align-items: start; }
 .hm-price-fields__field { grid-column: span 2; display: flex; flex-direction: column; min-width: 0; }
 .hm-price-fields__note { grid-column: span 6; align-self: center; margin: 0; color: var(--text-strong); }
+.hm-price-fields__bargain { grid-column: 1 / -1; }
 @media (--mobile) {
   .hm-price-fields__row { grid-template-columns: minmax(0, 1fr); }
   .hm-price-fields__field,

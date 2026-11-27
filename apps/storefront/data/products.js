@@ -88,7 +88,8 @@ function toProduct(row, mediaUrl, artists = []) {
       weight_g: row.weight_g || null,   // shipping: own weight; null = the format's (decision 0057)
       custom_title: row.custom_title,
       custom_title_links: titleLinksOf(row, artists),
-      published_at: row.published_at || null   // the home's "This week" (decision 0120)
+      published_at: row.published_at || null,   // the home's "This week" (decision 0120)
+      bargain: !!row.bargain   // Bargain crate (migration 0046, decision 0201): /bargain-crate/, hidden elsewhere until ticked
     },
     release: {
       discogs_release_id: r.discogs_release_id,
